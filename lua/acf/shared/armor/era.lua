@@ -13,8 +13,8 @@ Material.curve		= 0.95
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
 
-Material.effectiveness	= 3	--5 --Data before to angle factor. Needs proper testing
-Material.HEATeffectiveness  = 10	--20
+Material.effectiveness	= 2.5	--5 --Data before to angle factor. Needs proper testing
+Material.HEATeffectiveness  = 8	--20
 
 Material.resiliance		= 1
 Material.HEATresiliance	= 1

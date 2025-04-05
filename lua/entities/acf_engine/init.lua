@@ -136,18 +136,25 @@ do
 			Electric			= 0.8 --Due to odd power outputs
 		}
 		local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
-		local FallBackCost = (Engine.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[Engine.FuelType] or 1)
+		local EngineHorsepower = Engine.peakkw / 0.7457 --Converts KW to HP, 74.57 / 100
+
+		local FallBackCost = EngineHorsepower * PtsPerHP * (FuelCostMul[Engine.FuelType] or 1)
 		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointCostMultiplier)
 
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
 
-		if Engine.peakkw > (74.57 / 100 * ACF.LargeEngineThreshold) and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
+		Engine.MaxDB = 50 + 60 * (EngineHorsepower / 2400) --Base volume of 70DB. Plus 60 * The ratio of the engine hp to 2400.
+
+		if EngineHorsepower > ACF.LargeEngineThreshold and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
 			Engine.RequiresDriver = true
 			Engine.CanUseSeatDriver = true
 		end
+
 		--calculate base fuel usage
 		if Engine.EngineType == "Electric" then
 			Engine.FuelUse = ACF.ElecRate / (ACF.Efficiency[Engine.EngineType] * 60 * 60) --elecs use current power output, not max
+
+			Engine.MaxDB = Engine.MaxDB * 0.15 --Electrics generate hardly any sound by themselves.
 		else
 			Engine.FuelUse = ACF.FuelRate * ACF.Efficiency[Engine.EngineType] * Engine.peakkw / (60 * 60)
 		end
@@ -414,8 +421,9 @@ function ENT:TriggerInput( iname, value )
 					filter:AddAllPlayers()
 
 					self.Sound = CreateSound(self, self.SoundPath , filter)
+					self.Sound:SetSoundLevel( self.MaxDB ) --Has to be adjusted before being played sadly. No dynamic DB levels.
 					self.Sound:PlayEx(0.5,100)
-
+					--print("Engine DB: " .. SoundStrength * self.MaxDB)
 				end
 				self:ACFInit()
 			else
@@ -805,7 +813,11 @@ function ENT:CalcRPM()
 
 	if self.Sound then
 		self.Sound:ChangePitch( math.min( 20 + (SmoothRPM * (self.SoundPitch / 100)) / 50, 255 ), 0 )
-		self.Sound:ChangeVolume( 0.25 + (0.1 + 0.9 * ((SmoothRPM / self.LimitRPM) ^ 1.5)) * self.Throttle / 1.5, 0 )
+		local SoundStrength = 0.25 + (0.1 + 0.9 * ((SmoothRPM / self.LimitRPM) ^ 1.5)) * self.Throttle / 1.5
+
+		self.Sound:ChangeVolume( SoundStrength, 0 )
+		--self.Sound:SetSoundLevel( SoundStrength * self.MaxDB, 0 ) --Will not work after being played.
+
 	end
 
 	return RPM

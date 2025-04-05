@@ -143,6 +143,23 @@ ACF.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 ACF.PointsLimit = 10000 -- The maximum legal point value.
 ACF.MaxWeight   = 200000 -- The max weight in kg.
 
+ACE.CannonPointMul = 0.85 --Multiplier for cannon point cost
+ACE.EnginePointMul = 0.69 --Multiplier for engine cost in points
+ACF.PointsPerTon   = 60  --Base cost per ton of armor. Multiplier used to balance out armor
+ACE.AmmoPerTon     = 100 --Point cost per ton of ammo
+
+ACE.MatCostTables = {
+	Alum			= 1.06 * (0.8325 / 0.334),	--A 20% increase in cost for 60% reduction in weight.
+	CHA				= 0.7 * (0.98 / 1.25),	--20% more heavy for a 30% reduction in cost.
+	Cer				= 0.95 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
+	ERA				= 0.7 * (3 / 2.0),
+	Rub				= 1.05 * (0.05 / 0.2),
+	Texto			= 0.9 * (0.5 / 0.35),
+	RHA 			= 1,
+	DU				= 1.2 * (3.9 / 2.43),	--A 20% increase in cost for 40% reduction in weight.
+	Ti				= 1.3 * (1.7 / 0.61)	--A 25% increase in cost for 64% reduction in weight.
+}
+
 ---------------------------------- Misc & other ----------------------------------
 
 ACF.LargeCaliber        = 10 --Gun caliber in CM to be considered a large caliber gun, 10cm = 100mm

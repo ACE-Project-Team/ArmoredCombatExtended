@@ -57,7 +57,7 @@ ACF.TankVolumeMul       = 1						-- multiplier for fuel tank capacity, 1.0 is ap
 ---------------------------------- Ammo Crate config ----------------------------------
 
 ACF.CrateMaximumSize    = 250
-ACF.CrateMinimumSize    = 5
+ACF.CrateMinimumSize    = 1
 
 ACF.RefillDistance      = 400					-- Distance in which ammo crate starts refilling.
 ACF.RefillSpeed         = 250					-- (ACF.RefillSpeed / RoundMass) / Distance

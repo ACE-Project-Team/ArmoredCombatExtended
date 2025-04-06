@@ -19,6 +19,7 @@ local LegacyAmmoTable   = {}
 local EngineTable       = {}
 local GearboxTable      = {}
 local FuelTankTable     = {}
+local RadiatorTable		= {}
 local FuelTankSizeTable = {}
 local MuzzleFlashTable  = {}
 
@@ -52,6 +53,10 @@ local gearbox_base = {
 local fueltank_base = {
 	ent    = "acf_fueltank",
 	type   = "FuelTanks"
+}
+local radiator_base = {
+	ent    = "ace_radiator",
+	type   = "Radiators"
 }
 local rack_base = {
 	ent    = "acf_rack",
@@ -99,6 +104,9 @@ if CLIENT then
 
 	fueltank_base.guicreate      = function( _, tbl ) ACFFuelTankGUICreate( tbl )		end or nil
 	fueltank_base.guiupdate      = function( _, tbl ) ACFFuelTankGUIUpdate( tbl )		end or nil
+
+	radiator_base.guicreate      = function( _, tbl ) ACFRadiatorGUICreate( tbl )		end or nil
+	radiator_base.guiupdate      = function( _, tbl ) ACFRadiatorGUIUpdate( tbl )		end or nil
 
 	radar_base.guicreate         = function( _, Table ) ACFRadarGUICreate( Table )	end
 	radar_base.guiupdate         = function() return end
@@ -241,6 +249,14 @@ function ACF_DefineFuelTankSize( id, data )
 	FuelTankSizeTable[ id ] = data
 end
 
+-- fueltank definition
+function ACF_DefineRadiator( id, data )
+	data.id = id
+	table.Inherit( data, radiator_base )
+	RadiatorTable[ id ] = data
+	MobilityTable[ id ] = data
+end
+
 -- Radar definition
 function ACF_DefineRadar( id, data )
 	data.id = id
@@ -380,6 +396,7 @@ do
 		"gearboxes",
 		"guidances",
 		"fueltanks",
+		"radiators",
 		"fuses",
 		"sounds",
 		"tools",
@@ -412,6 +429,7 @@ ACF.Weapons.Racks           = RackTable
 ACF.Weapons.Engines         = EngineTable
 ACF.Weapons.Gearboxes       = GearboxTable
 ACF.Weapons.FuelTanks       = FuelTankTable
+ACF.Weapons.Radiators       = RadiatorTable
 ACF.Weapons.FuelTanksSize   = FuelTankSizeTable
 ACF.Weapons.Radars          = Radars
 ACF.Weapons.Tools           = Tools

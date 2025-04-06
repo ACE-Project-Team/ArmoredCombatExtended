@@ -280,3 +280,76 @@ function ACE.HeatFromEngine( Engine , Radiator )  --radiator?!? woooo
 end
 ]]--
 
+--ACE.AmbientTemp
+
+--The following functions require any entity involved to:
+--Have a specific heat defined
+--Have a thermal transfer coefficient defined
+--Surface area
+
+function ACE_GetThermalMass(Ent)
+
+	local Mass = Ent.ThermalMass or -1
+
+	if Mass == -1 then
+		local Phys = Ent:GetPhysicsObject()
+		if Phys:IsValid() then
+			Mass = Phys:GetMass()
+			Ent.ThermalMass = Mass
+		else
+			Mass = 1000
+		end
+	end
+
+	return Mass
+end
+
+function ACE_AddThermalEnergy(Ent, KJ) --Used to add or remove thermal energy
+
+	local SpecificHeat = Ent.ACESpecificHeat or 0.9211 --Uses specific heat of aluminum if unavailable
+	local Mass = ACE_GetThermalMass(Ent)
+
+	local DeltaTemp = KJ / SpecificHeat / Mass
+
+	Ent.Heat = Ent.Heat + DeltaTemp or ACE.AmbientTemp
+end
+
+function ACE_EqualizeThermalEnergy(Ent1, Ent2) --Instantly balances the thermal energy of 2 objects. Useful for radiators or things one doesn't care for heat transfer rates with.
+
+	local SpecificHeat1 = Ent1.ACESpecificHeat or 0.9211 --Uses specific heat of aluminum if unavailable
+	local SpecificHeat2 = Ent2.ACESpecificHeat or 0.9211
+
+	local TMass1 = ACE_GetThermalMass(Ent1)
+	local TMass2 = ACE_GetThermalMass(Ent2)
+	local TotalMass = TMass1 + TMass2
+
+	local Ratio1 = TMass1/TotalMass
+	local Ratio2 = TMass2/TotalMass
+
+	--I LOVE KELVIN AND HAVING TO RECONVERT EVERYTHING 4 TIMES!!!!!!!! :)
+
+	local ThermalEnergy1 = (Ent1.Heat + 273.15) * SpecificHeat1 * TMass1
+	local ThermalEnergy2 = (Ent2.Heat + 273.15) * SpecificHeat2 * TMass2
+	local TotalEnergy = ThermalEnergy1 + ThermalEnergy2
+
+	local AvgSpecificHeat = SpecificHeat1 * Ratio1 + SpecificHeat2 * Ratio2
+
+	local FinalTemp = TotalEnergy / AvgSpecificHeat / TotalMass - 273.15
+
+	Ent1.Heat = FinalTemp
+	Ent2.Heat = FinalTemp
+end
+
+function ACE_AtmosphericHeatDissipation(Ent, Speed, DeltaTime) --Could be optimized by breaking into more functions. The rate doesn't need to be calculated every iteration riiiiiiiigt?
+	local ThermalTransferCoefficient = Ent.AtmosphericCoefficient or 5 --5 W / M^2 * K, the thermal transfer coefficient of aluminum to air
+	local SurfaceArea = Ent.ThermalSurfaceArea --Area in meters squared
+
+	local TempDif = ( (ACE.AmbientTemp + 273.15) - (Ent.Heat + 273.15) )
+
+	local TransferRate = ThermalTransferCoefficient * SurfaceArea * TempDif
+
+	ACE_AddThermalEnergy(Ent, TransferRate * DeltaTime) 
+end
+
+
+--AtmosphericHeatExchange with speed--

@@ -52,6 +52,8 @@ do
 		self.CanUseSeatDriver = false
 		self.SeatDriverEnt = nil
 
+		self.ThermalSurfaceArea = 1
+
 		self.LastDamageTime = CurTime()
 
 		self.Inputs = Wire_CreateInputs( self, { "Active", "Throttle (" .. EngineWireDescs["Throttle"] .. ")" } ) --use fuel input?
@@ -552,7 +554,6 @@ function ENT:Think()
 		self.NextUpdate = ACF.CurTime + 1
 	end
 
-	self.Heat = ACE.HeatFromEngine( self )
 	Wire_TriggerOutput(self, "EngineHeat", self.Heat)
 
 	if ACF.CurTime > self.NextUpdate then
@@ -696,6 +697,10 @@ function ENT:CalcRPM()
 		end
 
 		Tank.Fuel = math.max(Tank.Fuel - Consumption,0)
+		FuelBoost = ACF.TorqueBoost
+
+		ACE_AddThermalEnergy(self, Consumption * self.Efficiency * ACF.FuelPowerDensity[Tank.FuelType]* 0.4 ) --Assume 60% lost to air as exhaust
+
 		self.HasFuel = true
 		Wire_TriggerOutput(self, "Fuel Use", math.Round(60 * Consumption / DeltaTime,3))
 	else
@@ -708,7 +713,9 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
-	ACE.DoContraptionLegalCheck(self)
+	ACE_DoContraptionLegalCheck(self)
+
+	ACE_AtmosphericHeatDissipation(self, 0, DeltaTime)
 
 	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it

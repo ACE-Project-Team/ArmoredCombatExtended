@@ -276,3 +276,28 @@ ACE.DefineModelData("Cone",{
 		return volume
 	end
 })
+
+--Radiator. DefaultSize has issues with 3d vectors. Using external scaling for now.
+	ACE_DefineModelData("Radiator",{
+
+		Shape = "Radiator",
+		Model = "models/radiators/radiator_med.mdl", --Note: The model can be used as ID if needed.
+		physMaterial = "metal",
+		DefaultSize = 1, --Maybe later make scalable models support 3d hitboxes? Until then cope with it.
+		CustomMesh = { --Its a box anyways
+			{
+				Vector(17.8875, 2.25, 11.25),
+				Vector(17.8875, -2.25, 11.25),
+				Vector(-17.8875, 2.25, 11.25),
+				Vector(-17.8875, -2.25, 11.25),
+				Vector(17.8875, 2.25, -11.25),
+				Vector(17.8875, -2.25, -11.25),
+				Vector(-17.8875, 2.25, -11.25),
+				Vector(-17.8875, -2.25, -11.25)
+			},
+		},
+		volumefunction = function( L, W, H )
+			local volume = L * W * H
+			return volume
+		end
+	})

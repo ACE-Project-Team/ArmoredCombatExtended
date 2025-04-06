@@ -4,6 +4,11 @@ ACF.FuelDensity = { --kg/liter
 	Petrol = 0.745,
 	Electric = 1.35 -- li-ion --WAS 3.1
 }
+ACF.FuelPowerDensity = { --KJ/liter
+	Diesel = 38290,
+	Petrol = 33.526,
+	Electric = 1 --TODO: Find conversion units. Fine for now. Electric doesn't generate too much heat to be of concern.
+}
 
 ACF.Efficiency = { --how efficient various engine types are, higher is worse
 	GenericPetrol = 0.203, --kg per kw hr

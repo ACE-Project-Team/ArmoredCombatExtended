@@ -200,8 +200,9 @@ function PANEL:Init( )
 
 		local Mobility    = HomeNode:AddNode( "Mobility" , "icon16/car.png" )	--Mobility folder
 		local Engines     = Mobility:AddNode( "Engines" , ItemIcon )
-		local Gearboxes   = Mobility:AddNode( "Gearboxes" , ItemIcon  )
-		local FuelTanks   = Mobility:AddNode( "Fuel Tanks" , ItemIcon  )
+		local Gearboxes   = Mobility:AddNode( "Gearboxes" , "icon16/cog.png"  )
+		local FuelTanks   = Mobility:AddNode( "Fuel Tanks" , "icon16/cog.png"  )
+		local Radiators   = Mobility:AddNode( "Radiators" , "icon16/cog.png"  )
 
 		local EngineCatNodes    = {} --Stores all Engine Cats Nodes (V12, V8, I4, etc)
 		local GearboxCatNodes   = {} --Stores all Gearbox Cats Nodes (CVT, Transfer, etc)
@@ -280,6 +281,19 @@ function PANEL:Init( )
 			function FuelTanks:DoClick()
 				RunConsoleCommand( "acfmenu_type", FuelTankData.type )
 				acfmenupanel:UpdateDisplay( FuelTankData )
+			end
+
+			break
+		end
+
+		-------------------- Radiator folder --------------------
+
+		--Creates the only button to access to radiator config menu.
+		for _, RadiatorData in pairs(FinalContainer["Radiators"]) do
+
+			function Radiators:DoClick()
+				RunConsoleCommand( "acfmenu_type", RadiatorData.type )
+				acfmenupanel:UpdateDisplay( RadiatorData )
 			end
 
 			break

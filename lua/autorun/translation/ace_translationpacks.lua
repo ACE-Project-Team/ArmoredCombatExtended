@@ -139,8 +139,7 @@ ACFTranslation.MissileClasses = {
 }
 
 ACFTranslation.FuelTanks = {
-	"A fuel tank containing high grade fuel. Guaranteed to improve engine performance by " --FuelDesc
-
+	"A fuel tank containing high grade fuel." --FuelDesc
 }
 
 ACFTranslation.Radar = {

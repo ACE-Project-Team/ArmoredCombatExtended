@@ -1284,7 +1284,7 @@ do
 
 		if not isEngine(this) then return 0 end
 
-		return this.PeakTorque * ACF.TorqueBoost
+		return this.PeakTorque
 	end
 
 	--- Returns the power in kW of an ACF engine
@@ -1306,7 +1306,7 @@ do
 
 		if not isEngine(this) then return 0 end
 
-		return this.peakkw * ACF.TorqueBoost
+		return this.peakkw
 	end
 
 	--- Returns the idle rpm of an ACF engine
@@ -1800,16 +1800,11 @@ do
 		return isFuel(getent(self))
 	end
 
-	--- Returns true if the current engine requires fuel to run
+	--- (DEPRECATED) Returns true if the current engine requires fuel to run
 	-- @server
 	-- @return boolean True if the current engine requires fuel to run
 	function ents_methods:acfFuelRequired()
-		local this = getent(self)
-
-		if not isEngine(this) then return false end
-		if restrictInfo(this) then return false end
-
-		return (this.RequiresFuel and true) or false
+		return 1
 	end
 
 	--- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks

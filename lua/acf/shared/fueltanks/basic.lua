@@ -2,7 +2,7 @@
 --definition for the fuel tank that shows on menu
 ACF_DefineFuelTank( "Basic_FuelTank", {
 	name = "High Grade Fuel Tank",
-	desc = ACFTranslation.FuelTanks[1] .. ((ACF.TorqueBoost-1) * 100) .. "%.",
+	desc = ACFTranslation.FuelTanks[1],
 	category = "High Grade"
 } )
 

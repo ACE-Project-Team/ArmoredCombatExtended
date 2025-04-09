@@ -151,7 +151,6 @@ function TOOL:Reload( trace )
 	local physratio	= 100 * ent.acfphystotal / ent.acftotal
 
 	local power		= data.Power
-	local fuel		= data.Fuel
 
 	local GeneralTb	= { data.MaterialMass, data.MaterialPercent }
 	local ToJSON		= util.TableToJSON( GeneralTb )
@@ -187,8 +186,6 @@ function TOOL:Reload( trace )
 		net.WriteFloat(parenttotal)
 		net.WriteFloat(physratio)
 		net.WriteFloat(power)
-		net.WriteFloat(fuel)
-
 		net.WriteFloat(PointVal)
 		net.WriteFloat(PtsArmor)
 		net.WriteFloat(PtsEngine)
@@ -466,11 +463,9 @@ if CLIENT then
 		local parenttotal	= math.Round( net.ReadFloat(), 1 )
 		local physratio	= math.Round( net.ReadFloat(), 1 )
 		local power		= net.ReadFloat() -- Note: intentional
-		local fuel		= math.Round( net.ReadFloat(), 1 )
-		local bonus		= (fuel > 0 and 1.25 or 1)
 
-		local hpton		= math.Round( power * bonus / (total / 1000), 1 )
-		local hasfuel	= fuel == 1 and " with fuel (25% boost)" or fuel == 2 and "" or " (no fuel)"
+
+		local hpton		= math.Round( power / (total / 1000), 1 )
 
 		local PointVal	= math.Round( net.ReadFloat(), 1 )
 		local PtsArmor = math.Round( net.ReadFloat(), 1 )
@@ -496,7 +491,7 @@ if CLIENT then
 		--local ArmorComp1	= { Color4, "- Armor composition: " .. Sep }
 		local TMass2		= { Color4, "-Mass Ratio: ",Color3, "" .. phystotal .. "kg", Color4, " physical, ", Color3, "" .. parenttotal .. "kg", Color4, " parented / ", Color3, physratio .. "%", Color4, " physical )" .. Sep }
 
-		local Engine		= { Color4, "-Total Power: ", Color3, "" .. math.Round(power * bonus, 1), Color4," hp -> ",Color3, "" .. hpton, Color4, " hp/ton", Color3, "" .. hasfuel .. Sep }
+		local Engine		= { Color4, "-Total Power: ", Color3, "" .. math.Round(power, 1), Color4," hp -> ",Color3, "" .. hpton, Color4, " hp/ton" .. Sep }
 
 
 		--PointVal

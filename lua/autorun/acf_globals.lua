@@ -48,7 +48,6 @@ ACF.DebrisLifeTime        = 60
 ACF.LiIonED             = 0.27					-- li-ion energy density: kw hours / liter --BEFORE to balance: 0.458
 ACF.CuIToLiter          = 0.0163871				-- cubic inches to liters
 
-ACF.TorqueBoost         = 1.25					-- torque multiplier from using fuel
 ACF.DriverTorqueBoost   = 1.25					-- torque multiplier from having a driver
 ACF.FuelRate            = 10						-- multiplier for fuel usage, 1.0 is approx real world
 ACF.ElecRate            = 4						-- multiplier for electrics								--BEFORE to balance: 0.458

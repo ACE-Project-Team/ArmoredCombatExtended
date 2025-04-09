@@ -472,10 +472,6 @@ do
 
 		local torque = this.PeakTorque
 
-		if this.RequiresFuel then
-			torque = torque * ACF.TorqueBoost
-		end
-
 		return torque
 	end
 
@@ -487,10 +483,6 @@ do
 
 		local power = this.peakkw
 
-		if this.RequiresFuel then
-			power = power * ACF.TorqueBoost
-		end
-
 		return power
 	end
 
@@ -500,7 +492,7 @@ do
 		if not isEngine(this) then return self:throw("Entity is not a valid ACF engine", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
-		return this.PeakTorque * ACF.TorqueBoost
+		return this.PeakTorque
 	end
 
 	-- Returns the peak power in kW of an ACF engine when supplied with fuel
@@ -509,7 +501,7 @@ do
 		if not isEngine(this) then return self:throw("Entity is not a valid ACF engine", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
-		return this.peakkw * ACF.TorqueBoost
+		return this.peakkw
 	end
 
 	-- Returns the idle RPM of an ACF engine
@@ -1436,12 +1428,9 @@ do
 	__e2setcost(1)
 
 	-- Returns 1 if the ACF engine requires fuel to run
-	[nodiscard]
+	[nodiscard, deprecated = "All engines require fuel now."]
 	e2function number entity:acfFuelRequired()
-		if not isEngine(this) then return self:throw("Entity is not a valid ACF engine", 0) end
-		if restrictInfo(self.player, this) then return 0 end
-
-		return this.RequiresFuel and 1 or 0
+		return 1
 	end
 
 	__e2setcost(2)

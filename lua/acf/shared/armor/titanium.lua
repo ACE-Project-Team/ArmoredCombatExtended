@@ -4,7 +4,7 @@ local Material		= {}
 Material.id			= "Ti"
 Material.name		= "Titanium"
 Material.sname		= "Titanium"
-Material.desc		= "Lightweight and super resiliant. But E X P E N S I V E. 60% Lighter than RHA for a given thickness.\nUnlike aluminum works at high thicknesses but for a price."
+Material.desc		= "Lightweight and super resiliant. But E X P E N S I V E. 60% Lighter than RHA for a given thickness. Unlike aluminum works at high thicknesses but for a price."
 Material.year		= 1950 -- Dont blame about this, ik that RHA has existed before this year but it would be cool to see: when?
 
 Material.massMod		= 0.61

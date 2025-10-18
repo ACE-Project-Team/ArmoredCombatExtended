@@ -223,8 +223,8 @@ function SWEP:GetShootDir()
 		degrees = degrees + self.UnscopedSpread * (owner:Crouching() and self.CrouchRecoilBonus or 1)
 	end
 
-	spreadX = spreadX * degrees
-	spreadY = spreadY * degrees
+	spreadX = spreadX * degrees * ACF.SWEPInaccuracyMul
+	spreadY = spreadY * degrees * ACF.SWEPInaccuracyMul
 
 	shootDir = owner:GetAimVector()
 	local sideAxis = shootDir:Cross(Vector(0, 0, 1)):GetNormalized()
@@ -242,8 +242,8 @@ function SWEP:GetShootDir()
 
 		degrees = (degrees + 0.5) * Prof
 
-		spreadX = spreadX * degrees
-		spreadY = spreadY * degrees
+		spreadX = spreadX * degrees * ACF.SWEPInaccuracyMul
+		spreadY = spreadY * degrees * ACF.SWEPInaccuracyMul
 
 		local Enemy = owner:GetEnemy()
 		local EnemyPos = Enemy:WorldSpaceCenter()

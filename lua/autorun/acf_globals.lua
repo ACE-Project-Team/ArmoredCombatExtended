@@ -34,6 +34,7 @@ ACF.MeshCalcEnabled       = false
 ACF.SpreadScale           = 16						-- The maximum amount that damage can decrease a gun's accuracy.  Default 4x
 ACF.GunInaccuracyScale    = 1						-- A multiplier for gun accuracy.
 ACF.GunInaccuracyBias     = 2						-- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
+ACF.SWEPInaccuracyMul	  = 0.5
 
 ---------------------------------- Debris ----------------------------------
 
@@ -137,15 +138,15 @@ ACF.PointsPerTon   = 60  --Base cost per ton of armor. Multiplier used to balanc
 ACE.AmmoPerTon     = 100 --Point cost per ton of ammo
 
 ACE.MatCostTables = {
-	Alum			= 1.2 * (0.8325 / 0.333),	--A 20% increase in cost for 60% reduction in weight.
+	Alum			= 1.06 * (0.8325 / 0.334),	--A 20% increase in cost for 60% reduction in weight.
 	CHA				= 0.7 * (0.98 / 1.25),	--20% more heavy for a 30% reduction in cost.
-	Cer				= 1.10 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
-	ERA				= 0.7 * (2.5 / 2.0),
-	Rub				= 1.1 * (0.05 / 0.2),
-	Texto			= 1 * (0.5 / 0.35),
+	Cer				= 0.95 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
+	ERA				= 0.7 * (3 / 2.0),
+	Rub				= 1.05 * (0.05 / 0.2),
+	Texto			= 0.9 * (0.5 / 0.35),
 	RHA 			= 1,
 	DU				= 1.2 * (3.9 / 2.43),	--A 20% increase in cost for 40% reduction in weight.
-	Ti				= 1.25 * (1.7 / 0.61)	--A 25% increase in cost for 64% reduction in weight.
+	Ti				= 1.3 * (1.7 / 0.61)	--A 25% increase in cost for 64% reduction in weight.
 }
 
 ---------------------------------- Misc & other ----------------------------------
@@ -158,7 +159,7 @@ ACF.APHEDamageMult      = 1.75					-- APHE Damage Multipler
 ACF.APDSDamageMult      = 3					-- APDS Damage Multipler
 ACF.HVAPDamageMult      = 2					-- HVAP/APCR Damage Multipler
 ACF.FLDamageMult        = 1.4					-- FL Damage Multipler
-ACF.HEATDamageMult      = 3						-- HEAT Damage Multipler
+ACF.HEATDamageMult      = 6						-- HEAT Damage Multipler
 ACF.HEDamageMult        = 2						-- HE Damage Multipler
 ACF.HESHDamageMult      = 1.2					-- HESH Damage Multipler
 ACF.HPDamageMult        = 8						-- HP Damage Multipler

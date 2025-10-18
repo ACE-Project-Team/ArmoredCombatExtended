@@ -479,14 +479,25 @@ function ENT:Think()
 			local tr = util.TraceHull(self.LOSTraceData)
 			]]--
 
-			if tr.Hit and (not tr.HitSky) and util.IsInWorld( tr.HitPos ) then
+			local Exit = false
 
+			if tr.Hit then --and (not tr.HitSky) and util.IsInWorld( tr.HitPos ) -- Removed passing outside the world
+
+				if tr.Entity:IsValid() then
+					local HitCont = tr.Entity:GetContraption() or {}
+					if HitCont == self.Contraption then
+						Exit = true
+					end
+				end
+
+				if Exit == false then
 					debugoverlay.Cross(tr.StartPos, 10, 10, Color(255, 0, 0))
 					debugoverlay.Cross(tr.HitPos, 10, 10, Color(0, 255, 0))
 
 					self:SetPos(tr.HitPos + self:GetForward() * -30)
 					self:Detonate()
 					return
+				end
 
 			end
 

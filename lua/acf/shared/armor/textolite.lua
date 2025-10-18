@@ -16,7 +16,7 @@ Material.curve    = 0.94
 Material.effectiveness        = 0.5
 Material.HEATeffectiveness    = 1.2
 Material.HEeffectiveness      = 0.9
-Material.resiliance           = 20
+Material.resiliance           = 2
 Material.HEATresiliance       = 0.5
 Material.HEresiliance         = 0.75
 

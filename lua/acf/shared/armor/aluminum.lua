@@ -8,15 +8,15 @@ Material.desc		= "Aluminum is normally used by AFVs or light constructions, as i
 Material.year		= 1955
 
 Material.massMod		= 0.333
-Material.curve		= 0.93
+Material.curve		= 0.92
 
 Material.effectiveness  = 0.8325
-Material.resiliance	= 1.05
-Material.HEATMul		= 5 --Originally 80. Someone REALLY hated aluminum against HEAT.
+Material.resiliance	= 1.1
+Material.HEATMul		= 5 --Multiplies damage of HEAT against aluminum. Originally 80. Someone REALLY hated aluminum against HEAT.
 
-Material.spallresist	= 1.02
+Material.spallresist	= 1.0
 
-Material.spallmult	= 2
+Material.spallmult	= 1.2
 Material.ArmorMul	= 0.334
 Material.NormMult	= 0.7
 

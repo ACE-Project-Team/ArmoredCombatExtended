@@ -75,6 +75,8 @@ function ENT:Initialize()
 
 	self.TrackDelay				= 0
 
+	self.SelfContraption = nil
+
 	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")" },
 													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL" } )
 
@@ -335,6 +337,8 @@ function ENT:Think()
 		self.CurMissile = self:UpdateValidMissiles()
 		Wire_TriggerOutput(self, "Shots Left", self.CurMissile)
 		self:TrimDistantCrates()
+
+		self.SelfContraption = self:GetContraption() or {}
 	end
 
 	if self.GuidanceActive then
@@ -428,6 +432,8 @@ function ENT:ShootMissile()
 
 	self.Missiles[MissileToShoot][1]:EmitSound(self.Sound, 500, self.SoundPitch, 1, CHAN_WEAPON ) --Formerly 107
 	self.Missiles[MissileToShoot][1].MotorSound = self.Sound
+
+	self.Missiles[MissileToShoot][1].Contraption = self.SelfContraption
 
 	--Shamelessly stolen from the gun code
 	local coneAng		= math.tan(math.rad(self.Inaccuracy))

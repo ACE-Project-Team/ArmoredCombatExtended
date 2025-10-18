@@ -13,7 +13,7 @@ Material.curve		= 1.06 --Slight and almost unnoticable penalty to high thickness
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
 
-Material.effectiveness  = 3.9
+Material.effectiveness  = 3.0
 Material.resiliance	= 0.9
 
 Material.spallresist	= 1

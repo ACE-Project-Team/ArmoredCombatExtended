@@ -55,11 +55,29 @@ local function BuildRealPhysics( entity, Scale )
 		local PhysObj = entity.PhysicsObj
 
 		local Mesh			= ModelData[Model].CustomMesh or PhysObj:GetMeshConvexes()
+
+
+
+
 		local PhysMaterial  = ModelData[Model].physMaterial or ""
 
 
 		if entity.ConvertMeshToScale then
 			Mesh = entity:ConvertMeshToScale(Mesh, Scale)
+		end
+
+		local SafetyCatch = true --If the mesh would generate a crash bypass it. Only time will tell what this will unleash. Likely client only desync of the hitbox.
+
+		for k, tab in pairs( Mesh ) do
+			for c, v in pairs( tab ) do
+				if v != vector_origin then
+					SafetyCatch = false
+				end
+			end
+		end
+
+		if SafetyCatch then --Eject Eject Eject. Table only contains 0,0,0 entries leading to a crash.
+			return
 		end
 
 		entity:PhysicsInitMultiConvex(Mesh)

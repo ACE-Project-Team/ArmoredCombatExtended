@@ -8,13 +8,13 @@ Material.desc		= "Ceramic is usually used as a material to ensure shells do not 
 Material.year		= 1955
 
 Material.massMod		= 1.2
-Material.curve		= 0.98
+Material.curve		= 0.99
 
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
 
 Material.effectiveness  = 2.05
-Material.resiliance	= 100
+Material.resiliance	= 30
 
 Material.spallresist	= 1
 

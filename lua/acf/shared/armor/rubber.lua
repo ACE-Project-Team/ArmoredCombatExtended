@@ -16,8 +16,8 @@ Material.specialeffect  = 20 --Caliber to divide HEAT and spall caliber by when 
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
 
 Material.effectiveness  = 0.05 --Kinetic effectiveness. What sociopath builds a tank out of rubber?
-Material.resiliance	= 1.5 --Resiliance against penetrating kinetic shells
-Material.Catchresiliance = 2 --Resiliance Multiplier used for kinetic shells when they fail to penetrate the armor and are "caught"
+Material.resiliance	= 0.5 --Resiliance against penetrating kinetic shells
+Material.Catchresiliance = 1 --Resiliance Multiplier used for kinetic shells when they fail to penetrate the armor and are "caught"
 
 
 Material.HEATeffectiveness = 3

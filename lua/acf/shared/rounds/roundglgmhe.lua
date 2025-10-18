@@ -56,7 +56,7 @@ function Round.create( Gun, BulletData )
 		HasInertial = false,
 		HasDatalink = false,
 
-		ArmDelay = 0.3,
+		ArmDelay = 0.0,
 		DelayPrediction = 0.1,
 		ArmorThickness = 15,
 
@@ -64,6 +64,7 @@ function Round.create( Gun, BulletData )
 		BoostEffect = "Rocket Motor ATGM",
 		MotorEffect = "Rocket Motor ATGM"
 	}
+
 	local BData = table.Copy( BulletData ) --Done so we don't accidentally write to the original crate bulletdata
 	BData.BulletData = nil
 

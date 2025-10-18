@@ -58,7 +58,7 @@ function Round.create( Gun, BulletData )
 		HasInertial = false,
 		HasDatalink = false,
 
-		ArmDelay = 0.3,
+		ArmDelay = 0.0,
 		DelayPrediction = 0.1,
 		ArmorThickness = 15,
 

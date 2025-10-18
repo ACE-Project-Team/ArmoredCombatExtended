@@ -13,8 +13,8 @@ Material.curve		= 0.95
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
 
-Material.effectiveness	= 2.5	--5 --Data before to angle factor. Needs proper testing
-Material.HEATeffectiveness  = 8	--20
+Material.effectiveness	= 3	--5 --Data before to angle factor. Needs proper testing
+Material.HEATeffectiveness  = 10	--20
 
 Material.resiliance		= 1
 Material.HEATresiliance	= 1
@@ -113,7 +113,7 @@ if SERVER then
 
 			--print("----------------------------------------Boom")
 
-			local HEWeight  = math.Min(armor * 0.25, 100) -- #nonukespls
+			local HEWeight  = math.Min(armor * 0.2, 200) -- #nonukespls
 			local Radius	= ACE_CalculateHERadius( HEWeight )
 			local Owner	= (CPPI and Entity:CPPIGetOwner()) or NULL
 			local EntPos	= Entity:GetPos()
@@ -125,7 +125,7 @@ if SERVER then
 				local Flash = EffectData()
 					Flash:SetOrigin( EntPos )
 					Flash:SetNormal( -vector_up )
-					Flash:SetRadius( math.Round(math.max(Radius / 39.37 * 0.25, 1),2) )
+					Flash:SetRadius( math.Round(math.max(Radius / 39.37 * 0.125, 1),2) )
 				util.Effect( "ACF_Scaled_Explosion", Flash )
 			end)
 

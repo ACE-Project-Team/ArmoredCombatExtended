@@ -53,14 +53,14 @@ function EFFECT:Init( data )
 
 		local Muzzle = Gun:GetAttachment( Gun:LookupAttachment(Attachment)) or { Pos = Gun:GetPos(), Ang = Gun:GetAngles() }
 
-		if Gun:WaterLevel() ~= 3 then
-
-			self.Origin 		= Muzzle.Pos
-			self.DirAng			= Muzzle.Ang
-			self.DirVec        = self.DirAng:Forward()
+		self.Origin 		= Muzzle.Pos
+		self.DirAng			= Muzzle.Ang
+		self.DirVec        = self.DirAng:Forward()
 --			self.Radius 		= (Propellant * 1.35)
-			self.Radius 		= (Caliber / 8)
-			self.Emitter       = ParticleEmitter( self.Origin )
+		self.Radius 		= (Caliber / 8)
+		self.Emitter       = ParticleEmitter( self.Origin )
+
+		if Gun:WaterLevel() ~= 3 then
 
 			-- Gets the appropiated muzzleflash according to the defined in the gun class
 			local MuzzleTable = ACE.MuzzleFlashes

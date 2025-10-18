@@ -1,7 +1,7 @@
 
 AddCSLuaFile()
 
-ACF.AmmoBlacklist.HESH = { "MG", "HMG", "RAC", "SL" , "AC" , "SA" , "GL", "ECM", "ATR", "BOMB" , "GBU", "AAM", "SAM", "ECM", "FGL"}
+ACF.AmmoBlacklist.HESH = { "SBC", "MG", "HMG", "RAC", "SL" , "AC" , "SA" , "GL", "ECM", "ATR", "BOMB" , "GBU", "AAM", "SAM", "ECM", "FGL"}
 
 local Round = {}
 
@@ -139,6 +139,13 @@ function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not 
 			ACF_Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACF.HEPower, Bullet.Caliber, Target.ACF.Armour, Bullet.Owner, Target.ACF.Material) --Do some spalling
 
 		end
+
+		local Radius = Bullet.FillerMass ^ 0.33 * 8 * 39.37
+		local Flash = EffectData()
+			Flash:SetOrigin( HitPos )
+			Flash:SetNormal( Bullet.Flight:GetNormalized() )
+			Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
+		util.Effect( "ACF_Scaled_Explosion", Flash )
 
 	else
 		table.insert( Bullet.Filter , Target )

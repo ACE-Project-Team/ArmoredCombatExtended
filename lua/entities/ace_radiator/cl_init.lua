@@ -169,17 +169,18 @@ do
 
 			local FinCount = Height / FinsPerInch
 
-			local TotalSurfaceArea = finSize * FinCount
+			local TotalSurfaceArea = finSize * FinCount / 1550
 
-			local AirflowRestrictiveness = 1-(1-1/Length)^3 --Airflow ratio of the radiator. Difficulty air flowing through it will have cooling anything.
+			local AirflowRestrictiveness = 1-(1-(1/Length))^2 --Airflow ratio of the radiator. Difficulty air flowing through it will have cooling anything.
 
 			acfmenupanel:CPanelText("Mass", "Full mass: " .. math.Round(Mass,1) .. " kg, Empty mass: " .. math.Round(EmptyMass,1) .. " kg")
 			acfmenupanel:CPanelText("Cap", "Capacity: " .. math.Round(Capacity,1) .. " liters / " .. math.Round(Capacity * 0.264172,1) .. " gallons")
 
 			acfmenupanel:CPanelText("RestrictedFlow", "Airflow restriction: " .. math.Round(AirflowRestrictiveness * 100,1) .. "%")
 
-			acfmenupanel:CPanelText("Area", "Total Fin Surface Area: " .. math.Round(TotalSurfaceArea/12/12,1) .. " ft^2")
-			local KJTo100C = Capacity * 4.186 --Heat capacity of the radiator. Joules needed to raise the radiator to 100C.
+			acfmenupanel:CPanelText("Area", "Total Fin Surface Area: " .. math.Round(TotalSurfaceArea,1) .. " m^2")
+			local specificHeat = (EmptyMass * 0.9211 + Capacity * 4.184) / Mass
+			local KJTo100C = Mass * specificHeat * 100 * ACF.RadiatorHeatCap --Heat capacity of the radiator. Joules needed to raise the radiator to 100C.
 			acfmenupanel:CPanelText("ThermalStorage", "" .. math.Round(KJTo100C,1) .. " kilojoules needed to raise the radiator to 100C")
 
 

@@ -57,16 +57,25 @@ function ACE_EngineGUI_Update( Table )
 	acfmenupanel:CPanelText("FuelType", "\nFuel Type: " .. Table.fuel)
 
 	if Table.fuel == "Electric" then
-		local cons = ACF.ElecRate * peakkw / ACF.Efficiency[Table.enginetype]
+		local engineEfficiency = ACF.Efficiency[Table.enginetype] * (1 + (peakkw * 1.34/2000)*0.1)
+		local cons = ACF.ElecRate * peakkw / engineEfficiency
 		acfmenupanel:CPanelText("FuelCons", "Peak energy use: " .. math.Round(cons,1) .. " kW / " .. math.Round(0.06 * cons,1) .. " MJ/min")
 	elseif Table.fuel == "Multifuel" then
-		local petrolcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Petrol)
-		local dieselcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Diesel)
+		local engineEfficiency = ACF.Efficiency[Table.enginetype] * (1 + (peakkw * 1.34/2000)*0.1)
+		local petrolcons = ACF.FuelRate * engineEfficiency * peakkw / (60 * ACF.FuelDensity.Petrol) * ACF.PerFuelRelativeEfficiency.Petrol
+		local dieselcons = ACF.FuelRate * engineEfficiency * peakkw / (60 * ACF.FuelDensity.Diesel) * ACF.PerFuelRelativeEfficiency.Diesel
+		local HeatPerLiterUsedPetrol = engineEfficiency * ACF.FuelPowerDensity["Petrol"] * 0.4 * 1000 / 60 / ACF.FuelRate --Heat generated per liter burned. Assume 60% heat lost to the air as exhaust.
+		local HeatPerLiterUsedDiesel = engineEfficiency * ACF.FuelPowerDensity["Diesel"] * 0.4 * 1000 / 60 / ACF.FuelRate --Heat generated per liter burned. Assume 60% heat lost to the air as exhaust.
 		acfmenupanel:CPanelText("FuelConsP", "Petrol Use at " .. math.Round(peakkwrpm) .. " rpm: " .. math.Round(petrolcons,2) .. " liters/min / " .. math.Round(0.264 * petrolcons,2) .. " gallons/min")
+		acfmenupanel:CPanelText("EngHeatP", "Producing ".. math.Round(petrolcons * HeatPerLiterUsedPetrol,2) .. "kJ / Second of heat")
 		acfmenupanel:CPanelText("FuelConsD", "Diesel Use at " .. math.Round(peakkwrpm) .. " rpm: " .. math.Round(dieselcons,2) .. " liters/min / " .. math.Round(0.264 * dieselcons,2) .. " gallons/min")
+		acfmenupanel:CPanelText("EngHeatD", "Producing ".. math.Round(dieselcons * HeatPerLiterUsedDiesel,2) .. "kJ / Second of heat")
 	else
-		local fuelcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity[Table.fuel])
+		local engineEfficiency = ACF.Efficiency[Table.enginetype] * (1 + (peakkw * 1.34/2000)*0.1)
+		local fuelcons = ACF.FuelRate * engineEfficiency * peakkw / (60 * ACF.FuelDensity[Table.fuel])  * ACF.PerFuelRelativeEfficiency[Table.fuel]
 		acfmenupanel:CPanelText("FuelCons", Table.fuel .. " Use at " .. math.Round(peakkwrpm) .. " rpm: " .. math.Round(fuelcons,2) .. " liters/min / " .. math.Round(0.264 * fuelcons,2) .. " gallons/min")
+		local HeatPerLiterUsed = engineEfficiency * ACF.FuelPowerDensity[Table.fuel] * 0.4 * 1000 / 60 / ACF.FuelRate --Heat generated per liter burned. Assume 60% heat lost to the air as exhaust.
+		acfmenupanel:CPanelText("EngHeat", "Producing ".. math.Round(fuelcons * HeatPerLiterUsed,2) .. "kJ / Second of heat")
 	end
 
 	acfmenupanel.CustomDisplay:PerformLayout()

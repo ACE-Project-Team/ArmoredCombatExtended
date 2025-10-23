@@ -311,7 +311,7 @@ function ACE_AddThermalEnergy(Ent, KJ) --Used to add or remove thermal energy
 
 	local DeltaTemp = KJ / SpecificHeat / Mass
 
-	Ent.Heat = Ent.Heat + DeltaTemp or ACE.AmbientTemp
+	Ent.Heat = (Ent.Heat or ACE.AmbientTemp) + DeltaTemp
 end
 
 function ACE_EqualizeThermalEnergy(Ent1, Ent2) --Instantly balances the thermal energy of 2 objects. Useful for radiators or things one doesn't care for heat transfer rates with.
@@ -326,29 +326,31 @@ function ACE_EqualizeThermalEnergy(Ent1, Ent2) --Instantly balances the thermal 
 	local Ratio1 = TMass1/TotalMass
 	local Ratio2 = TMass2/TotalMass
 
-	--I LOVE KELVIN AND HAVING TO RECONVERT EVERYTHING 4 TIMES!!!!!!!! :)
-
-	local ThermalEnergy1 = (Ent1.Heat + 273.15) * SpecificHeat1 * TMass1
-	local ThermalEnergy2 = (Ent2.Heat + 273.15) * SpecificHeat2 * TMass2
-	local TotalEnergy = ThermalEnergy1 + ThermalEnergy2
-
 	local AvgSpecificHeat = SpecificHeat1 * Ratio1 + SpecificHeat2 * Ratio2
 
-	local FinalTemp = TotalEnergy / AvgSpecificHeat / TotalMass - 273.15
+	--I LOVE KELVIN AND HAVING TO RECONVERT EVERYTHING 4 TIMES!!!!!!!! :)
+
+	local ThermalEnergy1 = Ent1.Heat * SpecificHeat1 * TMass1
+	local ThermalEnergy2 = Ent2.Heat * SpecificHeat2 * TMass2
+	local TotalEnergy = ThermalEnergy1 + ThermalEnergy2
+
+	local FinalTemp = TotalEnergy / AvgSpecificHeat / TotalMass
 
 	Ent1.Heat = FinalTemp
 	Ent2.Heat = FinalTemp
 end
 
-function ACE_AtmosphericHeatDissipation(Ent, Speed, DeltaTime) --Could be optimized by breaking into more functions. The rate doesn't need to be calculated every iteration riiiiiiiigt?
+function ACE_AtmosphericHeatDissipation(Ent, CoolingMultiplier, DeltaTime) --Could be optimized by breaking into more functions. The rate doesn't need to be calculated every iteration riiiiiiiigt?
 	local ThermalTransferCoefficient = Ent.AtmosphericCoefficient or 5 --5 W / M^2 * K, the thermal transfer coefficient of aluminum to air
 	local SurfaceArea = Ent.ThermalSurfaceArea --Area in meters squared
 
-	local TempDif = ( (ACE.AmbientTemp + 273.15) - (Ent.Heat + 273.15) )
+	local TempDif = ACE.AmbientTemp - Ent.Heat
 
-	local TransferRate = ThermalTransferCoefficient * SurfaceArea * TempDif
+	local TransferRate = ThermalTransferCoefficient * SurfaceArea * TempDif * CoolingMultiplier
 
-	ACE_AddThermalEnergy(Ent, TransferRate * DeltaTime) 
+	--print(TransferRate * DeltaTime * ACF.ThermalTimeScale)
+	--print(TransferRate * ACF.ThermalTimeScale / DeltaTime / ACF.ThermalTimeScale) --1 Second cooling
+	ACE_AddThermalEnergy(Ent, TransferRate * DeltaTime * ACF.ThermalTimeScale)
 end
 
 

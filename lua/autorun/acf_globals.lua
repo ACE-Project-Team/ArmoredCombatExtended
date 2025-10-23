@@ -50,7 +50,10 @@ ACF.CuIToLiter          = 0.0163871				-- cubic inches to liters
 
 ACF.DriverTorqueBoost   = 1.25					-- torque multiplier from having a driver
 ACF.FuelRate            = 10						-- multiplier for fuel usage, 1.0 is approx real world
-ACF.ElecRate            = 4						-- multiplier for electrics								--BEFORE to balance: 0.458
+ACF.ThermalTimeScale 	= 60						--Multiplies the timescale of anything heat related. This way engines don't take dozens of minutes to overheat.
+ACF.RadiatorEff			= 0.125					--Multiplier for radiator cooling effectiveness
+ACF.RadiatorHeatCap		= 0.2					--Multiplier for radiator specific heat cap. Makes radiators more or less effective at storing energy
+ACF.ElecRate            = 3						-- multiplier for electrics								--BEFORE to balance: 0.458
 ACF.TankVolumeMul       = 1						-- multiplier for fuel tank capacity, 1.0 is approx real world
 
 ---------------------------------- Ammo Crate config ----------------------------------

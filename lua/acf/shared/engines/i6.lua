@@ -10,13 +10,12 @@ ACF_DefineEngine( "2.2-I6", {
 	sound = "acf_engines/l6_petrolsmall2.wav",
 	category = "I6",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 120,
+	enginetype = "I6",
+	weight = 60,
 	torque = 195,
 	flywheelmass = 0.1,
 	idlerpm = 800,
-	limitrpm = 7200,
-	acepoints = 235
+	limitrpm = 7200
 } )
 
 ACF_DefineEngine( "4.8-I6", {
@@ -26,13 +25,12 @@ ACF_DefineEngine( "4.8-I6", {
 	sound = "acf_engines/l6_petrolmedium.wav",
 	category = "I6",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 300,
+	enginetype = "I6",
+	weight = 150,
 	torque = 540,
 	flywheelmass = 0.2,
 	idlerpm = 900,
-	limitrpm = 5500,
-	acepoints = 501
+	limitrpm = 5500
 } )
 
 ACF_DefineEngine( "17.2-I6", {
@@ -42,13 +40,12 @@ ACF_DefineEngine( "17.2-I6", {
 	sound = "acf_engines/l6_petrollarge2.wav",
 	category = "I6",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 850,
+	enginetype = "I6",
+	weight = 425,
 	torque = 1440,
 	flywheelmass = 2.5,
 	idlerpm = 800,
-	limitrpm = 4250,
-	acepoints = 1039
+	limitrpm = 4250
 } )
 
 -- Diesel
@@ -60,13 +57,12 @@ ACF_DefineEngine( "3.0-I6", {
 	sound = "acf_engines/l6_dieselsmall.wav",
 	category = "I6",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 150,
+	enginetype = "I6",
+	weight = 75,
 	torque = 300,
 	flywheelmass = 0.5,
 	idlerpm = 650,
-	limitrpm = 4500,
-	acepoints = 249
+	limitrpm = 4500
 } )
 
 ACF_DefineEngine( "6.5-I6", {
@@ -76,13 +72,12 @@ ACF_DefineEngine( "6.5-I6", {
 	sound = "acf_engines/l6_dieselmedium4.wav",
 	category = "I6",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 450,
+	enginetype = "I6",
+	weight = 225,
 	torque = 780,
 	flywheelmass = 1.5,
 	idlerpm = 600,
-	limitrpm = 4000,
-	acepoints = 573
+	limitrpm = 4000
 } )
 
 ACF_DefineEngine( "20.0-I6", {
@@ -92,11 +87,10 @@ ACF_DefineEngine( "20.0-I6", {
 	sound = "acf_engines/l6_diesellarge2.wav",
 	category = "I6",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 1200,
+	enginetype = "I6",
+	weight = 600,
 	torque = 2550,
 	flywheelmass = 8,
 	idlerpm = 400,
-	limitrpm = 2600,
-	acepoints = 1222
+	limitrpm = 2600
 } )

@@ -79,6 +79,28 @@ ACF.SoundToolSupport = {
 		end
 	},
 
+	ace_radiator = {
+
+		GetSound = function(ent) return { Sound = ent.SoundPath, Pitch = ent.SoundPitch or 100 } end,
+
+		SetSound = function(ent, soundData)
+			ent.SoundPath = soundData.Sound
+			ent.SoundPitch = soundData.Pitch
+		end,
+
+		ResetSound = function(ent)
+
+			local pitch = 100
+			local sound = "acf_extra/ACE/miscellaneous/fans/HighPitchCoolingFan.wav"
+
+			local soundData = { Sound = sound, Pitch = pitch }
+
+			local setSound = ACF.SoundToolSupport["ace_radiator"].SetSound
+			setSound( ent, soundData )
+		end
+	},
+
+
 	acf_rack = {
 
 		GetSound = function(ent) return { Sound = ent.Sound, Pitch = ent.SoundPitch or 100 } end,

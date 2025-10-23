@@ -210,7 +210,7 @@ end
 --Engine definition
 function ACF_DefineEngine( id, data )
 	if (data.year or 0) < ACF.Year then
-		local engineData = ACF_CalcEnginePerformanceData(data.torquecurve or ACF.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
+		local engineData = ACF_CalcEnginePerformanceData(data.torquecurve or ACF.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm, data.fuel)
 
 		data.peaktqrpm    = engineData.peakTqRPM
 		data.peakpower    = engineData.peakPower

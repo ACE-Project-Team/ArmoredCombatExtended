@@ -8,13 +8,12 @@ ACF_DefineEngine( "0.9L-I2", {
 	sound = "acf_extra/vehiclefx/engines/ponyengine.wav",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 60,
+	enginetype = "I2",
+	weight = 15,
 	torque = 174,
 	flywheelmass = 0.085,
 	idlerpm = 750,
-	limitrpm = 6000,
-	acepoints = 219
+	limitrpm = 6000
 } )
 
 ACF_DefineEngine( "1.0L-I4", {
@@ -25,13 +24,12 @@ ACF_DefineEngine( "1.0L-I4", {
 	pitch = 75,
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 78,
+	enginetype = "I4",
+	weight = 20,
 	torque = 102,
 	flywheelmass = 0.031,
 	idlerpm = 1200,
-	limitrpm = 12000,
-	acepoints = 254
+	limitrpm = 12000
 } )
 
 ACF_DefineEngine( "1.8L-V4", {
@@ -41,29 +39,27 @@ ACF_DefineEngine( "1.8L-V4", {
 	sound = "acf_extra/vehiclefx/engines/l4/elan_onlow.WAV",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 92,
+	enginetype = "V4",
+	weight = 70,
 	torque = 186.8,
 	flywheelmass = 0.04,
 	idlerpm = 900,
-	limitrpm = 7500,
-	acepoints = 294
+	limitrpm = 7500
 } )
 
 ACF_DefineEngine( "1.9L-I4", {
 	name = "1.9L I4 Petrol",
-	desc = "Supercharged racing 4 cylinder, most of the power in the high revs.",
+	desc = "Racing 4 cylinder, most of the power in the high revs.",
 	model = "models/engines/inline4s.mdl",
 	sound = "acf_engines/i4_special.wav",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 150,
+	enginetype = "I4",
+	weight = 60,
 	torque = 264,
 	flywheelmass = 0.06,
 	idlerpm = 950,
-	limitrpm = 9000,
-	acepoints = 496
+	limitrpm = 9000
 } )
 
 ACF_DefineEngine( "2.4L-V6", {
@@ -73,29 +69,12 @@ ACF_DefineEngine( "2.4L-V6", {
 	sound = "acf_extra/vehiclefx/engines/l6/capri_onmid.WAV",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 134,
+	enginetype = "V6",
+	weight = 234,
 	torque = 258,
 	flywheelmass = 0.075,
 	idlerpm = 950,
-	limitrpm = 8000,
-	acepoints = 431
-} )
-
-ACF_DefineEngine( "2.6L-Wankel", {
-	name = "2.6L Rotary",
-	desc = "4 rotor racing Wankel, high revving and high strung.",
-	model = "models/engines/wankel_4_med.mdl",
-	sound = "acf_engines/wankel_large.wav",
-	category = "Special",
-	fuel = "Petrol",
-	enginetype = "Wankel",
-	weight = 260,
-	torque = 375,
-	flywheelmass = 0.11,
-	idlerpm = 1200,
-	limitrpm = 9500,
-	acepoints = 745
+	limitrpm = 8000
 } )
 
 ACF_DefineEngine( "2.9-V8", {
@@ -105,30 +84,12 @@ ACF_DefineEngine( "2.9-V8", {
 	sound = "acf_engines/v8_special.wav",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 180,
+	enginetype = "V8",
+	weight = 140,
 	torque = 300,
 	flywheelmass = 0.075,
 	idlerpm = 1000,
-	limitrpm = 10000,
-	acepoints = 500
-} )
-
-ACF_DefineEngine( "3.0-V12", {
-	name = "3.0L V12 Petrol",
-	desc = "A purpose-built racing v12, not known for longevity.",
-	model = "models/engines/v12s.mdl",
-	sound = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.WAV",
-	pitch = 85,
-	category = "Special",
-	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 175,
-	torque = 372,
-	flywheelmass = 0.1,
-	idlerpm = 1200,
-	limitrpm = 12500,
-	acepoints = 969
+	limitrpm = 10000
 } )
 
 ACF_DefineEngine( "3.8-I6", {
@@ -138,29 +99,12 @@ ACF_DefineEngine( "3.8-I6", {
 	sound = "acf_engines/l6_special.wav",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 180,
+	enginetype = "I6",
+	weight = 130,
 	torque = 336,
 	flywheelmass = 0.1,
 	idlerpm = 1100,
-	limitrpm = 9000,
-	acepoints = 634
-} )
-
-ACF_DefineEngine( "5.3-V10", {
-	name = "5.3L V10 Special",
-	desc = "Extreme performance v10",
-	model = "models/engines/v10sml.mdl",
-	sound = "acf_engines/v10_special.wav",
-	category = "Special",
-	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 300,
-	torque = 480,
-	flywheelmass = 0.15,
-	idlerpm = 1100,
-	limitrpm = 9000,
-	acepoints = 904
+	limitrpm = 9000
 } )
 
 ACF_DefineEngine( "7.2-V8", {
@@ -170,11 +114,71 @@ ACF_DefineEngine( "7.2-V8", {
 	sound = "acf_engines/v8_special2.wav",
 	category = "Special",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 400,
+	enginetype = "V8",
+	weight = 160,
 	torque = 510,
 	flywheelmass = 0.15,
 	idlerpm = 1000,
-	limitrpm = 8500,
-	acepoints = 906
+	limitrpm = 8500
+} )
+
+ACF_DefineEngine( "5.3-V10", {
+	name = "5.3L V10 Special",
+	desc = "De-limited V10 of ridiculous revving goodness. Born to race. Expect to overheat and explode.",
+	model = "models/engines/v10sml.mdl",
+	sound = "acf_engines/v10_special.wav",
+	category = "Special",
+	fuel = "Petrol",
+	enginetype = "Racing",
+	weight = 135,
+	torque = 480,
+	flywheelmass = 0.2,
+	idlerpm = 1100,
+	limitrpm = 12000
+} )
+
+ACF_DefineEngine( "2.4-V10", {
+	name = "2.4L V10 Petrol",
+	desc = "High revving F1-grade racing engine. You will combust into flames without cooling.",
+	model = "models/engines/v10sml.mdl",
+	sound = "acf_engines/v10_special.wav",
+	category = "Special",
+	fuel = "Petrol",
+	enginetype = "Racing",
+	weight = 106,
+	torque = 260,
+	flywheelmass = 0.05,
+	idlerpm = 1000,
+	limitrpm = 19100
+} )
+
+ACF_DefineEngine( "3.0-V12", {
+	name = "3.0L V12 Petrol",
+	desc = "A purpose-built racing v12. An energy-dense fuel guzzling monster with little hope for longevity rumored to be as hot as the sun.",
+	model = "models/engines/v12s.mdl",
+	sound = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.WAV",
+	pitch = 85,
+	category = "Special",
+	fuel = "Petrol",
+	enginetype = "Racing",
+	weight = 120,
+	torque = 350,
+	flywheelmass = 0.1,
+	idlerpm = 1000,
+	limitrpm = 15000
+} )
+
+ACF_DefineEngine( "25.0-V12", {
+	name = "25.0L V12 Petrol",
+	desc = "Aero-grade V-12 bored out by a racing nutjob. Has an absurd RPM despite its massive bore. Don't get cooked by the ludicrous heat output.",
+	model = "models/engines/v12l.mdl",
+	sound = "acf_engines/v12_petrollarge.wav",
+	category = "Special",
+	fuel = "Petrol",
+	enginetype = "Racing",
+	weight = 600,
+	torque = 1650,
+	flywheelmass = 3,
+	idlerpm = 500,
+	limitrpm = 5000
 } )

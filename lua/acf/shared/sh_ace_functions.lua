@@ -57,19 +57,52 @@ function ACF_CalcCurve(Points, Pos)
 		(3 * P1 - P0 - 3 * P2 + P3) * T ^ 3)
 end
 
+function applyEngineFuelModifierToCurve(EngineCurve, FuelCurve) --BEWARE OF FEEDING THE ORIGINAL TABLES INTO THE FUNCTION THIS FUNCTION IS DESTRUCTIVE. Maybe I should just use returns instead but inefficiency.
+	local MaxValue = 0
+	for Key in pairs(EngineCurve) do
+				 local CurveValue = EngineCurve[Key]
+		local Mult = FuelCurve[Key]
+
+		CurveValue = 1 - (1 - CurveValue * Mult)
+
+		EngineCurve[Key] = CurveValue
+		
+		if CurveValue > MaxValue then MaxValue = CurveValue end
+	   end
+	
+	local NormMul = 1/MaxValue --Used to normalize the new torque curve for the engine.
+
+
+	for Key in pairs(EngineCurve) do
+		local CurveValue = EngineCurve[Key]
+
+		CurveValue = math.Clamp(CurveValue * NormMul,0,1)
+
+		EngineCurve[Key] = CurveValue
+	end
+end
+
 --Calculates the performance characteristics of an engine, given a torque curve, max torque (in nm), idle, and redline rpm
-function ACF_CalcEnginePerformanceData(curve, maxTq, idle, redline)
+function ACF_CalcEnginePerformanceData(curve, maxTq, idle, redline, fueltype)
 	local peakTq = 0
 	local peakTqRPM
 	local peakPower = 0
 	local powerTable = {} --Power at each point on the curve for use in powerband calc
 	local res = 32 --Iterations for use in calculating the curve, higher is more accurate
 
+	local ModifiedCurve = table.Copy(curve) --We love accidentally modifying the original engine torque which modifies the torque for all engines :)))))))))
+	local Fuel = fueltype or "Petrol"
+	if Fuel == "Multifuel" then
+		Fuel = "Diesel"
+	end
+	--local Fuel = "Petrol"
+	applyEngineFuelModifierToCurve(ModifiedCurve, ACF.PerFuelTorqueCurveMul[Fuel])
+
 	--Calculate peak torque/power RPM
 	for i = 0, res do
 		local rpm = i / res * redline
 		local perc = math.Remap(rpm, idle, redline, 0, 1)
-		local curTq = ACF_CalcCurve(curve, perc)
+		local curTq = ACF_CalcCurve(ModifiedCurve, perc)
 		local power = maxTq * curTq * rpm / 9548.8
 
 		powerTable[i] = power

@@ -29,6 +29,7 @@ do
 		self.IsMaster       = true
 		self.GearLink       = {} -- a "Link" has these components: Ent, Rope, RopeLen, ReqTq
 		self.FuelLink       = {}
+		self.RadLink       = {}
 		self.OTWarnings		= {} --Used to remember all the one time warnings.
 
 		self.NextUpdate     = 0
@@ -37,7 +38,6 @@ do
 		self.FuelTank       = 0
 		self.Heat           = ACE.AmbientTemp
 		self.TotalFuel      = 0
-		self.Efficiency     = 1-(ACF.Efficiency[self.EngineType] or ACF.Efficiency["GenericPetrol"]) -- Energy not transformed into kinetic energy and instead into thermal
 		self.Legal          = true
 		self.CanUpdate      = true
 		self.RequiresDriver = false
@@ -52,7 +52,11 @@ do
 		self.CanUseSeatDriver = false
 		self.SeatDriverEnt = nil
 
-		self.ThermalSurfaceArea = 1
+		self.HeatGeneration = 0 --Heat generated per second
+
+		self.LastFuel = nil
+
+		self.ThermalSurfaceArea = 0.1 --In m^2
 
 		self.LastDamageTime = CurTime()
 
@@ -82,6 +86,7 @@ do
 		["AVDS-1790-9A"]                          = "24.8-V12",
 		["AVDS-1790-1500"]                        = "27.0-V12"
 	}
+
 
 	function MakeACF_Engine(Owner, Pos, Angle, Id)
 
@@ -119,7 +124,10 @@ do
 		Engine.IsTrans          = Lookup.istrans -- driveshaft outputs to the side
 		Engine.FuelType         = Lookup.fuel or "Petrol"
 		Engine.EngineType       = Lookup.enginetype or "GenericPetrol"
-		Engine.TorqueCurve      = Lookup.torquecurve or ACF.GenericTorqueCurves[Engine.EngineType]
+		Engine.Efficiency     = 1-(ACF.Efficiency[Engine.EngineType] or ACF.Efficiency["GenericPetrol"])  * (1 + (Engine.peakkw * 1.34/2000)*0.1) -- Energy not transformed into kinetic energy and instead into thermal
+		Engine.EfficiencyMod	= Engine.Efficiency
+		Engine.TorqueCurve	= Lookup.torquecurve or ACF.GenericTorqueCurves[Engine.EngineType]
+		Engine.ModTorqueCurve      = table.Copy(Engine.TorqueCurve)
 		Engine.RequiresDriver   = false
 		Engine.SoundPath        = Lookup.sound
 		Engine.DefaultSound     = Engine.SoundPath
@@ -129,14 +137,15 @@ do
 		Engine.TorqueMult       = 1
 		Engine.FuelTank         = 0
 		Engine.Heat             = ACE.AmbientTemp
-
+		Engine.ThermalSurfaceArea = Lookup.CoolingArea or 0.1
 
 		local FuelCostMul = {
 			Petrol				= 1.0,
-			Diesel				= 1.2, --Due to generally higher torques
-			Multifuel			= 1.2, --Due to generally higher torques
+			Diesel				= 1.25, --Due to generally higher torques
+			Multifuel			= 1.25, --Due to generally higher torques
 			Electric			= 0.8 --Due to odd power outputs
 		}
+
 		local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
 
 		local EngineHorsepower = Engine.peakkw / 0.7457 --Converts KW to HP, 74.57 / 100
@@ -144,6 +153,8 @@ do
 		local FallBackCost = EngineHorsepower * PtsPerHP * (FuelCostMul[Engine.FuelType] or 1)
 		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
+
+		Engine.MaxDB = 70 + 60 * (EngineHorsepower / 2400) --Base volume of 70DB. Plus 60 * The ratio of the engine hp to 2400.
 
 		if ACF.EnginesRequireFuel > 0 then
 			Engine.RequiresFuel = true
@@ -689,6 +700,26 @@ function ENT:CalcRPM()
 	if IsValid(Tank) then
 		local Consumption
 
+		if Tank.FuelType != self.LastFuel then --Fueltype changed. Recalculate fuel specific modifiers.
+
+			self.ModTorqueCurve = table.Copy(self.TorqueCurve) --Resets the variable to the base before modifying it for fueltype.
+			--print("Before:")
+			--PrintTable(self.ModTorqueCurve)
+
+			applyEngineFuelModifierToCurve(self.ModTorqueCurve, ACF.PerFuelTorqueCurveMul[Tank.FuelType])
+
+			--print("After:")
+			--PrintTable(self.ModTorqueCurve)
+
+			
+			self.EfficiencyMod     = self.Efficiency / ACF.PerFuelRelativeEfficiency[Tank.FuelType] --Applies efficiency modifer for different fueltypes on top of the per engine effiency.
+
+			--Cache FuelPowerDensity -- Is it worth another variable?
+			--Cache FuelEfficiency
+
+			self.LastFuel = Tank.FuelType
+		end
+
 		if self.FuelType == "Electric" then
 			Consumption = (self.Torque * self.FlyRPM / 9548.8) * self.FuelUse * DeltaTime
 		else
@@ -697,6 +728,15 @@ function ENT:CalcRPM()
 		end
 
 		Tank.Fuel = math.max(Tank.Fuel - Consumption,0)
+
+		self.HeatGeneration = Consumption * (1 - self.EfficiencyMod) * ACF.FuelPowerDensity[Tank.FuelType] * 0.4 * 1000 / ACF.FuelRate / DeltaTime --Assume 60% heat lost to air as exhaust hence 0.4
+		--print("Kj/S " .. self.HeatGeneration)
+
+		if self.HeatGeneration > 0 then --Avoids nan inputs from dividing by deltatime.
+			ACE_AddThermalEnergy(self, self.HeatGeneration * ACF.ThermalTimeScale * DeltaTime) --Have to convert it back to deltatime as the above indicates KJ/S of heat generation used on the display.
+		end
+
+
 		FuelBoost = ACF.TorqueBoost
 
 		ACE_AddThermalEnergy(self, Consumption * self.Efficiency * ACF.FuelPowerDensity[Tank.FuelType]* 0.4 ) --Assume 60% lost to air as exhaust
@@ -713,6 +753,11 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
+
+	ACE_AtmosphericHeatDissipation(self, CoolingMult, DeltaTime)
+	local CoolingMult = 1 * 2^(Speed/40) --The cooling of radiators doubles every 40mph of speed
+	local Speed = math.min(ACF_GetPhysicalParent(self):GetVelocity():Length() / 17.6,141) --Speed in MPH. Capped to 141mph or ~12x cooling.
+	--Could stuff this in a spot executed less frequently
 	ACE_DoContraptionLegalCheck(self)
 
 	ACE_AtmosphericHeatDissipation(self, 0, DeltaTime)
@@ -733,7 +778,7 @@ function ENT:CalcRPM()
 
 	-- Calculate the current torque from flywheel RPM.
 	local perc = math.Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
-	self.Torque = self.Throttle * ACF_CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
+	self.Torque = self.Throttle * ACF_CalcCurve(self.ModTorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 
 	-- Let's accelerate the flywheel based on that torque.
 	-- Calculate drag
@@ -770,10 +815,6 @@ function ENT:CalcRPM()
 	end
 	self.FlyRPM = self.FlyRPM - math.min( TorqueDiff, TotalReqTq ) / self.Inertia
 
-
-	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
-	self.Heat = ACE.HeatFromEngine( self )
-
 	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
 	if HealthRatio < 0.995 then
 		if HealthRatio > 0.025 then
@@ -795,7 +836,6 @@ function ENT:CalcRPM()
 		end
 	end
 
-	--  743.2 Estimate for engine material, 35% weight steel, 65% weight aluminum
 	-- Then we calc a smoothed RPM value for the sound effects. For some reason this thing exists.
 	table.remove( self.RPM, 10 )
 	table.insert( self.RPM, 1, self.FlyRPM )
@@ -909,12 +949,14 @@ do
 	local AllowedEnts = {
 		acf_gearbox = true,
 		acf_fueltank = true,
+		ace_radiator = true,
 		ace_crewseat_driver = true,
 	}
 
 	function ENT:Link( Target )
 
 		if not IsValid( Target ) or not AllowedEnts[Target:GetClass()] then
+			print(Target:GetClass())
 			return false, "You can only link gearboxes, fueltanks or crewseats!"
 		end
 
@@ -926,6 +968,10 @@ do
 		if Target:GetClass() == "acf_fueltank" then
 			return self:LinkFuel( Target )
 		end
+		-- Radiator links
+		if Target:GetClass() == "ace_radiator" then
+			return self:LinkRadiator( Target )
+		end
 		-- Crew links
 		if Target:GetClass() == "ace_crewseat_driver" then
 			return self:LinkCrew( Target )
@@ -935,7 +981,7 @@ do
 	function ENT:Unlink( Target )
 
 		if not IsValid( Target ) or not AllowedEnts[Target:GetClass()] then
-			return false, "You can only unlink gearboxes, fueltanks or crewseats!"
+			return false, "You can only unlink gearboxes, fueltanks, radiators, or crewseats!"
 		end
 
 		-- Gear links
@@ -945,6 +991,10 @@ do
 		-- Fuel links
 		if Target:GetClass() == "acf_fueltank" then
 			return self:UnlinkFuel( Target )
+		end
+		-- Radiator links
+		if Target:GetClass() == "ace_radiator" then
+			return self:UnlinkRadiator( Target )
 		end
 		-- Crew links
 		if Target:GetClass() == "ace_crewseat_driver" then
@@ -1066,7 +1116,7 @@ do
 		end
 
 		if self:GetPos():Distance( Target:GetPos() ) > FuelLinkDistBase then
-			return false, "Fuel tank is too far away."
+			return false, "The fuel tank is too far away."
 		end
 
 		table.insert( self.FuelLink, Target )
@@ -1086,6 +1136,36 @@ do
 
 		return false, "That fuel tank is not linked to this engine!"
 	end
+end
+
+function ENT:LinkRadiator( Target )
+
+	for _, Value in pairs(self.RadLink) do
+		if Value == Target then
+			return false, "That radiator is already linked to this engine!"
+		end
+	end
+
+	if self:GetPos():Distance( Target:GetPos() ) > FuelLinkDistBase then
+		return false, "The radiator is too far away."
+	end
+
+	table.insert( self.RadLink, Target )
+	table.insert( Target.Master, self )
+
+	return true, "Link successful!"
+end
+
+function ENT:UnlinkRadiator( Target )
+
+	for Key, Value in pairs( self.RadLink ) do
+		if Value == Target then
+			table.remove( self.RadLink, Key )
+			return true, "Unlink successful!"
+		end
+	end
+
+	return false, "That radiator is not linked to this engine!"
 end
 
 -------------------------- Duplicator related stuff --------------------------
@@ -1124,6 +1204,23 @@ do
 		fuel_info.entities = fuel_entids
 		if fuel_info.entities then
 			duplicator.StoreEntityModifier( self, "FuelLink", fuel_info )
+		end
+	
+		--fuel tank link saving
+		local rad_info = {}
+		local rad_entids = {}
+		for _, Value in pairs(self.RadLink) do				--First clean the table of any invalid entities
+			if not Value:IsValid() then
+				table.remove(self.RadLink, Value)
+			end
+		end
+		for _, Value in pairs(self.RadLink) do				--Then save it
+			table.insert(rad_entids, Value:EntIndex())
+		end
+
+		rad_info.entities = rad_entids
+		if rad_info.entities then
+			duplicator.StoreEntityModifier( self, "RadLink", rad_info )
 		end
 
 		--driver seat link saving
@@ -1175,6 +1272,19 @@ do
 				end
 			end
 			Ent.EntityMods.FuelLink = nil
+		end
+		--radiator link Pasting
+		if Ent.EntityMods and Ent.EntityMods.RadLink and Ent.EntityMods.RadLink.entities then
+			local RadLink = Ent.EntityMods.RadLink
+			if RadLink.entities and next(RadLink.entities) then
+				for _,ID in pairs(RadLink.entities) do
+					local Linked = CreatedEntities[ ID ]
+					if IsValid( Linked ) then
+						self:Link( Linked )
+					end
+				end
+			end
+			Ent.EntityMods.RadLink = nil
 		end
 		--ace_crewseat_gunner
 		if Ent.EntityMods and Ent.EntityMods.CrewLink and Ent.EntityMods.CrewLink.entities then

@@ -10,12 +10,13 @@ ACF_DefineEngine( "1.2-I3", {
 	sound = "acf_engines/i4_petrolsmall2.wav",
 	category = "I3",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 40,
+	enginetype = "I3",
+	weight = 20,
 	torque = 142,
 	flywheelmass = 0.05,
 	idlerpm = 1100,
 	limitrpm = 6000,
+	acepoints = 144
 } )
 
 ACF_DefineEngine( "3.4-I3", {
@@ -25,12 +26,13 @@ ACF_DefineEngine( "3.4-I3", {
 	sound = "acf_engines/i4_petrolmedium2.wav",
 	category = "I3",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 170,
+	enginetype = "I3",
+	weight = 85,
 	torque = 292,
 	flywheelmass = 0.2,
 	idlerpm = 900,
 	limitrpm = 6800,
+	acepoints = 333
 } )
 
 ACF_DefineEngine( "13.5-I3", {
@@ -40,12 +42,13 @@ ACF_DefineEngine( "13.5-I3", {
 	sound = "acf_engines/i4_petrollarge.wav",
 	category = "I3",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 500,
+	enginetype = "I3",
+	weight = 250,
 	torque = 1072,
 	flywheelmass = 3.7,
 	idlerpm = 500,
 	limitrpm = 3900,
+	acepoints = 701
 } )
 
 -- Diesel
@@ -57,12 +60,13 @@ ACF_DefineEngine( "1.1-I3", {
 	sound = "acf_engines/i4_diesel2.wav",
 	category = "I3",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 65,
+	enginetype = "I3",
+	weight = 32,
 	torque = 225,
 	flywheelmass = 0.2,
 	idlerpm = 550,
 	limitrpm = 3000,
+	acepoints = 126
 } )
 
 ACF_DefineEngine( "2.8-I3", {
@@ -72,12 +76,13 @@ ACF_DefineEngine( "2.8-I3", {
 	sound = "acf_engines/i4_dieselmedium.wav",
 	category = "I3",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 200,
+	enginetype = "I3",
+	weight = 100,
 	torque = 435,
 	flywheelmass = 1,
 	idlerpm = 600,
 	limitrpm = 3800,
+	acepoints = 305
 } )
 
 ACF_DefineEngine( "11.0-I3", {
@@ -87,10 +92,11 @@ ACF_DefineEngine( "11.0-I3", {
 	sound = "acf_engines/i4_diesellarge.wav",
 	category = "I3",
 	fuel = "Diesel",
-	enginetype = "GenericDiesel",
-	weight = 650,
+	enginetype = "I3",
+	weight = 325,
 	torque = 1800,
 	flywheelmass = 5,
 	idlerpm = 550,
 	limitrpm = 2000,
+	acepoints = 682
 } )

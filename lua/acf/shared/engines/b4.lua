@@ -3,32 +3,64 @@
 
 ACF_DefineEngine( "1.4-B4", {
 	name = "1.4L Flat 4 Petrol",
-	desc = "Small air cooled flat four, most commonly found in nazi insects",
+	desc = "Small air cooled flat four, most commonly found in nazi insects.",
 	model = "models/engines/b4small.mdl",
 	sound = "acf_engines/b4_petrolsmall.wav",
 	category = "B4",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 60,
-	torque = 158,
+	enginetype = "B4",
+	weight = 30,
+	torque = 148,
 	flywheelmass = 0.06,
 	idlerpm = 600,
 	limitrpm = 4500,
+	acepoints = 119
+} )
+
+ACF_DefineEngine( "1.7-B4", {
+	name = "1.7L Flat 4 Multifuel",
+	desc = "Torquey mini boxer. Useful in a small buggy.",
+	model = "models/engines/b4small.mdl",
+	sound = "acf_engines/b4_petrolsmall.wav",
+	category = "B4",
+	fuel = "Multifuel",
+	enginetype = "B4",
+	weight = 40,
+	torque = 208,
+	flywheelmass = 0.2,
+	idlerpm = 600,
+	limitrpm = 4000
 } )
 
 ACF_DefineEngine( "2.1-B4", {
 	name = "2.1L Flat 4 Petrol",
 	desc = "Tuned up flat four, probably find this in things that go fast in a desert.",
-	model = "models/engines/b4small.mdl",
+	model = "models/engines/b4med.mdl",
 	sound = "acf_engines/b4_petrolmedium.wav",
 	category = "B4",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 125,
-	torque = 270,
+	enginetype = "B4",
+	weight = 63,
+	torque = 450,
 	flywheelmass = 0.15,
 	idlerpm = 700,
 	limitrpm = 5000,
+	acepoints = 226
+} )
+
+ACF_DefineEngine( "2.4-B4", {
+	name = "2.4L Flat 4 Multifuel",
+	desc = "Small heavy duty multifuel. Heavy, but grunts hard.",
+	model = "models/engines/b4med.mdl",
+	sound = "acf_extra/vehiclefx/engines/coh/ba11.wav",
+	category = "B4",
+	fuel = "Multifuel",
+	enginetype = "B4",
+	weight = 67,
+	torque = 772,
+	flywheelmass = 0.4,
+	idlerpm = 550,
+	limitrpm = 2800
 } )
 
 ACF_DefineEngine( "3.2-B4", {
@@ -38,12 +70,13 @@ ACF_DefineEngine( "3.2-B4", {
 	sound = "acf_engines/b4_petrollarge.wav",
 	category = "B4",
 	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 210,
-	torque = 378,
+	enginetype = "B4",
+	weight = 105,
+	torque = 450,
 	flywheelmass = 0.15,
 	idlerpm = 900,
 	limitrpm = 6500,
+	acepoints = 412
 } )
 
 ACF_DefineEngine( "2.4-B4", {
@@ -59,6 +92,7 @@ ACF_DefineEngine( "2.4-B4", {
 	flywheelmass = 0.4,
 	idlerpm = 550,
 	limitrpm = 2800,
+	acepoints = 193
 } )
 
 ACF_DefineEngine( "7.4-B4", {
@@ -68,12 +102,13 @@ ACF_DefineEngine( "7.4-B4", {
 	sound = "acf_extra/vehiclefx/engines/gnomefather/t71.wav",
 	category = "B4",
 	fuel = "Multifuel",
-	enginetype = "GenericDiesel",
+	enginetype = "B4",
 	weight = 800,
 	torque = 2678,
 	flywheelmass = 4.3,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 1398
 } )
 
 ACF_DefineEngine( "8.2-B4", {
@@ -83,12 +118,13 @@ ACF_DefineEngine( "8.2-B4", {
 	sound = "acf_extra/vehiclefx/engines/gnomefather/t71.wav",
 	category = "B4",
 	fuel = "Multifuel",
-	enginetype = "GenericDiesel",
+	enginetype = "B4",
 	weight = 800,
 	torque = 2790,
 	flywheelmass = 4.3,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 1457
 } )
 
 ACF_DefineEngine( "14.3-B4", {
@@ -98,10 +134,12 @@ ACF_DefineEngine( "14.3-B4", {
 	sound = "acf_extra/vehiclefx/engines/gnomefather/t71.wav",
 	category = "B4",
 	fuel = "Multifuel",
-	enginetype = "GenericDiesel",
+	enginetype = "B4",
 	weight = 1620,
 	torque = 4204,
 	flywheelmass = 6.8,
 	idlerpm = 400,
 	limitrpm = 2600,
+	acepoints = 2013
 } )
+]]--

@@ -9,11 +9,12 @@ ACF_DefineEngine( "3.8-R7", {
 	category = "Radial",
 	fuel = "Petrol",
 	enginetype = "Radial",
-	weight = 105,
+	weight = 53,
 	torque = 582,
 	flywheelmass = 0.22,
 	idlerpm = 700,
 	limitrpm = 4800,
+	acepoints = 394
 } )
 
 ACF_DefineEngine( "11.0-R7", {
@@ -24,11 +25,12 @@ ACF_DefineEngine( "11.0-R7", {
 	category = "Radial",
 	fuel = "Petrol",
 	enginetype = "Radial",
-	weight = 190,
+	weight = 95,
 	torque = 1050,
 	flywheelmass = 0.45,
 	idlerpm = 600,
 	limitrpm = 4400,
+	acepoints = 652
 } )
 
 ACF_DefineEngine( "24.0-R7", {
@@ -39,11 +41,12 @@ ACF_DefineEngine( "24.0-R7", {
 	category = "Radial",
 	fuel = "Petrol",
 	enginetype = "Radial",
-	weight = 475,
+	weight = 238,
 	torque = 3027,
 	flywheelmass = 3.4,
 	idlerpm = 750,
 	limitrpm = 3500,
+	acepoints = 1526
 } )
 
 
@@ -55,9 +58,10 @@ ACF_DefineEngine( "8.0-R7", {
 	category = "Radial",
 	fuel = "Multifuel",
 	enginetype = "GenericDiesel",
-	weight = 225,
+	weight = 112,
 	torque = 1500,
 	flywheelmass = 1.0,
 	idlerpm = 400,
 	limitrpm = 2800,
+	acepoints = 618
 } )

@@ -308,7 +308,7 @@ end
 
 --Checks if theres new versions for ACE
 function ACF_UpdateChecking( )
-	http.Fetch("https://raw.githubusercontent.com/RedDeadlyCreeper/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
+	http.Fetch("https://raw.githubusercontent.com/ACE-Project-Team/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
 
 		--maybe not the best way to get git but well......
 		str = tostring("String:" .. contents)

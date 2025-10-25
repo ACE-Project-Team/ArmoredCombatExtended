@@ -2,7 +2,7 @@
 -- @name acf
 -- @class library
 -- @libtbl acf_library
--- @src https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/tree/master/lua/starfall/lib_sv/acf.lua
+-- @src https://github.com/ACE-Project-Team/ArmoredCombatExtended/tree/master/lua/starfall/lib_sv/acf.lua
 SF.RegisterLibrary("acf")
 
 local min, clamp, abs, round, floor = math.min, math.Clamp, math.abs, math.Round, math.floor

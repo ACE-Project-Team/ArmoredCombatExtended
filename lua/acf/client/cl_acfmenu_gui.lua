@@ -576,7 +576,7 @@ function ACFChangelogHTTPCallBack(contents)
 
 end
 
-http.Fetch("http://raw.github.com/RedDeadlyCreeper/ArmoredCombatExtended/master/changelog.txt", ACFChangelogHTTPCallBack, function() end)
+http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACFChangelogHTTPCallBack, function() end)
 
 --[[=========================
 	Clientside folder content
@@ -774,7 +774,7 @@ function ContactGUICreate()
 	Wiki:SetPos(0,0)
 	Wiki:SetSize(250,30)
 	Wiki.DoClick = function()
-	gui.OpenURL("https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/wiki")
+	gui.OpenURL("https://github.com/ACE-Project-Team/ArmoredCombatExtended/wiki")
 	end
 	acfmenupanel.CustomDisplay:AddItem( Wiki )
 

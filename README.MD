@@ -1,8 +1,8 @@
 # Armored Combat Framework Extended
 [![Discord Invite](https://img.shields.io/discord/580463055595503646?label=Discord&style=flat-square)](https://discord.gg/Y8aEYU6)
-[![Linting Status](https://img.shields.io/github/actions/workflow/status/RedDeadlyCreeper/ArmoredCombatExtended/glualint.yml?branch=master&label=Linter%20Status&style=flat-square)](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/actions?query=workflow%3AGLuaFixer)
-[![Repository Size](https://img.shields.io/github/repo-size/RedDeadlyCreeper/ArmoredCombatExtended?label=Repository%20Size&style=flat-square)](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended)
-[![Commit Activity](https://img.shields.io/github/commit-activity/m/RedDeadlyCreeper/ArmoredCombatExtended?label=Commit%20Activity&style=flat-square)](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/graphs/commit-activity)
+[![Linting Status](https://img.shields.io/github/actions/workflow/status/ACE-Project-Team/ArmoredCombatExtended/glualint.yml?branch=master&label=Linter%20Status&style=flat-square)](https://github.com/ACE-Project-Team/ArmoredCombatExtended/actions?query=workflow%3AGLuaFixer)
+[![Repository Size](https://img.shields.io/github/repo-size/ACE-Project-Team/ArmoredCombatExtended?label=Repository%20Size&style=flat-square)](https://github.com/ACE-Project-Team/ArmoredCombatExtended)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/ACE-Project-Team/ArmoredCombatExtended?label=Commit%20Activity&style=flat-square)](https://github.com/ACE-Project-Team/ArmoredCombatExtended/graphs/commit-activity)
 
 Welcome to Armored Combat Framework Extended (ACE), your gateway to a world of realistic building experience in your favorite game. ACE is more than just an addon; it's a journey into creating incredible machines, vehicles, and contraptions. Whether you're dreaming of armored tanks, high-speed cars, futuristic aircraft, or complex mechanisms, ACE empowers your creativity. All you need is a dash of Wiremod knowledge, and you're ready to conquer new frontiers.
 
@@ -55,12 +55,12 @@ If you dont like the methods above, you can use tortoiseGIT, which you can downl
 
 ## Contributions & Contact
 
-We welcome contributions to ACE. Please review our [contribution guidelines](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/wiki/General-Coding-and-Style-Guidelines) on our wiki before getting started.
+We welcome contributions to ACE. Please review our [contribution guidelines](https://github.com/ACE-Project-Team/ArmoredCombatExtended/wiki/General-Coding-and-Style-Guidelines) on our wiki before getting started.
 
 To keep up with our progress, visit our [Trello board](https://trello.com/b/AW6lxk7z/ace-development) and join our [ACE Discord](https://discord.gg/Y8aEYU6).
 
-Explore our documentation and tutorials in the [ACE Wiki](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/wiki).
+Explore our documentation and tutorials in the [ACE Wiki](https://github.com/ACE-Project-Team/ArmoredCombatExtended/wiki).
 
-Use the [Dev Branch](https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/tree/dev) for contribution.
+Use the [Dev Branch](https://github.com/ACE-Project-Team/ArmoredCombatExtended/tree/dev) for contribution.
 
 

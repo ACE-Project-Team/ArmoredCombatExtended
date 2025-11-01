@@ -1,6 +1,10 @@
 
 AddCSLuaFile() -- SHITTY WAY TO DO IT BUT WHATEVER
 
+local EnableSurveyMessage = true
+
+if not EnableSurveyMessage then return end
+
 local SurveyDesc = "A Survey is out! We would love to hear your feedback!"
 local Surveylink = "https://forms.gle/aowZ32cDkJhE6m9f9"
 

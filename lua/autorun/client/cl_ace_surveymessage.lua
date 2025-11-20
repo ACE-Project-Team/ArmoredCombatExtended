@@ -1,7 +1,7 @@
 
 AddCSLuaFile() -- SHITTY WAY TO DO IT BUT WHATEVER
 
-local EnableSurveyMessage = true
+local EnableSurveyMessage = false
 
 if not EnableSurveyMessage then return end
 

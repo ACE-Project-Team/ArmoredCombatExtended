@@ -167,7 +167,14 @@ function TOOL:Reload( trace )
 	local PtsCrew = 0
 	local PtsElectronics = 0
 
-	if Contraption ~= nil then
+		if Contraption ~= nil then
+			if ACE_EnsureArmor then
+				local base = ent
+				if Contraption.GetACEBaseplate then
+					base = Contraption:GetACEBaseplate() or ent
+				end
+				ACE_EnsureArmor(Contraption, base)
+			end
 		PointVal		= Contraption.ACEPoints or ACE_GetEntPoints(ent) or 0
 		PtsArmor = Contraption.ACEPointsPerType.Armor
 		PtsEngine = Contraption.ACEPointsPerType.Engines
@@ -178,6 +185,11 @@ function TOOL:Reload( trace )
 		PtsElectronics = Contraption.ACEPointsPerType.Electronics
 	else
 		PointVal = ACE_GetEntPoints(ent)
+	end
+
+	local frontArm, sideArm = 0, 0
+	if ACE_GetArmorScan then
+		frontArm, sideArm = ACE_GetArmorScan(ent)
 	end
 
 	net.Start("ACE_ArmorSummary")
@@ -194,6 +206,8 @@ function TOOL:Reload( trace )
 		net.WriteFloat(PtsAmmo)
 		net.WriteFloat(PtsCrew)
 		net.WriteFloat(PtsElectronics)
+		net.WriteFloat(frontArm)
+		net.WriteFloat(sideArm)
 
 		net.WriteData(Compressed)
 
@@ -323,28 +337,35 @@ if CLIENT then
 			ToolPanel.ComboMat = vgui.Create( "DComboBox" )
 			ToolPanel.ComboMat:SetPos( 5, 30 )
 			ToolPanel.ComboMat:SetSize( 100, 20 )
-			ToolPanel.ComboMat:SetValue( MaterialData.sname )
 			ToolPanel.panel:AddItem(ToolPanel.ComboMat)
+		else
+			ToolPanel.ComboMat:Clear()
+		end
 
-			for _, Mat  in pairs(MaterialTypes) do
-				if ACF.Year >= Mat.year then
-					ToolPanel.ComboMat:AddChoice(Mat.sname, Mat.id )
-				end
+		-- (Re)populate choices every time to avoid stale lists
+		for _, Mat  in pairs(MaterialTypes) do
+			local year = Mat.year or 0
+			if (ACF.Year or 0) >= year then
+				ToolPanel.ComboMat:AddChoice(Mat.sname, Mat.id )
 			end
+		end
 
-			ArmorPanelText( "ComboTitle", ToolPanel.panel, MaterialData.name , "DermaDefaultBold" )
-			ArmorPanelText( "ComboDesc" , ToolPanel.panel, MaterialData.desc .. "\n" )
+		ToolPanel.ComboMat:SetValue( MaterialData.sname )
 
-			ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acfarmorprop.curve") .. ": " .. MaterialData.curve )
-			ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acfarmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
-			ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acfarmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
-			ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acfarmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
-			ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acfarmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
+		ArmorPanelText( "ComboTitle", ToolPanel.panel, MaterialData.name , "DermaDefaultBold" )
+		ArmorPanelText( "ComboDesc" , ToolPanel.panel, MaterialData.desc .. "\n" )
 
-			function ToolPanel.ComboMat:OnSelect(self, _, value )
+		ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acfarmorprop.curve") .. ": " .. MaterialData.curve )
+		ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acfarmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
+		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acfarmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
+		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acfarmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
+		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acfarmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 
-				RunConsoleCommand( "acfarmorprop_material", value )
-			end
+		function ToolPanel.ComboMat:OnSelect(self, index, value, data)
+			-- data carries the real material id; fallback to value if missing
+			local matId = tostring(data or value)
+			RunConsoleCommand("acfarmorprop_material", matId)
+			self:SetValue(value)
 		end
 	end
 
@@ -475,6 +496,8 @@ if CLIENT then
 		local PtsAmmo = math.Round( net.ReadFloat(), 1 )
 		local PtsCrew = math.Round( net.ReadFloat(), 1 )
 		local PtsElectronics = math.Round( net.ReadFloat(), 1 )
+		local FrontArm = math.Round( net.ReadFloat(), 2 )
+		local SideArm = math.Round( net.ReadFloat(), 2 )
 
 		local Compressed	= net.ReadData(640)
 		local Decompress	= util.Decompress(Compressed)
@@ -514,6 +537,10 @@ if CLIENT then
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsEngine / PointVal * 100,0) .. "%) - " .. PtsEngine .. FractionalPts ..  Sep})
 		table.Add(Tabletxt,{ Color4, "Firepower: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsFirepower / PointVal * 100,0) .. "%) - " .. PtsFirepower .. FractionalPts ..  Sep})
+		local sideWeighted = SideArm * 2
+		local cost = (FrontArm + sideWeighted) * 4
+		table.Add(Tabletxt,{ Color4, "Armor scan ((front + side*2) x4): "})
+		table.Add(Tabletxt,{ Color3, string.format("front=%.2f  side=%.2f  side*2=%.2f  cost=%.2f", FrontArm, SideArm, sideWeighted, cost) .. Sep})
 		table.Add(Tabletxt,{ Color4, "Fuel: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsFuel / PointVal * 100,0) .. "%) - " .. PtsFuel .. FractionalPts ..  Sep})
 		table.Add(Tabletxt,{ Color4, "Ammo: "})

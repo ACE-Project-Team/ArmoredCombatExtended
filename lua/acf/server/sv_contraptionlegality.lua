@@ -187,7 +187,7 @@ local function ACE_CalcContraptionArmor(ent)
 		ace_crewseat_driver = true
 	}
 
-	local function projectedArea(comp, dir)
+	local function projectedData(comp, dir)
 		dir = dir:GetNormalized()
 		local upHint = math.abs(dir.z) < 0.99 and Vector(0, 0, 1) or Vector(1, 0, 0)
 		local u = dir:Cross(upHint):GetNormalized()
@@ -206,7 +206,32 @@ local function ACE_CalcContraptionArmor(ent)
 			if pv > maxV then maxV = pv end
 		end
 
-		return (maxU - minU) * (maxV - minV)
+		local halfU = (maxU - minU) * 0.5
+		local halfV = (maxV - minV) * 0.5
+		local area = (maxU - minU) * (maxV - minV)
+
+		return area, halfU, halfV, u, v
+	end
+
+	-- Move a point onto the outer face of an OBB along a given direction.
+	local function pushPointToFace(comp, dir, pos)
+		dir = dir:GetNormalized()
+		local center = comp:WorldSpaceCenter()
+		local centerDot = center:Dot(dir)
+
+		local maxDiff = -math.huge
+		local minDiff = math.huge
+		for _, corner in ipairs(getBoundsWorld(comp)) do
+			local diff = corner:Dot(dir) - centerDot
+			if diff > maxDiff then maxDiff = diff end
+			if diff < minDiff then minDiff = diff end
+		end
+
+		local targetDiff = maxDiff
+		local ptDiff = pos:Dot(dir) - centerDot
+		local delta = targetDiff - ptDiff
+
+		return pos + dir * delta
 	end
 
 	local function losFiltered(startPos, endPos, targetComp)
@@ -233,55 +258,59 @@ local function ACE_CalcContraptionArmor(ent)
 			local hitEnt = tr.Entity
 			if not IsValid(hitEnt) then break end
 
+			local skip = false
+
 			-- Ignore spheres made with MakeSpherical (no meaningful armor)
 			if hitEnt.RenderOverride and tostring(hitEnt.RenderOverride):find("MakeSpherical") then
-				filter[#filter + 1] = hitEnt
-				startPos = tr.HitPos + dir * 0.1
-				goto continue
+				skip = true
 			end
 
-			if hitEnt == targetComp then
+			if not skip and hitEnt == targetComp then
 				hitTarget = true
 				break
 			end
 
-			local cls = hitEnt:GetClass()
-			local skipArmor = ignoredArmor[cls] or not ACF_Check(hitEnt)
-			if skipArmor then
+			if not skip then
+				local cls = hitEnt:GetClass()
+				local skipArmor = ignoredArmor[cls] or not ACF_Check(hitEnt)
+
+				if skipArmor then
+					skip = true
+				elseif ACF_CheckClips(hitEnt, tr.HitPos) then
+					skip = true
+				end
+			end
+
+			if skip then
 				filter[#filter + 1] = hitEnt
 				startPos = tr.HitPos + dir * 0.1
 			else
-				if ACF_CheckClips(hitEnt, tr.HitPos) then
-					filter[#filter + 1] = hitEnt
-					startPos = tr.HitPos + dir * 0.1
+				local Mat = hitEnt.ACF.Material or "RHA"
+				local MatData = ACE_GetMaterialData(Mat)
+				local armor = hitEnt.ACF.Armour or 0
+				local armorData = hitEnt.acfPropArmorData and hitEnt:acfPropArmorData()
+				local eff = (armorData and armorData.Effectiveness) or (MatData and MatData.effectiveness) or 1
+				local curve = (armorData and armorData.Curve) or 1
+				local ang = ACF_GetHitAngle(tr.HitNormal, dir)
+				local los
+
+				if ang >= 89 then
+					los = (armor ^ curve) * eff
 				else
-					local Mat = hitEnt.ACF.Material or "RHA"
-					local MatData = ACE_GetMaterialData(Mat)
-					local armor = hitEnt.ACF.Armour or 0
-					local armorData = hitEnt.acfPropArmorData and hitEnt:acfPropArmorData()
-					local eff = (armorData and armorData.Effectiveness) or (MatData and MatData.effectiveness) or 1
-					local curve = (armorData and armorData.Curve) or 1
-					local ang = ACF_GetHitAngle(tr.HitNormal, dir)
-					local los
-
-					if ang >= 89 then
-						los = (armor ^ curve) * eff
-					else
-						local cosAng = math.max(math.cos(math.rad(ang)), 0.01)
-						los = (armor / (cosAng ^ ACF.SlopeEffectFactor)) ^ curve
-						los = los * eff
-					end
-
-					total = total + los
-
-					if dbg and los > 100 then
-						debugoverlay.Text(tr.HitPos, string.format("LOS %.1f", los), 30, true)
-					end
+					local cosAng = math.max(math.cos(math.rad(ang)), 0.01)
+					los = (armor / (cosAng ^ ACF.SlopeEffectFactor)) ^ curve
+					los = los * eff
 				end
 
-			filter[#filter + 1] = hitEnt
-			startPos = tr.HitPos + dir * 0.1
-		end
+				total = total + los
+
+				if dbg and los > 100 then
+					debugoverlay.Text(tr.HitPos, string.format("LOS %.1f", los), 30, true)
+				end
+
+				filter[#filter + 1] = hitEnt
+				startPos = tr.HitPos + dir * 0.1
+			end
 		end
 
 		if not hitTarget then
@@ -300,22 +329,24 @@ local function ACE_CalcContraptionArmor(ent)
 		local up = comp:GetUp()
 		local right = comp:GetRight()
 
-		local frontArea = projectedArea(comp, frontDir)
-		local sideArea  = projectedArea(comp, sideDir)
-		local sampleCount = 5
-		local weightF = frontArea / sampleCount
-		local weightS = sideArea / sampleCount
+			local frontArea, frontHalfU, frontHalfV, frontU, frontV = projectedData(comp, frontDir)
+			local sideArea, sideHalfU, sideHalfV, sideU, sideV = projectedData(comp, sideDir)
 
 		local halfUp = up * (size.z * 0.5 * 0.95)
 		local halfRight = right * (size.y * 0.5 * 0.95)
 
 		local samples = {
-			center,
-			center + halfUp,
-			center - halfUp,
-			center + halfRight,
-			center - halfRight
+			center + halfUp + halfRight,
+			center + halfUp - halfRight,
+			center - halfUp + halfRight,
+			center - halfUp - halfRight,
+			center -- center sample for coverage
 		}
+		local sampleCount = #samples
+		local weightF = sampleCount > 0 and (frontArea / sampleCount) or 0
+		local weightS = sampleCount > 0 and (sideArea / sampleCount) or 0
+
+		local frontAng = frontDir:Angle()
 
 		for _, pt in ipairs(samples) do
 			local frontStart = pt - frontDir * 500
@@ -331,6 +362,7 @@ local function ACE_CalcContraptionArmor(ent)
 			local sideValB  = losFiltered(pt + sideDir * 500, pt - sideDir * 50, comp)
 			local sideVal = math.min(sideValA > 0 and sideValA or math.huge, sideValB > 0 and sideValB or math.huge)
 			if sideVal == math.huge then sideVal = 0 end
+			local sideDirUsed = sideVal > 0 and ((sideValA > 0 and sideValA <= sideValB) and sideDir or -sideDir) or sideDir
 
 			-- Area-weighted averaging; only include weights if we got a hit.
 			if frontVal > 0 then
@@ -343,11 +375,33 @@ local function ACE_CalcContraptionArmor(ent)
 				countSide = countSide + weightS
 			end
 
-			if armorDebugCvar:GetBool() then
-				debugoverlay.Text(pt, string.format("F %.1f | S %.1f", frontVal or 0, sideVal or 0), 30, true)
+				if armorDebugCvar:GetBool() then
+					local function colorFromVal(v)
+						local ratio = math.min(math.max((v or 0) / 500, 0), 1)
+						return 255 * ratio, 255 * (1 - ratio)
+					end
+
+						local thickness = 0.01
+						local frontHalfUSample = frontHalfU * 0.5
+						local frontHalfVSample = frontHalfV * 0.5
+						local sideHalfUSample = sideHalfU * 0.5
+						local sideHalfVSample = sideHalfV * 0.5
+
+						if frontArea > 0 then
+							local r, g = colorFromVal(frontVal)
+							local frontPos = pushPointToFace(comp, -frontDir, pt)
+							debugoverlay.BoxAngles(frontPos, Vector(-thickness, -frontHalfUSample, -frontHalfVSample), Vector(thickness, frontHalfUSample, frontHalfVSample), frontAng, 30, Color(r, g, 0, 0.01))
+						end
+
+						if sideArea > 0 then
+							local r, g = colorFromVal(sideVal)
+							local sidePos = pushPointToFace(comp, sideDirUsed, pt)
+							local sideAng = sideDirUsed:Angle()
+							debugoverlay.BoxAngles(sidePos, Vector(-thickness, -sideHalfUSample, -sideHalfVSample), Vector(thickness, sideHalfUSample, sideHalfVSample), sideAng, 30, Color(r, g, 0, 0.01))
+						end
+					end
+				end
 			end
-		end
-	end
 
 	local avgFront = countFront > 0 and (accumFront / countFront) or 0
 	local avgSide = countSide > 0 and (accumSide / countSide) or 0

@@ -531,16 +531,16 @@ if CLIENT then
 		table.Add(Tabletxt,TPoints)
 
 		local FractionalPts = "/" .. PointVal
+		local sideWeighted = SideArm * 2
+		local cost = (FrontArm + sideWeighted) * 4
+		table.Add(Tabletxt,{ Color4, "Armor scan: "})
+		table.Add(Tabletxt,{ Color3, string.format("front=%.2f  side=%.2f", FrontArm, SideArm) .. Sep})
 		table.Add(Tabletxt,{ Color4, "Armor: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsArmor / PointVal * 100,0) .. "%) - " .. PtsArmor .. FractionalPts ..  Sep})
 		table.Add(Tabletxt,{ Color4, "Engines: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsEngine / PointVal * 100,0) .. "%) - " .. PtsEngine .. FractionalPts ..  Sep})
 		table.Add(Tabletxt,{ Color4, "Firepower: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsFirepower / PointVal * 100,0) .. "%) - " .. PtsFirepower .. FractionalPts ..  Sep})
-		local sideWeighted = SideArm * 2
-		local cost = (FrontArm + sideWeighted) * 4
-		table.Add(Tabletxt,{ Color4, "Armor scan ((front + side*2) x4): "})
-		table.Add(Tabletxt,{ Color3, string.format("front=%.2f  side=%.2f  side*2=%.2f  cost=%.2f", FrontArm, SideArm, sideWeighted, cost) .. Sep})
 		table.Add(Tabletxt,{ Color4, "Fuel: "})
 		table.Add(Tabletxt,{ Color3, "(" .. math.Round(PtsFuel / PointVal * 100,0) .. "%) - " .. PtsFuel .. FractionalPts ..  Sep})
 		table.Add(Tabletxt,{ Color4, "Ammo: "})

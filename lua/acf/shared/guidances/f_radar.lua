@@ -52,6 +52,7 @@ function this:Configure(missile)
 	self.SeekCone = ACF_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
 	self.GCMultiplier	= ACF_GetGunValue(missile.BulletData, "groundclutterfactor") or this.GCMultiplier
 	self.HasIRCCM	= ACF_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.seekReduction	= ACF_GetGunValue(missile.BulletData, "seekreduction") or 1
 end
 
 --TODO: still a bit messy, refactor this so we can check if a flare exits the viewcone too.
@@ -171,7 +172,8 @@ function this:GetWhitelistedEntsInCone(missile)
 		local dist = difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance then continue end
+		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+
 
 			local LOSdata = {}
 			LOSdata.start			= missilePos
@@ -232,6 +234,12 @@ function this:AcquireLock(missile)
 	local bestAng = math.huge
 	local bestent = nil
 
+
+	local SeekMul = 3 --Seeker Cone multiplier. Used for Seeker Expanded Acquisition making the missile search in a larger area if it lacks a target.
+	if self.Target then
+		SeekMul =  self.seekReduction or 1
+	end
+	
 	if missile.TargetPos then
 		--print("HasTpos")
 		DifSeek = missile.TargetPos - missilePos
@@ -269,7 +277,8 @@ function this:AcquireLock(missile)
 		--print(absang.p)
 		--print(absang.y)
 
-		if (absang.p < self.SeekCone and absang.y < self.SeekCone) then --Entity is within missile cone
+		local SeekExpanded = self.SeekCone*SeekMul --Expanded Seeker Angle used for searching without a target.
+		if absang.p < SeekExpanded and absang.y < SeekExpanded then --Entity is within missile cone
 
 			debugoverlay.Sphere(entpos, 100, 5, Color(255,100,0,255))
 

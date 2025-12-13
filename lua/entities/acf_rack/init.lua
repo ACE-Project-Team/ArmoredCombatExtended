@@ -23,10 +23,12 @@ local RackWireDescs = {
 	["Reload"]       = "Arms this rack. Its mandatory to set this since racks don't reload automatically.",
 	["TargetPos"]    = "Defines the Target position for the ordnance in this rack. This only works for Wire and laser guidances.",
 	["Delay"]        = "Sets a specific delay to guidance control over the default one in seconds.",
+	["Detonate"]        = "Remotely detonate any currently outbound missiles.",
 
 	--Outputs
 	["Ready"]        = "Returns if the rack is ready to fire.",
-	["CurMissile"]        = "Outputs the next position of the missile in the rack getting fired."
+	["CurMissile"]        = "Outputs the next position of the missile in the rack getting fired.",
+	["PositionFiredMissile"] = "Outputs the position of the missile last fired by this launcher"
 
 }
 
@@ -77,15 +79,16 @@ function ENT:Initialize()
 
 	self.SelfContraption = nil
 
-	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")" },
-													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL" } )
+	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
+													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL", "NORMAL" } )
 
-	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget", "TargetDirection", "Current Missile", "Missile Info", "CurMissile" },
-														{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "ENTITY", "STRING", "NORMAL" } )
+	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget", "TargetDirection", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
+														{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "ENTITY", "STRING", "NORMAL", "VECTOR" } )
 
 	Wire_TriggerOutput(self, "Ready", 1)
 	Wire_TriggerOutput(self, "Current Missile", nil)
 	Wire_TriggerOutput(self, "Missile Info", "")
+	Wire_TriggerOutput(self, "PositionFiredMissile", vector_origin)
 	self.WireDebugName = "ACF Rack"
 
 	self.lastCol = self:GetColor() or Color(255, 255, 255)
@@ -102,6 +105,10 @@ function ENT:Initialize()
 	self.UpdateNextMissile		= 0
 	self.NextAuxilaryFunctions	= 0
 	self.Inaccuracy				= 0
+
+	self.LastFiredMissile = nil
+
+	self.ScuttleMissiles = false
 
 
 	self.MissileEntity = NULL
@@ -231,6 +238,12 @@ function ENT:TriggerInput( iname , value )
 		else
 			self.TrackDelay = 0
 		end
+	elseif iname == "Detonate Missile" then
+		if value > 0 then
+			self.ScuttleMissiles = true
+		else
+			self.ScuttleMissiles = false
+		end
 	elseif iname == "Activate Guidance" then
 		if value > 0 then
 			self.GuidanceActive = true
@@ -324,6 +337,11 @@ function ENT:Think()
 		end
 	end
 
+	if IsValid(self.LastFiredMissile) then
+		Wire_TriggerOutput(self, "PositionFiredMissile", self.LastFiredMissile.MissilePosition or vector_origin)
+	else
+		Wire_TriggerOutput(self, "PositionFiredMissile", vector_origin)
+	end
 
 	if CT > self.NextHudUpdate then
 		self.NextHudUpdate = CT + 0.5
@@ -416,6 +434,8 @@ function ENT:ShootMissile()
 	Wire_TriggerOutput(self, "Missile Info", "")
 
 	--Activate the missile
+	self.LastFiredMissile = self.Missiles[MissileToShoot][1]
+
 	self.Missiles[MissileToShoot][1].MissileActive = true
 	self.Missiles[MissileToShoot][1].GuidanceActive = true
 	if self.TargPos then

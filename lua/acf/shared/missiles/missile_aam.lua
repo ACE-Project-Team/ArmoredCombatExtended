@@ -39,8 +39,8 @@ ACF_defineGun("AIM-9 AAM", {								-- id
 		reloaddelay			= 30.0,
 
 		--Formerly 302 and 1. Reduced blast from 381Mj to 136Mj. For reference a 100kg bomb has 117Kj.
-		maxlength			= 130,							-- Length of missile. Used for ammo properties.
-		propweight			= 4,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 37.3,							-- Length of missile. Used for ammo properties.
+		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 								--320
@@ -84,6 +84,7 @@ ACF_defineGun("AIM-9 AAM", {								-- id
 	viewcone           = 60,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -113,8 +114,8 @@ ACF_defineGun("AIM-7 AAM", {							-- id
 		reloaddelay			= 45.0,
 
 		--Formerly 370 and 1. Reduced blast from 1059Mj to 215Mj. For reference a 250kg bomb has 224Kj.
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 9,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 62,							-- Length of missile. Used for ammo properties.
+		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -157,6 +158,7 @@ ACF_defineGun("AIM-7 AAM", {							-- id
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.	--was 25
 	SeekSensitivity    = 1,
 	irccm				= false,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -166,14 +168,14 @@ ACF_defineGun("AIM-7 AAM", {							-- id
 --AIM-120 Sparrow. A medium-Range AAM missile, perfect for those who really need a decent boom in a single pass. Just remember that this is not an AIM-9 and is better to aim before.
 ACF_defineGun("AIM-120 AAM", {							-- id
 	name             = "AIM-120 AMRAAM",
-	desc             = "Faster than the AIM-9, but also a lot heavier. Burns hot and fast, with a good reach, but harder to lock with.  This long-range missile is sure to deliver one heck of a blast upon impact.Less agile than its smaller stablemate, so choose your shots carefully.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 289 m/s",
+	desc             = "Faster than the AIM-9, but also a lot heavier. Burns hot and fast, with a good reach, but harder to lock with.  This long-range missile is sure to deliver one heck of a blast upon impact.Less agile than its smaller stablemate, so choose your shots carefully.\n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 289 m/s",
 	model            = "models/missiles/aim120c.mdl",
 	effect           = "ACE_MissileMedium",
 	effectbooster    = "ACE_MissileMedium",
 	gunclass         = "AAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 383,
-	caliber          = 18,
+	caliber          = 17.8,
 	weight           = 152,								-- Don't scale down the weight though! --was 152, I cut that down to 1/2 an AIM-7s weight
 	year             = 1991,
 	modeldiameter    = 20.41,						-- in cm
@@ -187,8 +189,8 @@ ACF_defineGun("AIM-120 AAM", {							-- id
 		reloaddelay			= 60.0,
 
 		--Formerly 370 and 1. Reduced blast from 1059Mj to 215Mj. For reference a 250kg bomb has 224Kj.
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 9,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 41,							-- Length of missile. Used for ammo properties.
+		propweight			= 3,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -231,6 +233,7 @@ ACF_defineGun("AIM-120 AAM", {							-- id
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.	--was 25
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.0003, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -241,13 +244,13 @@ ACF_defineGun("AIM-120 AAM", {							-- id
 --with its seek cone and is suggested to AIM before launching.
 ACF_defineGun("AIM-54 AAM", {							-- id
 	name             = "AIM-54 Phoenix",
-	desc             = "Supersonic long-range air to air missile with early radar homing.Though relatively easy to dodge, this 300 kg beast will atomize any aircraft it hits. Getting hit is a traumatic experience. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 191 m/s",
+	desc             = "Supersonic long-range air to air missile with early radar homing.Though relatively easy to dodge, this 300 kg beast will atomize any aircraft it hits. Getting hit is a traumatic experience. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 191 m/s",
 	model            = "models/missiles/arend/aim54c.mdl",
 	effect           = "ACE_MissileLarge",
 	gunclass         = "AAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 153 * 2.53, --Convert to ammocrate units
-	caliber          = 38.1,
+	caliber          = 20,								--Actual is 514. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 463,								-- Don't scale down the weight though!
 	year             = 1974,
 	modeldiameter    = 30,--Already in ammocrate units
@@ -262,8 +265,8 @@ ACF_defineGun("AIM-54 AAM", {							-- id
 
 
 		--Formerly 396 and 5. Reduced blast from 5509Mj to 1303Mj. For reference a 500kg bomb has 2702Kj.
-		maxlength			= 120,							-- Length of missile. Used for ammo properties.
-		propweight			= 45,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 93.7,							-- Length of missile. Used for ammo properties.
+		propweight			= 10,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 
@@ -303,7 +306,9 @@ ACF_defineGun("AIM-54 AAM", {							-- id
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.
 	SeekSensitivity    = 1,
 
-	irccm				= false,
+	irccm				= true,
+	seekreduction		= 0.5, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
+
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.5,								-- Required time (in seconds) for missile to start guiding at target once launched
 	ghosttime          = 0.05									-- Time where this missile will be unable to hit surfaces, in seconds
@@ -318,7 +323,7 @@ ACF_defineGun("SRAAM AAM", {								-- id
 	gunclass         = "AAM",
 	rack             = "2x SRAAM",							-- Which rack to spawn this missile on?
 	length           = 115 * 2.53, --Convert to ammocrate units
-	caliber          = 16.5,
+	caliber          = 10,		--Actual is 165. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead	
 	weight           = 70,								-- Don't scale down the weight though! --was 152, I cut that down to 1/2 an AIM-7s weight
 	year             = 1984,
 	modeldiameter    = 8,--Already in ammocrate units
@@ -331,8 +336,8 @@ ACF_defineGun("SRAAM AAM", {								-- id
 		reloadspeed			= 1.5,
 		reloaddelay			= 45.0,
 
-		maxlength			= 40,							-- Length of missile. Used for ammo properties.
-		propweight			= 3,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 62,							-- Length of missile. Used for ammo properties.
+		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 								--320
@@ -373,6 +378,7 @@ ACF_defineGun("SRAAM AAM", {								-- id
 	seekcone           = 10,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
 	viewcone           = 48,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
+	seekreduction		= 0.5, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -402,8 +408,8 @@ ACF_defineGun("Magic AAM", {								-- id
 		reloadspeed			= 1.5,
 		reloaddelay			= 45.0,
 
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 3,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 33.3,							-- Length of missile. Used for ammo properties.
+		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 								--320
@@ -447,6 +453,7 @@ ACF_defineGun("Magic AAM", {								-- id
 	viewcone           = 48,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -456,7 +463,7 @@ ACF_defineGun("Magic AAM", {								-- id
 
 ACF_defineGun("MICA AAM", {								-- id
 	name             = "MICA Missile",
-	desc             = "Thrust vectoring short range air to air missile. Not quite as maneuverable as the R-73 but still remarkably agile. Capable of missile intercept. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 189 m/s",
+	desc             = "Thrust vectoring short range air to air missile. Not quite as maneuverable as the R-73 but still remarkably agile. Capable of missile intercept. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 189 m/s",
 	model            = "models/missiles/arend/mica_em.mdl",
 	effect           = "ACE_MissileSmall",
 	effectbooster    = "ACE_MissileSmall",
@@ -476,8 +483,8 @@ ACF_defineGun("MICA AAM", {								-- id
 		reloadspeed			= 1.5,
 		reloaddelay			= 45.0,
 
-		maxlength			= 80,							-- Length of missile. Used for ammo properties.
-		propweight			= 4,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 30.7,							-- Length of missile. Used for ammo properties.
+		propweight			= 1.5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -523,6 +530,7 @@ ACF_defineGun("MICA AAM", {								-- id
 	viewcone           = 60,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.0003, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -531,7 +539,7 @@ ACF_defineGun("MICA AAM", {								-- id
 
 ACF_defineGun("Meteor AAM", {							-- id
 	name             = "Meteor Missile",
-	desc             = "Long range ramjet proppeled missile. Takes a bit longer to get up to speed but much longer range and harder to overshoot. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 236 m/s",
+	desc             = "Long range ramjet proppeled missile. Takes a bit longer to get up to speed but much longer range and harder to overshoot. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 236 m/s",
 	model            = "models/missiles/arend/meteor.mdl",
 	effect           = "ACE_RocketBlackSmoke",
 	effectbooster    = "ACE_MissileTiny",
@@ -552,8 +560,8 @@ ACF_defineGun("Meteor AAM", {							-- id
 		reloaddelay			= 60.0,
 
 		--Formerly 370 and 1. Reduced blast from 1059Mj to 215Mj. For reference a 250kg bomb has 224Kj.
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 9,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 50,							-- Length of missile. Used for ammo properties.
+		propweight			= 4,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -597,6 +605,7 @@ ACF_defineGun("Meteor AAM", {							-- id
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.	--was 25
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.0003, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -625,8 +634,8 @@ ACF_defineGun("R-60 AAM", {								-- id
 		reloadspeed			= 1.5,
 		reloaddelay			= 30.0,
 
-		maxlength			= 50,							-- Length of missile. Used for ammo properties.
-		propweight			= 1,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 19,							-- Length of missile. Used for ammo properties.
+		propweight			= 0.1,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 15,							-- Armour effectiveness of casing, in mm
 
@@ -669,6 +678,7 @@ ACF_defineGun("R-60 AAM", {								-- id
 	seekcone           = 10,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
 	viewcone           = 60,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -678,14 +688,14 @@ ACF_defineGun("R-60 AAM", {								-- id
 
 ACF_defineGun("R-73 AAM", {								-- id
 	name             = "R-73 Archer",
-	desc             = "A monster in a dogfight. Compared to the Aim-9 this missile has a longer range and incredible offbore capability. But the IRCCM isn't as effective.\n\nInertial Guidance: Yes\nECCM: Narrow Seeker\nDatalink: No\nTop Speed: 188 m/s",
+	desc             = "A monster in a dogfight. Compared to the Aim-9 this missile has a longer range and incredible offbore capability. But the IRCCM isn't as effective.\n\nInertial Guidance: Yes\nECCM: Reduction\nDatalink: No\nTop Speed: 188 m/s",
 	model            = "models/missiles/arend/r73.mdl",
 	effect           = "ACE_MissileSmall",
 	effectbooster    = "ACE_MissileSmall",
 	gunclass         = "AAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 116 * 2.53, --Convert to ammocrate units
-	caliber          = 16.5,
+	caliber          = 10,		--Actual is 165. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead	
 	weight           = 105,								-- Don't scale down the weight though! --was 152, I cut that down to 1/2 an AIM-7s weight
 	year             = 1984,
 	modeldiameter    = 15,--Already in ammocrate units
@@ -698,8 +708,8 @@ ACF_defineGun("R-73 AAM", {								-- id
 		reloadspeed			= 1.5,
 		reloaddelay			= 45.0,
 
-		maxlength			= 80,							-- Length of missile. Used for ammo properties.
-		propweight			= 4,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 40.2,							-- Length of missile. Used for ammo properties.
+		propweight			= 1,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -741,9 +751,10 @@ ACF_defineGun("R-73 AAM", {								-- id
 
 
 	--Doesn't use the IRCCM system. Instead has a narrower seek cone that makes it better able to filter flares.
-	seekcone           = 3,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
+	seekcone           = 4,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
 	viewcone           = 48,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
 	SeekSensitivity    = 1,
+	seekreduction		= 0.0002, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -752,7 +763,7 @@ ACF_defineGun("R-73 AAM", {								-- id
 
 ACF_defineGun("R-77 AAM", {							-- id
 	name             = "R-77 Adder",
-	desc             = "Counterpart to the aim-120. Very similar in performance but heavier but burns hot and fast.  This long-range missile is sure to deliver its payload fast.Less agile than its smaller stablemate, so choose your shots carefully. \n\nInertial Guidance: Yes\nECCM: Narrow Seeker\nDatalink: Yes\nTop Speed: 330 m/s",
+	desc             = "Counterpart to the aim-120. Very similar in performance but heavier but burns hot and fast.  This long-range missile is sure to deliver its payload fast. Less agile than its smaller stablemate, so choose your shots carefully. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 330 m/s",
 	model            = "models/missiles/arend/r77.mdl",
 	effect           = "ACE_MissileMedium",
 	effectbooster    = "ACE_MissileMedium",
@@ -773,8 +784,8 @@ ACF_defineGun("R-77 AAM", {							-- id
 		reloaddelay			= 60.0,
 
 		--Formerly 370 and 1. Reduced blast from 1059Mj to 215Mj. For reference a 250kg bomb has 224Kj.
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 9,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 37,							-- Length of missile. Used for ammo properties.
+		propweight			= 2.7,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -817,6 +828,8 @@ ACF_defineGun("R-77 AAM", {							-- id
 	seekcone           = 2,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 20
 	viewcone           = 27.5,								-- getting outside this cone will break the lock.  Divided by 2.	--was 25
 	SeekSensitivity    = 1,
+	seekreduction		= 0.0003, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
+	irccm				= true,
 
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -832,7 +845,7 @@ ACF_defineGun("R-27 AAM", {							-- id
 	gunclass         = "AAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 180 * 2.53, --Convert to ammocrate units
-	caliber          = 20,
+	caliber          = 23,
 	weight           = 253,								-- Don't scale down the weight though! --was 152, I cut that down to 1/2 an AIM-7s weight
 	year             = 1994,
 	modeldiameter    = 28,--Already in ammocrate units
@@ -846,8 +859,8 @@ ACF_defineGun("R-27 AAM", {							-- id
 		reloaddelay			= 45.0,
 
 		--Formerly 370 and 1. Reduced blast from 1059Mj to 215Mj. For reference a 250kg bomb has 224Kj.
-		maxlength			= 100,							-- Length of missile. Used for ammo properties.
-		propweight			= 9,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 48,							-- Length of missile. Used for ammo properties.
+		propweight			= 3,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -889,6 +902,7 @@ ACF_defineGun("R-27 AAM", {							-- id
 	seekcone           = 2,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 20
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.	--was 25
 	SeekSensitivity    = 1,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -897,13 +911,13 @@ ACF_defineGun("R-27 AAM", {							-- id
 
 ACF_defineGun("R-33 AAM", {							-- id
 	name             = "R-33 Amos",
-	desc             = "A supersonic long-range air to air missile. H E A V Y. Faster than its Aim-54 counterpart but with a weaker warhead. Will vaporize any aircraft it touches.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 216 m/s",
+	desc             = "A supersonic long-range air to air missile. H E A V Y. Faster than its Aim-54 counterpart but with a weaker warhead. Will vaporize any aircraft it touches.\n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: No\nTop Speed: 216 m/s",
 	model            = "models/missiles/arend/r33.mdl",
 	effect           = "ACE_MissileLarge",
 	gunclass         = "AAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 163 * 2.53, --Convert to ammocrate units
-	caliber          = 38.0,
+	caliber          = 20,		--Actual is 380. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 490,								-- Don't scale down the weight though!
 	year             = 1981,
 	modeldiameter    = 27,--Already in ammocrate units
@@ -917,8 +931,8 @@ ACF_defineGun("R-33 AAM", {							-- id
 		reloaddelay			= 60.0,
 
 
-		maxlength			= 110,							-- Length of missile. Used for ammo properties.
-		propweight			= 40,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 72.3,							-- Length of missile. Used for ammo properties.
+		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 								--320
@@ -958,6 +972,7 @@ ACF_defineGun("R-33 AAM", {							-- id
 	seekcone           = 2,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)  --was 4
 	viewcone           = 110,								-- getting outside this cone will break the lock.  Divided by 2.
 	SeekSensitivity    = 1,
+	seekreduction		= 0.0003, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	irccm				= true,
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3

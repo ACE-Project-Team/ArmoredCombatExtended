@@ -93,7 +93,6 @@ ACF_DefineRack("2x AGM-114", {
 	gunclass = "RK",
 	weight = 50,
 	year = 1984,
-	caliber = 16,
 
 	mountpoints =
 	{
@@ -109,7 +108,6 @@ ACF_DefineRack("4x AGM-114", {
 	gunclass = "RK",
 	weight = 100,
 	year = 1984,
-	caliber = 16,
 
 	mountpoints =
 	{
@@ -159,7 +157,6 @@ ACF_DefineRack("1x9M331 Pod", {
 	weight = 100,
 	year = 1986,
 	magsize = 1,
-	caliber = 23.9,
 	whitelistonly   = true,
 	protectmissile  = false,
 	hidemissile     = false,

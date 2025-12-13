@@ -98,7 +98,6 @@ end
 
 --Gets all valid targets, does not check angle
 function this:GetWhitelistedEntsInCone(missile)
-
 	local missilePos = missile:GetPos()
 	local foundAnim = {}
 
@@ -112,7 +111,7 @@ function this:GetWhitelistedEntsInCone(missile)
 		local dist = difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance then continue end
+		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 		local LOSdata = {}
 		LOSdata.start			= missilePos
@@ -136,6 +135,8 @@ end
 -- Return the first entity found within the seek-tolerance, or the entity within the seek-cone closest to the seek-tolerance.
 function this:AcquireLock(missile)
 
+	local CPPIOwn = missile:CPPIGetOwner()
+
 	local curTime = CurTime()
 
 	--We make sure that its seeking between the defined delay
@@ -150,9 +151,13 @@ function this:AcquireLock(missile)
 	local missilePos = missile:GetPos()
 
 	local bestAng = math.huge
+	local bestCount = math.huge
 	local bestent = nil
 
+
 	for _, classifyent in pairs(found) do
+
+		if CPPIOwn == classifyent:CPPIGetOwner() then continue end
 
 		local entpos = classifyent:GetPos()
 		local ang = missile:WorldToLocalAngles((entpos - missilePos):Angle())	--Used for testing if inrange
@@ -168,13 +173,35 @@ function this:AcquireLock(missile)
 			--Could do pythagorean stuff but meh, works 98% of time
 			local testang = absang.p + absang.y
 
-			--Sorts targets as closest to being directly in front of radar
-			if testang < bestAng then
+			if classifyent.AMMTarget then --Missile already has an antimissile missile registered to it
 
-				bestAng = testang
-				bestent = classifyent
+				if classifyent.AMMTarget == missile then --Is the assigned target this missile?
+
+					bestAng = testang
+					bestent = classifyent
+					--print("AMM: owned target")
+					break
+
+				elseif testang < bestAng then --Sorts targets as closest to being directly in front of radar
+
+					bestAng = testang
+					bestent = classifyent
+					--print("AMM: standard assignment")
+
+				end
+
+			else --Missile has no Anti Missile Missile registered to it. TARGET IT.
+
+					classifyent.AMMTarget = missile
+					bestAng = testang
+					bestent = classifyent
+					--print("AMM: assigned to target")
+					break
 
 			end
+				
+			
+
 		end
 	end
 

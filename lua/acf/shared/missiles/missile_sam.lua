@@ -17,51 +17,53 @@ ACF_defineGunClass("SAM", {
 -- The FIM-92, a lightweight, medium-speed short-range anti-air missile.
 ACF_defineGun("FIM-92 SAM", {								-- id
 	name             = "FIM-92 Missile",
-	desc             = "The FIM-92 Stinger is a lightweight and versatile close-range air defense missile.\nWith a seek cone of 15 degrees and a sharply limited range that makes it useless versus high-flying targets, it is best to aim before firing and choose shots carefully.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 194 m/s",
+	desc             = "The FIM-92 Stinger is a lightweight and versatile close-range air defense missile.\nWith a seek cone of 15 degrees and a sharply limited range that makes it useless versus high-flying targets, it is best to aim before firing and choose shots carefully.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 226 m/s",
 	model            = "models/missiles/fim_92.mdl",
-	effect           = "ACE_MissileTiny",					--Tiny motor for tiny rocket
+	effect           = "ACE_RocketBlackSmoke",					--Tiny motor for tiny rocket
+	effectbooster    = "ACE_MissileSmall",
 	gunclass         = "SAM",
 	rack             = "1x FIM-92",							-- Which rack to spawn this missile on?
 	length           = 150,
-	caliber          = 11,
+	caliber          = 7,
 	weight           = 20,									-- 15.1,	-- Don't scale down the weight though!
 	modeldiameter    = 3,									-- in cm
 	year             = 1978,
 
 	round = {
-		rocketmdl				= "models/missiles/fim_92.mdl",
+		rocketmdl			= "models/missiles/fim_92.mdl",
 		rackmdl				= "models/missiles/fim_92_folded.mdl",
 		firedelay			= 2.0,
 		reloadspeed			= 8.0,
 		reloaddelay			= 20,
 
-		--Former 125 and 1.5. Reduced blast from 107Mj to 60Mj. For reference a 100kg bomb has 117Kj.
-		maxlength			= 22,							-- Length of missile. Used for ammo properties.
-		propweight			= 0.5,							-- Motor mass - motor casing. Used for ammo properties.
+
+		maxlength			= 30,							-- Length of missile. Used for ammo properties.
+		propweight			= 0.3,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 20,							-- Armour effectiveness of casing, in mm
 
 		turnrate			= 240,							--Turn rate of missile at max deflection per 100 m/s
 		finefficiency		= 0.4,							--Fraction of speed redirected every second at max deflection
 
-		thrust				= 85,							-- Acceleration in m/s.
-		burntime			= 2.5,							-- time in seconds for rocket motor to burn at max proppelant.
+		thrust				= 5,							-- Acceleration in m/s.
+		burntime			= 20,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
 
 		launchkick			= 40,							-- Speed missile starts with on launch in m/s
 
 		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
 
-		boostacceleration	= 0,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
-		boostertime			= 0,							-- Time in seconds for booster runtime
-		boostdelay			= 0.15,							-- Delay in seconds before booster activates.
+		boostacceleration	= 200,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
+		boostertime			= 0.9,							-- Time in seconds for booster runtime
+		boostdelay			= 0.25,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
 		velmul				= 0.1,		--No
 
-		dragcoef			= 0.001,						-- percent speed loss per second
+		dragcoef			= 0.00015,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
-		predictiondelay		= 0.4,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
+		datalink			= true,
+		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		pointcost			= 83
 	},
 
@@ -75,10 +77,11 @@ ACF_defineGun("FIM-92 SAM", {								-- id
 				["4x FIM-92"] = true
 			},
 
-	seekcone           = 15,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 35
+	seekcone           = 7,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 35
 	viewcone           = 70,									-- getting outside this cone will break the lock.  Divided by 2.	--was 55
-	SeekSensitivity    = 1,
-	irccm				= false,
+	SeekSensitivity    = 1.5,
+	irccm				= true,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	armdelay	= 0.15,									-- minimum fuse arming delay		-was 0.3
 	guidelay           = 0,									-- Required time (in seconds) for missile to start guiding at target once launched
@@ -88,13 +91,14 @@ ACF_defineGun("FIM-92 SAM", {								-- id
 -- The Mistral missile is a faster short range missile with greater range than fim92 but less agility
 ACF_defineGun("Mistral SAM", {								-- id
 	name             = "Mistral Missile",
-	desc             = "A very fast short range missile, faster and less agile than FIM-92. Mostly for Anti-Aircraft and Anti-Missile operations.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 204 m/s",
+	desc             = "A very fast short range missile, faster and less agile than FIM-92. Mostly for Anti-Aircraft and Anti-Missile operations.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 292 m/s",
 	model            = "models/missiles/fim_92_folded.mdl",
-	effect           = "ACE_MissileTiny",					-- Tiny motor for tiny rocket
+	effect           = "ACE_RocketBlackSmoke",					--Tiny motor for tiny rocket
+	effectbooster    = "ACE_MissileTiny",
 	gunclass         = "SAM",
 	rack             = "2x FIM-92",							-- Which rack to spawn this missile on?
 	length           = 150,
-	caliber          = 11,
+	caliber          = 9,
 	weight           = 19.7,									-- 15.1,	-- Don't scale down the weight though!
 	modeldiameter    = 3,									-- in cm
 	year             = 1974,
@@ -102,36 +106,36 @@ ACF_defineGun("Mistral SAM", {								-- id
 	round = {
 		rocketmdl			= "models/missiles/fim_92.mdl",
 		rackmdl				= "models/missiles/fim_92_folded.mdl",
-		firedelay			= 2.5,
+		firedelay			= 2.0,
 		reloadspeed			= 8.0,
-		reloaddelay			= 25.0,
+		reloaddelay			= 20,
 
-		--Formerly 130 and 1.5. Reduced blast from 112Mj to 72Mj. For reference a 100kg bomb has 117Kj.
-		maxlength			= 35,							-- Length of missile. Used for ammo properties.
-		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
+
+		maxlength			= 23,							-- Length of missile. Used for ammo properties.
+		propweight			= 0.5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 20,							-- Armour effectiveness of casing, in mm
 
-		turnrate			= 30,							--Turn rate of missile at max deflection per 100 m/s
+		turnrate			= 50,							--Turn rate of missile at max deflection per 100 m/s
 		finefficiency		= 0.3,							--Fraction of speed redirected every second at max deflection
 
-		thrust				= 190,							-- Acceleration in m/s.
-		burntime			= 4,							-- time in seconds for rocket motor to burn at max proppelant.
+		thrust				= 5,							-- Acceleration in m/s.
+		burntime			= 20,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
 
-		launchkick			= 30,							-- Speed missile starts with on launch in m/s
+		launchkick			= 60,							-- Speed missile starts with on launch in m/s
 
 		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
 
-		boostacceleration	= 0,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
-		boostertime			= 0,							-- Time in seconds for booster runtime
+		boostacceleration	= 130,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
+		boostertime			= 6,							-- Time in seconds for booster runtime
 		boostdelay			= 0,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
 		velmul				= 0.1,		--No
 
-		dragcoef			= 0.005,						-- percent speed loss per second
-		inertialcapable		= false,						-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
+		dragcoef			= 0.0015,						-- percent speed loss per second
+		inertialcapable		= true,						-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		pointcost			= 83
 	},
@@ -141,25 +145,28 @@ ACF_defineGun("Mistral SAM", {								-- id
 	fuses      = {"Contact", "Overshoot", "Radio", "Optical", "Timed", "Altitude"},
 
 	racks	= {											-- a whitelist for racks that this missile can load into.
-					["2x FIM-92"] = true
+				["1x FIM-92"] = true,
+				["2x FIM-92"] = true,
+				["4x FIM-92"] = true
 				},
 
-	seekcone			= 15,										-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 35
+	seekcone			= 7,										-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 35
 	viewcone			= 70,										-- getting outside this cone will break the lock.  Divided by 2.	--was 55
-	SeekSensitivity		= 1,
-	irccm				= false,
+	SeekSensitivity		= 1.5,
+	irccm				= true,
+	seekreduction		= 0.3, --Low level seek reduction mainly meant to make it not incredibly easy to flare.
 
 	guidelay   = 0,										-- Required time (in seconds) for missile to start guiding at target once launched
 	ghosttime  = 0.5,									-- Time where this missile will be unable to hit surfaces, in seconds
-	armdelay   = 0.00										-- minimum fuse arming delay		-was 0.3
+	armdelay   = 0.15										-- minimum fuse arming delay		-was 0.3
 } )
 
 
 ACF_defineGun("TY-90 AAM", {								-- id
 	name             = "TY-90 Anti Air Missile",
-	desc             = "A relatively short range missile but extremele agile. With a decent warhead..\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 151 m/s",
+	desc             = "A short range missile with exceptional agility. Cruises at a moderate speed compared to the other short range SAMs.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 242 m/s",
 	model            = "models/missiles/ty90.mdl",
-	effect           = "ACE_MissileSmall",
+	effect           = "ACE_RocketBlackSmoke",					--Tiny motor for tiny rocket
 	effectbooster    = "ACE_MissileSmall",
 	gunclass         = "SAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
@@ -173,12 +180,12 @@ ACF_defineGun("TY-90 AAM", {								-- id
 	round = {
 		rocketmdl			= "models/missiles/ty90.mdl",
 		rackmdl				= "models/missiles/ty90.mdl",
-		firedelay			= 1.5,
-		reloadspeed			= 1.5,
-		reloaddelay			= 45.0,
+		firedelay			= 2.0,
+		reloadspeed			= 8.0,
+		reloaddelay			= 20,
 
-		maxlength			= 85,							-- Length of missile. Used for ammo properties.
-		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 23,							-- Length of missile. Used for ammo properties.
+		propweight			= 0.5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
@@ -186,22 +193,22 @@ ACF_defineGun("TY-90 AAM", {								-- id
 		finefficiency		= 0.8,							--Fraction of speed redirected every second at max deflection
 		thrusterturnrate	= 0,							--Max turnrate from thrusters regardless of speed. Active only if the missile motor is active.
 
-		thrust				= 150,							-- Acceleration in m/s.
-		burntime			= 1.0,							-- time in seconds for rocket motor to burn at max proppelant.
+		thrust				= 5,							-- Acceleration in m/s.
+		burntime			= 20.0,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
 
-		launchkick			= 0,							-- Speed missile starts with on launch in m/s
+		launchkick			= 40,							-- Speed missile starts with on launch in m/s
 
 		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
 
-		boostacceleration	= 200,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
-		boostertime			= 0.3,							-- Time in seconds for booster runtime
+		boostacceleration	= 120,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
+		boostertime			= 6.0,							-- Time in seconds for booster runtime
 		boostdelay			= 0,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
 		velmul				= 0.1,		--No
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.002,						-- percent speed loss per second
 		inertialcapable		= false,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		pointcost			= 415
@@ -220,10 +227,11 @@ ACF_defineGun("TY-90 AAM", {								-- id
 				["4x FIM-92"] = true
 			},
 
-	seekcone           = 3,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
+	seekcone           = 7,								-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
 	viewcone           = 65,								-- getting outside this cone will break the lock.  Divided by 2.		--was 30
-	SeekSensitivity    = 1,
+	SeekSensitivity    = 1.5,
 	irccm				= true,
+	seekreduction		= 0.2,
 
 	armdelay           = 0.15,								-- minimum fuse arming delay		--was 0.4
 	guidelay           = 0.25,								-- Required time (in seconds) for missile to start guiding at target once launched
@@ -233,9 +241,9 @@ ACF_defineGun("TY-90 AAM", {								-- id
 -- The 9M31 Strela-1, a bulky, slow medium-range anti-air missile.
 ACF_defineGun("Strela-1 SAM", {								-- id
 	name             = "9M31 Strela-1",
-	desc             = "The 9M31 Strela-1 is a medium-range homing SAM with a much bigger payload than the FIM-92. Bulky. It is best suited to ground vehicles or stationary units. The strela is fast-reacting, while its missiles are surprisingly deadly and able to defend an acceptable area.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 180 m/s",
+	desc             = "The 9M31 Strela-1 is a medium-range homing SAM with a much bigger payload than the FIM-92. Bulky. It is best suited to ground vehicles or stationary units. Beware the narrow seeker. This helps with flares but makes acquisition harder.\n\nInertial Guidance: No\nECCM: Reduction\nDatalink: No\nTop Speed: 179 m/s",
 	model            = "models/missiles/9m31.mdl",
-	effect           = "ACE_MissileSmall",
+	effect           = "ACE_MissileMedium",
 	gunclass         = "SAM",
 	rack             = "1x Strela-1",							-- Which rack to spawn this missile on?
 	length           = 219,
@@ -249,19 +257,18 @@ ACF_defineGun("Strela-1 SAM", {								-- id
 		rocketmdl			= "models/missiles/9m31.mdl",
 		rackmdl				= "models/missiles/9m31f.mdl",
 		firedelay			= 1.25,
-		reloadspeed			= 5.0,
-		reloaddelay			= 30.0,
+		reloadspeed			= 8.0,
+		reloaddelay			= 20,
 
-		--Formerly 190 and 1. Reduced blast from 213j to 120Mj. For reference a 100kg bomb has 117Kj.
-		maxlength			= 145,							-- Length of missile. Used for ammo properties.
-		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 22,							-- Length of missile. Used for ammo properties.
+		propweight			= 0.5,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
 		turnrate			= 60,							--Turn rate of missile at max deflection per 100 m/s
 		finefficiency		= 0.25,							--Fraction of speed redirected every second at max deflection
 
-		thrust				= 62,							-- Acceleration in m/s.
+		thrust				= 60,							-- Acceleration in m/s.
 		--120 seconds? Does it really have a 120 second burntime??? Not setting higher so people can't minimize proppelant
 		burntime			= 10,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
@@ -275,11 +282,11 @@ ACF_defineGun("Strela-1 SAM", {								-- id
 		boostdelay			= 0,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
-		velmul				= 0.1,		--No
 
 		dragcoef			= 0.002,						-- percent speed loss per second
 		inertialcapable		= false,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
+
 		pointcost			= 250
 	},
 
@@ -293,9 +300,11 @@ ACF_defineGun("Strela-1 SAM", {								-- id
 						["4x Strela-1"] = true
 					},
 
-	seekcone           = 8,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)
+	seekcone           = 6,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)
 	viewcone           = 70,									-- getting outside this cone will break the lock.  Divided by 2.
-	SeekSensitivity    = 0.8,
+	SeekSensitivity    = 1.5,
+	irccm				= false,
+	seekreduction		= 0.0002,
 
 	armdelay	= 0.15,									-- minimum fuse arming delay
 	guidelay           = 0.75,									-- Required time (in seconds) for missile to start guiding at target once launched
@@ -304,14 +313,14 @@ ACF_defineGun("Strela-1 SAM", {								-- id
 
 ACF_defineGun("VT-1 SAM", {										-- id
 	name             = "VT-1 Missile",
-	desc             = "Powerful command guided SAM. Great range, good agility, and a powerful warhead. \n\nInertial Guidance: False\nECCM: No\nDatalink: Yes\nTop Speed: 178 m/s",
+	desc             = "Powerful command guided SAM. Great range, good agility, and a powerful warhead. \n\nInertial Guidance: False\nECCM: Reduction\nDatalink: Yes\nTop Speed: 183 m/s",
 	model            = "models/missiles/arend/vt1.mdl",
 	effect           = "ACE_MissileSmall",
 	effectbooster	= "ACE_MissileSmall",
 	gunclass         = "SAM",
 	rack             = "1x VT-1",								-- Which rack to spawn this missile on?
 	length           = 92 * 2.53, --Convert to ammocrate units
-	caliber          = 12,
+	caliber          = 16.5,
 	weight           = 73,										-- Don't scale down the weight though!
 	year             = 1960,
 	modeldiameter    = 8,--Already in ammocrate units
@@ -323,13 +332,12 @@ ACF_defineGun("VT-1 SAM", {										-- id
 		reloadspeed			= 5.0,
 		reloaddelay			= 30.0,
 
-		--Formerly 190 and 1. Reduced blast from 213j to 120Mj. For reference a 100kg bomb has 117Kj.
-		maxlength			= 145,							-- Length of missile. Used for ammo properties.
-		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 38,							-- Length of missile. Used for ammo properties.
+		propweight			= 3,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 30,							-- Armour effectiveness of casing, in mm
 
-		turnrate			= 70,							--Turn rate of missile at max deflection per 100 m/s
+		turnrate			= 65,							--Turn rate of missile at max deflection per 100 m/s
 		finefficiency		= 0.3,							--Fraction of speed redirected every second at max deflection
 
 		thrust				= 60,							-- Acceleration in m/s.
@@ -345,7 +353,6 @@ ACF_defineGun("VT-1 SAM", {										-- id
 		boostdelay			= 0,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
-		velmul				= 0.1,		--No
 
 		dragcoef			= 0.002,						-- percent speed loss per second
 		inertialcapable		= false,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
@@ -368,6 +375,8 @@ ACF_defineGun("VT-1 SAM", {										-- id
 
 	seekcone           = 6,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)
 	viewcone           = 70,									-- getting outside this cone will break the lock.  Divided by 2.
+	irccm				= false,
+	seekreduction		= 0.25,
 
 	armdelay	= 0.15,									-- minimum fuse arming delay
 	guidelay           = 0,									-- Required time (in seconds) for missile to start guiding at target once launched
@@ -378,14 +387,14 @@ ACF_defineGun("VT-1 SAM", {										-- id
 --Tunguska Missile
 ACF_defineGun("9M311 SAM", {										-- id
 	name             = "9M311 Tunguska",
-	desc             = "The 9M311 missile is a supersonic Anti Air missile that while is not agile enough to hit maneuvering planes, excels against helicopters. \n\nInertial Guidance: No\nECCM: No\nDatalink: Yes\nTop Speed: 233 m/s",
+	desc             = "The 9M311 missile is SAM meant to minimize traveltime. While lacking the agility and energy retention to hit maneuvering planes, this missile excels against helicopters due to the short traveltime. \n\nInertial Guidance: No\nECCM: Reduction\nDatalink: Yes\nTop Speed: 365 m/s",
 	model            = "models/missiles/arend/9m311_unfolded.mdl",
-	effect           = "ACE_MissileSmall",
-	effectbooster	= "ACE_MissileSmall",
+	effect           = "ACE_RocketBlackSmoke",
+	effectbooster	= "ACE_MotorSmall",
 	gunclass         = "SAM",
 	rack             = "1x 9m311",								-- Which rack to spawn this missile on?
 	length           = 100 * 2.53, --Convert to ammocrate units
-	caliber          = 12,
+	caliber          = 7.6,
 	weight           = 71,										-- Don't scale down the weight though!
 	year             = 1982,
 	modeldiameter    = 7,--Already in ammocrate units
@@ -399,33 +408,33 @@ ACF_defineGun("9M311 SAM", {										-- id
 
 		--Formerly 190 and 1. Reduced blast from 283j to 116Mj. For reference a 100kg bomb has 117Kj.
 
-		maxlength			= 140,							-- Length of missile. Used for ammo properties.
-		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 78,							-- Length of missile. Used for ammo properties.
+		propweight			= 2,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 25,							-- Armour effectiveness of casing, in mm
-		turnrate			= 15,							--Turn rate of missile at max deflection per 100 m/s
-		finefficiency		= 0.4,							--Fraction of speed redirected every second at max deflection
+		turnrate			= 13,							--Turn rate of missile at max deflection per 100 m/s
+		finefficiency		= 0.3,							--Fraction of speed redirected every second at max deflection
 
-		thrust				= 100,							-- Acceleration in m/s.
-		burntime			= 1,							-- time in seconds for rocket motor to burn at max proppelant.
+		thrust				= 5,							-- Acceleration in m/s.
+		burntime			= 20,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
 
-		launchkick			= 30,							-- Speed missile starts with on launch in m/s
+		launchkick			= 60,							-- Speed missile starts with on launch in m/s
 
 		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
 
 		--Should be around 1.5s. Set to 1/4th boost time.
-		boostacceleration	= 300,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
+		boostacceleration	= 800,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
 		boostertime			= 0.35,							-- Time in seconds for booster runtime
 		boostdelay			= 0,							-- Delay in seconds before booster activates.
 
 		fusetime			= 19,							--Time in seconds after launch/booster stop before missile scuttles
 		velmul				= 0.1,		--No
 
-		dragcoef			= 0.00035,						-- percent speed loss per second
+		dragcoef			= 0.0001,						-- percent speed loss per second
 		inertialcapable		= false,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		datalink			= true,
-		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
+		predictiondelay		= 0.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		pointcost			= 235
 	},
 
@@ -443,6 +452,8 @@ ACF_defineGun("9M311 SAM", {										-- id
 
 	seekcone           = 6,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)
 	viewcone           = 70,									-- getting outside this cone will break the lock.  Divided by 2.
+	irccm				= false,
+	seekreduction		= 0.25,
 
 	armdelay	= 0.15,									-- minimum fuse arming delay
 	guidelay           = 0,									-- Required time (in seconds) for missile to start guiding at target once launched
@@ -454,14 +465,14 @@ ACF_defineGun("9M311 SAM", {										-- id
 --TOR Missile. This is going to be fun.
 ACF_defineGun("9M331 SAM", {								-- id
 	name             = "9M331 TOR",
-	desc             = "The TOR Missile. Medium range SAM. This vertically Launched medium range missile is fast reacting making it good for missile intercepts, agile, and deadly. The missile is first kicked out of the tube, spun towards the target, then launched. \n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 241 m/s",
+	desc             = "The TOR Missile. Medium range SAM. This vertically Launched medium range missile is fast reacting making it good for missile intercepts, agile, and deadly. The missile is first kicked out of the tube, spun towards the target, then launched. \n\nInertial Guidance: Yes\nECCM: Reduction\nDatalink: Yes\nTop Speed: 251 m/s",
 	model            = "models/missiles/arend/9m331_unfolded.mdl",
 	effect           = "ACE_MissileMedium",
 	effectbooster	 = "Rocket_Smoke_Trail",
 	gunclass         = "SAM",
 	rack             = "1x9M331 Pod",							-- Which rack to spawn this missile on?
 	length           = 118 * 2.53, --Convert to ammocrate units
-	caliber          = 23.9,
+	caliber          = 15, --Had to artificially reduce the caliber from 23.5 to get the warhead area to reduce
 	weight           = 167,									-- 15.1,	-- Don't scale down the weight though!
 	year             = 1986,
 	modeldiameter    = 10,
@@ -474,8 +485,8 @@ ACF_defineGun("9M331 SAM", {								-- id
 		reloadspeed			= 5.0,
 		reloaddelay			= 40,
 
-		maxlength			= 55,							-- Length of missile. Used for ammo properties.
-		propweight			= 5,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 40,							-- Length of missile. Used for ammo properties.
+		propweight			= 1.0,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 35,							-- Armour effectiveness of casing, in mm
 								--320
@@ -483,11 +494,11 @@ ACF_defineGun("9M331 SAM", {								-- id
 		finefficiency		= 0.5,							--Fraction of speed redirected every second at max deflection
 		thrusterturnrate	= 120,							--Max turnrate from thrusters regardless of speed. Active only if the missile motor is active.
 
-		thrust				= 110,							-- Acceleration in m/s.
+		thrust				= 120,							-- Acceleration in m/s.
 		burntime			= 10,							-- time in seconds for rocket motor to burn at max proppelant.
 		startdelay			= 0,
 
-		launchkick			= 15,							-- Speed missile starts with on launch in m/s
+		launchkick			= 30,							-- Speed missile starts with on launch in m/s
 
 		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
 
@@ -501,7 +512,7 @@ ACF_defineGun("9M331 SAM", {								-- id
 		dragcoef			= 0.002,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		datalink			= true,
-		predictiondelay		= 2,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
+		predictiondelay		= 1.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		pointcost			= 353
 	},
 
@@ -519,25 +530,26 @@ ACF_defineGun("9M331 SAM", {								-- id
 
 	seekcone           = 6,									-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)
 	viewcone           = 60,									-- getting outside this cone will break the lock.  Divided by 2.
-	SeekSensitivity    = 1,
+	irccm				= false,
+	seekreduction		= 0.25,
 
 	armdelay	= 0.15,									-- minimum fuse arming delay
-	guidelay           = 0.75,									-- Required time (in seconds) for missile to start guiding at target once launched
-	ghosttime          = 0.5									-- Time where this missile will be unable to hit surfaces, in seconds
+	guidelay           = 0,									-- Required time (in seconds) for missile to start guiding at target once launched
+	ghosttime          = 0									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
 --AIM-54 phoenix. Being faster and bigger than AIM-120, can deliver a single big blast against the target, however, this 300kgs piece of aerial destruction has a serious trouble
 --with its seek cone and is suggested to AIM before launching.
 ACF_defineGun("9M38M1 SAM", {							-- id
 	name             = "9M38M1 BUK",
-	desc             = "Absolute monster of a missile. Long range yet still appreciably maneuverable. Takes a bit to get up to speed but it is a monster. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 273 m/s",
+	desc             = "Diabolically sized missile meant to bring about the end of aviation. Has a nasty amount of ECCM, an absurd warhead, and enough range to travel across some countries. Takes a bit to get up to speed but is remarkably difficult to defeat. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 273 m/s",
 	model            = "models/macc/9m38m1.mdl",
 	effect           = "ACE_MissileLarge",
 	effectbooster	 = "ACE_MissileLarge",
 	gunclass         = "SAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 220 * 2.53, --Convert to ammocrate units
-	caliber          = 40.0,
+	caliber          = 20,								--Actual is 330. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 710,								-- Don't scale down the weight though!
 	year             = 1981,
 	modeldiameter    = 32,--Already in ammocrate units
@@ -551,8 +563,8 @@ ACF_defineGun("9M38M1 SAM", {							-- id
 		reloaddelay			= 45.0,
 
 
-		maxlength			= 110,							-- Length of missile. Used for ammo properties.
-		propweight			= 40,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 111.8,							-- Length of missile. Used for ammo properties.
+		propweight			= 15,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 								--320
@@ -594,6 +606,7 @@ ACF_defineGun("9M38M1 SAM", {							-- id
 	viewcone           = 60,								-- getting outside this cone will break the lock.  Divided by 2.
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.0002,
 
 	agility            = 3,									-- multiplier for missile turn-rate.  --was 0.7
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3
@@ -611,7 +624,7 @@ ACF_defineGun("5V55 SAM", {							-- id
 	gunclass         = "SAM",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 200 * 2.53, --Convert to ammocrate units
-	caliber          = 51.4,
+	caliber          = 20,								--Actual is 514. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 1480,								-- Don't scale down the weight though!
 	year             = 1981,
 	modeldiameter    = 32,--Already in ammocrate units
@@ -625,8 +638,8 @@ ACF_defineGun("5V55 SAM", {							-- id
 		reloaddelay			= 45.0,
 
 
-		maxlength			= 110,							-- Length of missile. Used for ammo properties.
-		propweight			= 40,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 177.5,							-- Length of missile. Used for ammo properties.
+		propweight			= 20,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 
@@ -669,6 +682,7 @@ ACF_defineGun("5V55 SAM", {							-- id
 	viewcone           = 60,								-- getting outside this cone will break the lock.  Divided by 2.
 	SeekSensitivity    = 1,
 	irccm				= true,
+	seekreduction		= 0.25,
 
 	agility            = 3,									-- multiplier for missile turn-rate.  --was 0.7
 	armdelay           = 0.15,								-- minimum fuse arming delay --was 0.3

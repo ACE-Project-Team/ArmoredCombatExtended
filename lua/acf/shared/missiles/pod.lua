@@ -19,7 +19,7 @@ ACF_DefineRackClass("POD", {
 
 
 
--- MAKE SURE THE CALIBER MATCHES THE ROCKETS YOU WANT TO LOAD!
+
 ACF_DefineRack("40mm7xPOD", {
 	name		= "7x 40mm FFAR Pod",
 	desc		= "A lightweight pod for small rockets which is vulnerable to shots and explosions.",
@@ -28,7 +28,6 @@ ACF_DefineRack("40mm7xPOD", {
 	weight	= 20,
 	year		= 1940,
 	magsize	= 7,
-	caliber	= 4,
 
 	reloadmul	= 150,
 
@@ -50,7 +49,6 @@ ACF_DefineRack("40mm7xPOD", {
 
 
 
--- MAKE SURE THE CALIBER MATCHES THE ROCKETS YOU WANT TO LOAD!
 ACF_DefineRack("70mm7xPOD", {
 	name		= "7x 70mm FFAR Pod",
 	desc		= "A lightweight pod for rockets which is vulnerable to shots and explosions.",
@@ -59,7 +57,6 @@ ACF_DefineRack("70mm7xPOD", {
 	weight	= 40,
 	year		= 1940,
 	magsize	= 7,
-	caliber	= 7,
 
 	reloadmul	= 150,
 
@@ -81,7 +78,7 @@ ACF_DefineRack("70mm7xPOD", {
 
 
 
--- MAKE SURE THE CALIBER MATCHES THE ROCKETS YOU WANT TO LOAD!
+
 ACF_DefineRack("1x BGM-71E", {
 	name = "BGM-71E Single Tube",
 	desc = "A single BGM-71E round.",
@@ -90,7 +87,6 @@ ACF_DefineRack("1x BGM-71E", {
 	weight = 10,
 	year = 1970,
 	magsize = 1,
-	caliber = 13,
 
 	whitelistonly	= true,
 	protectmissile  = true,
@@ -104,7 +100,6 @@ ACF_DefineRack("1x BGM-71E", {
 
 
 
--- MAKE SURE THE CALIBER MATCHES THE ROCKETS YOU WANT TO LOAD!
 ACF_DefineRack("2x BGM-71E", {
 	name = "BGM-71E 2x Rack",
 	desc = "A BGM-71E rack designed to carry 2 rounds.",
@@ -113,7 +108,7 @@ ACF_DefineRack("2x BGM-71E", {
 	weight = 60,
 	year = 1970,
 	magsize = 2,
-	caliber = 13,
+	--caliber = 13, --Obsolete. Left here to have an example. If the missile caliber does not match this tube size precisely it won't be able to be loaded into the launcher.
 
 	whitelistonly	= true,
 	protectmissile  = true,
@@ -128,7 +123,7 @@ ACF_DefineRack("2x BGM-71E", {
 
 
 
--- MAKE SURE THE CALIBER MATCHES THE ROCKETS YOU WANT TO LOAD!
+
 ACF_DefineRack("4x BGM-71E", {
 	name = "BGM-71E 4x Rack",
 	desc = "A BGM-71E rack designed to carry 4 rounds.",
@@ -137,7 +132,6 @@ ACF_DefineRack("4x BGM-71E", {
 	weight = 100,
 	year = 1970,
 	magsize = 4,
-	caliber = 13,
 
 	whitelistonly	= true,
 	protectmissile  = true,
@@ -152,7 +146,7 @@ ACF_DefineRack("4x BGM-71E", {
 	}
 } )
 
--- MAKE SURE THE CALIBER MATCHES THE yeah yeah I know I can read the code mate whitelist only mmkay?
+
 ACF_DefineRack("380mmRW61", {
 	name		= "380mm rocket asisted mortar",
 	desc		= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions.",
@@ -161,7 +155,6 @@ ACF_DefineRack("380mmRW61", {
 	weight	= 600,
 	year		= 1945,
 	magsize	= 1,
-	caliber	= 38,
 
 	hidemissile	= false,
 	whitelistonly	= true,
@@ -236,7 +229,6 @@ ACF_DefineRack("1x FIM-92", {
 	weight = 10,
 	year = 1984,
 	magsize = 1,
-	caliber = 11,
 	protectmissile  = true,
 	hidemissile	= false,
 	whitelistonly	= true,
@@ -255,7 +247,6 @@ ACF_DefineRack("2x FIM-92", {
 	weight = 30,
 	year = 1984,
 	magsize = 2,
-	caliber = 11,
 	rofmod = 3,
 
 	protectmissile  = true,
@@ -300,7 +291,6 @@ ACF_DefineRack("1x Strela-1", {
 	weight = 10,
 	year = 1968,
 	magsize = 1,
-	caliber = 12,
 
 	protectmissile  = true,
 	hidemissile	= false,
@@ -320,8 +310,6 @@ ACF_DefineRack("2x Strela-1", {
 	weight = 30,
 	year = 1968,
 	magsize = 2,
-	caliber = 12,
-
 	protectmissile  = true,
 	hidemissile	= false,
 	whitelistonly	= true,
@@ -342,7 +330,6 @@ ACF_DefineRack("4x Strela-1", {
 	weight = 50,
 	year = 1968,
 	magsize = 4,
-	caliber = 12,
 
 	protectmissile  = true,
 	hidemissile	= false,
@@ -366,7 +353,6 @@ ACF_DefineRack("1x Ataka", {
 	weight = 10,
 	year = 1968,
 	magsize = 1,
-	caliber = 13,
 
 	protectmissile  = true,
 	hidemissile	= true,
@@ -387,7 +373,6 @@ ACF_DefineRack("1x SPG9", {
 	weight = 90,
 	year = 1968,
 	magsize = 1,
-	caliber = 7.3,
 	spread = 0.1,
 
 	protectmissile  = true,
@@ -409,7 +394,6 @@ ACF_DefineRack("1x Kornet", {
 	weight     = 30,
 	year       = 1994,
 	magsize    = 1,
-	caliber    = 15.2,
 
 	protectmissile   = true,
 	hidemissile      = true,
@@ -430,7 +414,6 @@ ACF_DefineRack("2x Kornet", {
 	weight     = 60,
 	year       = 1994,
 	magsize    = 2,
-	caliber    = 15.2,
 
 	protectmissile   = true,
 	hidemissile      = true,
@@ -452,7 +435,6 @@ ACF_DefineRack("4x Kornet", {
 	weight     = 120,
 	year       = 1994,
 	magsize    = 4,
-	caliber    = 15.2,
 
 	protectmissile   = true,
 	hidemissile      = true,
@@ -477,7 +459,6 @@ ACF_DefineRack("127mm4xPOD", {
 	weight = 100,
 	year = 1957,
 	magsize = 4,
-	caliber = 12.7,
 
 	protectmissile  = true,
 	hidemissile	= false,
@@ -502,7 +483,6 @@ ACF_DefineRack("1x 9m311", {
 	year = 1982,
 	magsize = 1,
 	armour  = 18,
-	caliber = 12,
 
 	whitelistonly   = true,
 	protectmissile  = true,
@@ -523,7 +503,6 @@ ACF_DefineRack("1x Javelin", {
 	weight = 6.4,
 	year = 1989,
 	magsize = 1,
-	caliber = 12.7,
 
 	protectmissile  = true,
 	hidemissile	= true,
@@ -544,7 +523,6 @@ ACF_DefineRack("20x S8KO", {
 	year = 1970,
 	magsize = 20,
 	armour  = 20,
-	caliber = 8,
 	whitelistonly   = true,
 	protectmissile  = true,
 	hidemissile     = false,
@@ -583,7 +561,6 @@ ACF_DefineRack("2x SRAAM", {
 	year = 1970,
 	magsize = 2,
 	armour  = 20,
-	caliber = 16.5,
 
 	mountpoints =
 	{
@@ -641,7 +618,6 @@ ACF_DefineRack("6x 9K121", {
 	year = 1984,
 	magsize = 6,
 	armour  = 20,
-	caliber = 13,
 
 	mountpoints =
 	{
@@ -663,7 +639,6 @@ ACF_DefineRack("1x 9M113", {
 	year = 1970,
 	magsize = 1,
 	armour  = 18,
-	caliber = 13.5,
 
 	whitelistonly   = true,
 	protectmissile  = true,

@@ -60,6 +60,7 @@ function this:Configure(missile)
 	self.HeatAboveAmbient = self.HeatAboveAmbient / (ACF_GetGunValue(missile.BulletData, "seeksensitivity") or 10)
 	--self.SeekSensitivity	= ACF_GetGunValue(missile.BulletData, "seeksensitivity") or this.SeekSensitivity
 	self.HasIRCCM	= ACF_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.seekReduction	= ACF_GetGunValue(missile.BulletData, "seekreduction") or 1
 
 	--print("CEent")
 	--for i, ent in ipairs(ACE.contraptionEnts) do
@@ -192,7 +193,7 @@ function this:GetWhitelistedContraptionsInCone(missile)
 		dist	= difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance then continue end
+		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 		-- skip any ent far than maximum distance
 		if dist > self.MaximumDistance then continue end
@@ -247,6 +248,11 @@ function this:AcquireLock(missile)
 	local ang		= Angle()
 	local absang		= Angle()
 	local testang	= Angle()
+
+	local SeekMul = 3 --Seeker Cone multiplier. Used for Seeker Expanded Acquisition making the missile search in a larger area if it lacks a target.
+	if self.Target then
+		SeekMul =  self.seekReduction or 1
+	end
 
 	if missile.TargetPos then
 		--print("HasTpos")
@@ -315,7 +321,8 @@ function this:AcquireLock(missile)
 
 		absang	= Angle(math.abs(ang.p),math.abs(ang.y),0) --Since I like ABS so much
 
-		if absang.p < self.SeekCone and absang.y < self.SeekCone then --Entity is within missile cone
+		local SeekExpanded = self.SeekCone*SeekMul --Expanded Seeker Angle used for searching without a target.
+		if absang.p < SeekExpanded and absang.y < SeekExpanded then --Entity is within missile cone
 
 			testang = absang.p + absang.y --Could do pythagorean stuff but meh, works 98% of time
 

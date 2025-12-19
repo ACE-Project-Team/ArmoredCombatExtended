@@ -1083,8 +1083,9 @@ do
 
 	end
 
-	acfmenupanel.CData.CaliberSelect.OnSelect = function( _ , _ , data )
-		acfmenupanel.AmmoData["Data"] = acfmenupanel.WeaponData["Guns"][data]["round"]
+	acfmenupanel.CData.CaliberSelect.OnSelect = function( _ , _ , gun )
+
+		acfmenupanel.AmmoData["Data"] = ACFEnts["Guns"][gun]["round"]
 		MainPanel:UpdateAttribs()
 		MainPanel:UpdateAttribs() --Note : this is intentional
 

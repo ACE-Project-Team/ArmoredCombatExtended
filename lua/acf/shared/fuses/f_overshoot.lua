@@ -20,8 +20,10 @@ this.Target = nil
 -- the fuse may trigger at some point under this range - unless it's travelling so fast that it steps right on through.
 this.Distance = 2000
 
+this.fuseArmed = false --Arms the fuse once it gets below the target distance. Allows missiles without memory to fuse after losing sight of the target.
 
-this.desc = "If the missile is in the set activation distance, detonates the missile when distance increases as it flys past the target.\nDistance in inches."
+
+this.desc = "Once the arming distance has been reached. Detonates when the missile loses the target which is assumed to be at the closest point.\n NOT reccomended for missiles without inertial guidance.\nDistance in inches."
 
 
 -- Configuration information for things like acfmenu.
@@ -49,16 +51,29 @@ do
 
 		if not self:IsArmed() then return false end
 
-		if (missile.IsDecoyed or false) then return false end
+		--if (missile.IsDecoyed or false) then return false end
 
 		local missilePos = missile:GetPos()
 		local missileTarget = missile.TargetPos
 
-		if not missileTarget then return false end
+		if not missileTarget then --Target Lost
+			
+			if not self.fuseArmed then
+				return false 
+			else --The fuse was armed but we lost sight of the target. Detonate.
+				return true 				
+			end
+		end
 
 		local CurDist = missileTarget:DistToSqr( missilePos )
 
-		if CurDist < self.Distance^2 and (missileTarget:DistToSqr( missilePos ) < missileTarget:DistToSqr( missilePos + missile.Flight )) then
+		if CurDist < self.Distance^2 then
+			self.fuseArmed = true
+			--print("isarmed")
+		end
+
+		if self.fuseArmed and (missileTarget:DistToSqr( missilePos ) < missileTarget:DistToSqr( missilePos + missile.Flight )) then
+			
 
 			return true
 

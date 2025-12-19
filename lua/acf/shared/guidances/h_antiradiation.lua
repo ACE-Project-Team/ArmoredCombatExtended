@@ -144,7 +144,7 @@ function this:GetWhitelistedEntsInCone(missile)
 		local dist = difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance then continue end
+		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 			local LOSdata = {}
 			LOSdata.start			= missilePos

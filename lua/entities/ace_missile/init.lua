@@ -468,6 +468,14 @@ function ENT:Think()
 			self.CanDetonate = true
 		end
 
+		--Detonation by launcher scuttle command
+		if self.Launcher.ScuttleMissiles then
+			self.CanDetonate = true
+			self:Detonate()
+			return
+		end
+
+
 		--Detonation by fuse, if available
 
 		if self.CanDetonate == true then

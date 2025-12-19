@@ -580,7 +580,7 @@ ACF_defineGun("Scaled 9M317ME SAM", {							-- id
 	gunclass         = "mNAV",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 200 * 2.53, --Convert to ammocrate units
-	caliber          = 38.0,
+	caliber          = 20,								--Actual is 380. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 1040,								-- Don't scale down the weight though!
 	year             = 1981,
 	modeldiameter    = 15,--Already in ammocrate units
@@ -594,8 +594,8 @@ ACF_defineGun("Scaled 9M317ME SAM", {							-- id
 		reloaddelay			= 45.0,
 
 
-		maxlength			= 110,							-- Length of missile. Used for ammo properties.
-		propweight			= 40,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 111.8,							-- Length of missile. Used for ammo properties.
+		propweight			= 15,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 								--320
@@ -655,7 +655,7 @@ ACF_defineGun("Scaled 5V55 SAM", {							-- id
 	gunclass         = "mNAV",
 	rack             = "1xRK",							-- Which rack to spawn this missile on?
 	length           = 200 * 2.53, --Convert to ammocrate units
-	caliber          = 51.4,
+	caliber          = 20,								--Actual is 514. Had to reduce caliber because of shell customization ratio limits preventing not having a shell smaller than 50cm and thus having a huge warhead
 	weight           = 1480,								-- Don't scale down the weight though!
 	year             = 1981,
 	modeldiameter    = 15,--Already in ammocrate units
@@ -669,8 +669,8 @@ ACF_defineGun("Scaled 5V55 SAM", {							-- id
 		reloaddelay			= 45.0,
 
 
-		maxlength			= 110,							-- Length of missile. Used for ammo properties.
-		propweight			= 40,							-- Motor mass - motor casing. Used for ammo properties.
+		maxlength			= 177.5,							-- Length of missile. Used for ammo properties.
+		propweight			= 20,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 40,							-- Armour effectiveness of casing, in mm
 

@@ -104,7 +104,7 @@ function SWEP:PrimaryAttack()
 
 	self:SendWeaponAnim(ACT_VM_PULLPIN)
 
-	self:ThrowNade(5000, -7)
+	self:ThrowNade(400, -7)  -- Was 5000, now 400 for 0.4kg grenade
 end
 
 
@@ -128,7 +128,7 @@ function SWEP:SecondaryAttack()
 	self:SendWeaponAnim( ACT_VM_PULLPIN  )
 	owner:SetAnimation( PLAYER_ATTACK1 )
 
-	self:ThrowNade(1000, -10)
+	self:ThrowNade(80, -10)  -- Was 1000, now 80 for underhand toss
 end
 
 function SWEP:Think()

@@ -63,7 +63,7 @@ ACF.RefillSpeed         = 250					-- (ACF.RefillSpeed / RoundMass) / Distance
 
 ---------------------------------- Explosive config ----------------------------------
 
-ACF.HEDamageFactor    = 50
+ACF.HEDamageFactor    = 25
 ACF.BoomMult          = 1					-- How much more do ammocrates/fueltanks blow up, useful since crates detonate all at once now.
 ACF.APAmmoDetonateFactor = 2				--Multiplier for the explosion power of AP proppelant. To make AP rounds(the most common round) less underwhelming.
 
@@ -74,8 +74,8 @@ ACF.HEFragDragFactor  = 0.2						--Lower = less drag. Higher = more. Adjust this
 ACF.HEFragRadiusMul   = 2						--Hard cap on frag radius. Multiplies HE Radius.
 ACF.HEBlastPen        = 0.4					-- Blast penetration exponent based of HE power
 ACF.HEFeatherExp      = 0.5					-- exponent applied to HE dist/maxdist feathering, <1 will increasingly bias toward max damage until sharp falloff at outer edge of range
-ACF.HEBlastPenMinPow  = 35000				--Minimum HE filler in KJ to start testing for blast penetrations. Don't even bother on something that doesn't even have 10mm of pen
-ACF.HEBlastPenetration  = 3500				--KJ per mm penetrated
+ACF.HEBlastPenMinPow  = 12000				--Minimum HE filler in KJ to start testing for blast penetrations. Don't even bother on something that doesn't even have 10mm of pen
+ACF.HEBlastPenetration  = 2000				--KJ per mm penetrated
 ACF.HEBlastPenRadiusMul  = 3				--Fraction of the HE radius to apply penetrations to. 2 is half. 4 is 1/4th.
 ACF.HEBlastPenLossAtMaxDist = 0.35				--HE penetration against targets at the max penetration distance
 ACF.HEBlastPenLossExponent = 1.5					--Exponent for pen loss. For example, with a 0.25x pen loss, 2 means 0.25^2 = 0.0625 loss. Higher means less falloff.
@@ -180,6 +180,35 @@ ACF.ArmorMod            = 1
 ACF.SlopeEffectFactor   = 1.0					-- Sloped armor effectiveness: armor / cos(angle) ^ factor
 ACF.Spalling            = 1
 ACF.SpallMult           = 1
+
+---------------------------------- HE Rework Physics Constants ----------------------------------
+
+ACF.GurneyConstant          = 2440      -- m/s for TNT (√(2E) where E ≈ 2.97 MJ/kg)
+ACF.FragAirDensity          = 1.225     -- kg/m³ at sea level
+ACF.FragDragCoef            = 1.1       -- Cd for irregular fragments
+ACF.FragDensity             = 7800      -- kg/m³ (steel)
+
+ACF.HENearFieldZone         = 0.15      -- 0-15% radius: maximum damage
+ACF.HEMidFieldZone          = 0.5       -- 15-50% radius: rapid falloff
+
+ACF.MinLethalFragVel        = 125        -- m/s minimum to cause damage
+ACF.MaxFragmentsPerEnt      = 50        -- Cap fragments hitting single entity
+
+ACF.HEDebugDuration         = 5         -- seconds for debug visualization
+ACF.HEPrintStats            = true      -- Print explosion stats to console
+
+-- Surface reflection (Mach stem effect)
+ACF.HESurfaceReflectMul     = 1.4      -- Damage multiplier for surface detonations
+ACF.HESurfaceReflectDist    = 50        -- Max distance (units) to count as surface det
+
+-- Damage tuning
+ACF.HEBlastDamageMul        = 1.0       -- Overall blast damage multiplier
+ACF.HEFragDamageMul         = 1.0       -- Overall fragment damage multiplier
+
+ACF.HEFragEffectiveVelRatio = 0.40      -- Effective range: where velocity drops to (value)
+ACF.HEFragMaxRange          = 7874      -- Absolute max fragment range in units (200m cap for performance)
+ACF.HEFragExtendedDamageMul = 0.06      -- Damage multiplier in extended range zone (beyond effective)
+ACF.MaxFragmentCount        = 2000      -- Maximum fragments per explosion (performance cap)
 
 --In case the recoil torque broke too many tanks, allows the owner to disable recoil torque. Has CVAR
 ACF.UseLegacyRecoil = 0

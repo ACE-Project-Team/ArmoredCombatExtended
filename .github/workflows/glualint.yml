@@ -3,23 +3,15 @@ name: GLuaFixer
 on:
   push:
     paths:
-    - 'lua/**'
-    - '!lua/entities/gmod_wire_expression2/**'
+      - 'lua/**'
+      - '!lua/entities/gmod_wire_expression2/**'
   pull_request:
     paths:
-    - 'lua/**'
-    - '!lua/entities/gmod_wire_expression2/**'
+      - 'lua/**'
+      - '!lua/entities/gmod_wire_expression2/**'
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Download GLuaFixer 1.26.0
-      run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.26.0/glualint-1.26.0-x86_64-linux.zip
-    - name: Extract glualint.zip
-      run: unzip glualint.zip
-    - name: Remove blacklisted folders
-      run: rm -r lua/entities/gmod_wire_expression2/
-    - name: Initiate linting
-      run: ./glualint --output-format github lint .
+  Lint:
+    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
+    with:
+      config: .glualint.json

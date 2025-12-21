@@ -34,6 +34,7 @@ function Round.convert( _, PlayerData )
 
 	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
 	Data.ProjMass		= math.max(GUIData.ProjVolume-PlayerData.Data5,0) * 7.9 / 1000 + math.min(PlayerData.Data5,GUIData.ProjVolume) * ACF.HEDensity / 1000
+	Data.FragMass = math.max(Data.ProjMass - Data.FillerMass, 0)
 	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 	local Energy			= ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local MaxVol			= ACF_RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
@@ -80,15 +81,34 @@ end
 
 function Round.getDisplayData(Data)
 	local GUIData = {}
+
 	GUIData.FuseDistance = Data.FuseDistance
-	GUIData.BombletCount = math.Round(math.Clamp(math.Round(Data.FillerMass * 2),10,160) * Data.ClusterMult / 100)
-	GUIData.AdjFillerMass = Data.FillerMass / GUIData.BombletCount
-	local AdjProjMass = Data.ProjMass / 2
-	GUIData.BlastRadius = GUIData.AdjFillerMass ^ 0.33 * 8
-	local FragMass = AdjProjMass - GUIData.AdjFillerMass
-	GUIData.Fragments = math.max(math.floor((GUIData.AdjFillerMass / FragMass) * ACF.HEFrag),2)
-	GUIData.FragMass = FragMass / GUIData.Fragments
-	GUIData.FragVel = (GUIData.AdjFillerMass * ACF.HEPower * 1000 / GUIData.FragMass / GUIData.Fragments) ^ 0.5
+
+	-- number of bomblets (same as your server logic)
+	GUIData.BombletCount = math.Round(math.Clamp(math.Round((Data.FillerMass or 0) * 2), 10, 160) * (Data.ClusterMult or 100) / 100)
+
+	-- Per-bomblet filler and casing assumptions:
+	-- Your cluster spawner sets ProjMass ~= parent.ProjMass / Bomblets / 2 for each bomblet.
+	-- So for display, approximate per-bomblet projectile mass as parent.ProjMass / (Bomblets * 2).
+	local bomblets = math.max(GUIData.BombletCount, 1)
+
+	local fillerPer = (Data.FillerMass or 0) / bomblets
+	local projPer   = (Data.ProjMass or 0) / bomblets / 2
+	local casingPer = math.max(projPer - fillerPer, 0)
+
+	GUIData.AdjFillerMass = fillerPer
+
+	local HE = ACF_GetHEDisplayData(fillerPer, casingPer)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
+	GUIData.FragArea = HE.FragArea
+	GUIData.FragEffectiveRange = HE.FragEffectiveRange
+	GUIData.FragRadius = HE.FragRadius
+
 	return GUIData
 end
 
@@ -174,6 +194,7 @@ do
 		GEnt.BulletDataC["Crate"]			= bdata.Crate
 		GEnt.BulletDataC["DragCoef"]		= bdata.DragCoef / Bomblets / 2
 		GEnt.BulletDataC["FillerMass"]	= bdata.FillerMass / Bomblets 	--nan armor ocurrs when this value is > 1
+		GEnt.BulletDataC["FragMass"] = math.max(GEnt.BulletDataC["ProjMass"] - GEnt.BulletDataC["FillerMass"], 0)
 
 		--print(GEnt.BulletDataC["FillerMass"])
 		--print(Bomblets)
@@ -262,7 +283,15 @@ do
 
 			--local ACF_HE_Math = Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass
 			--ACF_HE(ACF_HE_Math, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
-			ACF_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+
+			local sepFiller = (Bullet.FillerMass or 0) / 20
+			-- Separation charge should have small fragmentation too.
+			-- Use a small fraction of the shell casing (or even 0 if you want blast-only separation).
+			local casing = math.max((Bullet.ProjMass or 0) - (Bullet.FillerMass or 0), 0)
+			local sepFrag = casing * 0.05
+
+			ACF_HE(Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), sepFiller, sepFrag, Bullet.Owner, nil, Bullet.Gun)
+
 			local GunEnt = Bullet.Gun
 			if IsValid(GunEnt) then
 				--print("Valid")
@@ -279,7 +308,15 @@ do
 	function Round.endflight( Index, Bullet)
 		ACF_BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
 
-		ACF_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+		local sepFiller = (Bullet.FillerMass or 0) / 20
+
+		-- Separation charge should have small fragmentation too.
+		-- Use a small fraction of the shell casing (or even 0 if you want blast-only separation).
+		local casing = math.max((Bullet.ProjMass or 0) - (Bullet.FillerMass or 0), 0)
+		local sepFrag = casing * 0.05
+
+		ACF_HE(Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), sepFiller, sepFrag, Bullet.Owner, nil, Bullet.Gun)
+		
 		local GunEnt = Bullet.Gun
 		if IsValid(GunEnt) then
 			--print("Valid")

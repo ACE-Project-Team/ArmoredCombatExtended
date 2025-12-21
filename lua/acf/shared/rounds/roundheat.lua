@@ -99,6 +99,7 @@ function Round.convert( _, PlayerData )
 	Data.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 
 	Data.CasingMass = Data.ProjMass - Data.FillerMass - ConeVol * 7.9 / 1000
+	Data.FragMass = math.max(Data.CasingMass, 0)
 
 	--Random bullshit left
 	Data.ShovePower = 0.1
@@ -129,17 +130,31 @@ end
 
 
 function Round.getDisplayData(Data)
-	local GUIData	= {}
+	local GUIData = {}
 
-	local SlugEnergy	= ACF_Kinetic( Data.SlugMV * 39.37 , Data.SlugMass, 999999 )
-
+	-- Jet / slug pen
+	local SlugEnergy = ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999)
 	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
-	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
-	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
-	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
-	GUIData.FragVel = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass / GUIData.Fragments) ^ 0.5
 
-	--print("Max pen here is:" .. GUIData.MaxPen)
+	-- Explosion + fragments (use the same model as sv_acfdamage.lua)
+	local filler = tonumber(Data.BoomFillerMass) or ((tonumber(Data.FillerMass) or 0) / 3)
+	local casing = tonumber(Data.FragMass) or tonumber(Data.CasingMass) or 0
+
+	local HE = ACF_GetHEDisplayData(filler, casing)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
+	GUIData.FragArea = HE.FragArea
+	GUIData.Power = HE.Power
+	GUIData.CanBlastPen = HE.CanBlastPen
+	GUIData.BlastPen = HE.BlastPen
+	GUIData.BlastPenRadius = HE.BlastPenRadius
+	GUIData.FragEffectiveRange = HE.FragEffectiveRange
+	GUIData.FragRadius = HE.FragRadius
+
 	return GUIData
 end
 
@@ -183,7 +198,10 @@ end
 
 function Round.detonate( _, Bullet, HitPos, HitNormal )
 
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, nil, Bullet.Gun )
+	Bullet.CasingMass = tonumber(Bullet.CasingMass) or 0
+	Bullet.FragMass   = tonumber(Bullet.FragMass) or Bullet.CasingMass
+
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass, Bullet.FragMass, Bullet.Owner, nil, Bullet.Gun)
 
 	Bullet.Detonated		= true
 	Bullet.InitTime		= SysTime()
@@ -285,7 +303,12 @@ end
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
 
 	if not Bullet.Detonated then
-		ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
+		-- If it never fused, treat it as a normal shaped-charge round impacting without forming the jet:
+		-- use BoomFillerMass for blast and CasingMass for fragments.
+		local filler = tonumber(Bullet.BoomFillerMass) or ((tonumber(Bullet.FillerMass) or 0) / 3)
+		local casing = tonumber(Bullet.FragMass) or tonumber(Bullet.CasingMass) or 0
+
+		ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, filler, casing, Bullet.Owner, nil, Bullet.Gun)
 	end
 
 	ACF_RemoveBullet( Index )

@@ -46,6 +46,7 @@ function Round.convert( _, PlayerData )
 	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity / 1000
 
 	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 7.9 / 1000 + Data.FillerMass
+	Data.FragMass = math.max(Data.ProjMass - Data.FillerMass, 0)
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 
 	--Random bullshit left
@@ -75,12 +76,20 @@ end
 
 function Round.getDisplayData(Data)
 	local GUIData = {}
-	GUIData.BlastRadius = (Data.FillerMass * 0.7) ^ 0.33 * 8
-	local FragMass = Data.ProjMass - Data.FillerMass
-	GUIData.Fragments = math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
-	GUIData.FragMass = FragMass / GUIData.Fragments
-	GUIData.FragVel = (Data.FillerMass * ACF.HEPower * 1000 / GUIData.FragMass / GUIData.Fragments) ^ 0.5
-	GUIData.MaxPen = Data.FillerMass / 300 * ACF.HEPower
+
+	local fillerUsed = (Data.FillerMass or 0) * 0.7
+	local casingMass = Data.FragMass or math.max((Data.ProjMass or 0) - (Data.FillerMass or 0), 0)
+
+	local HE = ACF_GetHEDisplayData(fillerUsed, casingMass)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
+	GUIData.FragArea = HE.FragArea
+	GUIData.Power = HE.Power
+	GUIData.MaxPen = fillerUsed / 300 * ACF.HEPower
 
 	return GUIData
 end
@@ -161,7 +170,13 @@ end
 
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
 
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass * 0.7, Bullet.ProjMass - Bullet.FillerMass * 0.7, Bullet.Owner, nil, Bullet.Gun )
+	local fillerUsed = (Bullet.FillerMass or 0) * 0.7
+	Bullet.FragMass = Bullet.FragMass or math.max((Bullet.ProjMass or 0) - (Bullet.FillerMass or 0), 0)
+
+	-- Optional: reduce fragmentation strength for HESH
+	local fragUsed = Bullet.FragMass -- or: Bullet.FragMass * 0.7
+
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, fillerUsed, fragUsed, Bullet.Owner, nil, Bullet.Gun)
 	ACF_RemoveBullet( Index )
 
 end

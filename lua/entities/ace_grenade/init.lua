@@ -14,7 +14,7 @@ function ENT:Initialize()
 
 
 	local phys = self:GetPhysicsObject()
-	phys:SetMass(5) --4.1 kg mine, round down.
+	phys:SetMass(0.4) -- 400g grenade (realistic M67 weight)
 
 	self.FuseTime = 4
 	self.phys = phys
@@ -34,26 +34,27 @@ end
 function ENT:Think()
 
 	local curtime = CurTime()
-	self.FuseTime = self.FuseTime-(curtime-self.LastTime)
+	self.FuseTime = self.FuseTime - (curtime - self.LastTime)
 	self.LastTime = CurTime()
 
 	if self.FuseTime < 0 then
 
-		--0.21 ~5m
-
 		self:Remove()
-		--Originally 4
-		local HEWeight =  4
+
+		-- Realistic M67 frag grenade values
+		-- HE Filler: ~180g (0.18 kg) of Composition B
+		-- Casing: ~180g (0.18 kg) of steel (becomes fragments)
+		local HEWeight   = 0.18  -- kg of explosive filler
+		local FragWeight = 0.18  -- kg of steel casing (fragments)
+
 		local Radius = HEWeight ^ 0.33 * 8 * 39.37
 
-		--print(Radius/39.37)
-
-		ACF_HE( self:GetPos() + Vector(0,0,8) , Vector(0,0,1) , HEWeight , HEWeight * 0.5 , self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
+		ACF_HE( self:GetPos() + Vector(0,0,8), Vector(0,0,1), HEWeight, FragWeight, self.DamageOwner, nil, self)
 
 		local Flash = EffectData()
-		Flash:SetOrigin( self:GetPos() + Vector(0,0,8) )
-		Flash:SetNormal( Vector(0,0,-1) )
-		Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
+			Flash:SetOrigin( self:GetPos() + Vector(0,0,8) )
+			Flash:SetNormal( Vector(0,0,-1) )
+			Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1), 2) )
 		util.Effect( "ACF_Scaled_Explosion", Flash )
 	end
 end

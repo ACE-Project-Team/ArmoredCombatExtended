@@ -1,5 +1,7 @@
-
 AddCSLuaFile()
+
+ACF.AmmoBlacklist.GLATGM = { "AC", "HMG", "MG", "RAC", "SAM", "AAM", "ASM", "BOMB", "FFAR", "UAR", "GBU", "GL", "SL", "FGL" , "ATR", "ECM", "ARTY", "ATGM", "SA","NAV","mNAV" }
+
 
 local Round = {}
 
@@ -28,11 +30,16 @@ function Round.create( Gun, BulletData )
 
 	local SMul = 15 / BulletData.Caliber * BulletData.MuzzleVel / 200
 
+	-- Calculate muzzle position from gun's bounding box
+	-- This is more reliable than GetAttachment for parented entities
+	local muzzleLength = Gun:OBBMaxs().x
+	local spawnPos = Gun:GetPos() + Gun:GetForward() * (muzzleLength + 39.37)
+
 	local MDat = {
 		Owner = Gun:CPPIGetOwner(),
 		Launcher = Gun,
 
-		Pos = Gun:GetAttachment(1).Pos + Gun:GetForward() * 39.37,
+		Pos = spawnPos,
 		Ang = Gun:GetAngles(),
 
 		Mdl = mdl,
@@ -56,7 +63,7 @@ function Round.create( Gun, BulletData )
 		HasInertial = false,
 		HasDatalink = false,
 
-		ArmDelay = 0.0,
+		ArmDelay = 0.15,  -- Fixed: was 0.0
 		DelayPrediction = 0.1,
 		ArmorThickness = 15,
 
@@ -65,16 +72,14 @@ function Round.create( Gun, BulletData )
 		MotorEffect = "Rocket Motor ATGM"
 	}
 
-	local BData = table.Copy( BulletData ) --Done so we don't accidentally write to the original crate bulletdata
+	local BData = table.Copy( BulletData )
 	BData.BulletData = nil
 
 	BData.Type = "HE"
-	--BData.Id = 2	
 
 	BData.FakeCrate = ents.Create("acf_fakecrate2")
 	BData.FakeCrate:RegisterTo(BData)
 	BData.Crate = BData.FakeCrate:EntIndex()
-	--self:DeleteOnRemove(BData.FakeCrate)
 
 	GenerateMissile(MDat,BData.FakeCrate,BData)
 end
@@ -108,6 +113,8 @@ function Round.convert( _, PlayerData )
 	Data.FillerMass		= GUIData.FillerVol * ACF.HEDensity / 1000
 
 	Data.ProjMass		= math.max(GUIData.ProjVolume-GUIData.FillerVol,0) * 7.9 / 1000 + Data.FillerMass
+	Data.FragMass = math.max(Data.ProjMass - Data.FillerMass, 0)
+
 	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 
 	--Random bullshit left
@@ -137,11 +144,17 @@ end
 
 function Round.getDisplayData(Data)
 	local GUIData = {}
-	GUIData.BlastRadius = Data.FillerMass ^ 0.33 * 8
-	local FragMass = Data.ProjMass - Data.FillerMass
-	GUIData.Fragments = math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag),2)
-	GUIData.FragMass = FragMass / GUIData.Fragments
-	GUIData.FragVel = (Data.FillerMass * ACF.HEPower * 1000 / GUIData.FragMass / GUIData.Fragments) ^ 0.5
+
+	local casing = Data.FragMass or math.max(Data.ProjMass - Data.FillerMass, 0)
+	local HE = ACF_GetHEDisplayData(Data.FillerMass, casing)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
+	GUIData.FragArea = HE.FragArea
+
 	return GUIData
 end
 
@@ -199,7 +212,8 @@ function Round.worldimpact()
 end
 
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
+	Bullet.FragMass = Bullet.FragMass or math.max((Bullet.ProjMass or 0) - (Bullet.FillerMass or 0), 0)
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.FragMass, Bullet.Owner)
 	ACF_RemoveBullet( Index )
 end
 

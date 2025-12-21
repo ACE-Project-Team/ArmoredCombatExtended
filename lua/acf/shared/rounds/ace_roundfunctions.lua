@@ -43,6 +43,132 @@ do
 		return PlayerData, Data, ServerData, GUIData
 	end
 
+	--match sv_acfdamage.lua
+	function ACF_CalcFragmentCount(fillerMass, casingMass)
+		local totalMass = fillerMass + casingMass
+		
+		local avgFragMassGrams = 0.1 + totalMass * 0.3
+		avgFragMassGrams = math.Clamp(avgFragMassGrams, 0.1, 5.0)
+		
+		local baseFrags = (casingMass * 1000) / avgFragMassGrams
+		
+		local maxFrags = ACF.MaxFragmentCount or 2000
+		local cappedFrags = math.Clamp(math.floor(baseFrags), 2, maxFrags)
+		
+		return cappedFrags, math.floor(baseFrags)
+	end
+
+	function ACF_CalcGurneyFragVel(fillerMass, casingMass)
+		local cmRatio = fillerMass / math.max(casingMass, 0.001)
+		local velocity = ACF.GurneyConstant * math.sqrt(cmRatio) / math.sqrt(1 + cmRatio / 2)
+		return velocity
+	end
+
+	function ACF_CalcFragmentArea(fragMass)
+		local massGrams = fragMass * 1000
+		local areaCm2 = 0.5 * (massGrams ^ (2/3))
+		return areaCm2
+	end
+
+	function ACF_GetHEDisplayData(fillerMass, casingMass)
+		local GUIData = {}
+
+		fillerMass = tonumber(fillerMass) or 0
+		casingMass = tonumber(casingMass) or 0
+
+		-- Matches ACE_CalculateHERadius in sv_acfdamage.lua (meters)
+		GUIData.BlastRadius = fillerMass ^ 0.33 * 8
+
+		-- Fragment count
+		local fragsCapped, fragsUncapped = ACF_CalcFragmentCount(fillerMass, casingMass)
+		fragsCapped = math.max(tonumber(fragsCapped) or 0, 1)
+		fragsUncapped = math.max(tonumber(fragsUncapped) or 0, 0)
+
+		GUIData.Fragments = fragsCapped
+		GUIData.FragmentsUncapped = fragsUncapped
+
+		-- Frag mass / vel
+		GUIData.FragMass = casingMass / fragsCapped
+		GUIData.FragVel  = ACF_CalcGurneyFragVel(fillerMass, casingMass)
+		GUIData.FragArea = ACF_CalcFragmentArea(GUIData.FragMass)
+
+		-- Power
+		GUIData.Power = fillerMass * (ACF.HEPower or 0)
+
+		-- Blast penetration
+		GUIData.CanBlastPen = GUIData.Power > (ACF.HEBlastPenMinPow or math.huge)
+		if GUIData.CanBlastPen then
+			GUIData.BlastPen = GUIData.Power / (ACF.HEBlastPenetration or 1)
+			GUIData.BlastPenRadius = GUIData.BlastRadius / (ACF.HEBlastPenRadiusMul or 1)
+		else
+			GUIData.BlastPen = 0
+			GUIData.BlastPenRadius = 0
+			GUIData.FillerNeeded = ((ACF.HEBlastPenMinPow or 0) - GUIData.Power) / (ACF.HEPower or 1)
+		end
+
+		-- If no casing, treat as blast-only for display
+		if casingMass <= 0 or GUIData.FragMass <= 0 then
+			GUIData.FragEffectiveRange = GUIData.BlastRadius * 1.5
+			GUIData.FragRadius = GUIData.BlastRadius * 2.5
+			return GUIData
+		end
+
+		-- Fragment range scaling (matches your sv_acfdamage.lua approach approximately)
+		local fragDensity = tonumber(ACF.FragDensity) or 0
+		local dragCoef    = tonumber(ACF.FragDragCoef) or 0
+		local airDensity  = tonumber(ACF.FragAirDensity) or 0
+
+		if fragDensity <= 0 or dragCoef <= 0 or airDensity <= 0 then
+			GUIData.FragEffectiveRange = GUIData.BlastRadius * 1.5
+			GUIData.FragRadius = GUIData.BlastRadius * 2.5
+			return GUIData
+		end
+
+		local fragVolume = GUIData.FragMass / fragDensity
+		local fragDiameter = (fragVolume * 6 / math.pi) ^ (1/3)
+		local fragArea = math.pi * (fragDiameter / 2) ^ 2
+		if fragArea <= 0 then
+			GUIData.FragEffectiveRange = GUIData.BlastRadius * 1.5
+			GUIData.FragRadius = GUIData.BlastRadius * 2.5
+			return GUIData
+		end
+
+		local ballisticCoef = GUIData.FragMass / (dragCoef * fragArea)
+		if ballisticCoef <= 0 then
+			GUIData.FragEffectiveRange = GUIData.BlastRadius * 1.5
+			GUIData.FragRadius = GUIData.BlastRadius * 2.5
+			return GUIData
+		end
+
+		local dragConstant = airDensity / (2 * ballisticCoef)
+
+		local effectiveVelRatio = ACF.HEFragEffectiveVelRatio or 0.25
+		local targetVel = math.max(GUIData.FragVel * effectiveVelRatio, ACF.MinLethalFragVel or 0)
+
+		if GUIData.FragVel > targetVel and dragConstant > 0 then
+			local rawRange = ((GUIData.FragVel / targetVel) - 1) * 1000 / (dragConstant * GUIData.FragVel)
+			local sourceUnits = rawRange * 39.37
+
+			local chargeScale = math.Clamp(1.1 - fillerMass * 0.15, 0.50, 1.0)
+			local velBonus = math.Clamp(0.4 + GUIData.FragVel / 2500, 0.5, 1.2)
+			local combinedScale = 0.40 * chargeScale * velBonus
+
+			local scaledRange = sourceUnits * combinedScale
+			scaledRange = math.max(scaledRange, GUIData.BlastRadius * 39.37 * 1.5)
+
+			local extendedZoneMul = math.Clamp(1.4 + fillerMass * 0.2, 1.4, 1.8)
+			local maxRange = math.min(scaledRange * extendedZoneMul, (ACF.HEFragMaxRange or 7874))
+
+			GUIData.FragEffectiveRange = scaledRange / 39.37
+			GUIData.FragRadius = maxRange / 39.37
+		else
+			GUIData.FragEffectiveRange = GUIData.BlastRadius * 1.5
+			GUIData.FragRadius = GUIData.BlastRadius * 2.5
+		end
+
+		return GUIData
+	end
+
 	function ACF_RoundShellCapacity( Momentum, FrArea, Caliber, ProjLength )
 
 		local MinWall = 0.2 + ((Momentum / FrArea) ^ 0.7) / 50 --The minimal shell wall thickness required to survive firing at the current energy level

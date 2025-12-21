@@ -140,88 +140,84 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 
 end
 
-function ENT:ConsumeCrewseats() --So we died I guess. Find another poor schmuck to takeover
+function ENT:ConsumeCrewseats()
+    EmitSound(self.Sound, self:GetPos(), 50, CHAN_AUTO, 1, 75, 0, self.SoundPitch)
 
-	EmitSound(self.Sound, self:GetPos(), 50, CHAN_AUTO, 1, 75, 0, self.SoundPitch)
+    self.Legal = false
+    self.LegalIssues = "Apparently He Died"
 
-	self.Legal = false
-	self.LegalIssues = "Apparently He Died"
+    self:SetNoDraw( true )
+    self:SetNotSolid( true )
 
-	self:SetNoDraw( true )
-	self:SetNotSolid( true )
+    -- Store engine active states BEFORE marking driver as dead
+    self.PreviousEngineStates = {}
 
-	for _, Link in pairs( self.Master ) do	--Unlink itself
-		if IsValid( Link ) then
-			Link.HasDriver = false
-		end
-	end
+    for _, Link in pairs( self.Master ) do
+        if IsValid( Link ) then
+            self.PreviousEngineStates[Link] = Link.Active  -- Save state
+            Link.HasDriver = false
+        end
+    end
 
-	local ReplaceSeat = false
+    local ReplaceSeat = false
+    local ClosestDist = math.huge
 
-	local ClosestDist = math.huge
+    if next(ACE.Crewseats) then
+        local ReplaceEnt = nil
+        for _, SeatEnt in pairs(ACE.Crewseats) do
 
-	if next(ACE.Crewseats) then
-		local ReplaceEnt = nil
-		for _, SeatEnt in pairs(ACE.Crewseats) do
+            if not IsValid(SeatEnt) then continue end
+            if SeatEnt:CPPIGetOwner() ~= self:CPPIGetOwner() then continue end
 
-			if not IsValid(SeatEnt) then
-				continue
-			end
+            local Eclass = SeatEnt:GetClass()
+            if Eclass ~= "ace_crewseat_loader" then continue end
 
-			if SeatEnt:CPPIGetOwner() ~= self:CPPIGetOwner() then
-				continue
-			end
+            local sqDist = SeatEnt:GetPos():DistToSqr(self:GetPos())
+            if sqDist < 624100 and (sqDist < ClosestDist) then
+                ClosestDist = sqDist
+                ReplaceEnt = SeatEnt
+            end
+        end
 
-			local Eclass = SeatEnt:GetClass()
-			if Eclass ~= "ace_crewseat_loader" then
-				continue
-			end
-			--Range: 20m or 790. 624100 is squared.
-			local sqDist = SeatEnt:GetPos():DistToSqr(self:GetPos())
-			if sqDist < 624100 and (sqDist < ClosestDist) then
-					ClosestDist = sqDist
-					ReplaceEnt = SeatEnt
-			end
-		end
+        if IsValid(ReplaceEnt) then
+            ReplaceSeat = true
+            self.Name = ReplaceEnt.Name
+            ACF_HEKill( ReplaceEnt, VectorRand(), 0)
+        end
+    end
 
-		if IsValid(ReplaceEnt) then
-			ReplaceSeat = true --You just got promoted bud.
-			self.Name = ReplaceEnt.Name
-			ACF_HEKill( ReplaceEnt, VectorRand() , 0)
-			--print("Found one...")
-			--debugoverlay.Cross(SeatEnt:GetPos(), 10, 10, Color(255,100,0), true)
-		end
-	end
+    if ReplaceSeat then
+        local ReplaceTime = 5 + math.sqrt( ClosestDist ) / 39.37 * 1
 
-	if ReplaceSeat then
-		local ReplaceTime = 5 + math.sqrt( ClosestDist ) / 39.37 * 1 --5 seconds plus 1 second per meter
+        timer.Create( "CrewDie" .. self:GetCreationID(), ReplaceTime, 1, function()
+            if IsValid(self) then self:ResetLinks() end
+        end)
+    else
+        ACF_HEKill( self, VectorRand(), 0)
+    end
 
-		timer.Create( "CrewDie" .. self:GetCreationID(), ReplaceTime, 1, function() if IsValid(self) then self:ResetLinks() end end )
-
-	else
-		ACF_HEKill( self, VectorRand() , 0)
-	end
-
-
-	return ReplaceSeat
-
+    return ReplaceSeat
 end
 
 function ENT:ResetLinks()
+    self.ACF.Health = self.ACF.MaxHealth or 1
+    self.ACF.Armour = self.ACF.MaxArmour or 1
+    self.NextLegalCheck = 0
+    self:SetNoDraw( false )
+    self:SetNotSolid( false )
 
-	self.ACF.Health = self.ACF.MaxHealth or 1
-	self.ACF.Armour = self.ACF.MaxArmour or 1
-	self.NextLegalCheck = 0
-	self:SetNoDraw( false )
-	self:SetNotSolid( false )
+    for _, Link in pairs( self.Master ) do
+        if IsValid( Link ) then
+            table.insert( Link.CrewLink, self )
+            Link.HasDriver = true
 
-	for _, Link in pairs( self.Master ) do				--First clean the table of any invalid entities
-		if IsValid( Link ) then
-			table.insert( Link.CrewLink, self )
-			Link.HasDriver = true
+            -- Only restore engine to active if it was previously active
+            if self.PreviousEngineStates and self.PreviousEngineStates[Link] then
+                Link:TriggerInput("Active", 1)
+            end
+        end
+    end
 
-			--Need to think of a better workaround. Shooting someone's driver activates their engine?
-			Link:TriggerInput("Active",1) -- disable if not legal and active
-		end
-	end
+    -- Clean up saved states
+    self.PreviousEngineStates = nil
 end

@@ -45,6 +45,7 @@ function Round.convert( _, PlayerData )
 	GUIData.MaxFillerVol	= math.min(GUIData.ProjVolume,MaxVol * 0.9)
 	GUIData.FillerVol	= math.min(PlayerData.Data5,GUIData.MaxFillerVol)
 	Data.FillerMass		= GUIData.FillerVol * ACF.HEDensity / 1000
+	Data.FragMass = math.max(Data.ProjMass - Data.FillerMass, 0)
 
 	Data.ProjMass		= math.max(GUIData.ProjVolume-GUIData.FillerVol,0) * 7.9 / 1000 + Data.FillerMass
 	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
@@ -75,16 +76,27 @@ function Round.convert( _, PlayerData )
 end
 
 function Round.getDisplayData(Data)
+	local GUIData = {}
 
-	local GUIData	= {}
-	local Energy		= ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
-	local FragMass	= Data.ProjMass - Data.FillerMass
+	local Energy = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
+	GUIData.MaxPen = (Energy.Penetration / Data.PenArea) * ACF.KEtoRHA
 
-	GUIData.MaxPen	= (Energy.Penetration / Data.PenArea) * ACF.KEtoRHA
-	GUIData.BlastRadius = Data.FillerMass ^ 0.33 * 8
-	GUIData.Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag),2)
-	GUIData.FragMass	= FragMass / GUIData.Fragments
-	GUIData.FragVel	= (Data.FillerMass * ACF.HEPower * 1000 / GUIData.FragMass / GUIData.Fragments) ^ 0.5
+	local casingMass = Data.FragMass or math.max(Data.ProjMass - Data.FillerMass, 0)
+	local HE = ACF_GetHEDisplayData(Data.FillerMass, casingMass)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
+	GUIData.FragArea = HE.FragArea
+	GUIData.Power = HE.Power
+	GUIData.CanBlastPen = HE.CanBlastPen
+	GUIData.BlastPen = HE.BlastPen
+	GUIData.BlastPenRadius = HE.BlastPenRadius
+	GUIData.FragEffectiveRange = HE.FragEffectiveRange
+	GUIData.FragRadius = HE.FragRadius
+
 	return GUIData
 end
 
@@ -175,7 +187,8 @@ end
 
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
 
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
+	Bullet.FragMass = Bullet.FragMass or math.max((Bullet.ProjMass or 0) - (Bullet.FillerMass or 0), 0)
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.FragMass, Bullet.Owner, nil, Bullet.Gun)
 	ACF_RemoveBullet( Index )
 
 end

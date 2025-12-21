@@ -112,6 +112,7 @@ function Round.convert( _, PlayerData )
 
 
 	Data.CasingMass = Data.ProjMass - Data.FillerMass - ConeVol * 7.9 / 2000 - ConeVol2 * 7.9 / 2000
+	Data.FragMass = math.max(Data.CasingMass, 0)
 
 	--Random bullshit left
 	Data.ShovePower = 0.1
@@ -143,15 +144,22 @@ end
 function Round.getDisplayData(Data)
 	local GUIData = {}
 
-	local SlugEnergy = ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999)
+	local SlugEnergy  = ACF_Kinetic(Data.SlugMV  * 39.37, Data.SlugMass,  999999)
 	local SlugEnergy2 = ACF_Kinetic(Data.SlugMV2 * 39.37, Data.SlugMass2, 999999)
-	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+
+	GUIData.MaxPen  = (SlugEnergy.Penetration  / Data.SlugPenArea)  * ACF.KEtoRHA
 	GUIData.MaxPen2 = (SlugEnergy2.Penetration / Data.SlugPenArea2) * ACF.KEtoRHA
-	--GUIData.BlastRadius = (Data.FillerMass/2) ^ 0.33 * 5*10
-	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
-	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
-	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
-	GUIData.FragVel = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass / GUIData.Fragments) ^ 0.5
+
+	local filler = tonumber(Data.BoomFillerMass) or ((tonumber(Data.FillerMass) or 0) / 3)
+	local casing = tonumber(Data.FragMass) or tonumber(Data.CasingMass) or 0
+
+	local HE = ACF_GetHEDisplayData(filler, casing)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
 
 	return GUIData
 end
@@ -205,7 +213,8 @@ function Round.detonate( _, Bullet, HitPos, HitNormal )
 
 		Bullet.NotFirstPen = false
 
-		ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass * (1-Bullet.HEAllocation), Bullet.CasingMass, Bullet.Owner, nil, Bullet.Gun )
+		local casing = tonumber(Bullet.FragMass) or tonumber(Bullet.CasingMass) or 0
+		ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass * (1 - Bullet.HEAllocation), casing, Bullet.Owner, nil, Bullet.Gun)
 
 		Bullet.Pos			= HitPos
 		Bullet.Flight		= Bullet.Flight:GetNormalized() * Bullet.SlugMV * 39.37
@@ -228,7 +237,8 @@ function Round.detonate( _, Bullet, HitPos, HitNormal )
 
 		Bullet.NotFirstPen = false
 
-		ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass * Bullet.HEAllocation, Bullet.CasingMass, Bullet.Owner, nil, Bullet.Gun )
+		local casing = tonumber(Bullet.FragMass) or tonumber(Bullet.CasingMass) or 0
+		ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass * Bullet.HEAllocation, casing, Bullet.Owner, nil, Bullet.Gun)
 
 		Bullet.InitTime	= SysTime()
 		Bullet.Pos		= HitPos

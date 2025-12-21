@@ -30,11 +30,16 @@ function Round.create( Gun, BulletData )
 
 	local SMul = 15 / BulletData.Caliber * BulletData.MuzzleVel / 200
 
+	-- Calculate muzzle position from gun's bounding box
+	-- This is more reliable than GetAttachment for parented entities
+	local muzzleLength = Gun:OBBMaxs().x  -- Distance from center to front of model
+	local spawnPos = Gun:GetPos() + Gun:GetForward() * (muzzleLength + 39.37)
+
 	local MDat = {
 		Owner = Gun:CPPIGetOwner(),
 		Launcher = Gun,
 
-		Pos = Gun:GetAttachment(1).Pos + Gun:GetForward() * 39.37,
+		Pos = spawnPos,
 		Ang = Gun:GetAngles(),
 
 		Mdl = mdl,
@@ -58,7 +63,7 @@ function Round.create( Gun, BulletData )
 		HasInertial = false,
 		HasDatalink = false,
 
-		ArmDelay = 0.0,
+		ArmDelay = 0.15,
 		DelayPrediction = 0.1,
 		ArmorThickness = 15,
 
@@ -153,6 +158,7 @@ function Round.convert( _, PlayerData )
 	Data.SlugRicochet				=	500									--Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 
 	Data.CasingMass				= Data.ProjMass - Data.FillerMass - ConeVol * 7.9 / 1000
+	Data.FragMass = math.max(Data.CasingMass, 0)
 
 	--Random bullshit left
 	Data.ShovePower				= 0.1
@@ -186,11 +192,17 @@ function Round.getDisplayData(Data)
 
 	local SlugEnergy = ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999)
 	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
-	--GUIData.BlastRadius = (Data.FillerMass/2) ^ 0.33 * 5*10
-	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
-	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
-	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
-	GUIData.FragVel = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass / GUIData.Fragments) ^ 0.5
+
+	local filler = tonumber(Data.BoomFillerMass) or ((tonumber(Data.FillerMass) or 0) / 3)
+	local casing = tonumber(Data.FragMass) or tonumber(Data.CasingMass) or 0
+
+	local HE = ACF_GetHEDisplayData(filler, casing)
+
+	GUIData.BlastRadius = HE.BlastRadius
+	GUIData.Fragments = HE.Fragments
+	GUIData.FragmentsUncapped = HE.FragmentsUncapped
+	GUIData.FragMass = HE.FragMass
+	GUIData.FragVel = HE.FragVel
 
 	return GUIData
 end
@@ -234,7 +246,19 @@ end
 
 function Round.detonate( _, Bullet, HitPos, HitNormal )
 
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3 , HitNormal , Bullet.BoomFillerMass , Bullet.CasingMass , Bullet.Owner )
+	print("[GLATGM DEBUG] Detonating at:", HitPos)
+	print("[GLATGM DEBUG] Flight vector:", Bullet.Flight)
+	print("[GLATGM DEBUG] BoomFillerMass:", Bullet.BoomFillerMass)
+	
+	local casing = tonumber(Bullet.FragMass) or tnumber(Bullet.CasingMass) or 0
+	print("[GLATGM DEBUG] Casing mass:", casing)
+	
+	if Bullet.Gun and IsValid(Bullet.Gun) then
+		print("[GLATGM DEBUG] Gun position:", Bullet.Gun:GetPos())
+		print("[GLATGM DEBUG] Distance from gun:", HitPos:Distance(Bullet.Gun:GetPos()))
+	end
+	
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass, casing, Bullet.Owner, nil, Bullet.Gun)
 
 	Bullet.Detonated = true
 	Bullet.InitTime = SysTime()

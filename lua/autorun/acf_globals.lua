@@ -372,6 +372,8 @@ include("acf/shared/sh_ace_loader.lua")
 include("acf/shared/sh_ace_concommands.lua")
 include("acf/shared/sh_acfm_roundinject.lua")
 include("acf/shared/compatibility/cppiCompatibility.lua")
+include("acf/shared/sh_crewseat_base.lua")
+AddCSLuaFile("acf/shared/sh_crewseat_base.lua")
 AddCSLuaFile("acf/shared/compatibility/cppiCompatibility.lua")
 
 if SERVER then
@@ -382,6 +384,7 @@ if SERVER then
 	include("acf/server/sv_acfballistics.lua")
 	include("acf/server/sv_contraption.lua")
 	include("acf/server/sv_heat.lua")
+	include("acf/server/sv_crewseat_base.lua")
 	include("acf/server/sv_legality.lua")
 	include("acf/server/sv_acfpermission.lua")
 	include("acf/server/sv_contraptionlegality.lua")

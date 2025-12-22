@@ -23,6 +23,7 @@ local FuelTankSizeTable = {}
 local MuzzleFlashTable 	= {}
 
 local MobilityTable     = {}
+local Entities          = {}
 
 local GSoundData        = {}
 local ModelData         = {}
@@ -76,6 +77,10 @@ local vheat_source_base = {
 	type   = "Tools"
 }
 
+local entity_base = {
+	type   = "Entities"
+}
+
 -- add gui stuff to base classes if this is client
 -- more required stuff for the menu. Janky as fuck
 if CLIENT then
@@ -104,6 +109,9 @@ if CLIENT then
 
 	vheat_source_base.guicreate  = function( _, Table ) ACEVHeatSourceGUICreate( Table )	end or nil
 	vheat_source_base.guiupdate  = function() return end
+
+	entity_base.guicreate    = function( _, Table ) ACEEntityGUICreate( Table ) end or nil
+	entity_base.guiupdate    = function() return end
 end
 
 -- some factory functions for defining ents
@@ -115,6 +123,12 @@ function ACF_defineGunClass( id, data )
 		data.id = id
 		GunClasses[ id ] = data
 	end
+end
+
+function ACF_DefineEntity( id, data )
+	data.id = id
+	table.Inherit( data, entity_base )
+	Entities[ id ] = data
 end
 
 -- Gun definition
@@ -341,7 +355,8 @@ do
 		"fueltanks",
 		"fuses",
 		"sounds",
-		"tools"
+		"tools",
+		"entities"
 	}
 
 	for _, folder in ipairs(folders) do
@@ -372,6 +387,7 @@ ACF.Weapons.FuelTanks       = FuelTankTable
 ACF.Weapons.FuelTanksSize   = FuelTankSizeTable
 ACF.Weapons.Radars          = Radars
 ACF.Weapons.Tools           = Tools
+ACF.Weapons.Entities    = Entities
 ACE.MuzzleFlashes           = MuzzleFlashTable
 
 --Small reminder of Mobility table. Still being used in stuff like starfall/e2. This can change

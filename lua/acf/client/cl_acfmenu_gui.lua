@@ -342,6 +342,40 @@ function PANEL:Init( )
 	end
 	do
 
+	do
+	--[[==================================================
+						Entities folder
+	]]--==================================================
+
+		local entitiesNode = HomeNode:AddNode("Entities", "icon16/bricks.png")
+
+		-- Crew subfolder
+		local crewNode = entitiesNode:AddNode("Crew", "icon16/user.png")
+
+		-- Misc subfolder
+		local miscNode = entitiesNode:AddNode("Misc", "icon16/cog.png")
+
+		for _, EntityData in pairs(FinalContainer["Entities"] or {}) do
+			local targetNode
+
+			if EntityData.category == "Crew" then
+				targetNode = crewNode
+			elseif EntityData.category == "Misc" then
+				targetNode = miscNode
+			else
+				targetNode = entitiesNode
+			end
+
+			local ItemNode = targetNode:AddNode(EntityData.name or "No Name", ItemIcon2)
+			ItemNode.mytable = EntityData
+
+			function ItemNode:DoClick()
+				RunConsoleCommand("acfmenu_type", self.mytable.type)
+				acfmenupanel:UpdateDisplay(self.mytable)
+			end
+		end
+	end
+
 	--[[==================================================
 						Settings folder
 	]]--==================================================
@@ -1236,6 +1270,104 @@ function PANEL:CPanelText(Name, Desc, Font, Panel)
 	acfmenupanel["CData"][Name .. "_text"]:SetSize( acfmenupanel.CustomDisplay:GetWide(), 10 )
 	acfmenupanel["CData"][Name .. "_text"]:SizeToContentsY()
 
+end
+
+--[[=========================
+	Entity GUI (Crewseats, Wind Sensor, etc.)
+]]--=========================
+function ACEEntityGUICreate(Table)
+	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+
+	-- Model display
+	local displayModel = Table.model
+	if Table.defaultModel and ACE and ACE.CrewseatModels then
+		displayModel = ACE.CrewseatModels[Table.defaultModel] or Table.model
+	end
+
+	if displayModel then
+		acfmenupanel.CData.DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
+		acfmenupanel.CData.DisplayModel:SetModel(displayModel)
+
+		-- Adjust camera based on entity type
+		if Table.category == "Crew" then
+			-- Crewseat models - human sized, need larger window
+			acfmenupanel.CData.DisplayModel:SetCamPos(Vector(150, 150, 70))
+			acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 30))
+			acfmenupanel.CData.DisplayModel:SetFOV(18)
+			acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide() * 0.7)
+		elseif Table.ent == "ace_gforce_meter" then
+			-- Gyroscope model
+			acfmenupanel.CData.DisplayModel:SetCamPos(Vector(25, 25, 15))
+			acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 5))
+			acfmenupanel.CData.DisplayModel:SetFOV(50)
+			acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide() * 0.5)
+		elseif Table.ent == "ace_wind_sensor" then
+			-- Wind sensor - propeller model
+			acfmenupanel.CData.DisplayModel:SetCamPos(Vector(50, 50, 25))
+			acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 5))
+			acfmenupanel.CData.DisplayModel:SetFOV(35)
+			acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide() * 0.5)
+		else
+			-- Default for other entities
+			acfmenupanel.CData.DisplayModel:SetCamPos(Vector(50, 50, 40))
+			acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 10))
+			acfmenupanel.CData.DisplayModel:SetFOV(35)
+			acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide() * 0.5)
+		end
+
+		acfmenupanel.CData.DisplayModel.LayoutEntity = function() end
+		acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.DisplayModel)
+	end
+
+	-- Model selection dropdown for crewseats
+	if Table.category == "Crew" and ACE and ACE.CrewseatModelList then
+		acfmenupanel:CPanelText("ModelLabel", "\nPose Model:")
+
+		acfmenupanel.CData.ModelSelect = vgui.Create("DComboBox", acfmenupanel.CustomDisplay)
+		acfmenupanel.CData.ModelSelect:SetSize(acfmenupanel.CustomDisplay:GetWide(), 30)
+
+		for _, modelName in ipairs(ACE.CrewseatModelList) do
+			acfmenupanel.CData.ModelSelect:AddChoice(modelName, modelName)
+		end
+
+		local defaultModel = Table.defaultModel or "Sitting"
+		acfmenupanel.CData.ModelSelect:SetValue(defaultModel)
+
+		-- Set initial convar
+		RunConsoleCommand("acfmenu_entitydata", defaultModel)
+
+		acfmenupanel.CData.ModelSelect.OnSelect = function(_, _, value)
+			-- Update convar for spawning
+			RunConsoleCommand("acfmenu_entitydata", value)
+
+			-- Update preview model
+			if acfmenupanel.CData.DisplayModel and ACE.CrewseatModels and ACE.CrewseatModels[value] then
+				acfmenupanel.CData.DisplayModel:SetModel(ACE.CrewseatModels[value])
+			end
+		end
+
+		acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.ModelSelect)
+
+		-- Pose recommendation
+		if Table.ent == "ace_crewseat_loader" then
+			acfmenupanel:CPanelText("PoseRec", "Recommended: Standing - Loaders need to move around to fetch ammunition from crates. Standing allows faster movement and better reach.")
+		elseif Table.ent == "ace_crewseat_gunner" then
+			acfmenupanel:CPanelText("PoseRec", "Recommended: Sitting - Gunners need stability for accurate aiming. A seated position provides better support and reduces fatigue.")
+		elseif Table.ent == "ace_crewseat_driver" then
+			acfmenupanel:CPanelText("PoseRec", "Recommended: Sitting - Drivers need access to controls and good visibility. A seated position allows comfortable long-term operation.")
+		end
+	else
+		-- Clear entity data for non-crew entities
+		RunConsoleCommand("acfmenu_entitydata", "")
+	end
+
+	acfmenupanel:CPanelText("Desc", "\n" .. Table.desc)
+
+	if Table.weight then
+		acfmenupanel:CPanelText("Weight", "\nWeight: " .. Table.weight .. " kg")
+	end
+
+	acfmenupanel.CustomDisplay:PerformLayout()
 end
 
 net.Receive( "colorchatmessage", function( _, _ ) --Wooo colored chat

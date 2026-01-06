@@ -146,7 +146,7 @@ function SWEP:StartMinigame(mine)
     -- Generate sequence (no repeats)
     local sequence = {}
     local lastZone = 0
-    for i = 1, sequenceLength do
+    for _ = 1, sequenceLength do
         local zone
         repeat
             zone = math.random(1, zoneCount)

@@ -1,6 +1,6 @@
 AddCSLuaFile("shared.lua")
 SWEP.Base = "weapon_ace_base"
-
+--basic
 SWEP.PrintName     = "Mine Detector"
 SWEP.Category      = "ACE Weapons"
 SWEP.SubCategory   = "Equipment"

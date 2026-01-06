@@ -6,9 +6,9 @@ SWEP.DrawCrosshair  = true
 local DetectedMines = {}
 local LastBeepTime = 0
 local MinigameSequence = {}
-local ZoneCount = 4
+--local ZoneCount = 4
 local ZoneOrder = {1, 2, 3, 4}
-local IsUltraHardMode = false
+--local IsUltraHardMode = false
 
 local BeepSounds = {"buttons/blip1.wav", "buttons/blip2.wav"}
 
@@ -34,7 +34,7 @@ local ZoneColorsDim = {
 net.Receive("ACE_MineDetector_UpdateMines", function()
     DetectedMines = {}
     local count = net.ReadUInt(8)
-    for i = 1, count do
+    for _ = 1, count do
         table.insert(DetectedMines, {
             position = net.ReadVector(),
             distance = net.ReadFloat(),
@@ -46,7 +46,7 @@ end)
 net.Receive("ACE_MineDetector_Sequence", function()
     local length = net.ReadUInt(4)
     MinigameSequence = {}
-    for i = 1, length do
+    for _ = 1, length do
         table.insert(MinigameSequence, net.ReadUInt(4))
     end
     ZoneCount = net.ReadUInt(4)
@@ -386,7 +386,7 @@ function SWEP:DrawRadar()
 
         -- Get angle relative to player's facing direction
         local mineWorldAngle = math.deg(math.atan2(toMine.y, toMine.x))
-        local relativeAngle = mineWorldAngle - eyeYaw
+        local relativeAngle = (mineWorldAngle * -1) + eyeYaw
 
         -- Convert to radar coordinates (up is forward)
         local radarAngle = math.rad(-relativeAngle + 90)

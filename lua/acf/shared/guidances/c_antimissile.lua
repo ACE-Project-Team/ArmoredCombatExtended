@@ -151,7 +151,7 @@ function this:AcquireLock(missile)
 	local missilePos = missile:GetPos()
 
 	local bestAng = math.huge
-	local bestCount = math.huge
+	--local bestCount = math.huge
 	local bestent = nil
 
 
@@ -199,8 +199,8 @@ function this:AcquireLock(missile)
 					break
 
 			end
-				
-			
+
+
 
 		end
 	end

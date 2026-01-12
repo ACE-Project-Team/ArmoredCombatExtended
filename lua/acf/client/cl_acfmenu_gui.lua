@@ -326,8 +326,8 @@ function PANEL:Init( )
 	end
 	do
 	--[[==================================================
-                        Tools folder
-    ]]--==================================================
+						Tools folder
+	]]--==================================================
 
 	local toolsNode	= HomeNode:AddNode("Tools" , "icon16/plugin.png") --Tools folder name
 
@@ -1282,47 +1282,47 @@ end
 	- Spawning still uses the 3 existing entities (Driver/Gunner/Loader), so no builds/dupes break.
 ]]--=========================
 function ACFCrewMenuGUICreate(Table)
-    -- Enable scrolling for this page
-    if acfmenupanel.CustomDisplay and acfmenupanel.CustomDisplay.EnableVerticalScrollbar then
-        acfmenupanel.CustomDisplay:EnableVerticalScrollbar(true)
-    end
+	-- Enable scrolling for this page
+	if acfmenupanel.CustomDisplay and acfmenupanel.CustomDisplay.EnableVerticalScrollbar then
+		acfmenupanel.CustomDisplay:EnableVerticalScrollbar(true)
+	end
 
-    local CrewDefs = (ACF and ACF.Weapons and ACF.Weapons.Crewseats) or {}
-    if table.IsEmpty(CrewDefs) then
-        acfmenupanel:CPanelText("CrewMissing", "No crewseat definitions loaded (ACF.Weapons.Crewseats is empty).")
-        acfmenupanel.CustomDisplay:PerformLayout()
-        return
-    end
+	local CrewDefs = (ACF and ACF.Weapons and ACF.Weapons.Crewseats) or {}
+	if table.IsEmpty(CrewDefs) then
+		acfmenupanel:CPanelText("CrewMissing", "No crewseat definitions loaded (ACF.Weapons.Crewseats is empty).")
+		acfmenupanel.CustomDisplay:PerformLayout()
+		return
+	end
 
-    local RoleToId = {
-        Driver = "Crewseat_Driver",
-        Gunner = "Crewseat_Gunner",
-        Loader = "Crewseat_Loader",
-    }
+	local RoleToId = {
+		Driver = "Crewseat_Driver",
+		Gunner = "Crewseat_Gunner",
+		Loader = "Crewseat_Loader",
+	}
 
-    local function GetRoleFromId(id)
-        if id == RoleToId.Gunner then return "Gunner" end
-        if id == RoleToId.Loader then return "Loader" end
-        return "Driver"
-    end
+	local function GetRoleFromId(id)
+		if id == RoleToId.Gunner then return "Gunner" end
+		if id == RoleToId.Loader then return "Loader" end
+		return "Driver"
+	end
 
-    local function GetDefaultPoseForId(id)
-        local def = CrewDefs[id]
-        return (def and def.defaultModel) or "Sitting"
-    end
+	local function GetDefaultPoseForId(id)
+		local def = CrewDefs[id]
+		return (def and def.defaultModel) or "Sitting"
+	end
 
-    local function GetModelFor(id, pose)
-        local def = CrewDefs[id]
-        if not def then return nil end
+	local function GetModelFor(id, pose)
+		local def = CrewDefs[id]
+		if not def then return nil end
 
-        if ACE and ACE.CrewseatModels and pose and ACE.CrewseatModels[pose] then
-            return ACE.CrewseatModels[pose]
-        end
+		if ACE and ACE.CrewseatModels and pose and ACE.CrewseatModels[pose] then
+			return ACE.CrewseatModels[pose]
+		end
 
-        return def.model
-    end
+		return def.model
+	end
 
-    -- Camera presets per pose type
+	-- Camera presets per pose type
 	local CameraPresets = {
 		-- Standing poses
 		Standing = {
@@ -1338,139 +1338,139 @@ function ACFCrewMenuGUICreate(Table)
 		},
 	}
 
-    -- Default fallback
-    CameraPresets.Default = CameraPresets.Sitting
+	-- Default fallback
+	CameraPresets.Default = CameraPresets.Sitting
 
-    local function GetCameraForPose(poseName)
-        -- Check if it's a standing pose
-        if ACE_IsStandingPose and ACE_IsStandingPose(poseName) then
-            return CameraPresets.Standing
-        end
+	local function GetCameraForPose(poseName)
+		-- Check if it's a standing pose
+		if ACE_IsStandingPose and ACE_IsStandingPose(poseName) then
+			return CameraPresets.Standing
+		end
 
-        -- Manual check if function doesn't exist
-        if poseName and string.find(string.lower(poseName), "stand") then
-            return CameraPresets.Standing
-        end
+		-- Manual check if function doesn't exist
+		if poseName and string.find(string.lower(poseName), "stand") then
+			return CameraPresets.Standing
+		end
 
-        return CameraPresets.Sitting
-    end
+		return CameraPresets.Sitting
+	end
 
-    RunConsoleCommand("acfmenu_type", "Crewseats")
+	RunConsoleCommand("acfmenu_type", "Crewseats")
 
-    local currentId = (Table and Table.id) or RoleToId.Driver
-    if not CrewDefs[currentId] then currentId = RoleToId.Driver end
+	local currentId = (Table and Table.id) or RoleToId.Driver
+	if not CrewDefs[currentId] then currentId = RoleToId.Driver end
 
-    local currentPose = GetDefaultPoseForId(currentId)
+	local currentPose = GetDefaultPoseForId(currentId)
 
-    RunConsoleCommand("acfmenu_id", currentId)
-    RunConsoleCommand("acfmenu_entitydata", currentPose)
+	RunConsoleCommand("acfmenu_id", currentId)
+	RunConsoleCommand("acfmenu_entitydata", currentPose)
 
-    -- Header
-    acfmenupanel:CPanelText("Crew_Title", "Crew", "DermaDefaultBold")
+	-- Header
+	acfmenupanel:CPanelText("Crew_Title", "Crew", "DermaDefaultBold")
 
-    -- Role dropdown
-    acfmenupanel:CPanelText("Crew_RoleLabel", "\nRole:")
+	-- Role dropdown
+	acfmenupanel:CPanelText("Crew_RoleLabel", "\nRole:")
 
-    local RoleSelect = vgui.Create("DComboBox", acfmenupanel.CustomDisplay)
-    RoleSelect:SetSize(acfmenupanel.CustomDisplay:GetWide(), 30)
-    RoleSelect:AddChoice("Driver")
-    RoleSelect:AddChoice("Gunner")
-    RoleSelect:AddChoice("Loader")
-    RoleSelect:SetValue(GetRoleFromId(currentId))
-    acfmenupanel.CustomDisplay:AddItem(RoleSelect)
+	local RoleSelect = vgui.Create("DComboBox", acfmenupanel.CustomDisplay)
+	RoleSelect:SetSize(acfmenupanel.CustomDisplay:GetWide(), 30)
+	RoleSelect:AddChoice("Driver")
+	RoleSelect:AddChoice("Gunner")
+	RoleSelect:AddChoice("Loader")
+	RoleSelect:SetValue(GetRoleFromId(currentId))
+	acfmenupanel.CustomDisplay:AddItem(RoleSelect)
 
-    -- Pose dropdown
-    acfmenupanel:CPanelText("Crew_PoseLabel", "\nPose Model:")
+	-- Pose dropdown
+	acfmenupanel:CPanelText("Crew_PoseLabel", "\nPose Model:")
 
-    local PoseSelect = vgui.Create("DComboBox", acfmenupanel.CustomDisplay)
-    PoseSelect:SetSize(acfmenupanel.CustomDisplay:GetWide(), 30)
+	local PoseSelect = vgui.Create("DComboBox", acfmenupanel.CustomDisplay)
+	PoseSelect:SetSize(acfmenupanel.CustomDisplay:GetWide(), 30)
 
-    if ACE and ACE.CrewseatModelList then
-        for _, modelName in ipairs(ACE.CrewseatModelList) do
-            PoseSelect:AddChoice(modelName, modelName)
-        end
-    end
+	if ACE and ACE.CrewseatModelList then
+		for _, modelName in ipairs(ACE.CrewseatModelList) do
+			PoseSelect:AddChoice(modelName, modelName)
+		end
+	end
 
-    PoseSelect:SetValue(currentPose)
-    acfmenupanel.CustomDisplay:AddItem(PoseSelect)
+	PoseSelect:SetValue(currentPose)
+	acfmenupanel.CustomDisplay:AddItem(PoseSelect)
 
-    -- Model preview
-    local DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
-    DisplayModel:SetSize(acfmenupanel.CustomDisplay:GetWide(), acfmenupanel.CustomDisplay:GetWide() * 0.75)
-    DisplayModel.LayoutEntity = function() end
-    acfmenupanel.CustomDisplay:AddItem(DisplayModel)
+	-- Model preview
+	local DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
+	DisplayModel:SetSize(acfmenupanel.CustomDisplay:GetWide(), acfmenupanel.CustomDisplay:GetWide() * 0.75)
+	DisplayModel.LayoutEntity = function() end
+	acfmenupanel.CustomDisplay:AddItem(DisplayModel)
 
-    -- Description label
-    local DescLabel = vgui.Create("DLabel")
-    DescLabel:SetDark(true)
-    DescLabel:SetWrap(true)
-    DescLabel:SetAutoStretchVertical(true)
-    DescLabel:SetText("")
-    DescLabel:SetSize(acfmenupanel.CustomDisplay:GetWide() - 10, 20)
-    DescLabel:SetContentAlignment(7)
-    acfmenupanel.CustomDisplay:AddItem(DescLabel)
+	-- Description label
+	local DescLabel = vgui.Create("DLabel")
+	DescLabel:SetDark(true)
+	DescLabel:SetWrap(true)
+	DescLabel:SetAutoStretchVertical(true)
+	DescLabel:SetText("")
+	DescLabel:SetSize(acfmenupanel.CustomDisplay:GetWide() - 10, 20)
+	DescLabel:SetContentAlignment(7)
+	acfmenupanel.CustomDisplay:AddItem(DescLabel)
 
-    -- Spacer
-    local Spacer = vgui.Create("DPanel")
-    Spacer:SetSize(acfmenupanel.CustomDisplay:GetWide(), 8)
-    Spacer:SetPaintBackground(false)
-    acfmenupanel.CustomDisplay:AddItem(Spacer)
+	-- Spacer
+	local Spacer = vgui.Create("DPanel")
+	Spacer:SetSize(acfmenupanel.CustomDisplay:GetWide(), 8)
+	Spacer:SetPaintBackground(false)
+	acfmenupanel.CustomDisplay:AddItem(Spacer)
 
-    -- Weight label
-    local WeightLabel = vgui.Create("DLabel")
-    WeightLabel:SetDark(true)
-    WeightLabel:SetText("")
-    WeightLabel:SetSize(acfmenupanel.CustomDisplay:GetWide(), 20)
-    acfmenupanel.CustomDisplay:AddItem(WeightLabel)
+	-- Weight label
+	local WeightLabel = vgui.Create("DLabel")
+	WeightLabel:SetDark(true)
+	WeightLabel:SetText("")
+	WeightLabel:SetSize(acfmenupanel.CustomDisplay:GetWide(), 20)
+	acfmenupanel.CustomDisplay:AddItem(WeightLabel)
 
-    local function Refresh()
-        local def = CrewDefs[currentId]
-        if not def then return end
+	local function Refresh()
+		local def = CrewDefs[currentId]
+		if not def then return end
 
-        local mdl = GetModelFor(currentId, currentPose) or def.model
-        if mdl then
-            DisplayModel:SetModel(mdl)
+		local mdl = GetModelFor(currentId, currentPose) or def.model
+		if mdl then
+			DisplayModel:SetModel(mdl)
 
-            -- Apply pose-specific camera settings
-            local cam = GetCameraForPose(currentPose)
-            DisplayModel:SetCamPos(cam.pos)
-            DisplayModel:SetLookAt(cam.lookat)
-            DisplayModel:SetFOV(cam.fov)
-        end
+			-- Apply pose-specific camera settings
+			local cam = GetCameraForPose(currentPose)
+			DisplayModel:SetCamPos(cam.pos)
+			DisplayModel:SetLookAt(cam.lookat)
+			DisplayModel:SetFOV(cam.fov)
+		end
 
-        DescLabel:SetText(def.desc or "")
-        DescLabel:SizeToContentsY()
+		DescLabel:SetText(def.desc or "")
+		DescLabel:SizeToContentsY()
 
-        if def.weight then
-            WeightLabel:SetText("Weight: " .. tostring(def.weight) .. " kg")
-        else
-            WeightLabel:SetText("")
-        end
-        WeightLabel:SizeToContentsY()
-    end
+		if def.weight then
+			WeightLabel:SetText("Weight: " .. tostring(def.weight) .. " kg")
+		else
+			WeightLabel:SetText("")
+		end
+		WeightLabel:SizeToContentsY()
+	end
 
-    Refresh()
+	Refresh()
 
-    RoleSelect.OnSelect = function(_, _, roleName)
-        currentId = RoleToId[roleName] or RoleToId.Driver
-        if not CrewDefs[currentId] then currentId = RoleToId.Driver end
+	RoleSelect.OnSelect = function(_, _, roleName)
+		currentId = RoleToId[roleName] or RoleToId.Driver
+		if not CrewDefs[currentId] then currentId = RoleToId.Driver end
 
-        currentPose = GetDefaultPoseForId(currentId)
+		currentPose = GetDefaultPoseForId(currentId)
 
-        RunConsoleCommand("acfmenu_id", currentId)
-        RunConsoleCommand("acfmenu_entitydata", currentPose)
+		RunConsoleCommand("acfmenu_id", currentId)
+		RunConsoleCommand("acfmenu_entitydata", currentPose)
 
-        PoseSelect:SetValue(currentPose)
-        Refresh()
-    end
+		PoseSelect:SetValue(currentPose)
+		Refresh()
+	end
 
-    PoseSelect.OnSelect = function(_, _, poseName)
-        currentPose = poseName or "Sitting"
-        RunConsoleCommand("acfmenu_entitydata", currentPose)
-        Refresh()
-    end
+	PoseSelect.OnSelect = function(_, _, poseName)
+		currentPose = poseName or "Sitting"
+		RunConsoleCommand("acfmenu_entitydata", currentPose)
+		Refresh()
+	end
 
-    acfmenupanel.CustomDisplay:PerformLayout()
+	acfmenupanel.CustomDisplay:PerformLayout()
 end
 
 --[[=========================

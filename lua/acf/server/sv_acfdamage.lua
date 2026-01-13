@@ -53,6 +53,7 @@ end
 local PI = math.pi
 
 --[[----------------------------------------------------------------------------
+<<<<<<< HEAD
 	HE Debug Visualization
 ------------------------------------------------------------------------------]]
 
@@ -645,10 +646,433 @@ function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun,
 		local TotalArea  = 0
 
 		for i, Tar in ipairs(FRTargets) do
+=======
+    HE Physics Calculations
+------------------------------------------------------------------------------]]
 
-			if not IsValid(Tar) then continue end
-			if Power <= 0 or Tar.Exploding then continue end
+-- Gurney equation for initial fragment velocity
+local function CalcGurneyFragVel(fillerMass, casingMass)
+    local cmRatio = fillerMass / math.max(casingMass, 0.001)
+    local velocity = ACF.GurneyConstant * math.sqrt(cmRatio) / math.sqrt(1 + cmRatio / 2)
+    return velocity
+end
 
+-- Improved quadratic drag model for fragments
+local function CalcFragVelAtDistance(v0, fragMass, distance)
+    if v0 <= 0 or distance <= 0 then return v0 end
+
+    local fragVolume = fragMass / ACF.FragDensity
+    local fragDiameter = (fragVolume * 6 / math.pi) ^ (1/3)
+    local fragArea = math.pi * (fragDiameter / 2) ^ 2
+
+    local ballisticCoef = fragMass / (ACF.FragDragCoef * fragArea)
+    local dragConstant = (ACF.FragAirDensity) / (2 * ballisticCoef)
+    local velocityDecay = 1 / (1 + dragConstant * distance * (v0 / 1000))
+    local velocity = v0 * velocityDecay
+
+    return math.max(velocity, 0)
+end
+
+-- Fragment count based on casing mass and weapon size
+local function CalcFragmentCount(fillerMass, casingMass)
+    local totalMass = fillerMass + casingMass
+
+    local avgFragMassGrams = 0.1 + totalMass * 0.3
+    avgFragMassGrams = math.Clamp(avgFragMassGrams, 0.1, 5.0)
+
+    local baseFrags = (casingMass * 1000) / avgFragMassGrams
+
+    local maxFrags = ACF.MaxFragmentCount or 2000
+    local cappedFrags = math.Clamp(math.floor(baseFrags), 2, maxFrags)
+
+    -- Return both: capped (for per-frag mass/energy) and uncapped (for hit probability)
+    return cappedFrags, math.floor(baseFrags)
+end
+
+-- Fragment area for penetration calculation
+local function CalcFragmentArea(fragMass)
+    local massGrams = fragMass * 1000
+    local areaCm2 = 0.5 * (massGrams ^ (2/3))
+    return areaCm2
+end
+
+-- Zone-based blast overpressure falloff
+local function CalcBlastFeathering(distance, maxRadius)
+    if distance >= maxRadius then return 0 end
+    if distance <= 0 then return 1 end
+
+    local ratio = distance / maxRadius
+
+    if ratio < ACF.HENearFieldZone then
+        return 1.0 - (ratio / ACF.HENearFieldZone) * 0.05
+    elseif ratio < ACF.HEMidFieldZone then
+        local midRatio = (ratio - ACF.HENearFieldZone) / (ACF.HEMidFieldZone - ACF.HENearFieldZone)
+        return 0.95 - (midRatio ^ 1.5) * 0.65
+    else
+        local farRatio = (ratio - ACF.HEMidFieldZone) / (1 - ACF.HEMidFieldZone)
+        return 0.3 * (1 - farRatio ^ 0.7)
+    end
+end
+
+-- Fragment damage feathering with extended range support
+local function CalcFragFeathering(distance, effectiveRadius, maxRadius, fillerMass)
+    if distance <= 0 then return 1 end
+    if distance >= maxRadius then return 0 end
+
+    if distance <= effectiveRadius then
+        -- Within effective range: high lethality with gradual falloff
+        -- Minimum 20% damage at edge of effective range
+        local ratio = distance / effectiveRadius
+        local falloff = (1 - ratio ^ 1.8)  -- Slightly steeper than before
+        return 0.20 + 0.80 * falloff
+    else
+        -- Extended range: MUCH more aggressive falloff
+        -- Fragments at this range are tumbling, losing energy rapidly
+        local extendedRatio = (distance - effectiveRadius) / (maxRadius - effectiveRadius)
+        
+        -- Smaller charges have almost no extended effectiveness
+        local baseDamage = ACF.HEFragExtendedDamageMul or 0.06
+        local chargeScale = math.Clamp((fillerMass or 0.5) / 1.0, 0.05, 1.0)  -- Scale to 1kg reference
+        baseDamage = baseDamage * chargeScale
+        
+        -- Quadratic decay - starts at 20% (matching effective range edge), drops rapidly
+        local decay = (1 - extendedRatio) ^ 2
+        return 0.20 * decay + baseDamage * (1 - extendedRatio)
+    end
+end
+
+-- Blast penetration at distance
+local function CalcBlastPenAtDistance(power, distance, maxPenRadius)
+    if distance >= maxPenRadius then return 0 end
+
+    local maxPen = power / ACF.HEBlastPenetration
+
+    if distance < maxPenRadius * 0.2 then
+        return maxPen
+    end
+
+    local ratio = distance / maxPenRadius
+    local falloff = 1 - (ratio ^ ACF.HEBlastPenLossExponent) * ACF.HEBlastPenLossAtMaxDist
+
+    return maxPen * math.max(falloff, 0)
+end
+
+-- Check if detonation is near a surface
+local function CheckSurfaceDetonation(hitPos, hitNormal)
+    local checkDist = ACF.HESurfaceReflectDist
+    
+    -- Check downward (most common)
+    local tr = util.TraceLine({
+        start = hitPos,
+        endpos = hitPos - Vector(0, 0, checkDist),
+        mask = MASK_SOLID_BRUSHONLY
+    })
+
+    if tr.Hit then
+        local dist = tr.HitPos:Distance(hitPos)
+        if dist < checkDist then
+            return true, tr.HitNormal, dist
+        end
+    end
+
+    -- Check in all cardinal directions
+    local directions = {
+        Vector(0, 0, 1),
+        Vector(1, 0, 0),
+        Vector(-1, 0, 0),
+        Vector(0, 1, 0),
+        Vector(0, -1, 0),
+    }
+
+    for _, dir in ipairs(directions) do
+        local tr2 = util.TraceLine({
+            start = hitPos,
+            endpos = hitPos + dir * checkDist,
+            mask = MASK_SOLID_BRUSHONLY
+        })
+
+        if tr2.Hit then
+            local dist = tr2.HitPos:Distance(hitPos)
+            if dist < checkDist then
+                return true, tr2.HitNormal, dist
+            end
+        end
+    end
+
+    if hitNormal and hitNormal:Length() > 0 then
+        local backTrace = util.TraceLine({
+            start = hitPos,
+            endpos = hitPos - hitNormal * checkDist,
+            mask = MASK_SOLID_BRUSHONLY
+        })
+
+        if backTrace.Hit then
+            local dist = backTrace.HitPos:Distance(hitPos)
+            if dist < checkDist then
+                return true, backTrace.HitNormal, dist
+            end
+        end
+    end
+
+    return false, nil, 0
+end
+
+-- Get direction name for printing
+local function GetDirectionName(vec)
+    local pitch = vec:Angle().pitch
+    local yaw = vec:Angle().yaw
+
+    local vertical = ""
+    if pitch < -30 then vertical = "Up-"
+    elseif pitch > 30 then vertical = "Down-"
+    end
+
+    local horizontal = ""
+    if yaw >= -22.5 and yaw < 22.5 then horizontal = "East"
+    elseif yaw >= 22.5 and yaw < 67.5 then horizontal = "NorthEast"
+    elseif yaw >= 67.5 and yaw < 112.5 then horizontal = "North"
+    elseif yaw >= 112.5 and yaw < 157.5 then horizontal = "NorthWest"
+    elseif yaw >= 157.5 or yaw < -157.5 then horizontal = "West"
+    elseif yaw >= -157.5 and yaw < -112.5 then horizontal = "SouthWest"
+    elseif yaw >= -112.5 and yaw < -67.5 then horizontal = "South"
+    else horizontal = "SouthEast"
+    end
+
+    return vertical .. horizontal
+end
+
+-- Calculate the effective fragment range (where fragments retain ~25% velocity)
+local function CalcFragmentEffectiveRange(fillerMass, casingMass)
+    local fragVel = CalcGurneyFragVel(fillerMass, casingMass)
+    local fragCount = CalcFragmentCount(fillerMass, casingMass)
+    local fragMass = casingMass / math.max(fragCount, 1)
+
+    local fragVolume = fragMass / ACF.FragDensity
+    local fragDiameter = (fragVolume * 6 / math.pi) ^ (1/3)
+    local fragArea = math.pi * (fragDiameter / 2) ^ 2
+    local ballisticCoef = fragMass / (ACF.FragDragCoef * fragArea)
+    local dragConstant = (ACF.FragAirDensity) / (2 * ballisticCoef)
+
+    local effectiveVelRatio = ACF.HEFragEffectiveVelRatio or 0.25
+    local targetVel = math.max(fragVel * effectiveVelRatio, ACF.MinLethalFragVel)
+
+    if fragVel <= targetVel then return 0 end
+
+    local effectiveRange = ((fragVel / targetVel) - 1) * 1000 / (dragConstant * fragVel)
+
+    -- Convert to Source units - NO CAP HERE, cap in ACF_HE
+    return effectiveRange * 39.37
+end
+
+-- Calculate the absolute maximum fragment range (where velocity = minimum lethal)
+local function CalcFragmentMaxRange(fillerMass, casingMass)
+    local fragVel = CalcGurneyFragVel(fillerMass, casingMass)
+    local fragCount = CalcFragmentCount(fillerMass, casingMass)
+    local fragMass = casingMass / math.max(fragCount, 1)
+
+    local fragVolume = fragMass / ACF.FragDensity
+    local fragDiameter = (fragVolume * 6 / math.pi) ^ (1/3)
+    local fragArea = math.pi * (fragDiameter / 2) ^ 2
+    local ballisticCoef = fragMass / (ACF.FragDragCoef * fragArea)
+    local dragConstant = (ACF.FragAirDensity) / (2 * ballisticCoef)
+
+    local minVel = ACF.MinLethalFragVel
+    if fragVel <= minVel then return 0 end
+
+    local maxRange = ((fragVel / minVel) - 1) * 1000 / (dragConstant * fragVel)
+
+    -- Convert to Source units - NO CAP HERE, cap in ACF_HE
+    return maxRange * 39.37
+end
+
+--[[----------------------------------------------------------------------------
+    ACF_HE - Main HE Explosion Handler
+------------------------------------------------------------------------------]]
+
+function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun, BlastPenMul )
+
+    local StartTime = SysTime()
+
+    local Stats = {
+        Position = Hitpos,
+        Inflictor = IsValid(Inflictor) and tostring(Inflictor) or "Unknown",
+        FillerMass = FillerMass,
+        FragMass = FragMass,
+        TargetCount = 0,
+        EntitiesHit = 0,
+        EntitiesKilled = 0,
+        CriticalEnts = 0,
+        BlastPenHits = 0,
+        Iterations = 0,
+        PowerSpent = 0,
+        TargetBreakdown = {},
+        MissedTargets = {},
+    }
+
+    local Radius = ACE_CalculateHERadius(FillerMass)
+    local Power  = FillerMass * ACF.HEPower
+
+    -- Calculate fragment properties FIRST (needed for range scaling)
+    local Fragments, FragmentsUncapped = CalcFragmentCount(FillerMass, FragMass)
+    Fragments = math.max(tonumber(Fragments) or 0, 1)
+    FragmentsUncapped = math.max(tonumber(FragmentsUncapped) or 0, 0)
+
+    local FragWeight = (tonumber(FragMass) or 0) / Fragments
+    local FragVel    = CalcGurneyFragVel(FillerMass, FragMass)
+    local FragArea   = CalcFragmentArea(FragWeight)
+
+    -- Physics-based fragment ranges (uncapped calculations)
+    local FragEffectiveRadiusRaw = CalcFragmentEffectiveRange(FillerMass, FragMass)
+    local FragMaxRadiusRaw       = CalcFragmentMaxRange(FillerMass, FragMass)
+
+    -- Store raw values for stats
+    local FragMaxRadiusRawOriginal = FragMaxRadiusRaw
+
+    -- Performance cap
+    local FragMaxCap = ACF.HEFragMaxRange or 7874  -- 200m
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- RANGE SCALING
+    -- ═══════════════════════════════════════════════════════════════════════
+
+    local BaseEffectiveness = 0.40
+    local ChargeSizeScale = math.Clamp(1.1 - FillerMass * 0.15, 0.50, 1.0)
+    local VelocityBonus = math.Clamp(0.4 + FragVel / 2500, 0.5, 1.2)
+    local CombinedScale = BaseEffectiveness * ChargeSizeScale * VelocityBonus
+
+    FragEffectiveRadiusRaw = FragEffectiveRadiusRaw * CombinedScale
+    FragMaxRadiusRaw = FragMaxRadiusRaw * CombinedScale
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- MINIMUM RANGE FLOORS
+    -- ═══════════════════════════════════════════════════════════════════════
+    local MinEffectiveRange = Radius * 1.5
+    local MinMaxRange = Radius * 2.5
+
+    FragEffectiveRadiusRaw = math.max(FragEffectiveRadiusRaw, MinEffectiveRange)
+    FragMaxRadiusRaw = math.max(FragMaxRadiusRaw, MinMaxRange)
+
+    local ExtendedZoneMul = math.Clamp(1.4 + FillerMass * 0.2, 1.4, 1.8)
+
+    local FragMaxRadius = math.min(FragMaxRadiusRaw, FragEffectiveRadiusRaw * ExtendedZoneMul, FragMaxCap)
+    local FragEffectiveRadius = math.min(FragEffectiveRadiusRaw, FragMaxRadius)
+
+    local FragRangeWasCapped = FragMaxRadiusRawOriginal > FragMaxCap or 
+                               (FragMaxRadiusRaw > FragEffectiveRadiusRaw * ExtendedZoneMul)
+
+    local FragRadius = FragMaxRadius
+
+    local MaxSphere = 4 * PI * (Radius * 2.54) ^ 2
+    local Amp       = math.min(Power / 2000, 50)
+
+    Stats.BlastRadius = Radius
+    Stats.FragRadius = FragMaxRadius
+    Stats.FragEffectiveRadius = FragEffectiveRadius
+    Stats.FragRangeWasCapped = FragRangeWasCapped
+    Stats.FragMaxRadiusRaw = FragMaxRadiusRawOriginal
+    Stats.Power = Power
+
+    local IsSurfaceDet, SurfaceNormal, SurfaceDist = CheckSurfaceDetonation(Hitpos, HitNormal)
+    local BaseSurfaceBoost = IsSurfaceDet and ACF.HESurfaceReflectMul or 1
+
+    Stats.IsSurfaceDet = IsSurfaceDet
+    Stats.SurfaceNormal = SurfaceNormal
+    Stats.SurfaceDist = SurfaceDist
+
+    Stats.Fragments = Fragments
+    Stats.FragmentsUncapped = FragmentsUncapped
+    Stats.FragWeight = FragWeight
+    Stats.FragVel = FragVel
+    Stats.FragArea = FragArea
+
+    local HEBP = Power * (BlastPenMul or 1)
+    local BlastPenRadius = 0
+    local CanBlastPen = Power > ACF.HEBlastPenMinPow
+
+    if CanBlastPen then
+        BlastPenRadius = Radius / ACF.HEBlastPenRadiusMul
+    end
+
+    Stats.CanBlastPen = CanBlastPen
+    Stats.MaxBlastPen = CanBlastPen and (HEBP / ACF.HEBlastPenetration) or 0
+    Stats.BlastPenRadius = BlastPenRadius
+    Stats.BlastPenMul = BlastPenMul
+
+    local OccFilter = istable(NoOcc) and table.Copy(NoOcc) or { NoOcc }
+    local LoopKill  = true
+
+    local FRTargets = ACF_HEFind( Hitpos, FragRadius )
+    Stats.TargetCount = #FRTargets
+
+    if CanBlastPen then
+        local RadSq = BlastPenRadius ^ 2
+        local HEPen = HEBP / ACF.HEBlastPenetration
+
+        local Blast = {
+            Penetration = HEPen
+        }
+
+        for _, ent in pairs( ACE.critEnts ) do
+            if not IsValid(ent) then continue end
+
+            local epos = ent:GetPos()
+            local SqDist = Hitpos:DistToSqr( epos )
+            if SqDist > RadSq then continue end
+
+            Stats.CriticalEnts = Stats.CriticalEnts + 1
+
+            local Dist = math.sqrt(SqDist)
+            local penAtDist = CalcBlastPenAtDistance(HEBP, Dist, BlastPenRadius)
+            penAtDist = penAtDist
+
+            local LosArmor = ACE_LOSMultiTrace(Hitpos, epos, penAtDist)
+
+            if LosArmor < penAtDist then
+                Blast.Penetration = penAtDist
+                local BlastRes = ACF_Damage( ent, Blast, 1, 0, Inflictor, 0, Gun, "Frag" )
+
+                Stats.EntitiesHit = Stats.EntitiesHit + 1
+                Stats.BlastPenHits = Stats.BlastPenHits + 1
+
+                if BlastRes and BlastRes.Kill then
+                    local Debris = ACF_HEKill( ent, VectorRand(), Power * 0.0001, Hitpos )
+                    table.insert( OccFilter, Debris )
+                    LoopKill = true
+                    Stats.EntitiesKilled = Stats.EntitiesKilled + 1
+                end
+            else
+                table.insert(Stats.MissedTargets, {
+                    Class = ent:GetClass(),
+                    Distance = Dist / 39.37,
+                    Reason = string.format("Armor blocked (%.0fmm > %.0fmm pen)", LosArmor, penAtDist)
+                })
+            end
+        end
+    end
+
+    local IterationCount = 0
+    local MaxIterations = 10
+    local TotalPowerSpent = 0
+
+    while LoopKill and Power > 0 and IterationCount < MaxIterations do
+
+        LoopKill = false
+        IterationCount = IterationCount + 1
+
+        local PowerSpent = 0
+        local Damage     = {}
+        local TotalArea  = 0
+
+        for i, Tar in ipairs(FRTargets) do
+>>>>>>> KemGus/he_rework
+
+            if not IsValid(Tar) then continue end
+            if Power <= 0 or Tar.Exploding then continue end
+
+            local Type = ACF_Check(Tar)
+            if Type then
+
+<<<<<<< HEAD
 			local Type = ACF_Check(Tar)
 			if Type then
 
@@ -820,6 +1244,175 @@ function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun,
 				continue
 			end
 
+=======
+                local TargetPos = Tar:GetPos()
+                local TargetCenter = Tar:WorldSpaceCenter()
+
+                TraceInit.start  = Hitpos
+                TraceInit.endpos = TargetCenter
+                TraceInit.filter = OccFilter
+
+                util.TraceLine( TraceInit )
+
+                if not TraceRes.Hit then
+                    local Hitat = Tar:NearestPoint( Hitpos )
+
+                    if Type == "Squishy" then
+                        local hugenumber = 99999999999
+                        local cldist = Hitpos:Distance( Hitat ) or hugenumber
+                        local Tpos
+                        local Tdis = hugenumber
+
+                        local Eyes = Tar:LookupAttachment("eyes")
+                        if Eyes then
+                            local Eyeat = Tar:GetAttachment( Eyes )
+                            if Eyeat then
+                                Tpos = Eyeat.Pos
+                                Tdis = Hitpos:Distance( Tpos ) or hugenumber
+                                if Tdis < cldist then
+                                    Hitat = Tpos
+                                    cldist = Tdis
+                                end
+                            end
+                        end
+
+                        Tpos = TargetCenter
+                        Tdis = Hitpos:Distance( Tpos ) or hugenumber
+                        if Tdis < cldist then
+                            Hitat = Tpos
+                            cldist = Tdis
+                        end
+                    end
+
+                    if Hitat == Hitpos then Hitat = TargetPos end
+
+                    TraceInit.endpos = Hitat + (Hitat - Hitpos):GetNormalized() * 100
+                    util.TraceHull( TraceInit )
+                end
+
+                if TraceRes.Hit and TraceRes.Entity == Tar then
+
+                    FRTargets[i] = NULL
+                    local Table  = {}
+
+                    Table.Ent  = Tar
+                    Table.Type = Type
+                    Table.Class = Tar:GetClass()
+
+                    if ACE.CritEnts[Tar:GetClass()] then
+                        Table.LocalHitpos = WorldToLocal(Hitpos, Angle(0,0,0), TargetPos, Tar:GetAngles())
+                        Table.IsCritical = true
+                    end
+
+                    Table.HitGroup = TraceRes.HitGroup or 0
+                    Table.HitPos   = TraceRes.HitPos or TargetCenter or TargetPos
+                    Table.Dist     = Hitpos:Distance(Table.HitPos)
+                    Table.Vec      = (Table.HitPos - Hitpos):GetNormalized()
+                    Table.Direction = Table.Vec
+
+                    local Sphere       = math.max(4 * PI * (Table.Dist * 2.54) ^ 2, 1)
+                    local AreaAdjusted = Tar.ACF.Area
+
+                    Table.Area = math.min(AreaAdjusted / Sphere, 0.5) * MaxSphere * ACF.HEFragRadiusMul
+                    table.insert(Damage, Table)
+
+                    TotalArea = TotalArea + Table.Area
+
+                end
+
+            else
+                FRTargets[i] = NULL
+                table.insert( OccFilter, Tar )
+            end
+
+        end
+
+        for _, Table in ipairs(Damage) do
+
+            local Tar       = Table.Ent
+            local TargetPos = Tar:GetPos()
+            local DistMeters = Table.Dist / 39.37
+
+            local BlastFeather = CalcBlastFeathering(Table.Dist, Radius)
+            local FRFeathering = CalcFragFeathering(Table.Dist, FragEffectiveRadius, FragMaxRadius, FillerMass)
+
+            -- Directional surface boost (Mach stem effect)
+            local DirectionalSurfaceBoost = 1
+            if IsSurfaceDet and SurfaceNormal then
+                local dirToTarget = Table.Vec
+                local dotToSurface = dirToTarget:Dot(SurfaceNormal)
+                local surfaceAlignment = 1 - math.abs(dotToSurface)
+                DirectionalSurfaceBoost = 1 + (BaseSurfaceBoost - 1) * surfaceAlignment
+            end
+
+            BlastFeather = BlastFeather * DirectionalSurfaceBoost
+
+            local targetInfo = {
+                Class = Table.Class,
+                Distance = DistMeters,
+                Direction = Table.Direction,
+                BlastFeather = BlastFeather,
+                FragFeather = FRFeathering,
+                SurfaceBoost = DirectionalSurfaceBoost,
+                Hit = false,
+                Killed = false,
+            }
+
+            local AreaFraction   = Table.Area / TotalArea
+            local PowerFraction  = Power * AreaFraction
+            local AreaAdjusted   = (Tar.ACF.Area / ACF.Threshold) * BlastFeather * ACF.HEBlastDamageMul
+            local FRAreaAdjusted = (Tar.ACF.Area / ACF.Threshold) * FRFeathering * ACF.HEFragDamageMul
+
+            if FRAreaAdjusted <= 0 then
+                table.insert(Stats.TargetBreakdown, targetInfo)
+                continue
+            end
+
+            local Blast = {
+                Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted
+            }
+
+            local BlastRes
+            local FragRes
+
+            -- Fragment velocity at distance
+            local FragVelAtDist = CalcFragVelAtDistance(FragVel, FragWeight, DistMeters)
+
+            -- =========================
+            -- REALISTIC FRAGMENT DISTRIBUTION
+            -- =========================
+            local FragHit = 0
+            if DistMeters > 0.1 then
+                local fragEffectiveAreaMul = 3
+                local targetAreaM2 = (Tar.ACF.Area / 10000) * fragEffectiveAreaMul
+                local sphereAreaM2 = 4 * PI * DistMeters ^ 2
+                local solidAngleFraction = math.min(targetAreaM2 / sphereAreaM2, 0.5)
+
+                FragHit = FragmentsUncapped * solidAngleFraction
+                FragHit = math.min(FragHit, ACF.MaxFragmentsPerEnt)
+            else
+                FragHit = math.min(Fragments * 0.15, ACF.MaxFragmentsPerEnt)
+            end
+
+            -- Probabilistic hit for fractional expected values
+            if FragHit > 0 and FragHit < 1 then
+                if math.random() < FragHit then
+                    FragHit = 1
+                else
+                    FragHit = 0
+                end
+            elseif FragHit >= 1 then
+                local variance = 0.25
+                local varianceMul = 1 + math.Rand(-variance, variance)
+                FragHit = math.max(math.floor(FragHit * varianceMul + 0.5), 1)
+
+                if math.random() < 0.05 then
+                    FragHit = math.max(math.floor(FragHit * math.Rand(0.5, 1.5) + 0.5), 1)
+                end
+            end
+
+            -- Only calculate frag KE if we actually have fragments hitting
+>>>>>>> KemGus/he_rework
 			-- Only calculate frag KE if we actually have fragments hitting
 			local FragKE = nil
 			local FragDamageArea = nil
@@ -827,7 +1420,11 @@ function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun,
 			if FragHit >= 1 and FragVelAtDist > ACF.MinLethalFragVel then
 				-- Calculate KE for a SINGLE fragment first
 				local SingleFragKE = ACF_Kinetic(FragVelAtDist * 39.37, FragWeight, 1500)
+<<<<<<< HEAD
 
+=======
+				
+>>>>>>> KemGus/he_rework
 				if Table.Type == "Squishy" then
 					-- Squishy targets: pass single fragment energy, damage function handles FragHit
 					FragKE = SingleFragKE
@@ -842,6 +1439,7 @@ function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun,
 						Momentum = SingleFragKE.Momentum * FragHit
 					}
 					FragDamageArea = FragArea * FragHit
+<<<<<<< HEAD
 				end
 			end
 
@@ -1037,6 +1635,180 @@ function ACF_HE( Hitpos, HitNormal, FillerMass, FragMass, Inflictor, NoOcc, Gun,
 		ACF_HE_DebugVisualize(Hitpos, Stats, debugTargets)
 		ACF_HE_DebugPrint(Hitpos, Stats)
 	end
+=======
+				end
+			end
+
+            -- =========================
+            -- FRAGMENT OCCLUSION CHECK
+            -- =========================
+            local FragsBlocked = false
+            local FragPenRemaining = 0
+            local NearFieldDist = Radius * 0.15
+
+            if FragKE and FragVelAtDist > ACF.MinLethalFragVel and FragHit >= 1 then
+                local shouldTrace = Table.Dist > NearFieldDist and FragHit >= 0.5
+
+                if shouldTrace then
+                    local targetPoint = Table.HitPos or TargetPos
+                    local startPoint  = Hitpos + (targetPoint - Hitpos):GetNormalized() * 1
+
+                    local FragTrace = util.TraceLine({
+                        start  = startPoint,
+                        endpos = targetPoint,
+                        filter = OccFilter,
+                        mask   = MASK_SHOT
+                    })
+
+                    if FragTrace.Hit and FragTrace.Entity ~= Tar then
+                        local BlockingEnt = FragTrace.Entity
+
+                        if FragTrace.HitWorld then
+                            FragsBlocked = true
+
+                        elseif IsValid(BlockingEnt) and ACF_Check(BlockingEnt) then
+                            local BlockerArmor = BlockingEnt.ACF.Armour or 0
+                            local FragPen = (FragKE.Penetration / math.max(FragArea * FragHit, 0.01)) * ACF.KEtoRHA
+
+                            if FragPen > BlockerArmor then
+                                local PenRatio = math.max(1 - (BlockerArmor / FragPen), 0.1)
+                                FragPenRemaining = PenRatio
+
+                                FragKE.Penetration = FragKE.Penetration * PenRatio
+                                FragKE.Kinetic = FragKE.Kinetic * PenRatio
+                            else
+                                FragsBlocked = true
+                            end
+
+                        elseif IsValid(BlockingEnt) then
+                            FragsBlocked = true
+                        end
+                    end
+                end
+            end
+
+            -- =========================
+            -- APPLY DAMAGE
+            -- =========================
+            if ACE.CritEnts[Tar:GetClass()] then
+
+                timer.Simple(0.03, function()
+                    if not IsValid(Tar) then return end
+
+                    local NewHitpos = LocalToWorld(
+                        Table.LocalHitpos + Table.LocalHitpos:GetNormalized() * 3,
+                        Angle(math.random(), math.random(), math.random()),
+                        TargetPos,
+                        Tar:GetAngles()
+                    )
+                    local NewHitat  = Tar:NearestPoint(NewHitpos)
+
+                    local Occlusion = {
+                        start = NewHitpos,
+                        endpos = NewHitat + (NewHitat - NewHitpos):GetNormalized() * 100,
+                        filter = NoOcc,
+                    }
+                    local Occ = util.TraceLine(Occlusion)
+
+                    if not Occ.Hit and NewHitpos ~= NewHitat then
+                        NewHitat = TargetPos
+                        Occlusion.endpos = NewHitat + (NewHitat - NewHitpos):GetNormalized() * 100
+                        Occ = util.TraceLine(Occlusion)
+                    end
+
+                    if not (Occ.Hit and Occ.Entity:EntIndex() ~= Tar:EntIndex())
+                        and not (not Occ.Hit and NewHitpos ~= NewHitat) then
+
+                        local localBlastRes = ACF_Damage(Tar, Blast, AreaAdjusted, 0, Inflictor, 0, Gun, "HE")
+
+                        if FragKE and FragHit >= 1 and not FragsBlocked then
+                            local localFragRes = ACF_Damage(Tar, FragKE, FragDamageArea, 0, Inflictor, Table.HitGroup, Gun, "Frag")
+
+                            if (localBlastRes and localBlastRes.Kill) or (localFragRes and localFragRes.Kill) then
+                                ACF_HEKill(Tar, (TargetPos - NewHitpos):GetNormalized(), PowerFraction, Hitpos)
+                            else
+                                ACF_KEShove(Tar, NewHitpos, (TargetPos - NewHitpos):GetNormalized(),
+                                    PowerFraction * 1 * (GetConVar("acf_hepush"):GetFloat() or 1), Inflictor)
+                            end
+                        else
+                            if localBlastRes and localBlastRes.Kill then
+                                ACF_HEKill(Tar, (TargetPos - NewHitpos):GetNormalized(), PowerFraction, Hitpos)
+                            else
+                                ACF_KEShove(Tar, NewHitpos, (TargetPos - NewHitpos):GetNormalized(),
+                                    PowerFraction * 1 * (GetConVar("acf_hepush"):GetFloat() or 1), Inflictor)
+                            end
+                        end
+                    end
+                end)
+
+                BlastRes = ACF_CalcDamage(Tar, Blast, AreaAdjusted, 0)
+                targetInfo.Hit = true
+                Stats.EntitiesHit = Stats.EntitiesHit + 1
+
+            else
+                BlastRes = ACF_Damage(Tar, Blast, AreaAdjusted, 0, Inflictor, 0, Gun, "HE")
+
+                if FragKE and FragVelAtDist > ACF.MinLethalFragVel and FragHit >= 1 and not FragsBlocked then
+                    FragRes = ACF_Damage(Tar, FragKE, FragDamageArea, 0, Inflictor, Table.HitGroup, Gun, "Frag")
+                end
+
+                targetInfo.Hit = true
+                targetInfo.FragsBlocked = FragsBlocked
+                Stats.EntitiesHit = Stats.EntitiesHit + 1
+
+                if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
+                    local Debris = ACF_HEKill(Tar, Table.Vec, PowerFraction, Hitpos)
+                    table.insert(OccFilter, Debris)
+
+                    LoopKill = true
+                    targetInfo.Killed = true
+                    Stats.EntitiesKilled = Stats.EntitiesKilled + 1
+                else
+                    ACF_KEShove(Tar, Hitpos, Table.Vec,
+                        PowerFraction * 5 * (GetConVar("acf_hepush"):GetFloat() or 1), Inflictor)
+                end
+            end
+
+            table.insert(Stats.TargetBreakdown, targetInfo)
+
+            if BlastRes and BlastRes.Loss then
+                PowerSpent = PowerSpent + PowerFraction * BlastRes.Loss / 2
+            end
+        end
+
+        TotalPowerSpent = TotalPowerSpent + PowerSpent
+        Power = math.max(Power - PowerSpent, 0)
+    end
+
+    Stats.Iterations = IterationCount
+    Stats.PowerSpent = TotalPowerSpent
+    Stats.PowerRemaining = Power
+
+    local RadiusSQ = 15 * Radius ^ 2
+    for _, Tar in ipairs(player.GetAll()) do
+        if Tar:HasGodMode() then continue end
+        local Difpos = (Tar:GetPos() - Hitpos)
+        local PlayerDist = Difpos:LengthSqr() + 0.001
+
+        if PlayerDist > RadiusSQ then continue end
+        local DifAngle = Difpos:Angle()
+        local RelAngle = (Angle(-DifAngle.pitch, DifAngle.yaw, 0)) - Tar:EyeAngles() + Angle(360, -180, 0)
+        RelAngle = Angle(math.NormalizeAngle(RelAngle.pitch), math.NormalizeAngle(RelAngle.yaw))
+        RelAngle = Angle(RelAngle.pitch > 0 and 1 or (RelAngle.pitch == 0 and 0 or -1), RelAngle.yaw > 0 and 1 or (RelAngle.yaw == 0 and 0 or -1), 0)
+
+        PlayerDist = math.max(PlayerDist, 13949)
+
+        local shakeBoost = IsSurfaceDet and BaseSurfaceBoost or 1
+
+        Tar:ViewPunch( Angle(
+            math.Clamp(RelAngle.pitch * Amp * shakeBoost * -120000 / PlayerDist * math.Rand(0.5, 1), -60, 60),
+            math.Clamp(RelAngle.yaw * Amp * shakeBoost * -100000 / PlayerDist * math.Rand(0.5, 1), -60, 60),
+            math.Clamp(RelAngle.yaw * Amp * shakeBoost * 50000 / PlayerDist * math.Rand(0.5, 1), -60, 60)
+        ))
+    end
+
+    Stats.ProcessingTime = SysTime() - StartTime
+>>>>>>> KemGus/he_rework
 
 end
 

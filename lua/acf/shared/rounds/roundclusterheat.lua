@@ -447,6 +447,17 @@ function Round.guiupdate(Panel)
 	acfmenupanel:AmmoSlider("FuseDistance", Data.FuseDistance, 500, 6000, 2, "Cluster Fuse Distance", "")
 
 	ACE_Checkboxes(Data)
+<<<<<<< HEAD
+=======
+
+	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc)
+	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm")
+	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m")
+	acfmenupanel:CPanelText("FragDisplay",
+		"Fragments : " .. Data.Fragments ..
+		"\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g" ..
+		"\n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s")
+>>>>>>> KemGus/he_rework
 
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm")

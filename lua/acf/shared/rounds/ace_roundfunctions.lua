@@ -88,7 +88,11 @@ do
 		GUIData.FragmentsUncapped = fragsUncapped
 
 		-- Frag mass / vel
+<<<<<<< HEAD
 		GUIData.FragMass = casingMass / fragsUncapped
+=======
+		GUIData.FragMass = casingMass / fragsCapped
+>>>>>>> KemGus/he_rework
 		GUIData.FragVel  = ACF_CalcGurneyFragVel(fillerMass, casingMass)
 		GUIData.FragArea = ACF_CalcFragmentArea(GUIData.FragMass)
 

@@ -88,7 +88,7 @@ do
 		GUIData.FragmentsUncapped = fragsUncapped
 
 		-- Frag mass / vel
-		GUIData.FragMass = casingMass / fragsCapped
+		GUIData.FragMass = casingMass / fragsUncapped
 		GUIData.FragVel  = ACF_CalcGurneyFragVel(fillerMass, casingMass)
 		GUIData.FragArea = ACF_CalcFragmentArea(GUIData.FragMass)
 

@@ -451,11 +451,8 @@ function Round.guiupdate(Panel)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm")
 	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m")
-	acfmenupanel:CPanelText("FragDisplay",
-		"Fragments : " .. Data.Fragments ..
-		"\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g" ..
-		"\n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s")
-
+	local fragDisplay = Data.FragmentsUncapped or Data.Fragments
+	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. fragDisplay .. "\nAverage Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \nAverage Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s")
 	acfmenupanel:CPanelText("RicoDisplay", "Max Detonation angle: " .. Data.DetonatorAngle .. "°")
 end
 

@@ -1127,9 +1127,28 @@ do
 		self.Bulletdata2.SlugPenArea2 = SlugFrArea ^ ACF.PenAreaMod
 		self.Bulletdata2.SlugDragCoef2 = ((SlugFrArea / 10000) / self.Bulletdata2.SlugMass2)
 		self.Bulletdata2.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
-		self.Bulletdata2.CasingMass = self.Bulletdata2.ProjMass - self.Bulletdata2.FillerMass - ConeVol * 7.9 / 1000
-		self.Bulletdata2.Fragments = math.max(math.floor((self.Bulletdata2.BoomFillerMass / self.Bulletdata2.CasingMass) * ACF.HEFrag), 2)
-		self.Bulletdata2.FragMass = self.Bulletdata2.CasingMass / self.Bulletdata2.Fragments
+		-- Calculate casing mass based on round type
+		local isHEAT = (self.Bulletdata2.Type == "HEAT" or self.Bulletdata2.Type == "THEAT" or 
+						self.Bulletdata2.Type == "HEATFS" or self.Bulletdata2.Type == "THEATFS")
+
+		if isHEAT then
+			-- HEAT: Subtract cone (becomes jet, not fragments)
+			self.Bulletdata2.CasingMass = math.max(self.Bulletdata2.ProjMass - self.Bulletdata2.FillerMass - ConeVol * 7.9 / 1000, 0)
+		else
+			-- HE/HESH/Other: All non-filler mass becomes fragments
+			self.Bulletdata2.CasingMass = math.max(self.Bulletdata2.ProjMass - self.Bulletdata2.FillerMass, 0)
+		end
+
+		-- Use the actual filler for HE calculations, not BoomFillerMass (which is reduced for HEAT)
+		local fillerForFragCalc = isHEAT and self.Bulletdata2.BoomFillerMass or self.Bulletdata2.FillerMass
+
+		-- Pass FragMass (total casing) to ACF_HE - it will calculate fragment count internally
+		self.Bulletdata2.FragMass = self.Bulletdata2.CasingMass
+
+		-- Legacy fragment count for display/other uses (using new formula)
+		local totalMass = fillerForFragCalc + self.Bulletdata2.CasingMass
+		local avgFragMassGrams = math.Clamp(0.1 + totalMass * 0.3, 0.1, 5.0)
+		self.Bulletdata2.Fragments = math.max(math.floor((self.Bulletdata2.CasingMass * 1000) / avgFragMassGrams), 2)
 		--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 		self.Bulletdata2.DragCoef = ((self.Bulletdata2.FrArea / 10000) / self.Bulletdata2.ProjMass)
 		--print(self.BulletData.SlugDragCoef)

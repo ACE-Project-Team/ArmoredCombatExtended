@@ -192,7 +192,6 @@ ACF.HENearFieldZone         = 0.15      -- 0-15% radius: maximum damage
 ACF.HEMidFieldZone          = 0.5       -- 15-50% radius: rapid falloff
 
 ACF.MinLethalFragVel        = 125        -- m/s minimum to cause damage
-ACF.MaxFragmentsPerEnt      = 50        -- Cap fragments hitting single entity
 
 ACF.HEDebugDuration         = 5         -- seconds for debug visualization
 ACF.HEPrintStats            = true      -- Print explosion stats to console
@@ -208,7 +207,27 @@ ACF.HEFragDamageMul         = 1.0       -- Overall fragment damage multiplier
 ACF.HEFragEffectiveVelRatio = 0.40      -- Effective range: where velocity drops to (value)
 ACF.HEFragMaxRange          = 7874      -- Absolute max fragment range in units (200m cap for performance)
 ACF.HEFragExtendedDamageMul = 0.06      -- Damage multiplier in extended range zone (beyond effective)
-ACF.MaxFragmentCount        = 2000      -- Maximum fragments per explosion (performance cap)
+ACF.MaxFragmentCount        = 2000      -- Performance cap: limits traces per explosion for fragments.
+ACF.HEDebugEnabled          = true     -- Set true to visualize explosions
+ACF.HEDebugDuration         = 5         -- Seconds to show debug visuals
+---------------------------------- HE Blast Impulse Physics ----------------------------------
+
+-- Hopkinson-Cranz scaling for realistic blast impulse
+-- Based on empirical TNT detonation data
+
+ACE.BlastHopkinsonK         = 84        -- bar·m/kg^(1/3) - scaling constant for TNT
+ACE.BlastTNTEquivalent      = 1.0       -- Filler to TNT equivalence (1.0 = same as TNT)
+ACE.BlastImpulseMul         = 1.0       -- Master tuning multiplier (adjust if too weak/strong)
+ACE.BlastMaxOverpressure    = 5000000   -- Pa (50 bar) - cap for point-blank detonations
+ACE.BlastPositivePhaseMul   = 0.0018    -- Positive phase duration: seconds per kg^(1/3)
+ACE.BlastWaveformFactor     = 0.4       -- Friedlander waveform integral approximation
+-- Specific impulse model: i(Z)=i1/Z^n  (i in Pa*s, Z in m/kg^(1/3))
+ACE.BlastImpulse_i1    = 160   -- Pa*s at Z=1 (order-of-magnitude TNT-ish)
+ACE.BlastImpulse_n     = 2.0
+ACE.BlastImpulse_ZMin  = 1  -- avoids singularity at extreme near-field
+-- Debug printing for shove (separate from visual debug)
+ACE.BlastDebug         = true
+ACE.BlastDebugMinForce = 1000  -- only print if force exceeds this
 
 --In case the recoil torque broke too many tanks, allows the owner to disable recoil torque. Has CVAR
 ACF.UseLegacyRecoil = 0

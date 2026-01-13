@@ -437,9 +437,10 @@ function Round.guiupdate( Panel )
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.VelScale) .. " m/s") --Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m") --Proj muzzle velocity (Name, Desc)
-	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\nAverage Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \nAverage Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
-
+	local fragDisplay = Data.FragmentsUncapped or Data.Fragments
+	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. fragDisplay .. "\nAverage Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \nAverage Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s")
 	--print("Ammo Pen in menu:" .. Data.MaxPen)
+
 	---------------------------Chance of Ricochet table----------------------------
 
 	acfmenupanel:CPanelText("RicoDisplay", "Max Detonation angle: " .. Data.DetonatorAngle .. "°")

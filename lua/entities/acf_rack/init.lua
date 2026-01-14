@@ -1295,7 +1295,8 @@ do
 	function CalculateMissileCost(BulletData) --Used for both the missiles on the rack and the ammo entities
 		local Pts = ACF_GetRackValue(BulletData, "pointcost") or ACF_GetGunValue(BulletData.Id, "pointcost") or 0.9
 		local Guid = BulletData.Data7 or "Dumb"
-		Pts = Pts * MissileGuidanceFactors[Guid] or 0
+		local factor = MissileGuidanceFactors[Guid] or MissileGuidanceFactors.Dumb or 1
+		Pts = Pts * factor
 		return Pts
 
 	end

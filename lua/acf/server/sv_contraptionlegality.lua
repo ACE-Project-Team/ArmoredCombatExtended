@@ -1,5 +1,16 @@
 
 
+ACE = ACE or {}
+
+local ArmorClasses = {
+	prop_physics = true,
+	primitive_shape = true,
+	primitive_airfoil = true,
+	primitive_rail_slider = true,
+	primitive_slider = true,
+	primitive_ladder = true
+}
+
 function ACE_DoContraptionLegalCheck(CheckEnt) --In the future could allow true/false to stop the vehicle from working.
 
 	CheckEnt.CanLegalCheck = CheckEnt.CanLegalCheck or false
@@ -11,13 +22,51 @@ function ACE_DoContraptionLegalCheck(CheckEnt) --In the future could allow true/
 	local Contraption = CheckEnt:GetContraption() or {}
 	if table.IsEmpty(Contraption) then return end
 
-	-- Recompute armor points on-demand when performing a legality check.
-	if ACE_EnsureArmor then
-		ACE_EnsureArmor(Contraption, CheckEnt)
-	end
-
 	ACE_CheckLegalCont(Contraption)
 
+end
+
+do
+	local function ACE_GetContraptionFromEntity(ent)
+		if not IsValid(ent) then return end
+		if not ent.GetContraption then return end
+
+		local con = ent:GetContraption()
+		if not con or not con.ents or table.IsEmpty(con.ents) then return end
+
+		return con
+	end
+
+	local function ACE_ScheduleInitArmor(con)
+		if not con then return end
+		if con.ACEArmorCalculated then return end
+		if not con.ACEArmorDirty then return end
+		if con.ACEArmorInitQueued then return end
+
+		con.ACEArmorInitQueued = true
+		timer.Simple(0.1, function()
+			con.ACEArmorInitQueued = nil
+			if not con or con.ACEArmorCalculated or not con.ACEArmorDirty then return end
+			if not con.GetACEBaseplate then return end
+
+			local base = con:GetACEBaseplate()
+			if IsValid(base) then
+				ACE_EnsureArmor(con, base)
+			end
+		end)
+	end
+
+	hook.Add("PlayerUnfrozeObject", "ACE_ArmorInitOnUnfreeze", function(_, ent)
+		local con = ACE_GetContraptionFromEntity(ent)
+		if not con then return end
+		ACE_ScheduleInitArmor(con)
+	end)
+
+	hook.Add("PlayerEnteredVehicle", "ACE_ArmorInitOnEntry", function(_, veh)
+		local con = ACE_GetContraptionFromEntity(veh)
+		if not con then return end
+		ACE_ScheduleInitArmor(con)
+	end)
 end
 
 function ACE_CheckLegalCont(Contraption)
@@ -25,11 +74,6 @@ function ACE_CheckLegalCont(Contraption)
 	Contraption.OTWarnings = Contraption.OTWarnings or {} --Used to remember all the one time warnings.
 	--Flag test
 	local HasWarned = false
-
-	-- Make sure armor points are up to date before evaluating limits.
-	if Contraption.ACEArmorDirty and Contraption.GetACEBaseplate then
-		ACE_EnsureArmor(Contraption, Contraption:GetACEBaseplate())
-	end
 
 	HasWarned = Contraption.OTWarnings.WarnedOverPoints or false
 	if Contraption.ACEPoints > ACF.PointsLimit and not HasWarned then
@@ -105,7 +149,7 @@ local function ACE_CalcContraptionArmor(ent)
 	-- Pick the main gun (largest caliber).
 	local mainGun
 	for _, candidate in ipairs(contraptionEnts) do
-		if IsValid(candidate) and candidate:GetClass() == "acf_gun" and candidate:GetModel() != "20mmsl" and candidate:GetModel() != "40mmsl" then
+		if IsValid(candidate) and candidate:GetClass() == "acf_gun" and candidate:GetModel() != "models/launcher/20mmsl.mdl" and candidate:GetModel() != "models/launcher/40mmsl.mdl" then
 			if not mainGun or (candidate.Caliber or 0) > (mainGun.Caliber or 0) then
 				mainGun = candidate
 			end
@@ -210,7 +254,7 @@ local function ACE_CalcContraptionArmor(ent)
 		local halfV = (maxV - minV) * 0.5
 		local area = (maxU - minU) * (maxV - minV)
 
-		return area, halfU, halfV, u, v
+		return area, halfU, halfV
 	end
 
 	-- Move a point onto the outer face of an OBB along a given direction.
@@ -240,6 +284,8 @@ local function ACE_CalcContraptionArmor(ent)
 		local dir = (endPos - startPos):GetNormalized()
 		local dbg = armorDebugCvar:GetBool()
 		local hitTarget = false
+		local hitPos
+		local hitNormal
 		local hullMins = Vector(-2, -2, -2)
 		local hullMaxs = Vector(2, 2, 2)
 
@@ -267,6 +313,10 @@ local function ACE_CalcContraptionArmor(ent)
 
 			if not skip and hitEnt == targetComp then
 				hitTarget = true
+				if not hitPos then
+					hitPos = tr.HitPos
+					hitNormal = tr.HitNormal
+				end
 				break
 			end
 
@@ -303,6 +353,10 @@ local function ACE_CalcContraptionArmor(ent)
 				end
 
 				total = total + los
+				if not hitPos then
+					hitPos = tr.HitPos
+					hitNormal = tr.HitNormal
+				end
 
 				if dbg and los > 100 then
 					debugoverlay.Text(tr.HitPos, string.format("LOS %.1f", los), 30, true)
@@ -317,7 +371,7 @@ local function ACE_CalcContraptionArmor(ent)
 			return 0
 		end
 
-		return total
+		return total, hitPos, hitNormal
 	end
 
 	local countFront, countSide = 0, 0
@@ -329,8 +383,8 @@ local function ACE_CalcContraptionArmor(ent)
 		local up = comp:GetUp()
 		local right = comp:GetRight()
 
-			local frontArea, frontHalfU, frontHalfV, frontU, frontV = projectedData(comp, frontDir)
-			local sideArea, sideHalfU, sideHalfV, sideU, sideV = projectedData(comp, sideDir)
+		local frontArea, frontHalfU, frontHalfV = projectedData(comp, frontDir)
+		local sideArea, sideHalfU, sideHalfV = projectedData(comp, sideDir)
 
 		local halfUp = up * (size.z * 0.5 * 0.95)
 		local halfRight = right * (size.y * 0.5 * 0.95)
@@ -345,8 +399,11 @@ local function ACE_CalcContraptionArmor(ent)
 		local sampleCount = #samples
 		local weightF = sampleCount > 0 and (frontArea / sampleCount) or 0
 		local weightS = sampleCount > 0 and (sideArea / sampleCount) or 0
-
-		local frontAng = frontDir:Angle()
+		local sampleScale = sampleCount > 0 and (1 / math.sqrt(sampleCount)) or 0
+		local frontHalfUSample = (frontHalfU or 0) * sampleScale
+		local frontHalfVSample = (frontHalfV or 0) * sampleScale
+		local sideHalfUSample = (sideHalfU or 0) * sampleScale
+		local sideHalfVSample = (sideHalfV or 0) * sampleScale
 
 		for _, pt in ipairs(samples) do
 			local frontStart = pt - frontDir * 500
@@ -355,14 +412,26 @@ local function ACE_CalcContraptionArmor(ent)
 			local sideEnd    = pt 
 
 			-- Front: take the forward trace only.
-			local frontVal = losFiltered(frontStart, frontEnd, comp)
+			local frontVal, frontHitPos, frontHitNormal = losFiltered(frontStart, frontEnd, comp)
 
 			-- Side: trace from both directions and take the lesser valid value.
-			local sideValA  = losFiltered(sideStart, sideEnd, comp)
-			local sideValB  = losFiltered(pt + sideDir * 500, pt - sideDir * 50, comp)
-			local sideVal = math.min(sideValA > 0 and sideValA or math.huge, sideValB > 0 and sideValB or math.huge)
-			if sideVal == math.huge then sideVal = 0 end
-			local sideDirUsed = sideVal > 0 and ((sideValA > 0 and sideValA <= sideValB) and sideDir or -sideDir) or sideDir
+			local sideValA, sideHitPosA, sideHitNormalA  = losFiltered(sideStart, sideEnd, comp)
+			local sideValB, sideHitPosB, sideHitNormalB  = losFiltered(pt + sideDir * 500, pt - sideDir * 50, comp)
+			local sideVal = 0
+			local sideDirUsed = sideDir
+			local sideHitPos
+			local sideHitNormal
+			if sideValA > 0 and (sideValB <= 0 or sideValA <= sideValB) then
+				sideVal = sideValA
+				sideDirUsed = sideDir
+				sideHitPos = sideHitPosA
+				sideHitNormal = sideHitNormalA
+			elseif sideValB > 0 then
+				sideVal = sideValB
+				sideDirUsed = -sideDir
+				sideHitPos = sideHitPosB
+				sideHitNormal = sideHitNormalB
+			end
 
 			-- Area-weighted averaging; only include weights if we got a hit.
 			if frontVal > 0 then
@@ -375,39 +444,43 @@ local function ACE_CalcContraptionArmor(ent)
 				countSide = countSide + weightS
 			end
 
-				if armorDebugCvar:GetBool() then
-					local function colorFromVal(v)
-						local ratio = math.min(math.max((v or 0) / 500, 0), 1)
-						return 255 * ratio, 255 * (1 - ratio)
-					end
+			if armorDebugCvar:GetBool() then
+				local function colorFromVal(v)
+					local ratio = math.min(math.max((v or 0) / 500, 0), 1)
+					return 255 * ratio, 255 * (1 - ratio)
+				end
 
-						local thickness = 0.01
-						local frontHalfUSample = frontHalfU * 0.5
-						local frontHalfVSample = frontHalfV * 0.5
-						local sideHalfUSample = sideHalfU * 0.5
-						local sideHalfVSample = sideHalfV * 0.5
+				local thickness = 0.1
+				local markerSize = math.max(2, math.min(size.x, size.y, size.z) * 0.05)
 
-						if frontArea > 0 then
-							local r, g = colorFromVal(frontVal)
-							local frontPos = pushPointToFace(comp, -frontDir, pt)
-							debugoverlay.BoxAngles(frontPos, Vector(-thickness, -frontHalfUSample, -frontHalfVSample), Vector(thickness, frontHalfUSample, frontHalfVSample), frontAng, 30, Color(r, g, 0, 0.01))
-						end
+				local function drawMarker(hitPos, hitNormal, fallbackNormal, val, halfU, halfV)
+					if not hitPos then return end
+					local normal = hitNormal or fallbackNormal
+					if not normal then return end
+					local r, g = colorFromVal(val)
+					local ang = normal:Angle()
+					local pos = hitPos + normal * 0.1
+					local u = halfU or markerSize
+					local v = halfV or markerSize
+					debugoverlay.BoxAngles(pos, Vector(-thickness, -u, -v), Vector(thickness, u, v), ang, 30, Color(r, g, 0, 0.1))
+				end
 
-						if sideArea > 0 then
-							local r, g = colorFromVal(sideVal)
-							local sidePos = pushPointToFace(comp, sideDirUsed, pt)
-							local sideAng = sideDirUsed:Angle()
-							debugoverlay.BoxAngles(sidePos, Vector(-thickness, -sideHalfUSample, -sideHalfVSample), Vector(thickness, sideHalfUSample, sideHalfVSample), sideAng, 30, Color(r, g, 0, 0.01))
-						end
-					end
+				if frontArea > 0 and frontVal > 0 then
+					drawMarker(frontHitPos, frontHitNormal, -frontDir, frontVal, frontHalfUSample, frontHalfVSample)
+				end
+
+				if sideArea > 0 and sideVal > 0 then
+					drawMarker(sideHitPos, sideHitNormal, -sideDirUsed, sideVal, sideHalfUSample, sideHalfVSample)
 				end
 			end
+		end
+	end
 
 	local avgFront = countFront > 0 and (accumFront / countFront) or 0
 	local avgSide = countSide > 0 and (accumSide / countSide) or 0
 
-	-- Side weighting (x2) per request.
-	return avgFront, avgSide * 2
+	-- Side weighting is handled in the cost calculation.
+	return avgFront, avgSide
 	end
 
 function ACE_GetArmorScan(ent)
@@ -415,9 +488,12 @@ function ACE_GetArmorScan(ent)
 end
 
 -- Ensure contraption armor points are up to date and reflected in totals.
-function ACE_EnsureArmor(Contraption, baseEnt)
+function ACE_EnsureArmor(Contraption, baseEnt, force)
 	if not Contraption then return end
-	if not Contraption.ACEArmorDirty then return end
+	if not force then
+		if not Contraption.ACEArmorDirty then return end
+		if Contraption.ACEArmorCalculated and Contraption.ACEArmorDirty then return end
+	end
 
 	local base = baseEnt
 	if (not IsValid(base)) and Contraption.GetACEBaseplate then
@@ -442,6 +518,7 @@ function ACE_EnsureArmor(Contraption, baseEnt)
 
 	Contraption.ACEArmorPoints = newArmorPts
 	Contraption.ACEArmorDirty = false
+	Contraption.ACEArmorCalculated = true
 
 	local nonArmor = Contraption.ACEPointsNonArmor or 0
 	Contraption.ACEPoints = nonArmor + newArmorPts
@@ -465,7 +542,7 @@ function ACE_GetEntPoints(Ent, MassOverride)
 	if not IsValid(Ent) then return 0 end
 
 	local class = Ent:GetClass()
-	if class == "prop_physics" or class == "primitive_shape" or class == "primitive_airfoil" or class == "primitive_rail_slider" or class == "primitive_slider" or class == "primitive_ladder" then
+	if ArmorClasses[class] then
 		-- Armor cost is handled at contraption-level (E2-style scan). Per-prop points are zero.
 		return 0
 	end
@@ -479,21 +556,6 @@ do
 	--Used for setweight update checks. This is such a hacky way to do things.
 	local PHYS    = FindMetaTable("PhysObj")
 	local ACE_Override_SetMass = ACE_Override_SetMass or PHYS.SetMass
-	function PHYS:SetMass(mass)
-
-		local ent     = self:GetEntity()
-		local oldPointValue = ent._AcePts or 0 -- The 'or 0' handles cases of ents connected before they had a physObj
-
-		ent._AcePts = ACE_GetEntPoints(ent,mass)
-
-		ACE_Override_SetMass(self,mass)
-
-		local con = ent:GetContraption()
-
-		if con then
-			con.ACEPoints = con.ACEPoints + (ent._AcePts - oldPointValue)
-		end
-	end
 
 	local FirepowerEnts = {
 		["acf_rack"]                  = true,
@@ -518,26 +580,55 @@ do
 	}
 
 	local function ACE_getPtsType(ClassName)
-		local RetVal = "Armor"
-
-		if ClassName == "prop_physics" then
-			--Do nothing. Bypass to skip all the later checks for most common parts.
-			RetVal = "Armor" --In circumstances like these, I HATE LINTER. Useless redundant callout but I have to have it to prevent the chain from being empty.
-		elseif ClassName == "acf_engine" then
-			RetVal = "Engines"
-		elseif FirepowerEnts[ClassName] then
-			RetVal = "Firepower"
-		elseif ClassName == "acf_fueltank" then
-			RetVal = "Fuel"
-		elseif ClassName == "acf_ammo" then
-			RetVal = "Ammo"
-		elseif CrewEnts[ClassName] then
-			RetVal = "Crew"
-		elseif ElectronicEnts[ClassName] then
-			RetVal = "Electronics"
+		if ArmorClasses[ClassName] then
+			return "Armor"
+		end
+		if ClassName == "acf_engine" then
+			return "Engines"
+		end
+		if FirepowerEnts[ClassName] then
+			return "Firepower"
+		end
+		if ClassName == "acf_fueltank" then
+			return "Fuel"
+		end
+		if ClassName == "acf_ammo" then
+			return "Ammo"
+		end
+		if CrewEnts[ClassName] then
+			return "Crew"
+		end
+		if ElectronicEnts[ClassName] then
+			return "Electronics"
 		end
 
-		return RetVal
+		return "Armor"
+	end
+
+	function PHYS:SetMass(mass)
+
+		local ent     = self:GetEntity()
+		local oldPointValue = ent._AcePts or 0 -- The 'or 0' handles cases of ents connected before they had a physObj
+
+		ent._AcePts = ACE_GetEntPoints(ent,mass)
+
+		ACE_Override_SetMass(self,mass)
+
+		local con = ent:GetContraption()
+		if not con then return end
+
+		local delta = ent._AcePts - oldPointValue
+		local eclass = ACE_getPtsType(ent:GetClass())
+
+		if eclass == "Armor" then
+			con.ACEArmorDirty = true
+			return
+		end
+
+		con.ACEPoints = (con.ACEPoints or 0) + delta
+		con.ACEPointsNonArmor = (con.ACEPointsNonArmor or 0) + delta
+		con.ACEPointsPerType = con.ACEPointsPerType or {}
+		con.ACEPointsPerType[eclass] = (con.ACEPointsPerType[eclass] or 0) + delta
 	end
 
 	local function ACE_InitPts(Class)
@@ -545,6 +636,7 @@ do
 		Class.ACEPointsNonArmor = 0
 		Class.ACEArmorPoints = 0
 		Class.ACEArmorDirty = true
+		Class.ACEArmorCalculated = false
 
 		Class.ACEPointsPerType = {}
 		Class.ACEPointsPerType.Armor = 0

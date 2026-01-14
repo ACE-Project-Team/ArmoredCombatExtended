@@ -166,15 +166,10 @@ function TOOL:Reload( trace )
 	local PtsAmmo = 0
 	local PtsCrew = 0
 	local PtsElectronics = 0
+	local ArmorDirty = false
+	local ArmorInitMissing = false
 
 		if Contraption ~= nil then
-			if ACE_EnsureArmor then
-				local base = ent
-				if Contraption.GetACEBaseplate then
-					base = Contraption:GetACEBaseplate() or ent
-				end
-				ACE_EnsureArmor(Contraption, base)
-			end
 		PointVal		= Contraption.ACEPoints or ACE_GetEntPoints(ent) or 0
 		PtsArmor = Contraption.ACEPointsPerType.Armor
 		PtsEngine = Contraption.ACEPointsPerType.Engines
@@ -183,12 +178,17 @@ function TOOL:Reload( trace )
 		PtsAmmo = Contraption.ACEPointsPerType.Ammo
 		PtsCrew = Contraption.ACEPointsPerType.Crew
 		PtsElectronics = Contraption.ACEPointsPerType.Electronics
+		ArmorDirty = Contraption.ACEArmorDirty and Contraption.ACEArmorCalculated
+		ArmorInitMissing = not Contraption.ACEArmorCalculated
 	else
 		PointVal = ACE_GetEntPoints(ent)
 	end
 
 	local frontArm, sideArm = 0, 0
-	if ACE_GetArmorScan then
+	if Contraption ~= nil and Contraption.ACEArmorCalculated then
+		frontArm = Contraption.ACEArmorFront or 0
+		sideArm = Contraption.ACEArmorSide or 0
+	elseif ACE_GetArmorScan then
 		frontArm, sideArm = ACE_GetArmorScan(ent)
 	end
 
@@ -208,6 +208,8 @@ function TOOL:Reload( trace )
 		net.WriteFloat(PtsElectronics)
 		net.WriteFloat(frontArm)
 		net.WriteFloat(sideArm)
+		net.WriteBool(ArmorDirty)
+		net.WriteBool(ArmorInitMissing)
 
 		net.WriteData(Compressed)
 
@@ -498,6 +500,8 @@ if CLIENT then
 		local PtsElectronics = math.Round( net.ReadFloat(), 1 )
 		local FrontArm = math.Round( net.ReadFloat(), 2 )
 		local SideArm = math.Round( net.ReadFloat(), 2 )
+		local ArmorDirty = net.ReadBool()
+		local ArmorInitMissing = net.ReadBool()
 
 		local Compressed	= net.ReadData(640)
 		local Decompress	= util.Decompress(Compressed)
@@ -529,6 +533,11 @@ if CLIENT then
 			TPoints		= { Color4, "Total Cost: ", Color3, "" .. PointVal .. "pts" .. Sep }
 		end
 		table.Add(Tabletxt,TPoints)
+		if ArmorDirty then
+			table.Add(Tabletxt, { Color1, "[!] Armor cost dirty; respawn to recalc." .. Sep })
+		elseif ArmorInitMissing then
+			table.Add(Tabletxt, { Color2, "[!] Armor cost not initialized; unfreeze or enter vehicle." .. Sep })
+		end
 
 		local FractionalPts = "/" .. PointVal
 		local sideWeighted = SideArm * 2

@@ -233,7 +233,15 @@ function ENT:Update( ArgsTable )
 	self.SpecialDamage     = true
 	self.TorqueMult        = self.TorqueMult or 1
 	self.FuelTank          = 0
-	self.ACEPoints			= Lookup.acepoints or 404
+	local FuelCostMul = {
+		Petrol				= 1.0,
+		Diesel				= 1.2, --Due to generally higher torques
+		Multifuel			= 1.2, --Due to generally higher torques
+		Electric			= 0.8 --Due to odd power outputs
+	}
+	local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
+	local FallBackCost = (self.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[self.FuelType] or 1)
+	self.ACEPoints			= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
 
 	self.TorqueScale		= ACF.TorqueScale[self.EngineType]
 

@@ -1,6 +1,6 @@
-# ACE Armor and Cost System (Current Behavior)
+# Improved ACE Armor and Cost System
 
-This document is a complete, no-context explanation of how the current ACE cost system works. It covers when calculations run, how armor and ammo are scored, what is shown in the readout, and which values can be tuned.
+This document is a complete, no-context explanation of how the new and improved ACE cost system works. It covers when calculations run, how armor and ammo are scored, what is shown in the readout, and which values can be tuned.
 
 ## Scope
 - Contraption-level armor scanning and scoring.
@@ -41,9 +41,15 @@ Dirty behavior:
 - Fallback: ACE.contraptionEnts filtered by contraption id.
 - Final fallback: base entity only.
 
-### Facing Detection
-- The largest-caliber main gun is used to infer front/side directions.
-- If no gun is found, the base entity forward/right vectors are used.
+### Facing and Up Direction
+- Up is derived from world gravity (physenv.GetGravity) and normalized.
+- Front uses the main gun forward (negated), flattened to the gravity plane.
+- If no gun exists or the vector is degenerate, base forward is used.
+- Side uses wheel axle axes when possible:
+  - Axis constraints between the baseplate and MakeSpherical wheels are collected.
+  - The axle axes are averaged and flattened to the gravity plane.
+- If no valid wheel axes are found, side falls back to cross(up, front), then base right.
+- The final basis is orthonormalized so front and side are perpendicular.
 
 ### Sampling
 - Critical components (engine, ammo, fuel, crew) are used as sampling anchors.
@@ -92,7 +98,7 @@ crate_pts = round_pts * capacity * (rps_total / RpsRef) ^ RpsExp
 
 ### Current Constants
 - BaseRoundPts = 111.1
-- RefPen = 500
+- RefPen = 600
 - RefCaliber = 120
 - PenExp = 2
 - RpsRef = 1 / 7
@@ -105,29 +111,29 @@ crate_pts = round_pts * capacity * (rps_total / RpsRef) ^ RpsExp
 
 ### Ammo Type Factors
 ```
-AP=1
-APHE=1
-APDS=1
-APFSDS=1.05
-HVAP=1
-HEAT=0.75
-HEATFS=0.75
-THEAT=0.82
-THEATFS=0.82
-HESH=0.55
-HE=0.25
-HEFS=0.25
-HP=0.25
-CAP=1
-CHEAT=0.75
-CHE=0.25
-CHF=0
-SM=0
-FLR=0
-FL=1
-GLATGM=0.75
-GLATGM-HE=0.25
-Refill=0
+AP = 0.5,
+APHE = 0.6,
+APDS = 0.9,
+APFSDS = 1.2,
+HVAP = 0.7,
+HEAT = 0.75,
+HEATFS = 0.9,
+THEAT = 0.95,
+THEATFS = 1.0,
+HESH = 0.4,
+HE = 0.2,
+HEFS = 0.3,
+HP = 0.1,
+CAP = 0.6,
+CHEAT = 0.8,
+CHE = 0.25,
+CHF = 0,
+SM = 0,
+FLR = 0,
+FL = 0.3,
+GLATGM = 0.75,
+["GLATGM-HE"] = 0.25,
+Refill = 0
 ```
 
 ## Other Point Categories
@@ -152,7 +158,6 @@ Crew: (9%) - 1202/12826.6
 Electronics: (0%) - 0/12826.6
 - Top Cost Items:
 Ammo: 42x140mm APFSDS - Pen: 857, RPS: 0.06 - 4936.1pts
-Ammo: 36x140mm HEATFS - Pen: 1300, RPS: 0.08 - 3432.5pts
 Engines: 20.7L Flat 6 Multifuel - 1409.0pts
 Crew: Alex Popov - 400.0pts
 <||============|[- Contraption Summary -]|============||>
@@ -181,7 +186,8 @@ Warnings:
 ## Edge Cases and Limitations
 - If a gun or rack has no compatible ammo in the contraption, ammo ROF is zero and crates score 0 points.
 - If MaxPen cannot be resolved for a round type, that crate scores 0.
-- Main-gun direction inference can be wrong on unconventional builds; fallback uses base entity orientation.
+- If no axis-constrained MakeSpherical wheels exist, side uses cross(up, front) and may be less reliable on unusual builds.
+- If the main gun is vertical, the front vector is flattened; extreme cases fall back to base forward.
 - Post-init modifications can change actual protection without updating cost; this is intentional and surfaced as a warning.
 
 ## Tuning Knobs

@@ -1,5 +1,3 @@
-
-
 ACE = ACE or {}
 
 local ArmorClasses = {
@@ -91,7 +89,7 @@ local AmmoTypeFactors = {
 -- Normalization constants for the ammo formula; tune these to rebalance without
 -- rewriting the math.
 local AmmoCostConfig = {
-	BaseRoundPts = 111.1,
+	BaseRoundPts = 80,
 	RefPen = 600,
 	RefCaliber = 120,
 	PenExp = 2,
@@ -101,6 +99,34 @@ local AmmoCostConfig = {
 
 ACE.AmmoTypeFactors = AmmoTypeFactors
 ACE.AmmoCostConfig = AmmoCostConfig
+
+ACE.DupeArmorCache = ACE.DupeArmorCache or {}
+ACE.DupeArmorCacheVersion = ACE.DupeArmorCacheVersion or 1
+ACE.DupeArmorCacheLastClear = ACE.DupeArmorCacheLastClear or CurTime()
+
+local DupeArmorCacheTtl = CreateConVar(
+	"ace_dupe_armor_cache_ttl",
+	"1800",
+	FCVAR_ARCHIVE,
+	"Seconds between clearing the dupe armor cache (0 to disable)."
+)
+
+timer.Create("ACE_DupeArmorCacheGC", 60, 0, function()
+	local ttl = DupeArmorCacheTtl:GetFloat()
+	if ttl <= 0 then return end
+
+	local now = CurTime()
+	local last = ACE.DupeArmorCacheLastClear or now
+	if now - last < ttl then return end
+
+	ACE.DupeArmorCache = {}
+	ACE.DupeArmorCacheLastClear = now
+end)
+
+concommand.Add("ace_dupe_armor_cache_clear", function()
+	ACE.DupeArmorCache = {}
+	ACE.DupeArmorCacheLastClear = CurTime()
+end)
 
 local function ACE_GetAmmoTypeFactor(ammoType)
 	return AmmoTypeFactors[ammoType] or 1
@@ -221,6 +247,89 @@ function ACE_DoContraptionLegalCheck(CheckEnt)
 end
 
 do
+	local function ACE_GetDupeSignature(dupe, created)
+		if not dupe then return nil end
+		local function formatArmorKey(material, ductility, armour, maxArmour, mass)
+			return string.format(
+				"mat=%s|duct=%.3f|arm=%.2f|max=%.2f|mass=%.2f",
+				tostring(material or ""),
+				tonumber(ductility) or 0,
+				tonumber(armour) or 0,
+				tonumber(maxArmour) or 0,
+				tonumber(mass) or 0
+			)
+		end
+
+		local entData = dupe.Entities
+			or dupe.Ents
+			or dupe.EntityList
+			or (dupe.Dupe and dupe.Dupe.Entities)
+
+		if istable(entData) then
+			local parts = {}
+			for _, data in pairs(entData) do
+				if istable(data) then
+					local class = data.Class or data.class or "unknown"
+					local model = data.Model or data.model or ""
+					local mods = data.EntityMods or data.entitymods
+					local acfSettings = mods and mods.acfsettings
+					local massMod = mods and mods.mass
+					local acf = data.ACF or data.acf
+					local material = (acfSettings and (acfSettings.Material or acfSettings.material))
+						or (acf and (acf.Material or acf.material))
+					local ductility = (acfSettings and (acfSettings.Ductility or acfSettings.ductility))
+						or (acf and (acf.Ductility or acf.ductility))
+					local armour = acf and (acf.Armour or acf.Armor)
+					local maxArmour = acf and (acf.MaxArmour or acf.MaxArmor)
+					local mass = massMod and (massMod.Mass or massMod.mass)
+					local armorKey = formatArmorKey(material, ductility, armour, maxArmour, mass)
+					parts[#parts + 1] = class .. "|" .. model .. "|" .. armorKey
+				end
+			end
+			table.sort(parts)
+			if #parts > 0 and util and util.SHA256 then
+				return tostring(ACE.DupeArmorCacheVersion) .. ":ents:" .. util.SHA256(table.concat(parts, ";"))
+			end
+		end
+
+		if istable(created) and util and util.SHA256 then
+			local parts = {}
+			for _, ent in pairs(created) do
+				if not IsValid(ent) then continue end
+				local class = ent:GetClass() or "unknown"
+				local model = ent:GetModel() or ""
+				local size = ent:OBBMaxs() - ent:OBBMins()
+				local sizeKey = string.format("%.1f,%.1f,%.1f", size.x, size.y, size.z)
+				local extra = ""
+				local acf = ent.ACF
+				local material = acf and acf.Material
+				local ductility = acf and acf.Ductility
+				local armour = acf and (acf.Armour or acf.Armor)
+				local maxArmour = acf and (acf.MaxArmour or acf.MaxArmor)
+				local mass = 0
+				local phys = ent:GetPhysicsObject()
+				if IsValid(phys) then
+					mass = phys:GetMass()
+				end
+				local armorKey = formatArmorKey(material, ductility, armour, maxArmour, mass)
+				if class == "acf_gun" then
+					extra = tostring(ent.Id or "")
+				elseif class == "acf_ammo" then
+					extra = tostring(ent.BulletData and ent.BulletData.Id or "")
+				elseif class == "acf_engine" then
+					extra = tostring(ent.Id or "")
+				end
+				parts[#parts + 1] = class .. "|" .. model .. "|" .. sizeKey .. "|" .. extra .. "|" .. armorKey
+			end
+			table.sort(parts)
+			if #parts > 0 then
+				return tostring(ACE.DupeArmorCacheVersion) .. ":spawn:" .. util.SHA256(table.concat(parts, ";"))
+			end
+		end
+
+		return nil
+	end
+
 	local function ACE_GetContraptionFromEntity(ent)
 		if not IsValid(ent) then return end
 		if not ent.GetContraption then return end
@@ -251,10 +360,13 @@ do
 		return con.ACEArmorTimerId
 	end
 
-	local function ACE_ScheduleInitArmor(con, delay, force)
+	local function ACE_ScheduleInitArmor(con, delay, force, cacheKey)
 		if not con then return end
 
 		if not force and con.ACEArmorCalculated and not con.ACEArmorDirty then return end
+		if cacheKey and not con.ACEArmorCacheKey then
+			con.ACEArmorCacheKey = cacheKey
+		end
 
 		local requestedDelay = delay or 0.1
 		local queuedDelay = con.ACEArmorQueuedDelay or 0
@@ -280,7 +392,7 @@ do
 		end)
 	end
 
-	local function ACE_ScheduleInitArmorFromEntities(entities, delay, force, skipFrozen)
+	local function ACE_ScheduleInitArmorFromEntities(entities, delay, force, skipFrozen, cacheKey, cachedData)
 		if not istable(entities) then return end
 		local scheduled = {}
 
@@ -290,7 +402,13 @@ do
 			if not con or scheduled[con] then continue end
 			if skipFrozen and ACE_IsContraptionFrozen(con) then continue end
 			scheduled[con] = true
-			ACE_ScheduleInitArmor(con, delay, force)
+			if cacheKey and not con.ACEArmorCacheKey then
+				con.ACEArmorCacheKey = cacheKey
+			end
+			if cachedData then
+				con.ACEArmorCachedData = cachedData
+			end
+			ACE_ScheduleInitArmor(con, delay, force, cacheKey)
 		end
 	end
 
@@ -310,15 +428,31 @@ do
 		local dupe = istable(dupeInfo) and dupeInfo[1]
 		local created = dupe and dupe.CreatedEntities
 		if not created then return end
+		local cacheKey = ACE_GetDupeSignature(dupe, created)
+		local cached = cacheKey and ACE.DupeArmorCache and ACE.DupeArmorCache[cacheKey] or nil
+		local flagName = "_ACEAdvDupeArmorInit"
+		local first
+		for _, ent in pairs(created) do
+			if IsValid(ent) then
+				first = ent
+				break
+			end
+		end
+		if not first or first[flagName] then return end
+		for _, ent in pairs(created) do
+			if IsValid(ent) then
+				ent[flagName] = true
+			end
+		end
 
 		timer.Simple(0, function()
-			ACE_ScheduleInitArmorFromEntities(created, 0.05, false, true)
+			ACE_ScheduleInitArmorFromEntities(created, 0.05, false, true, cacheKey, cached)
 		end)
 
 		timer.Simple(0.5, function()
-			ACE_ScheduleInitArmorFromEntities(created, 0.1, false, true)
+			ACE_ScheduleInitArmorFromEntities(created, 0.1, false, true, cacheKey, cached)
 			timer.Simple(0.8, function()
-				ACE_ScheduleInitArmorFromEntities(created, 0.1, false, true)
+				ACE_ScheduleInitArmorFromEntities(created, 0.1, false, true, cacheKey, cached)
 			end)
 		end)
 	end)
@@ -407,15 +541,87 @@ local function ACE_CalcContraptionArmor(ent)
 		end
 	end
 
-	-- Establish scan directions (front/side) from the chosen reference.
-	local frontDir
-	local sideDir
-	if IsValid(mainGun) then
-		frontDir = -mainGun:GetForward()
-		sideDir = mainGun:GetRight()
-	else
-		frontDir = ent:GetForward() * -1
-		sideDir = ent:GetRight()
+	-- Establish scan directions (front/side) using gun forward, gravity up, and wheel axes.
+	local function normalizeOrNil(vec)
+		if not vec then return nil end
+		local len = vec:Length()
+		if len <= 1e-6 then return nil end
+		return vec / len
+	end
+
+	local function flattenToPlane(vec, up)
+		if not vec or not up then return nil end
+		local flat = vec - up * vec:Dot(up)
+		return normalizeOrNil(flat)
+	end
+
+	local function getWorldUp()
+		local gravity = physenv and physenv.GetGravity and physenv.GetGravity() or Vector(0, 0, -1)
+		if gravity:LengthSqr() <= 1e-6 then return Vector(0, 0, 1) end
+		return (-gravity):GetNormalized()
+	end
+
+	local function isMakeSpherical(ent)
+		local override = ent and ent.RenderOverride
+		return override and tostring(override):find("MakeSpherical") ~= nil
+	end
+
+	local function getWheelAxisSide(base, up)
+		if not IsValid(base) or not constraint or not constraint.FindConstraints then return nil end
+		local cons = constraint.FindConstraints(base, "Axis")
+		if not istable(cons) or #cons == 0 then return nil end
+
+		local axisSum = Vector(0, 0, 0)
+		local count = 0
+
+		for _, con in ipairs(cons) do
+			if not con or (con.Ent1 ~= base and con.Ent2 ~= base) then continue end
+			local other = con.Ent1 == base and con.Ent2 or con.Ent1
+			if not IsValid(other) or not isMakeSpherical(other) then continue end
+
+			local localAxis = con.Ent1 == base and con.LNorm1 or con.LNorm2
+			if not localAxis then continue end
+
+			local axisWorld = base:LocalToWorld(localAxis) - base:GetPos()
+			axisWorld = axisWorld - up * axisWorld:Dot(up)
+			axisWorld = normalizeOrNil(axisWorld)
+			if axisWorld then
+				if count > 0 and axisWorld:Dot(axisSum) < 0 then
+					axisWorld = -axisWorld
+				end
+				axisSum = axisSum + axisWorld
+				count = count + 1
+			end
+		end
+
+		return count > 0 and normalizeOrNil(axisSum) or nil
+	end
+
+	local upDir = getWorldUp()
+	local rawFront = IsValid(mainGun) and -mainGun:GetForward() or nil
+	if not rawFront then
+		rawFront = ent:GetForward() * -1
+	end
+
+	local frontDir = flattenToPlane(rawFront, upDir) or normalizeOrNil(rawFront) or Vector(1, 0, 0)
+	local sideDir = getWheelAxisSide(ent, upDir)
+
+	if not sideDir then
+		sideDir = normalizeOrNil(upDir:Cross(frontDir))
+	end
+
+	if not sideDir then
+		sideDir = normalizeOrNil(ent:GetRight()) or Vector(0, 1, 0)
+	end
+
+	sideDir = normalizeOrNil(sideDir - frontDir * sideDir:Dot(frontDir)) or sideDir
+
+	local adjustedFront = normalizeOrNil(sideDir:Cross(upDir))
+	if adjustedFront then
+		if adjustedFront:Dot(frontDir) < 0 then
+			adjustedFront = -adjustedFront
+		end
+		frontDir = adjustedFront
 	end
 
 	local debugDraw = armorDebugCvar:GetBool()
@@ -906,16 +1112,27 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 	end
 
 	local front = 0
-	if IsValid(base) then
-		local f, s = ACE_CalcContraptionArmor(base)
-		front = f
-		Contraption.ACEArmorFront = f
-		Contraption.ACEArmorSide = s
+	local side = 0
+	local usedCache = false
+	local cached = Contraption.ACEArmorCachedData
+	if cached then
+		front = cached.Front or cached.front or 0
+		side = cached.Side or cached.side or 0
+		Contraption.ACEArmorFront = front
+		Contraption.ACEArmorSide = side
+		usedCache = true
+	else
+		if IsValid(base) then
+			local f, s = ACE_CalcContraptionArmor(base)
+			front = f
+			side = s
+			Contraption.ACEArmorFront = f
+			Contraption.ACEArmorSide = s
+		end
 	end
 
 	ACE_RebuildNonArmorPoints(Contraption, base)
 
-	local side = Contraption.ACEArmorSide or 0
 	-- Convert armor averages to points; side armor counts double to reflect exposure.
 	local newArmorPts = (front + side * 2) * 4
 	Contraption.ACEPointsPerType = Contraption.ACEPointsPerType or {}
@@ -927,6 +1144,17 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 
 	local nonArmor = Contraption.ACEPointsNonArmor or 0
 	Contraption.ACEPoints = nonArmor + newArmorPts
+
+	local cacheKey = Contraption.ACEArmorCacheKey
+	if cacheKey and not usedCache then
+		ACE.DupeArmorCache = ACE.DupeArmorCache or {}
+		ACE.DupeArmorCache[cacheKey] = {
+			Front = front,
+			Side = side
+		}
+	end
+	Contraption.ACEArmorCacheKey = nil
+	Contraption.ACEArmorCachedData = nil
 
 	if armorDebugCvar:GetBool() then
 		print(string.format("[ACE ArmorDbg] Front=%.2f Side=%.2f Pts(x4)=%.2f", front or 0, side or 0, newArmorPts))

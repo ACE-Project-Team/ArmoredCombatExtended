@@ -373,19 +373,19 @@ function ACF_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 
 	-- Spall armor factor bias
 	local ArmorMul	= MatData.ArmorMul or 1
-	
+
 	-- Cal of 3 = 30mm.
 	local Minimum_Caliber = 3
 
-	if SpallMul > 0 and Caliber > Minimum_Caliber then 
-	
+	if SpallMul > 0 and Caliber > Minimum_Caliber then
+
 		local WeightFactor = MatData.massMod or 1
 		-- local Max_Spall_Mass = 10
 
 		local Velocityfactor = 0.5
 		local Max_Spall_Vel = 7000
 		local MassFactor = 10
-		
+
 		local Max_Spalls = 128
 
 		-- print("KE: " .. KE)
@@ -402,10 +402,10 @@ function ACF_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 		SpallWeight = SpallWeight * MassFactor
 		local SpallArea = 4 * (TotalWeight / SpallWeight)
 		local SpallEnergy = ACF_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
-		
+
 
 		-- print("AR: " .. SpallArea)
-		
+
 		-- print("TW: " .. TotalWeight)
 
 		-- print("SW: " .. SpallWeight)
@@ -579,7 +579,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 
 	-- Spall armor factor bias
 	local ArmorMul	= MatData.ArmorMul or 1
-	
+
 	local UsedArmor	= Armour * ArmorMul
 
 	if SpallMul > 0 and ( HEFiller / 300 ) > UsedArmor then
@@ -589,7 +589,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 
 		local Velocityfactor = 0.2
 		local Max_Spall_Vel = 7000
-		
+
 		local Max_Spalls = 128
 
 		-- print("HE: " .. HEFiller)
@@ -605,9 +605,9 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		local SpallVel = ((HEFiller * Velocityfactor) / SpallWeight)
 		local SpallArea = (TotalWeight / SpallWeight)
 		local SpallEnergy = ACF_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
-		
+
 		-- print("AR: " .. SpallArea)
-		
+
 		-- print("TW: " .. TotalWeight)
 
 		-- print("SW: " .. SpallWeight)
@@ -616,7 +616,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		-- print("VEL: " .. SpallVel)
 
 		-- PrintTable(Filter)
-		
+
 		for i = 1,Spall do
 
 			ACE.CurSpallIndex = ACE.CurSpallIndex + 1
@@ -626,12 +626,12 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 
 			-- Normal Trace creation
 			local Index = ACE.CurSpallIndex
-			
+
 			ACE.Spall[Index]			= {}
 			ACE.Spall[Index].start	= HitPos
 			ACE.Spall[Index].endpos	= HitPos + ((fNormal * 2500 + HitVec):GetNormalized() + VectorRand() / 3):GetNormalized() * math.max( SpallVel / 8, 600) --I got bored of spall not going across the tank
 			ACE.Spall[Index].filter	= table.Copy(Temp_Filter)
-			
+
 			ACF_SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
 
 			--little sound optimization
@@ -670,7 +670,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 				ACE.Spall[Index].filter = Temp_Filter
 				ACE.Spall[Index].mins	= Vector(0,0,0)
 				ACE.Spall[Index].maxs	= Vector(0,0,0)
-			
+
 				ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 				return
 			end
@@ -685,8 +685,8 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		local MatData	= ACE_GetMaterialData( Mat )
 
 		local spall_resistance = MatData.spallresist
-		
-		-- The clamp is due to that if the material spall resist/armor is below 1 then it multiplies the penetration. 
+
+		-- The clamp is due to that if the material spall resist/armor is below 1 then it multiplies the penetration.
 		-- ^ Clamp keeps the variable at 1 or higher.
 		-- Such as why I have ceramic/textolite resistence set to 1 as that means spall doesnt lose energy when hitting it.
 		-- Two/three reasons why this is good ^:
@@ -702,9 +702,9 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		if ACE.CritEnts[ SpallRes.Entity:GetClass() ] then
 			SpallEnergy.Penetration = (SpallEnergy.Penetration / Entity_Crit_Hit_Factor)
 		end
-		
+
 		SpallEnergy.Penetration = math.floor(SpallEnergy.Penetration)
-		
+
 		-- print(SpallEnergy.Penetration)
 
 		-- Applies the damage to the impacted entity
@@ -727,24 +727,24 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			local Temp_Filter = table.Copy(ACE.Spall[Index].filter)
 			table.insert( Temp_Filter , SpallRes.Entity )
-				
+
 			ACE.Spall[Index] = {}
 			ACE.Spall[Index].start  = SpallRes.HitPos
 			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallRes.HitNormal + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 			ACE.Spall[Index].filter = Temp_Filter
 			ACE.Spall[Index].mins	= Vector(0,0,0)
 			ACE.Spall[Index].maxs	= Vector(0,0,0)
-			
+
 			SpallRes = util.TraceLine(ACE.Spall[Index])
 
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
 			-- Blue trace means spall trace that overpenned and killed something.
-			
+
 			-- Retry
 			ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 			return
-		else 
-			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )	
+		else
+			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
 			-- Red trace means spall trace that did hit something.
 		end
 

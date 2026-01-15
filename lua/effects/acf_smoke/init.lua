@@ -73,7 +73,7 @@ function EFFECT:StartSmoke( _, SmokeColor, ShootVector, WPRadius, SRadius ) --GT
 	--velocity = Vector(0, 0, 0)
 	--gravity = Vector(0, 0, 0)
 
-	
+
 
 	for _ = 0,3 do
 

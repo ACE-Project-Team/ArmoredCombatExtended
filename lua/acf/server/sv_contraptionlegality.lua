@@ -102,16 +102,6 @@ function ACE_CheckLegalCont(Contraption)
 
 end
 
-
--- Optional hook to override per-prop point cost (e.g., trace-based armor checks).
-local function ACE_ApplyArmorOverride(ent, basePoints)
-	local override = hook.Run("ACE_CustomArmorPointOverride", ent, basePoints)
-
-	if override ~= nil then return override end
-
-	return basePoints
-end
-
 local armorDebugCvar = CreateConVar("ace_armor_debugvis", "0", FCVAR_ARCHIVE, "Draw debug overlays for armor scan results.")
 
 -- Best-effort contraption scanner for average frontal/side armor by surface area.
@@ -149,10 +139,12 @@ local function ACE_CalcContraptionArmor(ent)
 	-- Pick the main gun (largest caliber).
 	local mainGun
 	for _, candidate in ipairs(contraptionEnts) do
-		if IsValid(candidate) and candidate:GetClass() == "acf_gun" and candidate:GetModel() != "models/launcher/20mmsl.mdl" and candidate:GetModel() != "models/launcher/40mmsl.mdl" then
-			if not mainGun or (candidate.Caliber or 0) > (mainGun.Caliber or 0) then
-				mainGun = candidate
-			end
+		if IsValid(candidate)
+			and candidate:GetClass() == "acf_gun"
+			and candidate:GetModel() ~= "models/launcher/20mmsl.mdl"
+			and candidate:GetModel() ~= "models/launcher/40mmsl.mdl"
+			and (not mainGun or (candidate.Caliber or 0) > (mainGun.Caliber or 0)) then
+			mainGun = candidate
 		end
 	end
 
@@ -185,32 +177,6 @@ local function ACE_CalcContraptionArmor(ent)
 		end
 
 		return corners
-	end
-
-	local function findUp(prop)
-		local corners = getBoundsWorld(prop)
-		local best, bestZ = corners[1], corners[1].z
-		for i = 2, #corners do
-			if corners[i].z > bestZ then
-				best = corners[i]
-				bestZ = corners[i].z
-			end
-		end
-		return prop:WorldToLocal(best)
-	end
-
-	local function findLeft(prop, sideDir, basePos)
-		local corners = getBoundsWorld(prop)
-		local target = basePos + sideDir * 1000
-		local best, bestDist = corners[1], corners[1]:Distance(target)
-		for i = 2, #corners do
-			local d = corners[i]:Distance(target)
-			if d < bestDist then
-				best = corners[i]
-				bestDist = d
-			end
-		end
-		return prop:WorldToLocal(best)
 	end
 
 	-- Critical components (targets)
@@ -255,27 +221,6 @@ local function ACE_CalcContraptionArmor(ent)
 		local area = (maxU - minU) * (maxV - minV)
 
 		return area, halfU, halfV
-	end
-
-	-- Move a point onto the outer face of an OBB along a given direction.
-	local function pushPointToFace(comp, dir, pos)
-		dir = dir:GetNormalized()
-		local center = comp:WorldSpaceCenter()
-		local centerDot = center:Dot(dir)
-
-		local maxDiff = -math.huge
-		local minDiff = math.huge
-		for _, corner in ipairs(getBoundsWorld(comp)) do
-			local diff = corner:Dot(dir) - centerDot
-			if diff > maxDiff then maxDiff = diff end
-			if diff < minDiff then minDiff = diff end
-		end
-
-		local targetDiff = maxDiff
-		local ptDiff = pos:Dot(dir) - centerDot
-		local delta = targetDiff - ptDiff
-
-		return pos + dir * delta
 	end
 
 	local function losFiltered(startPos, endPos, targetComp)
@@ -407,9 +352,9 @@ local function ACE_CalcContraptionArmor(ent)
 
 		for _, pt in ipairs(samples) do
 			local frontStart = pt - frontDir * 500
-			local frontEnd   = pt 
+			local frontEnd   = pt
 			local sideStart  = pt - sideDir * 500
-			local sideEnd    = pt 
+			local sideEnd    = pt
 
 			-- Front: take the forward trace only.
 			local frontVal, frontHitPos, frontHitNormal = losFiltered(frontStart, frontEnd, comp)
@@ -511,8 +456,6 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 	local side = Contraption.ACEArmorSide or 0
 	-- Final armor cost: (front + side*2) * 4
 	local newArmorPts = (front + side * 2) * 4
-	local oldArmor = Contraption.ACEPointsPerType and Contraption.ACEPointsPerType.Armor or 0
-
 	Contraption.ACEPointsPerType = Contraption.ACEPointsPerType or {}
 	Contraption.ACEPointsPerType.Armor = newArmorPts
 
@@ -531,7 +474,7 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 	end
 end
 
-function ACE_GetEntPoints(Ent, MassOverride)
+function ACE_GetEntPoints(Ent)
 	local Points = 0 --Use the specially assigned points if it has them
 	--[[ Old mass/material-based point calculation retained for reference.
 	if IsValid(Ent) then
@@ -610,7 +553,7 @@ do
 		local ent     = self:GetEntity()
 		local oldPointValue = ent._AcePts or 0 -- The 'or 0' handles cases of ents connected before they had a physObj
 
-		ent._AcePts = ACE_GetEntPoints(ent,mass)
+	ent._AcePts = ACE_GetEntPoints(ent)
 
 		ACE_Override_SetMass(self,mass)
 

@@ -363,7 +363,7 @@ if CLIENT then
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acfarmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acfarmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 
-		function ToolPanel.ComboMat:OnSelect(self, index, value, data)
+		function ToolPanel.ComboMat:OnSelect(_, value, data)
 			-- data carries the real material id; fallback to value if missing
 			local matId = tostring(data or value)
 			RunConsoleCommand("acfarmorprop_material", matId)
@@ -540,8 +540,6 @@ if CLIENT then
 		end
 
 		local FractionalPts = "/" .. PointVal
-		local sideWeighted = SideArm * 2
-		local cost = (FrontArm + sideWeighted) * 4
 		table.Add(Tabletxt,{ Color4, "Armor scan: "})
 		table.Add(Tabletxt,{ Color3, string.format("front=%.2f  side=%.2f", FrontArm, SideArm) .. Sep})
 		table.Add(Tabletxt,{ Color4, "Armor: "})

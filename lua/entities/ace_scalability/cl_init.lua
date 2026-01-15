@@ -68,9 +68,9 @@ local function BuildRealPhysics( entity, Scale )
 
 		local SafetyCatch = true --If the mesh would generate a crash bypass it. Only time will tell what this will unleash. Likely client only desync of the hitbox.
 
-		for k, tab in pairs( Mesh ) do
-			for c, v in pairs( tab ) do
-				if v != vector_origin then
+		for _, tab in pairs( Mesh ) do
+			for _, v in pairs( tab ) do
+				if v ~= vector_origin then
 					SafetyCatch = false
 				end
 			end

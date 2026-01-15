@@ -583,9 +583,9 @@ if CLIENT then
 		local ArmorInitMissing = net.ReadBool()
 		local HypoRequested = net.ReadBool()
 		local HypoUsed = net.ReadBool()
-		local HypoFront = math.Round( net.ReadFloat(), 2 )
-		local HypoSide = math.Round( net.ReadFloat(), 2 )
-		local HypoPts = math.Round( net.ReadFloat(), 1 )
+		net.ReadFloat()
+		net.ReadFloat()
+		net.ReadFloat()
 
 		local compressedLen = net.ReadUInt(16)
 		local Compressed = compressedLen > 0 and net.ReadData(compressedLen) or nil

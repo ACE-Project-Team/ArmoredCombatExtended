@@ -23,7 +23,14 @@
     "lint_spaceBetweenBrackets": false,
     "lint_spaceBetweenBraces": false,
     "lint_ignoreFiles": [
-        "lua/entities/gmod_wire_expression2/**"
+        "./lua/entities/gmod_wire_expression2/**",
+        "lua/entities/gmod_wire_expression2/**",
+        "lua\\entities\\gmod_wire_expression2\\**",
+        ".\\lua\\entities\\gmod_wire_expression2\\**",
+        "**/gmod_wire_expression2/**",
+        "**\\gmod_wire_expression2\\**",
+        "**/lua/entities/gmod_wire_expression2/**",
+        "**\\lua\\entities\\gmod_wire_expression2\\**"
     ],
     "lint_spaceBeforeComma": false,
     "lint_spaceAfterComma": false,

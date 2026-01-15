@@ -145,6 +145,12 @@ function TOOL:Reload( trace )
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
 
+	local ply = self:GetOwner()
+	local now = CurTime()
+	local lastReload = ply.ACE_ArmorReloadLast or 0
+	local doubleTap = (now - lastReload) <= 0.35
+	ply.ACE_ArmorReloadLast = now
+
 	local data		= ACF_CalcMassRatio(ent, true)
 
 	local total		= ent.acftotal
@@ -156,20 +162,25 @@ function TOOL:Reload( trace )
 
 	local Contraption = ent:GetContraption() or nil
 	local details = Contraption and Contraption.ACEPointsDetails or nil
-
-	local GeneralTb	= { data.MaterialMass, data.MaterialPercent, details }
-	local ToJSON		= util.TableToJSON( GeneralTb )
-	local Compressed	= util.Compress(ToJSON)
 	local PointVal		= 0
 
 	local PtsArmor = 0
 	local PtsEngine = 0
 	local PtsFirepower = 0
 	local PtsAmmo = 0
+	local PtsAmmoReady = 0
+	local PtsAmmoBackup = 0
+	local AmmoReadyRounds = 0
+	local AmmoBackupRounds = 0
 	local PtsCrew = 0
 	local PtsElectronics = 0
 	local ArmorDirty = false
 	local ArmorInitMissing = false
+	local HypoUsed = false
+	local HypoFront = 0
+	local HypoSide = 0
+	local HypoPts = 0
+	local HypoRequested = doubleTap
 
 		if Contraption ~= nil then
 		PointVal		= Contraption.ACEPoints or ACE_GetEntPoints(ent) or 0
@@ -177,6 +188,10 @@ function TOOL:Reload( trace )
 		PtsEngine = Contraption.ACEPointsPerType.Engines
 		PtsFirepower = Contraption.ACEPointsPerType.Firepower
 		PtsAmmo = Contraption.ACEPointsPerType.Ammo
+		PtsAmmoReady = Contraption.ACEPointsPerType.AmmoReady or 0
+		PtsAmmoBackup = Contraption.ACEPointsPerType.AmmoBackup or 0
+		AmmoReadyRounds = Contraption.ACEPointsPerType.AmmoReadyRounds or 0
+		AmmoBackupRounds = Contraption.ACEPointsPerType.AmmoBackupRounds or 0
 		PtsCrew = Contraption.ACEPointsPerType.Crew
 		PtsElectronics = Contraption.ACEPointsPerType.Electronics
 		ArmorDirty = Contraption.ACEArmorDirty and Contraption.ACEArmorCalculated
@@ -193,6 +208,50 @@ function TOOL:Reload( trace )
 		frontArm, sideArm = ACE_GetArmorScan(ent)
 	end
 
+	if doubleTap and ACE_GetArmorScan then
+		local nextAllowed = ply.ACE_ArmorHypoNext or 0
+		if now < nextAllowed then
+			local wait = math.max(0, nextAllowed - now)
+			ply:ChatPrint(string.format("[ACE] Armor preview is on cooldown (%.1fs).", wait))
+		else
+			local scanEnt = ent
+			if Contraption and Contraption.GetACEBaseplate then
+				local base = Contraption:GetACEBaseplate()
+				if IsValid(base) then
+					scanEnt = base
+				end
+			end
+			HypoFront, HypoSide = ACE_GetArmorScan(scanEnt)
+			HypoPts = (HypoFront + HypoSide * 2) * 4
+			HypoUsed = true
+			if ACE_CalcNonArmorPoints and Contraption then
+				local nonArmor, totals, hypoDetails = ACE_CalcNonArmorPoints(Contraption, scanEnt)
+				PointVal = nonArmor + HypoPts
+				PtsArmor = HypoPts
+				PtsEngine = totals.Engines or 0
+				PtsFirepower = totals.Firepower or 0
+				PtsAmmo = totals.Ammo or 0
+				PtsAmmoReady = totals.AmmoReady or 0
+				PtsAmmoBackup = totals.AmmoBackup or 0
+				AmmoReadyRounds = totals.AmmoReadyRounds or 0
+				AmmoBackupRounds = totals.AmmoBackupRounds or 0
+				PtsCrew = totals.Crew or 0
+				PtsElectronics = totals.Electronics or 0
+				details = hypoDetails
+			end
+			ply.ACE_ArmorHypoNext = now + 5
+		end
+	end
+
+	if HypoUsed then
+		frontArm = HypoFront
+		sideArm = HypoSide
+	end
+
+	local GeneralTb	= { data.MaterialMass, data.MaterialPercent, details }
+	local ToJSON		= util.TableToJSON( GeneralTb )
+	local Compressed	= util.Compress(ToJSON)
+
 	net.Start("ACE_ArmorSummary")
 		net.WriteFloat(total)
 		net.WriteFloat(phystotal)
@@ -204,12 +263,21 @@ function TOOL:Reload( trace )
 		net.WriteFloat(PtsEngine)
 		net.WriteFloat(PtsFirepower)
 		net.WriteFloat(PtsAmmo)
+		net.WriteFloat(PtsAmmoReady)
+		net.WriteFloat(PtsAmmoBackup)
+		net.WriteFloat(AmmoReadyRounds)
+		net.WriteFloat(AmmoBackupRounds)
 		net.WriteFloat(PtsCrew)
 		net.WriteFloat(PtsElectronics)
 		net.WriteFloat(frontArm)
 		net.WriteFloat(sideArm)
 		net.WriteBool(ArmorDirty)
 		net.WriteBool(ArmorInitMissing)
+		net.WriteBool(HypoRequested)
+		net.WriteBool(HypoUsed)
+		net.WriteFloat(HypoFront)
+		net.WriteFloat(HypoSide)
+		net.WriteFloat(HypoPts)
 
 		net.WriteUInt(#Compressed, 16)
 		net.WriteData(Compressed, #Compressed)
@@ -236,7 +304,14 @@ function TOOL:Think()
 
 		local Mat = ent.ACF.Material or "RHA"
 		local MatData =  ACE_GetMaterialData( Mat )
-		local AcePts = ACE_GetEntPoints(ent)
+		local AcePts = 0
+		local cls = ent:GetClass()
+		if cls == "acf_ammo" and ACE_GetAmmoCratePointsForContraption then
+			local con = ent:GetContraption()
+			AcePts = ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0
+		else
+			AcePts = ACE_GetEntPoints(ent)
+		end
 
 		if not MatData then return end
 
@@ -496,12 +571,21 @@ if CLIENT then
 		local PtsEngine = math.Round( net.ReadFloat(), 1 )
 		local PtsFirepower = math.Round( net.ReadFloat(), 1 )
 		local PtsAmmo = math.Round( net.ReadFloat(), 1 )
+		local PtsAmmoReady = math.Round( net.ReadFloat(), 1 )
+		local PtsAmmoBackup = math.Round( net.ReadFloat(), 1 )
+		local AmmoReadyRounds = math.Round( net.ReadFloat(), 0 )
+		local AmmoBackupRounds = math.Round( net.ReadFloat(), 0 )
 		local PtsCrew = math.Round( net.ReadFloat(), 1 )
 		local PtsElectronics = math.Round( net.ReadFloat(), 1 )
 		local FrontArm = math.Round( net.ReadFloat(), 2 )
 		local SideArm = math.Round( net.ReadFloat(), 2 )
 		local ArmorDirty = net.ReadBool()
 		local ArmorInitMissing = net.ReadBool()
+		local HypoRequested = net.ReadBool()
+		local HypoUsed = net.ReadBool()
+		local HypoFront = math.Round( net.ReadFloat(), 2 )
+		local HypoSide = math.Round( net.ReadFloat(), 2 )
+		local HypoPts = math.Round( net.ReadFloat(), 1 )
 
 		local compressedLen = net.ReadUInt(16)
 		local Compressed = compressedLen > 0 and net.ReadData(compressedLen) or nil
@@ -511,6 +595,44 @@ if CLIENT then
 	local Sep = "\n"
 
 	local Tabletxt	= {}
+
+	local function formatAmmoLines(lines)
+		if not istable(lines) then return {} end
+
+		local entries = {}
+		for _, entry in ipairs(lines) do
+			local count = tonumber(entry.Count or entry.count or 0) or 0
+			if count > 0 then
+				entries[#entries + 1] = {
+					count = math.floor(count + 0.5),
+					caliber = tonumber(entry.Caliber or entry.caliber or 0) or 0,
+					atype = tostring(entry.Type or entry.type or "Ammo"),
+					state = tostring(entry.State or entry.state or "")
+				}
+			end
+		end
+
+		table.sort(entries, function(a, b)
+			if a.caliber == b.caliber then
+				if a.atype == b.atype then
+					if a.state == b.state then
+						return a.count > b.count
+					end
+					return a.state == "READY"
+				end
+				return a.atype < b.atype
+			end
+			return a.caliber > b.caliber
+		end)
+
+		local formatted = {}
+		for _, entry in ipairs(entries) do
+			local calText = entry.caliber > 0 and string.format("%dmm", entry.caliber) or "0mm"
+			formatted[#formatted + 1] = string.format("%dx%s %s %s", entry.count, calText, entry.atype, entry.state)
+		end
+
+		return formatted
+	end
 
 	local function pct(part, total)
 		if total <= 0 then return 0 end
@@ -523,47 +645,68 @@ if CLIENT then
 		local Title		= { Color2, "<|",Color1, "|============|", Color2, "[- Contraption Summary -]", Color1, "|============|",Color2, "|>" .. Sep }
 		local TMass2		= { Color4, "-Mass Ratio: ",Color3, "" .. phystotal .. "kg", Color4, " physical, ", Color3, "" .. parenttotal .. "kg", Color4, " parented / ", Color3, physratio .. "%", Color4, " physical )" .. Sep }
 
-		local Engine		= { Color4, "-Total Power: ", Color3, "" .. math.Round(power, 1), Color4," hp -> ",Color3, "" .. hpton, Color4, " hp/ton" .. Sep }
+	local Engine		= { Color4, "-Total Power: ", Color3, "" .. math.Round(power, 1), Color4," hp -> ",Color3, "" .. hpton, Color4, " hp/ton" .. Sep }
 
+		local Details = FromJSON and FromJSON[3] or nil
+		local ammoLines = formatAmmoLines(Details and Details.AmmoLines)
 
-		Tabletxt = table.Add(Tabletxt, PTBreakdownHeader)
-
-		local TPoints = {}
-		if PointVal > ACF.PointsLimit then
-			local OverPoints = PointVal - ACF.PointsLimit
-			TPoints		= { Color4, "Total Cost: ", Color1, "" .. PointVal .. "pts", Color2, "  -  ", Color1, OverPoints .. " pts over" .. Sep }
-		else
-			TPoints		= { Color4, "Total Cost: ", Color3, "" .. PointVal .. "pts" .. Sep }
-		end
-		table.Add(Tabletxt,TPoints)
-		if ArmorDirty then
-			table.Add(Tabletxt, { Color1, "[!] Armor cost dirty; respawn to recalc." .. Sep })
-		elseif ArmorInitMissing then
-			table.Add(Tabletxt, { Color2, "[!] Armor cost not initialized; unfreeze or enter vehicle." .. Sep })
-		end
-
-		local FractionalPts = "/" .. PointVal
-		table.Add(Tabletxt, { Color4, "Armor scan: ", Color3, string.format("front=%.2fmm  side=%.2fmm", FrontArm, SideArm) .. Sep })
-		table.Add(Tabletxt, { Color4, "Armor: ", Color3, "(" .. pct(PtsArmor, PointVal) .. "%) - " .. PtsArmor .. FractionalPts .. Sep })
-		table.Add(Tabletxt, { Color4, "Engines: ", Color3, "(" .. pct(PtsEngine, PointVal) .. "%) - " .. PtsEngine .. FractionalPts .. Sep })
-		if PtsFirepower > 0 then
-			table.Add(Tabletxt, { Color4, "Firepower: ", Color3, "(" .. pct(PtsFirepower, PointVal) .. "%) - " .. PtsFirepower .. FractionalPts .. Sep })
-		end
-		table.Add(Tabletxt, { Color4, "Ammo: ", Color3, "(" .. pct(PtsAmmo, PointVal) .. "%) - " .. PtsAmmo .. FractionalPts .. Sep })
-		table.Add(Tabletxt, { Color4, "Crew: ", Color3, "(" .. pct(PtsCrew, PointVal) .. "%) - " .. PtsCrew .. FractionalPts .. Sep })
-		table.Add(Tabletxt, { Color4, "Electronics: ", Color3, "(" .. pct(PtsElectronics, PointVal) .. "%) - " .. PtsElectronics .. FractionalPts .. Sep })
-
-		-- Optional server-provided breakdown of highest-cost items.
-		local Details = FromJSON and FromJSON[3]
-		if Details and Details.Items and #Details.Items > 0 then
-			table.Add(Tabletxt,{ Color4, "- Top Cost Items:" .. Sep})
-			for _, item in ipairs(Details.Items) do
-				local category = item.Category or item.category or "Item"
-				local label = item.Label or item.label or ""
-				local pts = item.Points or item.points or item.Pts or item.pts or 0
-				table.Add(Tabletxt, { Color4, category .. ": ", Color3, string.format("%s - %.1fpts", label, pts) .. Sep })
+		local showBreakdown = not (ArmorInitMissing and not HypoUsed)
+		if not showBreakdown then
+			if not HypoRequested then
+				table.Add(Tabletxt, {
+					Color1,
+					"[!] ARMOR COST NOT INITIALIZED. ",
+					Color2,
+					"Unfreeze or enter vehicle. Double-tap R to preview." .. Sep
+				})
 			end
+		else
+			Tabletxt = table.Add(Tabletxt, PTBreakdownHeader)
+			if HypoUsed then
+				table.Add(Tabletxt, { Color2, "[i] Preview mode (no points applied). Respawn to apply." .. Sep })
+			end
+
+			local TPoints = {}
+			local totalLabel = HypoUsed and "Total Cost (preview): " or "Total Cost: "
+			if PointVal > ACF.PointsLimit then
+				local OverPoints = PointVal - ACF.PointsLimit
+				TPoints		= { Color4, totalLabel, Color1, "" .. PointVal .. "pts", Color2, "  -  ", Color1, OverPoints .. " pts over" .. Sep }
+			else
+				TPoints		= { Color4, totalLabel, Color3, "" .. PointVal .. "pts" .. Sep }
+			end
+			table.Add(Tabletxt,TPoints)
+			if ArmorDirty then
+				table.Add(Tabletxt, { Color1, "[!] Armor cost dirty; respawn to recalc." .. Sep })
+			elseif ArmorInitMissing and not HypoUsed then
+				table.Add(Tabletxt, { Color1, "[!] ARMOR COST NOT INITIALIZED. ", Color2, "Unfreeze or enter vehicle." .. Sep })
+			end
+
+			local FractionalPts = "/" .. PointVal
+			table.Add(Tabletxt, { Color4, "Armor scan: ", Color3, string.format("front=%.2fmm  side=%.2fmm", FrontArm, SideArm) .. Sep })
+			table.Add(Tabletxt, { Color4, "Armor: ", Color3, "(" .. pct(PtsArmor, PointVal) .. "%) - " .. PtsArmor .. FractionalPts .. Sep })
+			table.Add(Tabletxt, { Color4, "Engines: ", Color3, "(" .. pct(PtsEngine, PointVal) .. "%) - " .. PtsEngine .. FractionalPts .. Sep })
+			if PtsFirepower > 0 then
+				table.Add(Tabletxt, { Color4, "Firepower: ", Color3, "(" .. pct(PtsFirepower, PointVal) .. "%) - " .. PtsFirepower .. FractionalPts .. Sep })
+			end
+			if PtsAmmo > 0 or #ammoLines > 0 or PtsAmmoReady > 0 or PtsAmmoBackup > 0 then
+				table.Add(Tabletxt, { Color4, "Ammo: ", Color3, "(" .. pct(PtsAmmo, PointVal) .. "%) - " .. PtsAmmo .. FractionalPts .. Sep })
+				if #ammoLines > 0 then
+					for _, line in ipairs(ammoLines) do
+						table.Add(Tabletxt, { Color3, "    " .. line .. Sep })
+					end
+				else
+					if AmmoReadyRounds > 0 then
+						table.Add(Tabletxt, { Color3, "    " .. AmmoReadyRounds .. " rds READY" .. Sep })
+					end
+					if AmmoBackupRounds > 0 then
+						table.Add(Tabletxt, { Color3, "    " .. AmmoBackupRounds .. " rds BACKUP" .. Sep })
+					end
+				end
+			end
+			table.Add(Tabletxt, { Color4, "Crew: ", Color3, "(" .. pct(PtsCrew, PointVal) .. "%) - " .. PtsCrew .. FractionalPts .. Sep })
+			table.Add(Tabletxt, { Color4, "Electronics: ", Color3, "(" .. pct(PtsElectronics, PointVal) .. "%) - " .. PtsElectronics .. FractionalPts .. Sep })
 		end
+
 
 		Tabletxt = table.Add(Tabletxt, Title)
 		Tabletxt = table.Add(Tabletxt,TMass2)

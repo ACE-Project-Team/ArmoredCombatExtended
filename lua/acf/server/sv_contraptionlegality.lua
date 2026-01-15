@@ -71,8 +71,8 @@ local AmmoTypeFactors = {
 	THEAT = 0.95,
 	THEATFS = 1.0,
 	HESH = 0.4,
-	HE = 0.2,
-	HEFS = 0.3,
+	HE = 0.5,
+	HEFS = 0.6,
 	HP = 0.1,
 	CAP = 0.6,
 	CHEAT = 0.8,
@@ -89,12 +89,23 @@ local AmmoTypeFactors = {
 -- Normalization constants for the ammo formula; tune these to rebalance without
 -- rewriting the math.
 local AmmoCostConfig = {
-	BaseRoundPts = 80,
-	RefPen = 600,
-	RefCaliber = 120,
-	PenExp = 2,
-	RpsRef = 1 / 7,
-	RpsExp = 0.5
+	BaseRoundPts = 80, -- Base points per round before scaling.
+	RefPen = 600, -- Reference penetration (mm) for pen scaling.
+	RefCaliber = 120, -- Reference caliber (mm) for caliber scaling.
+	PenExp = 1.6, -- Penetration curve exponent.
+	RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
+	BlastExp = 1.1, -- Blast curve exponent.
+	BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
+	RpsRef = 1 / 7, -- Reference rounds per second for ROF scaling.
+	RpsExp = 0.5, -- ROF curve exponent.
+	ReadyRackBase = 2400, -- Ready rack baseline: base / caliber(mm).
+	ReadyRackMin = 10, -- Minimum ready rounds per gun group.
+	ReadyRackMax = 200, -- Maximum ready rounds per gun group.
+	ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
+	ReadyRackLowBoost = 0.5, -- Boost factor applied below pivot (0.5 = +50%).
+	StowFactor = 0.35, -- Cost multiplier for stowed rounds.
+	TailFactor = 0, -- Extra discount per round beyond tail start (0 disables).
+	TailStartMultiplier = 2 -- Tail start = readyCap * multiplier.
 }
 
 ACE.AmmoTypeFactors = AmmoTypeFactors
@@ -132,31 +143,90 @@ local function ACE_GetAmmoTypeFactor(ammoType)
 	return AmmoTypeFactors[ammoType] or 1
 end
 
+local function ACE_GetReadyRackCap(calMm, totalRounds)
+	local readyBase = AmmoCostConfig.ReadyRackBase or 0
+	local readyMax = AmmoCostConfig.ReadyRackMax or 0
+	if readyBase <= 0 or readyMax <= 0 then return 0 end
+
+	local readyMin = AmmoCostConfig.ReadyRackMin or 0
+	local pivot = AmmoCostConfig.ReadyRackPivot or 0
+	local lowBoost = AmmoCostConfig.ReadyRackLowBoost or 0
+
+	local baseCap = readyBase / math.max(calMm, 1)
+	if pivot > 0 and lowBoost > 0 and calMm < pivot then
+		local ratio = (pivot - calMm) / pivot
+		baseCap = baseCap * (1 + lowBoost * ratio)
+	end
+
+	local cap = math.Clamp(baseCap, readyMin, readyMax)
+	if totalRounds and totalRounds > 0 then
+		cap = math.min(cap, totalRounds)
+	end
+
+	return math.floor(cap + 0.5)
+end
+
 local function ACE_GetAmmoMaxPen(bulletData)
 	if not bulletData then return 0 end
-	if bulletData.MaxPen then return bulletData.MaxPen end
+
+	local maxPen = tonumber(bulletData.MaxPen) or 0
+	if bulletData.MaxPen2 then
+		maxPen = math.max(maxPen, tonumber(bulletData.MaxPen2) or 0)
+	end
+
+	if maxPen > 0 then
+		return maxPen
+	end
+
+	local function getBlastPen(data)
+		local filler = data.BoomFillerMass or data.FillerMass or 0
+		local hePower = ACF and ACF.HEPower or 0
+		local blastDiv = ACF and ACF.HEBlastPenetration or 0
+		if filler <= 0 or hePower <= 0 or blastDiv <= 0 then return 0 end
+		return (filler * hePower) / blastDiv
+	end
 
 	local roundType = bulletData.Type
 	local round = roundType and ACF.RoundTypes and ACF.RoundTypes[roundType]
 	if round and round.getDisplayData then
 		local ok, display = pcall(round.getDisplayData, bulletData)
 		if ok and istable(display) then
-			return display.MaxPen or 0
+			maxPen = math.max(maxPen, display.MaxPen or 0, display.MaxPen2 or 0)
 		end
 	end
 
-	return 0
+	if maxPen <= 0 then
+		maxPen = getBlastPen(bulletData)
+	end
+
+	return maxPen
 end
 
 local function ACE_GetAmmoCaliberMm(bulletData)
 	if not bulletData then return 0 end
 
-	local cal = bulletData.Caliber
-	if not cal and bulletData.Id then
-		cal = ACF_GetGunValue(bulletData.Id, "caliber")
+	local cal = bulletData.Caliber or 0
+	local slug = bulletData.SlugCaliber or 0
+	local slug2 = bulletData.SlugCaliber2 or 0
+	local jet = bulletData.JetCaliber or 0
+	local best = math.max(cal, slug, slug2, jet)
+
+	if best <= 0 and bulletData.Id then
+		best = ACF_GetGunValue(bulletData.Id, "caliber") or 0
 	end
 
-	return (cal or 0) * 10
+	return best * 10
+end
+
+local function ACE_GetAmmoBlastMass(bulletData)
+	if not bulletData then return 0 end
+
+	local mass = tonumber(bulletData.BoomFillerMass) or 0
+	if mass <= 0 then
+		mass = tonumber(bulletData.FillerMass) or 0
+	end
+
+	return mass
 end
 
 local function ACE_GetGunRps(ent)
@@ -176,7 +246,7 @@ local function ACE_GetRackRps(ent)
 	return 0
 end
 
-local function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks)
+local function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
 	if not IsValid(crate) then return 0 end
 
 	local bdata = crate.BulletData
@@ -186,7 +256,8 @@ local function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks)
 	if rounds <= 0 then return 0 end
 
 	local maxPen = ACE_GetAmmoMaxPen(bdata)
-	if maxPen <= 0 then return 0 end
+	local blastMass = ACE_GetAmmoBlastMass(bdata)
+	if maxPen <= 0 and blastMass <= 0 then return 0 end
 
 	local calMm = ACE_GetAmmoCaliberMm(bdata)
 	if calMm <= 0 then return 0 end
@@ -212,21 +283,61 @@ local function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks)
 	if rpsTotal <= 0 then return 0 end
 
 	local penFactor = (maxPen / AmmoCostConfig.RefPen) ^ AmmoCostConfig.PenExp
+	local blastFactor = 0
+	local blastRef = AmmoCostConfig.RefBlastMass
+	if blastMass > 0 and blastRef and blastRef > 0 then
+		blastFactor = (blastMass / blastRef) ^ AmmoCostConfig.BlastExp
+	end
+	local threatFactor = penFactor + blastFactor * AmmoCostConfig.BlastWeight
+	if threatFactor <= 0 then return 0 end
 	local calFactor = calMm / AmmoCostConfig.RefCaliber
 	local rpsFactor = (rpsTotal / AmmoCostConfig.RpsRef) ^ AmmoCostConfig.RpsExp
-	local roundPts = AmmoCostConfig.BaseRoundPts * penFactor * calFactor * typeFactor
+	local roundPts = AmmoCostConfig.BaseRoundPts * threatFactor * calFactor * typeFactor
+	local stowFactor = AmmoCostConfig.StowFactor or 1
+	local tailFactor = AmmoCostConfig.TailFactor or 0
+	local tailStartMul = AmmoCostConfig.TailStartMultiplier or 0
+	local effectiveRounds = rounds
+	local readyCap = ACE_GetReadyRackCap(calMm, rounds)
+	local readyCount = rounds
+	local stowCount = 0
+
+	if readyCap > 0 then
+		readyCount = readyCap
+		stowCount = math.max(rounds - readyCount, 0)
+		effectiveRounds = readyCount + stowCount * stowFactor
+		if tailFactor > 0 and tailStartMul > 0 then
+			local tailStart = readyCap * tailStartMul
+			local tail = math.max(rounds - tailStart, 0)
+			if tail > 0 then
+				effectiveRounds = effectiveRounds - tail * tailFactor
+			end
+		end
+		if effectiveRounds < 0 then
+			effectiveRounds = 0
+		end
+	end
 
 	local name = ACF_GetGunValue(ammoId, "name") or tostring(ammoId)
+	if readyAlloc and readyAlloc[crate] then
+		readyCount = math.min(readyAlloc[crate], rounds)
+		stowCount = math.max(rounds - readyCount, 0)
+	end
+	local readyCost = roundPts * readyCount * rpsFactor
+	local stowCost = roundPts * stowCount * stowFactor * rpsFactor
 	local detail = {
 		Name = name,
 		Type = bdata.Type or "",
 		Caliber = calMm,
 		Capacity = rounds,
 		MaxPen = maxPen,
-		Rps = rpsTotal
+		Rps = rpsTotal,
+		ReadyCount = readyCount,
+		StowCount = stowCount,
+		ReadyCost = readyCost,
+		StowCost = stowCost
 	}
 
-	return roundPts * rounds * rpsFactor, detail
+	return readyCost + stowCost, detail
 end
 
 -- Rate-limit legal checks per entity to prevent spam and allow future policy hooks.
@@ -984,13 +1095,140 @@ local function ACE_GetContraptionEntities(Contraption, fallbackEnt)
 	return ents
 end
 
-local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
-	if not Contraption then return end
+local function ACE_BuildAmmoReadyAlloc(ents)
+	local readyBase = AmmoCostConfig.ReadyRackBase or 0
+	local readyMax = AmmoCostConfig.ReadyRackMax or 0
+	if readyBase <= 0 or readyMax <= 0 then return nil end
+
+	local groups = {}
+
+	for _, ent in ipairs(ents) do
+		if not IsValid(ent) then continue end
+		if ent:GetClass() ~= "acf_ammo" then continue end
+
+		local bdata = ent.BulletData
+		if not bdata then continue end
+
+		local rounds = ent.Capacity or 0
+		if rounds <= 0 then continue end
+
+		local ammoId = bdata.Id
+		if not ammoId then continue end
+
+		local calMm = ACE_GetAmmoCaliberMm(bdata)
+		if calMm <= 0 then continue end
+
+		local group = groups[ammoId]
+		if not group then
+			group = {
+				calMm = calMm,
+				total = 0,
+				entries = {}
+			}
+			groups[ammoId] = group
+		end
+
+		group.total = group.total + rounds
+		group.entries[#group.entries + 1] = {
+			ent = ent,
+			rounds = rounds
+		}
+	end
+
+	local alloc = {}
+
+	for _, group in pairs(groups) do
+		local total = group.total or 0
+		if total <= 0 then continue end
+
+		local readyCap = ACE_GetReadyRackCap(group.calMm, total)
+		if readyCap <= 0 then continue end
+
+		local entries = {}
+		local remaining = readyCap
+		for _, entry in ipairs(group.entries) do
+			local raw = readyCap * entry.rounds / total
+			local base = math.floor(raw)
+			remaining = remaining - base
+			entries[#entries + 1] = {
+				ent = entry.ent,
+				rounds = entry.rounds,
+				ready = base,
+				frac = raw - base
+			}
+		end
+
+		table.sort(entries, function(a, b)
+			if a.frac == b.frac then
+				if a.rounds == b.rounds then
+					return tostring(a.ent) < tostring(b.ent)
+				end
+				return a.rounds < b.rounds
+			end
+			return a.frac > b.frac
+		end)
+
+		for _, entry in ipairs(entries) do
+			if remaining <= 0 then break end
+			if entry.ready < entry.rounds then
+				entry.ready = entry.ready + 1
+				remaining = remaining - 1
+			end
+		end
+
+		for _, entry in ipairs(entries) do
+			alloc[entry.ent] = entry.ready
+		end
+	end
+
+	if next(alloc) == nil then return nil end
+	return alloc
+end
+
+function ACE_GetAmmoCratePointsForContraption(crate, Contraption, fallbackEnt)
+	if not IsValid(crate) then return 0 end
+
+	local ents = ACE_GetContraptionEntities(Contraption, fallbackEnt or crate)
+	local gunRpsById = {}
+	local racks = {}
+	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents)
+
+	for _, ent in ipairs(ents) do
+		if not IsValid(ent) then continue end
+		local cls = ent:GetClass()
+		if cls == "acf_gun" then
+			local id = ent.Id
+			local rps = ACE_GetGunRps(ent)
+			if id and rps > 0 then
+				gunRpsById[id] = (gunRpsById[id] or 0) + rps
+			end
+		elseif cls == "acf_rack" then
+			racks[#racks + 1] = ent
+		end
+	end
+
+	return ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
+end
+
+function ACE_CalcNonArmorPoints(Contraption, baseEnt)
+	if not Contraption then
+		return 0, {
+			Engines = 0,
+			Firepower = 0,
+			Ammo = 0,
+			Crew = 0,
+			Electronics = 0
+		}, { Items = {} }
+	end
 
 	local totals = {
 		Engines = 0,
 		Firepower = 0,
 		Ammo = 0,
+		AmmoReady = 0,
+		AmmoBackup = 0,
+		AmmoReadyRounds = 0,
+		AmmoBackupRounds = 0,
 		Crew = 0,
 		Electronics = 0
 	}
@@ -999,6 +1237,23 @@ local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
 	local gunRpsById = {}
 	local racks = {}
 	local detailItems = {}
+	local ammoLines = {}
+	local function addAmmoLine(state, caliber, ammoType, count)
+		if not count or count <= 0 then return end
+		local calKey = caliber and math.floor(caliber + 0.5) or 0
+		if calKey <= 0 then return end
+		local typeKey = ammoType ~= "" and ammoType or "Ammo"
+		local key = string.format("%s|%d|%s", state, calKey, typeKey)
+		if not ammoLines[key] then
+			ammoLines[key] = {
+				State = state,
+				Caliber = calKey,
+				Type = typeKey,
+				Count = 0
+			}
+		end
+		ammoLines[key].Count = ammoLines[key].Count + count
+	end
 	local minDetailPts = 300
 
 	local function getEntityLabel(ent)
@@ -1030,31 +1285,40 @@ local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
 			racks[#racks + 1] = ent
 		end
 	end
+	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents)
 
 	for _, ent in ipairs(ents) do
 		if not IsValid(ent) then continue end
 
 		local cls = ent:GetClass()
 		if cls == "acf_ammo" then
-			local pts, detail = ACE_CalcAmmoCratePoints(ent, gunRpsById, racks)
+			local pts, detail = ACE_CalcAmmoCratePoints(ent, gunRpsById, racks, readyAlloc)
 			if pts > 0 then
 				nonArmor = nonArmor + pts
 				totals.Ammo = (totals.Ammo or 0) + pts
 				if detail then
+					totals.AmmoReady = (totals.AmmoReady or 0) + (detail.ReadyCost or 0)
+					totals.AmmoBackup = (totals.AmmoBackup or 0) + (detail.StowCost or 0)
+					totals.AmmoReadyRounds = (totals.AmmoReadyRounds or 0) + (detail.ReadyCount or 0)
+					totals.AmmoBackupRounds = (totals.AmmoBackupRounds or 0) + (detail.StowCount or 0)
+
 					local ammoType = detail.Type ~= "" and detail.Type or "Ammo"
-					local cap = math.floor((detail.Capacity or 0) + 0.5)
-					local cal = math.floor((detail.Caliber or 0) + 0.5)
-					local pen = math.floor((detail.MaxPen or 0) + 0.5)
-					local rps = detail.Rps or 0
-					local label = string.format(
-						"%dx%.0fmm %s - Pen: %.0f, RPS: %.2f",
-						cap,
-						cal,
-						ammoType,
-						pen,
-						rps
-					)
-					addDetail("Ammo", label, pts, ent)
+					local readyCount = math.floor((detail.ReadyCount or 0) + 0.5)
+					local stowCount = math.floor((detail.StowCount or 0) + 0.5)
+					local readyCost = detail.ReadyCost or 0
+					local stowCost = detail.StowCost or 0
+
+					if readyCount > 0 then
+						local label = string.format("Ready rack %s x%d", ammoType, readyCount)
+						addDetail("Ammo", label, readyCost, ent)
+					end
+					if stowCount > 0 then
+						local label = string.format("Backup ammo %s x%d", ammoType, stowCount)
+						addDetail("Ammo", label, stowCost, ent)
+					end
+
+					addAmmoLine("READY", detail.Caliber, ammoType, readyCount)
+					addAmmoLine("BACKUP", detail.Caliber, ammoType, stowCount)
 				end
 			end
 			continue
@@ -1090,12 +1354,32 @@ local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
 		end
 	end
 
+	local ammoList = {}
+	for _, entry in pairs(ammoLines) do
+		if entry.Count and entry.Count > 0 then
+			ammoList[#ammoList + 1] = {
+				State = entry.State,
+				Caliber = entry.Caliber,
+				Type = entry.Type,
+				Count = math.floor(entry.Count + 0.5)
+			}
+		end
+	end
+
+	return nonArmor, totals, { Items = trimmed, AmmoLines = ammoList }
+end
+
+local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
+	if not Contraption then return end
+
+	local nonArmor, totals, details = ACE_CalcNonArmorPoints(Contraption, baseEnt)
+
 	Contraption.ACEPointsNonArmor = nonArmor
 	Contraption.ACEPointsPerType = Contraption.ACEPointsPerType or {}
 	for key, value in pairs(totals) do
 		Contraption.ACEPointsPerType[key] = value
 	end
-	Contraption.ACEPointsDetails = { Items = trimmed }
+	Contraption.ACEPointsDetails = details
 end
 
 -- Rebuild armor points when dirty and synchronize totals for the breakdown.
@@ -1236,6 +1520,10 @@ do
 		Class.ACEPointsPerType.Engines = 0
 		Class.ACEPointsPerType.Firepower = 0
 		Class.ACEPointsPerType.Ammo = 0
+		Class.ACEPointsPerType.AmmoReady = 0
+		Class.ACEPointsPerType.AmmoBackup = 0
+		Class.ACEPointsPerType.AmmoReadyRounds = 0
+		Class.ACEPointsPerType.AmmoBackupRounds = 0
 		Class.ACEPointsPerType.Crew = 0
 		Class.ACEPointsPerType.Electronics = 0
 	end

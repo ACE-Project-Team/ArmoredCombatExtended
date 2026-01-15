@@ -92,7 +92,7 @@ crate_pts = round_pts * capacity * (rps_total / RpsRef) ^ RpsExp
 
 ### Current Constants
 - BaseRoundPts = 111.1
-- RefPen = 500
+- RefPen = 600
 - RefCaliber = 120
 - PenExp = 2
 - RpsRef = 1 / 7

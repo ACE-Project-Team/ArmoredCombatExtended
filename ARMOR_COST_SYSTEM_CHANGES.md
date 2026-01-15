@@ -1,142 +1,199 @@
-# ACE Armor Cost System Changes
+# ACE Armor and Cost System (Current Behavior)
 
-This document describes the recent armor cost pipeline changes, how the system now works end-to-end, the rationale, and the risk profile (including known exploit windows). It is intended to help maintainers evaluate adoption.
+This document is a complete, no-context explanation of how the current ACE cost system works. It covers when calculations run, how armor and ammo are scored, what is shown in the readout, and which values can be tuned.
 
-Contents
-- Executive Summary
-- Goals and Scope
-- System Overview
-- Calculation Pipeline (Step-by-step)
-- What Changed (Detailed List)
-- Debug Visualization Behavior
-- Performance Profile
-- Possible Exploits and Edge Cases
-- Mitigation Options
-- Suggested Test Plan
+## Scope
+- Contraption-level armor scanning and scoring.
+- Ammo-driven firepower cost (guns and racks are zero-cost; ammo carries offense).
+- Engine, crew, and electronics point rollups.
+- Readout format, warnings, and debug behavior.
 
-Executive Summary
-The new pipeline makes armor cost calculation consistent and deterministic by doing a single contraption-level scan on first initialization (unfreeze or first vehicle entry), then freezing the armor cost unless the vehicle is respawned. Subsequent changes mark the cost as dirty and display a visible warning in the readout rather than silently recalculating. This avoids expensive re-scans, removes inconsistent behavior from on-demand tools, and blocks most "spam-rescan" approaches that previously allowed players to search for favorable snapshots.
+## Key Terms
+- Contraption: A set of constrained entities treated as one vehicle.
+- Critical component: Engine, ammo crate, fuel tank, or crew seat; used as sampling anchors for armor traces.
+- Initialized: Armor scan has been performed and cached.
+- Dirty: Contraption changed after initialization; armor cost is stale until respawn.
 
-Goals and Scope
-- Consistency: The same vehicle configuration yields the same armor cost across sessions and tools.
-- Performance: Avoid repeated trace-heavy scans during normal play.
-- Transparency: Show explicit warnings when costs are stale or uninitialized.
-- Exploit resistance: Make it harder to abuse timing-based recalculation without server admin intent.
+## High-Level Flow
+1) When a contraption is initialized (unfreeze, vehicle entry, or dupe paste), an armor scan runs once.
+2) The scan computes average front and side armor for the contraption.
+3) Armor points are calculated from those averages.
+4) Non-armor points are rebuilt, including ammo points based on penetration and total compatible ROF.
+5) If the contraption changes afterward, it is marked dirty and a warning appears. No re-scan occurs until respawn.
 
-Scope
-- Contraption-level armor scanning and point rollups.
-- Tool readout behavior for armor summary.
-- Engine/ammo/missile point cost consistency fixes.
-- Debug overlays for armor scan visualization.
+## When Calculations Run
+Initialization triggers:
+- Player unfreezes an entity in the contraption.
+- Player enters a vehicle seat in the contraption.
+- Advanced Duplicator paste (runs multiple delayed attempts to catch reparenting).
 
-System Overview
-The armor cost system is now split into two phases:
-1) Initialization scan: a single expensive scan computes front and side armor values and derives armor points. This is performed on first unfreeze or first vehicle entry (whichever happens first).
-2) Steady state: after initialization, any later changes to armor mark the contraption as dirty and display a warning. The cost is not recomputed until a respawn.
+Initialization details:
+- The scan is delayed briefly (default 0.1s) to allow reparenting and tool adjustments.
+- If the contraption is already initialized and not dirty, it is not recalculated.
 
-This yields a stable cost snapshot used for legality checks and UI readouts, while still exposing when a player modified the vehicle afterward.
+Dirty behavior:
+- Any armor-affecting change (mass/material changes, armor entity add/remove) sets ACEArmorDirty = true.
+- Dirty contraptions do not re-scan; the readout warns that a respawn is required.
 
-Calculation Pipeline (Step-by-step)
-1) Contraption creation
-   - `ACE_InitPts` initializes point totals.
-   - `ACEArmorDirty = true` and `ACEArmorCalculated = false`.
+## Armor Scan Algorithm
+### Entity Set
+- Primary source: contraption.ents (framework list).
+- Fallback: ACE.contraptionEnts filtered by contraption id.
+- Final fallback: base entity only.
 
-2) Initialization trigger (first scan)
-   - Triggered by `PlayerUnfrozeObject` or `PlayerEnteredVehicle` (first occurrence).
-   - A 0.1s delay is applied to allow reparenting or tool-side adjustments to settle.
-   - The scan runs once via `ACE_EnsureArmor`, computes:
-     - Front armor average (line-of-sight thickness to critical components).
-     - Side armor average (line-of-sight thickness, separate sample set).
-   - Final armor points: `(front + side * 2) * 4`.
-   - `ACEArmorCalculated = true`, `ACEArmorDirty = false`.
+### Facing Detection
+- The largest-caliber main gun is used to infer front/side directions.
+- If no gun is found, the base entity forward/right vectors are used.
 
-3) After initialization
-   - Any changes (add/remove armor props, set mass) set `ACEArmorDirty = true`.
-   - Costs are not recomputed. The readout explicitly warns that costs are dirty and require a respawn.
+### Sampling
+- Critical components (engine, ammo, fuel, crew) are used as sampling anchors.
+- Each component contributes multiple sample points (OBB corners + center).
+- Projected surface area is computed in front and side directions.
+- Samples are area-weighted to reduce bias from small parts.
 
-4) UI behavior
-   - Armor tool readout uses the cached values if initialized.
-   - If not initialized, it shows a warning: unfreeze or enter vehicle.
-   - If dirty after initialization, it shows a respawn warning.
+### Line-of-Sight Thickness
+For each sample point:
+- A hull trace is fired toward the component from the front direction.
+- A hull trace is fired from both left and right for the side direction (lowest valid value wins).
+- Armor thickness uses material effectiveness and slope correction.
+- MakeSpherical props and non-armor classes are skipped.
+- Effective armor blends KE/CHEM as: eff = 0.8 * KE + 0.2 * CHEM.
 
-What Changed (Detailed List)
-1) Armor scan side weighting
-   - Side armor is now weighted only once. Previously, side was doubled in the scan and then doubled again when costing, over-weighting side by 4x.
-   - Current formula: `(front + side * 2) * 4`.
+### Aggregation
+- Samples are grouped by a coarse region key to prevent stacking the same armor multiple times.
+- Weighted averages are computed for front and side.
 
-2) Armor scan sampling and debug overlays
-   - Debug squares now render at actual trace hit points (armor surface), not just OBB corners.
-   - Marker size represents each sample’s share of the projected surface area.
+### Armor Points
+Final armor points are calculated as:
+```
+armor_pts = (front_avg + side_avg * 2) * 4
+```
+Side armor is intentionally weighted 2x.
 
-3) Engine cost consistency
-   - Engine cost is now recomputed on update using the same fallback cost formula and multiplier as initial spawn.
-   - This avoids "update path" vs "spawn path" point divergence.
+## Ammo Cost Model (Firepower)
+Firepower is represented by ammo only. Guns and racks are zero-cost entities.
 
-4) Ammo crate cost correctness
-   - Ammo cost now uses the freshly computed `AmmoMaxMass` instead of stale values.
+### Steps
+1) Collect total ROF per ammo id from all guns in the contraption.
+   - Uses ReloadTime if present; otherwise RateOfFire in RPM.
+2) If a rack is compatible with the ammo, add rack ReloadTime to the total ROF.
+3) For each ammo crate, compute a per-round cost from penetration, caliber, and type.
+4) Multiply per-round cost by crate capacity and ROF factor.
 
-5) Missile guidance cost safety
-   - Guidance multipliers are now guarded with a safe fallback to avoid nil math and zeroing cost when unknown guidance is used.
+### Formula
+```
+round_pts = BaseRoundPts
+            * (max_pen / RefPen) ^ PenExp
+            * (caliber_mm / RefCaliber)
+            * type_factor
 
-6) Scan triggering policy
-   - The scan no longer runs on tool use or legality checks.
-   - It runs once on unfreeze, or on first vehicle entry if that happens first.
-   - Changes afterward only mark the cost as dirty and warn.
+crate_pts = round_pts * capacity * (rps_total / RpsRef) ^ RpsExp
+```
 
-Debug Visualization Behavior
-- Debug overlays are tied to the scan execution itself.
-- Because scans are now single-shot and triggered on unfreeze/entry, debug overlays appear only when that initialization scan is performed (or when a manual debug scan is invoked).
-- This is expected and prevents debug overlays from encouraging repeated scans.
+### Current Constants
+- BaseRoundPts = 111.1
+- RefPen = 500
+- RefCaliber = 120
+- PenExp = 2
+- RpsRef = 1 / 7
+- RpsExp = 0.5
 
-Performance Profile
-Prior behavior:
-- Armor scanning could be triggered repeatedly by tools or legality checks.
-- Resulted in multiple trace hull runs per frame, inconsistent timing, and potential spam.
+### Max Pen Source
+- If BulletData.MaxPen exists, it is used.
+- Otherwise the round type display data is queried (ACF.RoundTypes[type].getDisplayData).
+- If no MaxPen can be resolved, the crate contributes 0 points.
 
-Current behavior:
-- One scan per contraption at initialization.
-- No repeated scanning on normal gameplay.
-- Dirty changes become a warning rather than a rescan.
-- Reduced server load and more consistent gameplay performance.
+### Ammo Type Factors
+```
+AP=1
+APHE=1
+APDS=1
+APFSDS=1.05
+HVAP=1
+HEAT=0.75
+HEATFS=0.75
+THEAT=0.82
+THEATFS=0.82
+HESH=0.55
+HE=0.25
+HEFS=0.25
+HP=0.25
+CAP=1
+CHEAT=0.75
+CHE=0.25
+CHF=0
+SM=0
+FLR=0
+FL=1
+GLATGM=0.75
+GLATGM-HE=0.25
+Refill=0
+```
 
-Possible Exploits and Edge Cases
-1) Post-init armor reduction
-   - Player initializes vehicle, then removes armor to reduce actual weight and still keep the old higher cost.
-   - Impact: vehicle pays more cost than needed, not a balance issue but could annoy players.
+## Other Point Categories
+- Armor: contraption-level scan result only.
+- Engines: uses existing per-entity ACEPoints.
+- Ammo: calculated as above from crates.
+- Crew: uses per-entity ACEPoints (crew seats).
+- Electronics: uses per-entity ACEPoints.
+- Fuel: ignored (0 points).
+- Firepower: guns/racks are tracked for ROF only and cost 0 points.
 
-2) Post-init armor increase
-   - Player initializes vehicle, then adds armor or changes materials to become tougher without cost increase.
-   - Impact: balance exploit if building is allowed after init.
+## Readout Format
+The armor tool shows a cost breakdown and a summary. Example format:
+```
+<||============|[- Cost Breakdown -]|============||>
+Total Cost: 12826.6pts  -  2826.6 pts over
+Armor scan: front=548.49mm  side=70.97mm
+Armor: (22%) - 2761.7/12826.6
+Engines: (11%) - 1409/12826.6
+Ammo: (58%) - 7453.9/12826.6
+Crew: (9%) - 1202/12826.6
+Electronics: (0%) - 0/12826.6
+- Top Cost Items:
+Ammo: 42x140mm APFSDS - Pen: 857, RPS: 0.06 - 4936.1pts
+Ammo: 36x140mm HEATFS - Pen: 1300, RPS: 0.08 - 3432.5pts
+Engines: 20.7L Flat 6 Multifuel - 1409.0pts
+Crew: Alex Popov - 400.0pts
+<||============|[- Contraption Summary -]|============||>
+...
+```
 
-3) Unfreeze order manipulation
-   - Player attaches "dummy" armor before unfreeze to inflate cost, then removes it.
-   - Impact: opposite of exploit (cost too high), but may be used to avoid suspicion in legality systems.
+Top Cost Items behavior:
+- Sorted by points descending, stable by entity index.
+- Any item >= 300 pts is listed.
+- Ammo entries are formatted as: cap x caliber type - Pen: X, RPS: Y.
 
-4) Entry-before-unfreeze timing
-   - If the player enters a seat before unfreeze, the scan will run at that time.
-   - This is intentional to guarantee initialization even if unfreeze never fires.
+Warnings:
+- If not initialized: "Armor cost not initialized; unfreeze or enter vehicle."
+- If dirty: "Armor cost dirty; respawn to recalc."
 
-5) Reparenting edge cases
-   - Some entities reparent on spawn; the 0.1s delay is intended to reduce mis-scans, but complex setups may still require a manual respawn.
+## Debug and Diagnostics
+- `ace_armor_debugvis` draws debug boxes at armor hit locations during a scan.
+- Colors scale from green to red relative to the max LOS value in that scan.
+- Console prints a single-line summary if debug is enabled.
 
-Mitigation Options
-If maintainers want to close exploit windows without reintroducing heavy scans:
-- Lock building after initialization
-  - Example: disallow tool use or physgun on contraption entities once `ACEArmorCalculated` is true.
-- Add an explicit "Recalculate Armor" admin command
-  - Only server admins can force a rescan for a contraption.
-- Enforce respawn on dirty
-  - If `ACEArmorDirty == true` for longer than a threshold, force a respawn or mark the contraption illegal.
-- Add a lightweight re-scan trigger
-  - Example: rescan only on vehicle freeze or after a build session ends.
+## Performance and Consistency
+- One scan per contraption at initialization; no continuous tracing during play.
+- Cached values are deterministic for a given contraption state.
+- Dirty changes are explicit rather than silent re-scans.
 
-Suggested Test Plan
-- Spawn a vehicle, do not unfreeze, check armor tool: see "not initialized" warning.
-- Unfreeze vehicle: armor is computed and warning disappears.
-- Enter vehicle before unfreeze: armor computes on entry.
-- Add armor after init: see "dirty" warning; cost stays fixed.
-- Update engine/ammo/missile definitions and verify costs remain consistent after entity updates.
-- Enable `ace_armor_debugvis` and confirm squares appear at real hit points with scaled sizes during initialization scan.
+## Edge Cases and Limitations
+- If a gun or rack has no compatible ammo in the contraption, ammo ROF is zero and crates score 0 points.
+- If MaxPen cannot be resolved for a round type, that crate scores 0.
+- Main-gun direction inference can be wrong on unconventional builds; fallback uses base entity orientation.
+- Post-init modifications can change actual protection without updating cost; this is intentional and surfaced as a warning.
 
-Summary for Adoption
-This system trades continuous recalculation for a consistent, stable cost snapshot. It is fast, avoids spam, and makes armor cost changes explicit to players. The remaining exploit window (post-init changes) is surfaced to users and can be hardened by server policy if desired, without reintroducing heavy tracing or inconsistent recalcs.
+## Tuning Knobs
+- AmmoCostConfig: BaseRoundPts, RefPen, RefCaliber, PenExp, RpsRef, RpsExp.
+- AmmoTypeFactors: per-type multipliers.
+- Armor cost scale: `(front + side * 2) * 4`.
+- Initialization timing: delay in ACE_ScheduleInitArmor.
+
+## Suggested Test Checklist
+- Spawn a contraption, do not unfreeze: readout shows "not initialized" warning.
+- Unfreeze: armor initializes and warning disappears.
+- Enter vehicle before unfreeze: armor initializes on entry.
+- Modify armor after init: readout shows "dirty" warning and costs remain fixed.
+- Test ammo crates with and without compatible guns/racks; confirm ROF scaling and label formatting.
+- Enable `ace_armor_debugvis` and verify debug boxes render at trace hit locations.

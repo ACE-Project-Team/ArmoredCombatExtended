@@ -519,6 +519,25 @@ do
 	end)
 end
 
+
+local function ACE_NotifyContraptionModified(Contraption)
+	if not Contraption or not Contraption.ACEArmorCalculated then return end
+
+	Contraption.OTWarnings = Contraption.OTWarnings or {}
+	if Contraption.OTWarnings.WarnedModified then return end
+
+	local base = Contraption.GetACEBaseplate and Contraption:GetACEBaseplate()
+	local owner = IsValid(base) and base.CPPIGetOwner and base:CPPIGetOwner() or nil
+	local name = IsValid(owner) and owner:Nick() or "Unknown"
+	local msg = "[ACE] " .. name .. " modified a vehicle after cost initialization."
+	if Contraption.ACEArmorDirty then
+		msg = msg .. " Armor cost marked dirty."
+	end
+
+	chatMessageGlobal(msg, Color(255, 200, 0))
+	Contraption.OTWarnings.WarnedModified = true
+end
+
 function ACE_CheckLegalCont(Contraption)
 
 	-- Track one-time warning flags per contraption to avoid repeated spam.
@@ -1402,6 +1421,9 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 	Contraption.ACEArmorPoints = newArmorPts
 	Contraption.ACEArmorDirty = false
 	Contraption.ACEArmorCalculated = true
+	if Contraption.OTWarnings then
+		Contraption.OTWarnings.WarnedModified = false
+	end
 
 	local nonArmor = Contraption.ACEPointsNonArmor or 0
 	Contraption.ACEPoints = nonArmor + newArmorPts
@@ -1476,6 +1498,7 @@ do
 		if eclass == "Ignore" then return end
 		if eclass == "Armor" then
 			con.ACEArmorDirty = true
+			ACE_NotifyContraptionModified(con)
 			return
 		end
 
@@ -1483,6 +1506,7 @@ do
 		con.ACEPointsNonArmor = (con.ACEPointsNonArmor or 0) + delta
 		con.ACEPointsPerType = con.ACEPointsPerType or {}
 		con.ACEPointsPerType[eclass] = (con.ACEPointsPerType[eclass] or 0) + delta
+		ACE_NotifyContraptionModified(con)
 	end
 
 	local function ACE_InitPts(Class)
@@ -1545,6 +1569,7 @@ do
 					Class.ACEPointsNonArmor = (Class.ACEPointsNonArmor or 0) + delta
 					Class.ACEPointsPerType = Class.ACEPointsPerType or {}
 					Class.ACEPointsPerType[EClass] = (Class.ACEPointsPerType[EClass] or 0) + delta
+					ACE_NotifyContraptionModified(Class)
 				end
 			end
 
@@ -1562,6 +1587,7 @@ do
 
 		if EClass == "Armor" then
 			Class.ACEArmorDirty = true
+			ACE_NotifyContraptionModified(Class)
 		else
 			Class.ACEPoints = (Class.ACEPoints or 0) + newPts
 			Class.ACEPointsNonArmor = (Class.ACEPointsNonArmor or 0) + newPts
@@ -1589,6 +1615,7 @@ do
 		if EClass == "Ignore" then return end
 		if EClass == "Armor" then
 			Class.ACEArmorDirty = true
+			ACE_NotifyContraptionModified(Class)
 			return
 		end
 
@@ -1598,6 +1625,7 @@ do
 		Class.ACEPointsNonArmor = (Class.ACEPointsNonArmor or 0) - AcePts
 
 		Class.ACEPointsPerType[EClass] = Class.ACEPointsPerType[EClass] - AcePts
+		ACE_NotifyContraptionModified(Class)
 	end
 
 	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE_RemPts)

@@ -148,7 +148,8 @@ function TOOL:Reload( trace )
 	local ply = self:GetOwner()
 	local now = CurTime()
 	local lastReload = ply.ACE_ArmorReloadLast or 0
-	local doubleTap = (now - lastReload) <= 0.35
+	local doubleTapWindow = ACE.ArmorPreviewTapWindow or 0.35
+	local doubleTap = (now - lastReload) <= doubleTapWindow
 	ply.ACE_ArmorReloadLast = now
 
 	local data		= ACF_CalcMassRatio(ent, true)
@@ -239,7 +240,8 @@ function TOOL:Reload( trace )
 				PtsElectronics = totals.Electronics or 0
 				details = hypoDetails
 			end
-			ply.ACE_ArmorHypoNext = now + 5
+			local cooldown = ACE.ArmorPreviewCooldown or 5
+			ply.ACE_ArmorHypoNext = now + cooldown
 		end
 	end
 

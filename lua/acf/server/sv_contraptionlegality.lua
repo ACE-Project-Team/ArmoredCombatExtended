@@ -57,59 +57,9 @@ local function ACE_GetPtsType(ClassName)
 	return "Armor"
 end
 
--- Ammo scoring model.
--- Per-round cost scales with max penetration, caliber, and ammo type factor.
--- Total crate cost multiplies per-round cost by capacity and summed compatible ROF.
-local AmmoTypeFactors = {
-	AP = 0.5,
-	APHE = 0.6,
-	APDS = 0.9,
-	APFSDS = 1.2,
-	HVAP = 0.7,
-	HEAT = 0.75,
-	HEATFS = 0.9,
-	THEAT = 0.95,
-	THEATFS = 1.0,
-	HESH = 0.4,
-	HE = 0.5,
-	HEFS = 0.6,
-	HP = 0.1,
-	CAP = 0.6,
-	CHEAT = 0.8,
-	CHE = 0.25,
-	CHF = 0,
-	SM = 0,
-	FLR = 0,
-	FL = 0.3,
-	GLATGM = 0.75,
-	["GLATGM-HE"] = 0.25,
-	Refill = 0
-}
-
--- Normalization constants for the ammo formula; tune these to rebalance without
--- rewriting the math.
-local AmmoCostConfig = {
-	BaseRoundPts = 80, -- Base points per round before scaling.
-	RefPen = 600, -- Reference penetration (mm) for pen scaling.
-	RefCaliber = 120, -- Reference caliber (mm) for caliber scaling.
-	PenExp = 1.6, -- Penetration curve exponent.
-	RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
-	BlastExp = 1.1, -- Blast curve exponent.
-	BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
-	RpsRef = 1 / 7, -- Reference rounds per second for ROF scaling.
-	RpsExp = 0.5, -- ROF curve exponent.
-	ReadyRackBase = 2400, -- Ready rack baseline: base / caliber(mm).
-	ReadyRackMin = 10, -- Minimum ready rounds per gun group.
-	ReadyRackMax = 200, -- Maximum ready rounds per gun group.
-	ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
-	ReadyRackLowBoost = 0.5, -- Boost factor applied below pivot (0.5 = +50%).
-	StowFactor = 0.35, -- Cost multiplier for stowed rounds.
-	TailFactor = 0, -- Extra discount per round beyond tail start (0 disables).
-	TailStartMultiplier = 2 -- Tail start = readyCap * multiplier.
-}
-
-ACE.AmmoTypeFactors = AmmoTypeFactors
-ACE.AmmoCostConfig = AmmoCostConfig
+-- Ammo scoring config lives in acf_globals.lua for centralized tuning.
+local AmmoTypeFactors = ACE.AmmoTypeFactors
+local AmmoCostConfig = ACE.AmmoCostConfig
 
 ACE.DupeArmorCache = ACE.DupeArmorCache or {}
 ACE.DupeArmorCacheVersion = ACE.DupeArmorCacheVersion or 1
@@ -1188,6 +1138,16 @@ end
 function ACE_GetAmmoCratePointsForContraption(crate, Contraption, fallbackEnt)
 	if not IsValid(crate) then return 0 end
 
+	if Contraption and Contraption.ACEAmmoCache and not Contraption.ACENonArmorDirty then
+		local cache = Contraption.ACEAmmoCache
+		return ACE_CalcAmmoCratePoints(
+			crate,
+			cache.GunRpsById or {},
+			cache.Racks or {},
+			cache.ReadyAlloc
+		)
+	end
+
 	local ents = ACE_GetContraptionEntities(Contraption, fallbackEnt or crate)
 	local gunRpsById = {}
 	local racks = {}
@@ -1207,7 +1167,15 @@ function ACE_GetAmmoCratePointsForContraption(crate, Contraption, fallbackEnt)
 		end
 	end
 
-	return ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
+	local pts, detail = ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
+	if Contraption then
+		Contraption.ACEAmmoCache = {
+			GunRpsById = gunRpsById,
+			Racks = racks,
+			ReadyAlloc = readyAlloc
+		}
+	end
+	return pts, detail
 end
 
 function ACE_CalcNonArmorPoints(Contraption, baseEnt)
@@ -1286,6 +1254,11 @@ function ACE_CalcNonArmorPoints(Contraption, baseEnt)
 		end
 	end
 	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents)
+	local ammoCache = {
+		GunRpsById = gunRpsById,
+		Racks = racks,
+		ReadyAlloc = readyAlloc
+	}
 
 	for _, ent in ipairs(ents) do
 		if not IsValid(ent) then continue end
@@ -1366,13 +1339,13 @@ function ACE_CalcNonArmorPoints(Contraption, baseEnt)
 		end
 	end
 
-	return nonArmor, totals, { Items = trimmed, AmmoLines = ammoList }
+	return nonArmor, totals, { Items = trimmed, AmmoLines = ammoList }, ammoCache
 end
 
 local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
 	if not Contraption then return end
 
-	local nonArmor, totals, details = ACE_CalcNonArmorPoints(Contraption, baseEnt)
+	local nonArmor, totals, details, ammoCache = ACE_CalcNonArmorPoints(Contraption, baseEnt)
 
 	Contraption.ACEPointsNonArmor = nonArmor
 	Contraption.ACEPointsPerType = Contraption.ACEPointsPerType or {}
@@ -1380,6 +1353,8 @@ local function ACE_RebuildNonArmorPoints(Contraption, baseEnt)
 		Contraption.ACEPointsPerType[key] = value
 	end
 	Contraption.ACEPointsDetails = details
+	Contraption.ACEAmmoCache = ammoCache
+	Contraption.ACENonArmorDirty = false
 end
 
 -- Rebuild armor points when dirty and synchronize totals for the breakdown.
@@ -1415,7 +1390,9 @@ function ACE_EnsureArmor(Contraption, baseEnt, force)
 		end
 	end
 
-	ACE_RebuildNonArmorPoints(Contraption, base)
+	if Contraption.ACENonArmorDirty or not Contraption.ACEPointsPerType then
+		ACE_RebuildNonArmorPoints(Contraption, base)
+	end
 
 	-- Convert armor averages to points; side armor counts double to reflect exposure.
 	local newArmorPts = (front + side * 2) * 4
@@ -1514,6 +1491,8 @@ do
 		Class.ACEArmorPoints = 0
 		Class.ACEArmorDirty = true
 		Class.ACEArmorCalculated = false
+		Class.ACENonArmorDirty = true
+		Class.ACEAmmoCache = nil
 
 		Class.ACEPointsPerType = {}
 		Class.ACEPointsPerType.Armor = 0
@@ -1536,6 +1515,11 @@ do
 		if not IsValid(Ent) then return end
 
 		local conRef = Class
+		local className = Ent:GetClass()
+		if className == "acf_ammo" or className == "acf_gun" or className == "acf_rack" then
+			Class.ACENonArmorDirty = true
+			Class.ACEAmmoCache = nil
+		end
 		local EClass = ACE_GetPtsType(Ent:GetClass())
 		local newPts = ACE_GetEntPoints(Ent)
 		local oldPts = Ent._AcePts or 0
@@ -1595,6 +1579,11 @@ do
 		Ent._ACEPointsConKey = nil
 		Ent._ACEPointsConRef = nil
 
+		local className = Ent:GetClass()
+		if className == "acf_ammo" or className == "acf_gun" or className == "acf_rack" then
+			Class.ACENonArmorDirty = true
+			Class.ACEAmmoCache = nil
+		end
 		local EClass = ACE_GetPtsType(Ent:GetClass())
 
 		if EClass == "Ignore" then return end

@@ -134,20 +134,74 @@ ACF.MaxWeight = 200000 --The max weight in Kg
 
 ACE.CannonPointMul = 0.85 --Multiplier for cannon point cost
 ACE.EnginePointMul = 0.69 --Multiplier for engine cost in points
-ACF.PointsPerTon   = 60  --Base cost per ton of armor. Multiplier used to balance out armor
 ACE.AmmoPerTon     = 100 --Point cost per ton of ammo
 
-ACE.MatCostTables = {
-	Alum			= 1.06 * (0.8325 / 0.334),	--A 20% increase in cost for 60% reduction in weight.
-	CHA				= 0.7 * (0.98 / 1.25),	--20% more heavy for a 30% reduction in cost.
-	Cer				= 0.95 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
-	ERA				= 0.7 * (3 / 2.0),
-	Rub				= 1.05 * (0.05 / 0.2),
-	Texto			= 0.9 * (0.5 / 0.35),
-	RHA 			= 1,
-	DU				= 1.2 * (3.9 / 2.43),	--A 20% increase in cost for 40% reduction in weight.
-	Ti				= 1.3 * (1.7 / 0.61)	--A 25% increase in cost for 64% reduction in weight.
+-- Deprecated: armor mass-based cost has been replaced by LOS armor scan.
+-- ACF.PointsPerTon   = 60  --Base cost per ton of armor. Multiplier used to balance out armor
+
+-- Ammo cost scoring config for the ACE legality system.
+ACE.AmmoTypeFactors = ACE.AmmoTypeFactors or {
+	AP = 0.5,
+	APHE = 0.6,
+	APDS = 0.9,
+	APFSDS = 1.2,
+	HVAP = 0.7,
+	HEAT = 0.75,
+	HEATFS = 0.9,
+	THEAT = 0.95,
+	THEATFS = 1.0,
+	HESH = 0.4,
+	HE = 0.5,
+	HEFS = 0.6,
+	HP = 0.1,
+	CAP = 0.6,
+	CHEAT = 0.8,
+	CHE = 0.25,
+	CHF = 0,
+	SM = 0,
+	FLR = 0,
+	FL = 0.3,
+	GLATGM = 0.75,
+	["GLATGM-HE"] = 0.25,
+	Refill = 0
 }
+
+ACE.AmmoCostConfig = ACE.AmmoCostConfig or {
+	BaseRoundPts = 80, -- Base points per round before scaling.
+	RefPen = 600, -- Reference penetration (mm) for pen scaling.
+	RefCaliber = 120, -- Reference caliber (mm) for caliber scaling.
+	PenExp = 1.6, -- Penetration curve exponent.
+	RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
+	BlastExp = 1.1, -- Blast curve exponent.
+	BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
+	RpsRef = 1 / 7, -- Reference rounds per second for ROF scaling.
+	RpsExp = 0.5, -- ROF curve exponent.
+	ReadyRackBase = 2400, -- Ready rack baseline: base / caliber(mm).
+	ReadyRackMin = 10, -- Minimum ready rounds per gun group.
+	ReadyRackMax = 200, -- Maximum ready rounds per gun group.
+	ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
+	ReadyRackLowBoost = 0.5, -- Boost factor applied below pivot (0.5 = +50%).
+	StowFactor = 0.35, -- Cost multiplier for stowed rounds.
+	TailFactor = 0, -- Extra discount per round beyond tail start (0 disables).
+	TailStartMultiplier = 2 -- Tail start = readyCap * multiplier.
+}
+
+-- Armor tool UX timing.
+ACE.ArmorPreviewTapWindow = ACE.ArmorPreviewTapWindow or 0.35 -- Seconds between reload taps to trigger preview.
+ACE.ArmorPreviewCooldown = ACE.ArmorPreviewCooldown or 5 -- Seconds between preview requests per player.
+
+-- Deprecated: material cost table from the old mass-based armor system.
+-- ACE.MatCostTables = {
+-- 	Alum			= 1.06 * (0.8325 / 0.334),	--A 20% increase in cost for 60% reduction in weight.
+-- 	CHA				= 0.7 * (0.98 / 1.25),	--20% more heavy for a 30% reduction in cost.
+-- 	Cer				= 0.95 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
+-- 	ERA				= 0.7 * (3 / 2.0),
+-- 	Rub				= 1.05 * (0.05 / 0.2),
+-- 	Texto			= 0.9 * (0.5 / 0.35),
+-- 	RHA 			= 1,
+-- 	DU				= 1.2 * (3.9 / 2.43),	--A 20% increase in cost for 40% reduction in weight.
+-- 	Ti				= 1.3 * (1.7 / 0.61)	--A 25% increase in cost for 64% reduction in weight.
+-- }
 
 ---------------------------------- Misc & other ----------------------------------
 

@@ -1,205 +1,323 @@
-# Improved ACE Armor and Cost System
+# ACE Points System Reference
 
-This document is a complete, no-context explanation of how the new and improved ACE cost system works. It covers when calculations run, how armor and ammo are scored, what is shown in the readout, and which values can be tuned.
+This document describes the current points system as implemented in this repo. It is a standalone explanation of how points are calculated, cached, and displayed.
 
-## Scope
-- Contraption-level armor scanning and scoring.
-- Ammo-driven firepower cost (guns and racks are zero-cost; ammo carries offense).
-- Engine, crew, and electronics point rollups.
-- Readout format, warnings, and debug behavior.
+## Overview
+- A contraption is a constrained set of entities treated as one vehicle.
+- Armor points come from a line-of-sight (LOS) scan of the contraption, not from mass.
+- Non-armor points are a mix of per-entity ACEPoints and ammo scoring.
+- Guns and racks contribute rate-of-fire only; their direct point cost is zero.
+- Fuel tanks are ignored for points.
 
-## Key Terms
-- Contraption: A set of constrained entities treated as one vehicle.
-- Critical component: Engine, ammo crate, fuel tank, or crew seat; used as sampling anchors for armor traces.
-- Initialized: Armor scan has been performed and cached.
-- Dirty: Contraption changed after initialization; armor cost is stale until respawn.
+## Core Contraption State
+The legality system stores computed values on the contraption object:
+- ACEPoints: Total points for the contraption.
+- ACEPointsPerType: Per-category totals (Armor, Engines, Ammo, AmmoReady, AmmoBackup, Crew, Electronics, Firepower).
+- ACEPointsNonArmor: Non-armor subtotal.
+- ACEArmorFront / ACEArmorSide: Cached armor averages (mm) from the scan.
+- ACEArmorPoints: Armor points derived from the scan.
+- ACEArmorDirty: True when armor-affecting changes occur after initialization.
+- ACEArmorCalculated: True after the first successful scan.
+- ACENonArmorDirty: True when non-armor totals need rebuilding (ammo, guns, racks, etc.).
+- ACEAmmoCache: Cached ROF and ready-rack data for ammo scoring.
+- ACEPointsDetails: Readout details (ammo lines and trimmed items).
 
-## High-Level Flow
-1) When a contraption is initialized (unfreeze, vehicle entry, or dupe paste), an armor scan runs once.
-2) The scan computes average front and side armor for the contraption.
-3) Armor points are calculated from those averages.
-4) Non-armor points are rebuilt, including ammo points based on penetration and total compatible ROF.
-5) If the contraption changes afterward, it is marked dirty and a warning appears. No re-scan occurs until respawn.
+## Entity Classification
+Entity classes are mapped into categories via ACE_GetPtsType:
+- Armor: prop_physics, primitive_*, and any class not explicitly listed below.
+- Engines: acf_engine
+- Firepower: acf_gun, acf_rack (points zero, ROF only)
+- Ammo: acf_ammo (custom scoring)
+- Crew: ace_crewseat_driver, ace_crewseat_gunner, ace_crewseat_loader
+- Electronics: ace_* radar/IRST/ECM devices and acf_opticalcomputer
+- Ignore: acf_fueltank
+
+ACE_GetEntPoints returns 0 for armor, ammo, guns, racks, and fuel tanks. All other entities contribute their ACEPoints value.
 
 ## When Calculations Run
-Initialization triggers:
-- Player unfreezes an entity in the contraption.
-- Player enters a vehicle seat in the contraption.
-- Advanced Duplicator paste (runs multiple delayed attempts to catch reparenting).
+Initialization (armor scan) is scheduled by these hooks:
+- PlayerUnfrozeObject: when a player unfreezes part of the contraption.
+- PlayerEnteredVehicle: when a player enters a seat in the contraption.
+- AdvDupe_FinishPasting: multiple delayed passes to catch reparenting after paste.
 
-Initialization details:
-- The scan is delayed briefly (default 0.1s) to allow reparenting and tool adjustments.
-- If the contraption is already initialized and not dirty, it is not recalculated.
+Scheduling behavior:
+- ACE_ScheduleInitArmor coalesces multiple triggers and uses the largest requested delay.
+- Typical delay is 0.1 seconds. AdvDupe runs multiple delayed attempts.
+- If ACEArmorCalculated is true and ACEArmorDirty is false, the scan is skipped.
 
 Dirty behavior:
-- Any armor-affecting change (mass/material changes, armor entity add/remove) sets ACEArmorDirty = true.
-- Dirty contraptions do not re-scan; the readout warns that a respawn is required.
+- Any armor-affecting change sets ACEArmorDirty = true.
+- If the contraption is already initialized, dirty contraptions do not rescan.
+- The readout warns that a respawn is required to apply new armor values.
 
-## Armor Scan Algorithm
-### Entity Set
-- Primary source: contraption.ents (framework list).
-- Fallback: ACE.contraptionEnts filtered by contraption id.
-- Final fallback: base entity only.
+Non-armor rebuild behavior:
+- ACENonArmorDirty is set when ammo, guns, or racks change.
+- Non-armor totals are rebuilt on demand when dirty or missing.
 
-### Facing and Up Direction
-- Up is derived from world gravity (physenv.GetGravity) and normalized.
-- Front uses the main gun forward (negated), flattened to the gravity plane.
-- If no gun exists or the vector is degenerate, base forward is used.
-- Side uses wheel axle axes when possible:
-  - Axis constraints between the baseplate and MakeSpherical wheels are collected.
-  - The axle axes are averaged and flattened to the gravity plane.
-- If no valid wheel axes are found, side falls back to cross(up, front), then base right.
-- The final basis is orthonormalized so front and side are perpendicular.
+## Armor Scan
+Armor is estimated by tracing toward critical components and measuring LOS thickness.
 
-### Sampling
-- Critical components (engine, ammo, fuel, crew) are used as sampling anchors.
-- Each component contributes multiple sample points (OBB corners + center).
-- Projected surface area is computed in front and side directions.
-- Samples are area-weighted to reduce bias from small parts.
+### 1) Entity Set
+The scan uses the contraption entity list when available:
+- Primary: contraption.ents.
+- Fallback: base entity only.
 
-### Line-of-Sight Thickness
+Entities are sorted by EntIndex for determinism.
+
+### 2) Direction Basis
+A stable front/side/up basis is derived:
+- Up comes from world gravity (physenv.GetGravity), inverted and normalized.
+- Front comes from the main gun (largest caliber) forward vector, negated.
+- If no gun is found, base entity forward is used.
+- Front is flattened onto the gravity plane to avoid vertical bias.
+- Side is derived from Axis constraints between the base and MakeSpherical wheels.
+- If no wheel axis is found, side uses up x front.
+- If that fails, side falls back to base right.
+- The basis is orthonormalized to keep front and side perpendicular.
+
+### 3) Critical Components
+Armor is sampled around these components:
+- acf_ammo, acf_fueltank, acf_engine
+- ace_crewseat_driver, ace_crewseat_gunner, ace_crewseat_loader
+
+If no critical components exist, the scan returns 0 for both front and side.
+
+### 4) Sampling Points and Weights
+For each critical component:
+- Use OBB corners (scaled to 75 percent) plus the center.
+- Compute projected area in front and side directions.
+- Each sample carries an area-based weight (area / sample count).
+
+### 5) LOS Thickness
 For each sample point:
 - A hull trace is fired toward the component from the front direction.
-- A hull trace is fired from both left and right for the side direction (lowest valid value wins).
-- Armor thickness uses material effectiveness and slope correction.
-- MakeSpherical props and non-armor classes are skipped.
-- Effective armor blends KE/CHEM as: eff = 0.8 * KE + 0.2 * CHEM.
+- Two hull traces are fired for the side direction (left and right).
+- The smaller valid side thickness is used.
 
-### Aggregation
-- Samples are grouped by a coarse region key to prevent stacking the same armor multiple times.
-- Weighted averages are computed for front and side.
+LOS thickness accumulation:
+- Non-ACF props, MakeSpherical props, ignored classes, and clipped surfaces are skipped.
+- Each valid armor hit adds LOS thickness based on material effectiveness and slope:
+  - Effective = 0.8 * KE_effectiveness + 0.2 * CHEM_effectiveness.
+  - Slope correction uses ACF_GetHitAngle and ACF.SlopeEffectFactor.
+  - Curved armor uses its Curve value (power term).
+- The trace repeats until the target component is hit or no hits remain.
+- Samples that do not hit the target component are ignored.
 
-### Armor Points
-Final armor points are calculated as:
+### 6) Region Deduplication
+To avoid stacking multiple hits from the same area:
+- Hits are bucketed into a 2-unit grid in the scan plane.
+- For each region, only the maximum LOS value is kept.
+
+### 7) Averaging
+Front and side averages are weighted by projected area and accumulated across regions.
+The scan returns raw averages in millimeters.
+
+### Debug
+When ace_armor_debugvis is enabled:
+- Boxes are drawn at hit locations.
+- Color scales from green to red based on the maximum LOS in that scan.
+
+## Armor Points
+Armor points are calculated from the averaged results:
+
 ```
 armor_pts = (front_avg + side_avg * 2) * 4
 ```
-Side armor is intentionally weighted 2x.
 
-## Ammo Cost Model (Firepower)
-Firepower is represented by ammo only. Guns and racks are zero-cost entities.
+Side armor is intentionally weighted 2x. Points are stored in ACEArmorPoints and ACEPointsPerType.Armor.
 
-### Steps
-1) Collect total ROF per ammo id from all guns in the contraption.
-   - Uses ReloadTime if present; otherwise RateOfFire in RPM.
-2) If a rack is compatible with the ammo, add rack ReloadTime to the total ROF.
-3) For each ammo crate, compute a per-round cost from penetration, caliber, and type.
-4) Multiply per-round cost by crate capacity and ROF factor.
+## Non-Armor Points
+Non-armor points are computed by ACE_CalcNonArmorPoints:
+- Engines, Crew, Electronics: sum of ACEPoints on each entity.
+- Firepower: zero (guns/racks are tracked for ROF only).
+- Ammo: custom scoring per crate (see next section).
 
-### Formula
+The totals are written into ACEPointsPerType and cached in ACEPointsNonArmor.
+
+## Ammo Scoring
+Ammo points are derived from ammo crates, compatible guns, and rack ROF.
+
+### Required Inputs
+For each crate:
+- BulletData (bdata) must exist.
+- Capacity must be greater than zero.
+- Max penetration or blast mass must be available.
+- A compatible gun or rack must exist to supply ROF.
+
+If any of these are missing, the crate scores 0 points.
+
+### Penetration and Blast Inputs
+Max penetration is resolved in this order:
+1) BulletData.MaxPen or MaxPen2 (takes the max).
+2) ACF.RoundTypes[Type].getDisplayData (MaxPen/MaxPen2).
+3) HE blast penetration from filler mass (BoomFillerMass or FillerMass),
+   using ACF.HEPower and ACF.HEBlastPenetration.
+
+Blast mass is taken from BoomFillerMass or FillerMass.
+
+Caliber (mm) is derived from:
+- Caliber, SlugCaliber, SlugCaliber2, JetCaliber (max), or
+- ACF_GetGunValue(Id, "caliber") fallback.
+
+Values are converted from cm to mm (x10).
+
+### Rate of Fire
+ROF is the sum of:
+- All guns with matching ammo Id (ReloadTime or RateOfFire/60).
+- All compatible racks (ReloadTime only).
+
+If ROF is 0, the crate scores 0 points.
+
+### Threat and Round Cost
+Penetration and blast are combined into a single threat factor:
+
 ```
-round_pts = BaseRoundPts
-            * (max_pen / RefPen) ^ PenExp
-            * (caliber_mm / RefCaliber)
-            * type_factor
+penFactor   = (maxPen / RefPen) ^ PenExp
+blastFactor = (blastMass / RefBlastMass) ^ BlastExp
+threat      = penFactor + blastFactor * BlastWeight
 
-crate_pts = round_pts * capacity * (rps_total / RpsRef) ^ RpsExp
+roundPts = BaseRoundPts * threat * (calMm / RefCaliber) * TypeFactor
+rpsFactor = (rpsTotal / RpsRef) ^ RpsExp
 ```
 
-### Current Constants
-- BaseRoundPts = 111.1
-- RefPen = 600
-- RefCaliber = 120
-- PenExp = 2
-- RpsRef = 1 / 7
-- RpsExp = 0.5
+### Ready Rack vs Backup Ammo
+Ready rounds and stowed rounds have different costs.
 
-### Max Pen Source
-- If BulletData.MaxPen exists, it is used.
-- Otherwise the round type display data is queried (ACF.RoundTypes[type].getDisplayData).
-- If no MaxPen can be resolved, the crate contributes 0 points.
+Ready rack cap (per ammo Id group):
+- Base: ReadyRackBase / caliber_mm
+- Clamp to [ReadyRackMin, ReadyRackMax]
+- If caliber is below ReadyRackPivot, apply a low-caliber boost:
+  baseCap *= 1 + ReadyRackLowBoost * ((pivot - cal) / pivot)
+- Clamp to total rounds in the group
+
+Ready allocation across crates:
+- Each ammo Id group shares a single readyCap.
+- Ready rounds are distributed proportionally by crate capacity.
+- Fractional remainder is distributed deterministically.
+
+Cost breakdown per crate:
+```
+readyCost = roundPts * readyCount * rpsFactor
+stowCost  = roundPts * stowCount * StowFactor * rpsFactor
+```
+
+Optional tail discount:
+- If TailFactor and TailStartMultiplier are set, rounds beyond
+  readyCap * TailStartMultiplier reduce effective rounds.
 
 ### Ammo Type Factors
+Ammo type factors are applied directly to roundPts:
+
 ```
-AP = 0.5,
-APHE = 0.6,
-APDS = 0.9,
-APFSDS = 1.2,
-HVAP = 0.7,
-HEAT = 0.75,
-HEATFS = 0.9,
-THEAT = 0.95,
-THEATFS = 1.0,
-HESH = 0.4,
-HE = 0.2,
-HEFS = 0.3,
-HP = 0.1,
-CAP = 0.6,
-CHEAT = 0.8,
-CHE = 0.25,
-CHF = 0,
-SM = 0,
-FLR = 0,
-FL = 0.3,
-GLATGM = 0.75,
-["GLATGM-HE"] = 0.25,
+AP = 0.5
+APHE = 0.6
+APDS = 0.9
+APFSDS = 1.2
+HVAP = 0.7
+HEAT = 0.75
+HEATFS = 0.9
+THEAT = 0.95
+THEATFS = 1.0
+HESH = 0.4
+HE = 0.5
+HEFS = 0.6
+HP = 0.1
+CAP = 0.6
+CHEAT = 0.8
+CHE = 0.25
+CHF = 0
+SM = 0
+FLR = 0
+FL = 0.3
+GLATGM = 0.75
+GLATGM-HE = 0.25
 Refill = 0
 ```
 
-## Other Point Categories
-- Armor: contraption-level scan result only.
-- Engines: uses existing per-entity ACEPoints.
-- Ammo: calculated as above from crates.
-- Crew: uses per-entity ACEPoints (crew seats).
-- Electronics: uses per-entity ACEPoints.
-- Fuel: ignored (0 points).
-- Firepower: guns/racks are tracked for ROF only and cost 0 points.
+## Caches and Performance
+### Non-Armor Cache
+Contraption.ACEAmmoCache stores:
+- GunRpsById
+- Racks
+- ReadyAlloc
 
-## Readout Format
-The armor tool shows a cost breakdown and a summary. Example format:
-```
-<||============|[- Cost Breakdown -]|============||>
-Total Cost: 12826.6pts  -  2826.6 pts over
-Armor scan: front=548.49mm  side=70.97mm
-Armor: (22%) - 2761.7/12826.6
-Engines: (11%) - 1409/12826.6
-Ammo: (58%) - 7453.9/12826.6
-Crew: (9%) - 1202/12826.6
-Electronics: (0%) - 0/12826.6
-- Top Cost Items:
-Ammo: 42x140mm APFSDS - Pen: 857, RPS: 0.06 - 4936.1pts
-Engines: 20.7L Flat 6 Multifuel - 1409.0pts
-Crew: Alex Popov - 400.0pts
-<||============|[- Contraption Summary -]|============||>
-...
-```
+When ACENonArmorDirty is false, ammo scoring uses this cached data.
 
-Top Cost Items behavior:
-- Sorted by points descending, stable by entity index.
-- Any item >= 300 pts is listed.
-- Ammo entries are formatted as: cap x caliber type - Pen: X, RPS: Y.
+### Dupe Armor Cache
+Armor scan results can be cached per duplication:
+- ACE.DupeArmorCache stores { Front, Side } by a hash of dupe content.
+- Hash inputs include class, model, bounds, and armor data.
+- ace_dupe_armor_cache_ttl (default 1800 seconds) clears the cache periodically.
+- ace_dupe_armor_cache_clear manually clears the cache.
+
+## Readout and UX
+The armor tool readout reports:
+- Total points and per-category percentages.
+- Armor scan front/side values in mm.
+- Ammo lines grouped by caliber and type, split into READY/BACKUP.
+- Contraption mass, material breakdown, and power-to-weight.
 
 Warnings:
-- If not initialized: "Armor cost not initialized; unfreeze or enter vehicle."
-- If dirty: "Armor cost dirty; respawn to recalc."
+- "ARMOR COST NOT INITIALIZED" if no scan has occurred.
+- "Armor cost dirty" if the contraption was modified after initialization.
 
-## Debug and Diagnostics
-- `ace_armor_debugvis` draws debug boxes at armor hit locations during a scan.
-- Colors scale from green to red relative to the max LOS value in that scan.
-- Console prints a single-line summary if debug is enabled.
+Preview mode (double-tap R):
+- Double-tap reload within ACE.ArmorPreviewTapWindow (default 0.35s).
+- Runs a hypothetical scan and non-armor rebuild.
+- Does not apply points to the contraption.
+- Cooldown is ACE.ArmorPreviewCooldown (default 5s).
 
-## Performance and Consistency
-- One scan per contraption at initialization; no continuous tracing during play.
-- Cached values are deterministic for a given contraption state.
-- Dirty changes are explicit rather than silent re-scans.
+## Global Warnings
+When a contraption exceeds limits, the system broadcasts a global chat message:
+- Over points limit (ACF.PointsLimit).
+- Over max weight (ACF.MaxWeight).
 
-## Edge Cases and Limitations
-- If a gun or rack has no compatible ammo in the contraption, ammo ROF is zero and crates score 0 points.
-- If MaxPen cannot be resolved for a round type, that crate scores 0.
-- If no axis-constrained MakeSpherical wheels exist, side uses cross(up, front) and may be less reliable on unusual builds.
-- If the main gun is vertical, the front vector is flattened; extreme cases fall back to base forward.
-- Post-init modifications can change actual protection without updating cost; this is intentional and surfaced as a warning.
+When a contraption is modified after initialization, a global warning is sent
+once per scan, and it resets after a successful rescan.
 
-## Tuning Knobs
-- AmmoCostConfig: BaseRoundPts, RefPen, RefCaliber, PenExp, RpsRef, RpsExp.
-- AmmoTypeFactors: per-type multipliers.
-- Armor cost scale: `(front + side * 2) * 4`.
-- Initialization timing: delay in ACE_ScheduleInitArmor.
+## Configuration Summary
+Key tuning values live in lua/autorun/acf_globals.lua:
 
-## Suggested Test Checklist
-- Spawn a contraption, do not unfreeze: readout shows "not initialized" warning.
-- Unfreeze: armor initializes and warning disappears.
-- Enter vehicle before unfreeze: armor initializes on entry.
-- Modify armor after init: readout shows "dirty" warning and costs remain fixed.
-- Test ammo crates with and without compatible guns/racks; confirm ROF scaling and label formatting.
-- Enable `ace_armor_debugvis` and verify debug boxes render at trace hit locations.
+```
+ACF.PointsLimit = 10000
+ACF.MaxWeight = 200000
+
+ACE.AmmoCostConfig = {
+    BaseRoundPts = 80,
+    RefPen = 600,
+    RefCaliber = 120,
+    PenExp = 1.6,
+    RefBlastMass = 6,
+    BlastExp = 1.1,
+    BlastWeight = 0.25,
+    RpsRef = 1 / 7,
+    RpsExp = 0.5,
+    ReadyRackBase = 2400,
+    ReadyRackMin = 10,
+    ReadyRackMax = 200,
+    ReadyRackPivot = 60,
+    ReadyRackLowBoost = 0.5,
+    StowFactor = 0.35,
+    TailFactor = 0,
+    TailStartMultiplier = 2
+}
+
+ACE.ArmorPreviewTapWindow = 0.35
+ACE.ArmorPreviewCooldown = 5
+
+ace_armor_debugvis (cvar)
+ace_dupe_armor_cache_ttl (cvar)
+```
+
+Entity ACEPoints are computed in the entity definitions (for example
+acf_engine and acf_gun) and then summed by the contraption system.
+
+## Known Behaviors and Edge Cases
+- If no critical components exist, armor scan returns 0 front/side.
+- If the main gun points straight up/down, the front vector is flattened.
+- If no wheel axis is found, side uses cross(up, front), then base right.
+- Non-ACF props, MakeSpherical wheels, and clipped surfaces are ignored in LOS.
+- Ammo with no compatible gun/rack, missing penetration, or zero type factor
+  contributes 0 points.
+- Classes not explicitly categorized are treated as Armor and only affect
+  points through the armor scan.

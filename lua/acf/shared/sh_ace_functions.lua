@@ -284,6 +284,10 @@ do
 			v.acflastupdatemass = ACF.CurTime
 		end
 
+		obj.acfphystotal = obj.acfphystotal or PhysMass
+		obj.acftotal = obj.acftotal or Mass
+		obj.acflastupdatemass = ACF.CurTime
+
 		if pwr then
 			--Get mass Material composition here
 			for material, tablemass in pairs(Compositions) do
@@ -297,7 +301,12 @@ do
 				end
 
 				--Gets the actual material percent of the contraption
-				PercentMat[material] = ( MatSums[material] / obj.acftotal ) or 0
+				local totalMass = obj.acftotal or Mass
+				if totalMass <= 0 then
+					PercentMat[material] = 0
+				else
+					PercentMat[material] = MatSums[material] / totalMass
+				end
 
 			end
 		end

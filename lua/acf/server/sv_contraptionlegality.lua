@@ -520,8 +520,17 @@ do
 end
 
 
+
+local function ACE_HasArmorInit(Contraption)
+	if not Contraption then return false end
+	if Contraption.ACEArmorCalculated then return true end
+	local lastCalc = Contraption.ACEArmorLastCalc or 0
+	return lastCalc > 0
+end
+
+
 local function ACE_NotifyContraptionModified(Contraption)
-	if not Contraption or not Contraption.ACEArmorCalculated then return end
+	if not ACE_HasArmorInit(Contraption) then return end
 
 	Contraption.OTWarnings = Contraption.OTWarnings or {}
 	if Contraption.OTWarnings.WarnedModified then return end
@@ -543,6 +552,10 @@ function ACE_CheckLegalCont(Contraption)
 	-- Track one-time warning flags per contraption to avoid repeated spam.
 	Contraption.OTWarnings = Contraption.OTWarnings or {}
 	local HasWarned = false
+
+	if Contraption.ACEArmorDirty then
+		ACE_NotifyContraptionModified(Contraption)
+	end
 
 	HasWarned = Contraption.OTWarnings.WarnedOverPoints or false
 	if Contraption.ACEPoints > ACF.PointsLimit and not HasWarned then
@@ -1562,6 +1575,7 @@ do
 		if Ent._ACEPointsConRef == conRef then
 			if EClass == "Armor" then
 				Class.ACEArmorDirty = true
+				ACE_NotifyContraptionModified(Class)
 			else
 				local delta = newPts - oldPts
 				if delta ~= 0 then

@@ -13,7 +13,7 @@ local Cast =
 
 function ACFM_CreateConfigurable(str, configurables, bdata, wlistPath)
 
-	success, ret =	xpcall( -- we're eating arbitrary user input, so let's not fuck up if they fuck up
+	local success, ret = xpcall( -- we're eating arbitrary user input, so let's not fuck up if they fuck up
 						function()
 							return ACFM_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
 						end,
@@ -49,7 +49,7 @@ function ACFM_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
 
 		if bdata then
 			local allowed = ACF_GetGunValue(bdata, wlistPath)
-			if not table.HasValue(allowed, name) then return nil end
+			if istable(allowed) and not table.HasValue(allowed, name) then return nil end
 		end
 
 

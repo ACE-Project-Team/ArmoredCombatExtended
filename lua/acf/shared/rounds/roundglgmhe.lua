@@ -69,7 +69,7 @@ function Round.create( Gun, BulletData )
 	local BData = table.Copy( BulletData ) --Done so we don't accidentally write to the original crate bulletdata
 	BData.BulletData = nil
 
-	BData.Type = "HE"
+	BData.Type = ACE_GetMissileWarheadType(BulletData.Type or "GLATGM-HE")
 	--BData.Id = 2	
 
 	BData.FakeCrate = ents.Create("acf_fakecrate2")

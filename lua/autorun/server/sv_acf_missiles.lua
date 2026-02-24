@@ -139,9 +139,10 @@ ACF.FillerDensity =
 function ACFM_CompactBulletData(crate)
 
 	local compact = {}
+	local source = crate.BulletData or {}
 
-	compact["Id"] =			crate.RoundId	or crate.Id
-	compact["Type"] =			crate.RoundType	or crate.Type
+	compact["Id"] =			crate.RoundId	or source.Id or crate.Id
+	compact["Type"] =			crate.RoundType	or source.Type or crate.Type
 	compact["PropLength"] =	crate.PropLength	or crate.RoundPropellant
 	compact["ProjLength"] =	crate.ProjLength	or crate.RoundProjectile
 	compact["Data5"] =			crate.Data5		or crate.RoundData5		or crate.FillerVol	or crate.CavVol			or crate.Flechettes

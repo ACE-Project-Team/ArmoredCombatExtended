@@ -393,7 +393,7 @@ do
 
 	if CLIENT then
 
-		concommand.Add( "acf_dupes_remount", function()
+		concommand.Add( "ace_dupes_remount", function()
 
 			if not AdvDupe2 then
 				notification.AddLegacy( "Unable to reload the dupes.", NOTIFY_ERROR, 7)
@@ -2040,6 +2040,7 @@ function ACE_GetArmorScan(ent)
 	local front, side = ACE_CalcContraptionArmor(ent)
 	return front, side
 end
+
 
 
 

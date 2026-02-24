@@ -662,7 +662,7 @@ function ACFCLGUICreate()
 	DupeSection:SetName("Dupe Loader")
 
 	DupeSection:Help( "If for some reason, your ace dupe folder was damaged or deleted, you can restore them here." )
-	DupeSection:Button("Restore ace dupe folders", "acf_dupes_remount" )
+	DupeSection:Button("Restore ace dupe folders", "ace_dupes_remount" )
 
 	acfmenupanel.CustomDisplay:AddItem( DupeSection )
 
@@ -1522,3 +1522,4 @@ if not ACF.ChatMessageReceiver then
 		chat.AddText( net.ReadColor(), net.ReadString() )
 	end )
 end
+

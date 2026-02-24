@@ -120,7 +120,7 @@ end
 ACE = ACE or {}
 
 -- Dump crewseat state for debugging from console.
-concommand.Add("acf_crewseat_dump", function(_, _, args)
+concommand.Add("ace_crewseat_dump", function(_, _, args)
 	local target = tonumber(args[1] or "")
 
 	local function dumpSeat(ent)
@@ -441,3 +441,4 @@ function ACE_FindReplacementLoader(ent, maxDistSqr)
 
 	return replaceEnt, closestDist
 end
+

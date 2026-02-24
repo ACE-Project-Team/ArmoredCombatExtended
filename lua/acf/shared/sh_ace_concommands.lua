@@ -2,7 +2,7 @@ AddCSLuaFile()
 
 if SERVER then
 
-	concommand.Add( "acf_debris_clear", function(ply)
+	concommand.Add( "ace_debris_clear", function(ply)
 
 		if IsValid(ply) and not ply:IsAdmin() then return end
 
@@ -16,7 +16,7 @@ if SERVER then
 
 	end)
 
-	concommand.Add( "acf_mines_clear", function(ply)
+	concommand.Add( "ace_mines_clear", function(ply)
 
 		if IsValid(ply) and not ply:IsAdmin() then return end
 
@@ -30,7 +30,7 @@ if SERVER then
 
 	end)
 
-	concommand.Add( "acf_mines_explode_all", function(ply)
+	concommand.Add( "ace_mines_explode_all", function(ply)
 
 		if IsValid(ply) and not ply:IsSuperAdmin() then return end
 
@@ -44,3 +44,4 @@ if SERVER then
 
 	end)
 end
+

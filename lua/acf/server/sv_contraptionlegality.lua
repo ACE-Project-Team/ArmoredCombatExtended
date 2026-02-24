@@ -495,7 +495,7 @@ end
 
 end
 
-concommand.Add("acf_armor_dirty_log_dump", function(_, _, args)
+concommand.Add("ace_armor_dirty_log_dump", function(_, _, args)
 	if not armorDebugCvar:GetBool() then
 		print("[ACE] ace_armor_debug is 0")
 		return
@@ -526,7 +526,7 @@ concommand.Add("acf_armor_dirty_log_dump", function(_, _, args)
 	end
 end)
 
-concommand.Add("acf_armor_dirty_log_clear", function()
+concommand.Add("ace_armor_dirty_log_clear", function()
 	armorDirtyLog = {}
 	print("[ACE] Cleared stored armor log")
 end)
@@ -635,7 +635,7 @@ local function ACE_ClearAllCaches()
 	ACE.CacheVersion = (ACE.CacheVersion or 1) + 1
 end
 
-concommand.Add("acf_cache_clear_all", function()
+concommand.Add("ace_cache_clear_all", function()
 	ACE_ClearAllCaches()
 end)
 
@@ -707,6 +707,7 @@ end)
 
 
 -- Armor scan and rebuild logic live in sv_pointshandling.lua
+
 
 
 

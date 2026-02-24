@@ -6,7 +6,7 @@ SWEP.DrawWeaponInfoBox	= true
 SWEP.BounceWeaponIcon	= true
 
 
-concommand.Add("acf_szcreationmenu", function(_, _, args)
+concommand.Add("ace_szcreationmenu", function(_, _, args)
     local frame = vgui.Create( "DFrame" )
     frame:SetSize( 300, 100 )
     frame:SetSizable(false)

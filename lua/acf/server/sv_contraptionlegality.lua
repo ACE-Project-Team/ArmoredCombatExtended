@@ -403,8 +403,7 @@ end
 -- Debug logging 
 -- ------------------------------------------------------------
 
-ACE.ArmorDebugCvar = ACE.ArmorDebugCvar or CreateConVar(
-	"ace_armor_debug",
+ACE.ArmorDebugCvar = ACE.ArmorDebugCvar or CreateConVar("acf_armor_debug",
 	"0",
 	FCVAR_ARCHIVE,
 	ACE_ConVarHelp("Enable stored armor dirty logging (no live console spam).")
@@ -412,8 +411,7 @@ ACE.ArmorDebugCvar = ACE.ArmorDebugCvar or CreateConVar(
 
 local armorDebugCvar = ACE.ArmorDebugCvar
 
-local armorDirtyLogLimit = CreateConVar(
-	"ace_armor_dirty_log_limit",
+local armorDirtyLogLimit = CreateConVar("acf_armor_dirty_log_limit",
 	"120",
 	FCVAR_ARCHIVE,
 	ACE_ConVarHelp("How many stored dirty entries to keep.")
@@ -497,7 +495,7 @@ end
 
 end
 
-concommand.Add("ace_armor_dirty_log_dump", function(_, _, args)
+concommand.Add("acf_armor_dirty_log_dump", function(_, _, args)
 	if not armorDebugCvar:GetBool() then
 		print("[ACE] ace_armor_debug is 0")
 		return
@@ -528,7 +526,7 @@ concommand.Add("ace_armor_dirty_log_dump", function(_, _, args)
 	end
 end)
 
-concommand.Add("ace_armor_dirty_log_clear", function()
+concommand.Add("acf_armor_dirty_log_clear", function()
 	armorDirtyLog = {}
 	print("[ACE] Cleared stored armor log")
 end)
@@ -609,8 +607,7 @@ ACE.DupeArmorCacheVersion = ACE.DupeArmorCacheVersion or 1
 ACE.DupeArmorCacheLastClear = ACE.DupeArmorCacheLastClear or CurTime()
 ACE.DupeSubsystemCacheLastClear = ACE.DupeSubsystemCacheLastClear or CurTime()
 
-local DupeArmorCacheTtl = CreateConVar(
-	"ace_dupe_armor_cache_ttl",
+local DupeArmorCacheTtl = CreateConVar("acf_dupe_armor_cache_ttl",
 	"1800",
 	FCVAR_ARCHIVE,
 	ACE_ConVarHelp("Seconds between clearing the dupe armor cache (0 disables).")
@@ -638,7 +635,7 @@ local function ACE_ClearAllCaches()
 	ACE.CacheVersion = (ACE.CacheVersion or 1) + 1
 end
 
-concommand.Add("ace_cache_clear_all", function()
+concommand.Add("acf_cache_clear_all", function()
 	ACE_ClearAllCaches()
 end)
 

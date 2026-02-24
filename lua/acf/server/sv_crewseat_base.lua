@@ -6,7 +6,7 @@
 
 include("acf/shared/sh_crewseat_base.lua")
 
-local crewseatDebug = CreateConVar("ace_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
+local crewseatDebug = CreateConVar("acf_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
 
 -- Resolve a crewseat model type from dupe data or the current model path.
 function ACE_CrewseatResolveModelType(ent, info)
@@ -120,7 +120,7 @@ end
 ACE = ACE or {}
 
 -- Dump crewseat state for debugging from console.
-concommand.Add("ace_crewseat_dump", function(_, _, args)
+concommand.Add("acf_crewseat_dump", function(_, _, args)
 	local target = tonumber(args[1] or "")
 
 	local function dumpSeat(ent)

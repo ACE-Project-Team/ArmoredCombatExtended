@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_ace_wind_sensor", 10)
+CreateConVar("sbox_max_acf_wind_sensor", 10)
 
 DEFINE_BASECLASS("base_wire_entity")
 

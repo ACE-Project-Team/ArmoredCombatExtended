@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_ace_vheat_source", 3)
+CreateConVar("sbox_max_acf_vheat_source", 3)
 
 DEFINE_BASECLASS( "base_wire_entity" )
 

@@ -51,7 +51,7 @@ end
 
 
 function this:IsArmed()
-	return self.TimeStarted + self.Primer <= CurTime()
+	return self.TimeStarted and (self.TimeStarted + self.Primer <= CurTime()) or false
 end
 
 

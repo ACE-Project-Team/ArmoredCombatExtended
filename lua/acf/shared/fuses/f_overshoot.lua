@@ -46,6 +46,11 @@ configs[#configs + 1] =
 
 do
 
+	function this:Configure(Missile)
+		self:super().Configure(self, Missile)
+		self.fuseArmed = false
+	end
+
 	--Question: Should radio fuze be limited to detect props in front of the missile only? Its weird it detonates by detecting something behind it.
 	function this:GetDetonate(missile)
 
@@ -57,11 +62,11 @@ do
 		local missileTarget = missile.TargetPos
 
 		if not missileTarget then --Target Lost
-			
+
 			if not self.fuseArmed then
-				return false 
+				return false
 			else --The fuse was armed but we lost sight of the target. Detonate.
-				return true 				
+				return true
 			end
 		end
 
@@ -73,7 +78,7 @@ do
 		end
 
 		if self.fuseArmed and (missileTarget:DistToSqr( missilePos ) < missileTarget:DistToSqr( missilePos + missile.Flight )) then
-			
+
 
 			return true
 

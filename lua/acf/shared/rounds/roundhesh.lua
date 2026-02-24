@@ -123,9 +123,10 @@ function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not 
 
 	if ACF_Check( Target ) then
 
-		--local Speed = Bullet.Flight:Length() / ACF.VelScale
-		local Energy = ACF_Kinetic(Bullet.FillerMass * 750, Bullet.FillerMass * 75, Bullet.LimitVel)
-		--local HitRes = ACF_RoundImpact(Bullet, Speed / 4 + Bullet.FillerMass * 250, Energy, Target, HitPos, HitNormal / 10, Bone)
+		local Speed = Bullet.Flight:Length() / ACF.VelScale
+		-- HESH should not behave like a giant AP slug; use mostly-casing impact mass.
+		local ImpactMass = math.max(Bullet.ProjMass - Bullet.FillerMass * 0.85, Bullet.ProjMass * 0.1)
+		local Energy = ACF_Kinetic(Speed, ImpactMass, Bullet.LimitVel)
 
 		local Mat		= Target.ACF.Material or "RHA"
 		local MatData	= ACE_GetMaterialData( Mat )
@@ -133,7 +134,7 @@ function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not 
 		local Pen = Bullet.FillerMass / 300 * ACF.HEPower
 		if ( Pen * 1.25 ) > ( Target.ACF.Armour * (MatData.ArmorMul or 1) ) then
 
-			ACF_RoundImpact(Bullet, Bullet.FillerMass * 250, Energy, Target, HitPos, -Bullet.Flight:GetNormalized(), Bone) --( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
+			ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, -Bullet.Flight:GetNormalized(), Bone) --( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
 
 			table.insert( Bullet.Filter , Target )
 			ACF_Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACF.HEPower, Bullet.Caliber, Target.ACF.Armour, Bullet.Owner, Target.ACF.Material) --Do some spalling

@@ -136,7 +136,7 @@ end
 function Round.getDisplayData(Data)
 	local GUIData = {}
 	local Energy = ACF_Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
-	GUIData["MaxPen"] = (Energy.Penetration / Data["FlechettePenArea"]) * ACF.KEtoRHA
+	GUIData["MaxPen"] = ACE_CalcPenetration(Energy, Data["FlechettePenArea"])
 	return GUIData
 end
 

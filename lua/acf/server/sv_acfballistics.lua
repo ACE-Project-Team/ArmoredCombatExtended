@@ -669,8 +669,8 @@ function GenerateMissile(MissileData,Crate,BData) --Shorthand function for gener
 	missile.StraightRunning = MissileData.DelayPrediction or 0.5
 	missile.MinStartDelay = MissileData.ArmDelay or 0.3
 
-	missile.MissileVelocityMul = MissileData.MissileVelocityMul or 3
-	missile.MissileCalMul = MissileCalMul or 1
+	missile.MissileVelocityMul = MissileData.MissileVelocityMul or MissileData.velmul or ACF_GetGunValue(BData.Id, "velmul") or 3
+	missile.MissileCalMul = MissileData.MissileCalMul or MissileData.calmul or ACF_GetGunValue(BData.Id, "calmul") or 1
 
 	missile.UnderwaterThrust = MissileData.UnderwaterThrustType or 1
 	missile.Buoyancy = MissileData.Buoyancy or 0.5

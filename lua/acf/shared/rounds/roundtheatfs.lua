@@ -145,8 +145,8 @@ function Round.getDisplayData(Data)
 
 	local SlugEnergy = ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999)
 	local SlugEnergy2 = ACF_Kinetic(Data.SlugMV2 * 39.37, Data.SlugMass2, 999999)
-	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
-	GUIData.MaxPen2 = (SlugEnergy2.Penetration / Data.SlugPenArea2) * ACF.KEtoRHA
+	GUIData.MaxPen = ACE_CalcPenetration(SlugEnergy, Data.SlugPenArea)
+	GUIData.MaxPen2 = ACE_CalcPenetration(SlugEnergy2, Data.SlugPenArea2)
 	--GUIData.BlastRadius = (Data.FillerMass/2) ^ 0.33 * 5*10
 	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
 	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)

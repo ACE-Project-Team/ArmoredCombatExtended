@@ -76,12 +76,13 @@ do
 
 		local Class = ent:GetClass()
 
-		--Skip ents like world entities
-		if whitelist[Class] then
-			return true
-		end
+		-- Return true to skip entities that are not valid radio fuze targets.
+		return not whitelist[Class]
+	end
 
-		return false
+	function this:Configure(Missile)
+		self:super().Configure(self, Missile)
+		Missile.DPos = Missile:GetPos()
 	end
 
 	--Question: Should radio fuze be limited to detect props in front of the missile only? Its weird it detonates by detecting something behind it.
@@ -91,72 +92,35 @@ do
 
 		if not self:IsArmed() then return false end
 
-		local MissilePos = missile.CurPos
-		local Dist = self.Distance
+		local MissilePos = missile.CurPos or missile:GetPos()
 
-		local trace = {}
-		trace.start         = missile.DPos or MissilePos
-		trace.endpos        = MissilePos --small compensation for incoming impacts.
-		trace.filter        = FilterFunction
-		trace.mins          = Vector(-Dist, -Dist, -Dist)
-		trace.maxs          = -trace.mins
-		trace.ignoreworld   = true
+		for _, HitEnt in ipairs(ents.FindInSphere(MissilePos, self.Distance)) do
+			if not IsValid(HitEnt) or HitEnt == missile then continue end
+			if FilterFunction(HitEnt) then continue end
 
-		missile.DPos = MissilePos
+			if CPPIOwn == HitEnt:CPPIGetOwner() then continue end
 
-		local tr = util.TraceHull(trace)
+			local HitPos = HitEnt:NearestPoint(MissilePos)
+			local tolocal = missile:WorldToLocal(HitPos)
+			if tolocal.x <= 0 then continue end
 
-		if tr.Hit then
+			if CFW then
+				local conLauncher = missile.Launcher and missile.Launcher:GetContraption() or nil
+				local conTarget = HitEnt:GetContraption() or nil
 
-			local HitEnt = tr.Entity
+				if conLauncher and conTarget and conLauncher == conTarget then
+					continue
+				end
+			else
+				local HitId = HitEnt.ACF and HitEnt.ACF.ContraptionId or nil
+				local OwnId = missile.ContrapId or nil
 
-			if CPPIOwn == HitEnt:CPPIGetOwner() then return false end
-
-			if ACF_Check( HitEnt ) then
-
-				local HitPos	= HitEnt:GetPos()
-				local tolocal	= missile:WorldToLocal(HitPos)
-
-				-- Cool
-				if CFW then
-
-					local conLauncher = missile.Launcher:GetContraption() or {}
-					local conTarget = HitEnt:GetContraption() or {} -- 1 prop will not have a contraption. 2 linked props (weld, parent) will do.
-
-					if conLauncher and conTarget then -- We only care about real contraptions. Not single props.
-
-						if conLauncher ~= conTarget and tolocal.x > 0 then
-
-							debugoverlay.Text(HitPos + Vector(0,0,20), "[CFW]- Valid Hit On: " .. (HitEnt:GetClass()) , 5 )
-							debugoverlay.Box(MissilePos, trace.mins, trace.maxs, 1, Color(0,255,0,10))
-
-							return true
-						end
-
-						debugoverlay.Text(HitPos + Vector(0,0,20), "[CFW] Invalid Hit on: " .. (HitEnt:GetClass()) , 5 )
-						debugoverlay.Box(MissilePos, trace.mins, trace.maxs, 1, Color(255,0,0,10))
-
-					end
-
-				-- Not Cool
-				else
-
-					local HitId	= HitEnt.ACF.ContraptionId or 1
-					local OwnId	= missile.ContrapId or 1
-
-					--Trigger the fuze if our hit was caused to an ent which is not ours, in front of it.
-					if HitId ~= OwnId and tolocal.x > 0 then
-
-						debugoverlay.Text(HitPos + Vector(0,0,20), "Valid Hit On: " .. (HitEnt:GetClass()) , 5 )
-						debugoverlay.Box(MissilePos, trace.mins, trace.maxs, 1, Color(0,255,0,10))
-						return true
-					end
-
-					debugoverlay.Text(HitPos + Vector(0,0,20), "Invalid Hit on: " .. (HitEnt:GetClass()) , 5 )
-					debugoverlay.Box(MissilePos, trace.mins, trace.maxs, 1, Color(255,0,0,10))
-
+				if HitId and OwnId and HitId == OwnId then
+					continue
 				end
 			end
+
+			return true
 		end
 
 		return false

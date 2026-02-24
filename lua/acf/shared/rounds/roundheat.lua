@@ -133,7 +133,7 @@ function Round.getDisplayData(Data)
 
 	local SlugEnergy	= ACF_Kinetic( Data.SlugMV * 39.37 , Data.SlugMass, 999999 )
 
-	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	GUIData.MaxPen = ACE_CalcPenetration(SlugEnergy, Data.SlugPenArea)
 	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
 	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
 	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
@@ -425,15 +425,15 @@ function Round.guiupdate( Panel )
 	--HEAT doesnt lose Pen by distance, so its ok to say MaxPen on every value below
 
 	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 100)
-	R1P = (ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	R1P = ACE_CalcPenetration(ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 200)
-	R2P = (ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	R2P = ACE_CalcPenetration(ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R3V, R3P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 400)
-	R3P = (ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	R3P = ACE_CalcPenetration(ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R4V, R4P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
-	R4P = (ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	R4P = ACE_CalcPenetration(ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R5V, R5P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea * ACF.HEATPlungingReduction, Data.LimitVel, 100)
-	R5P = (ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999).Penetration / Data.SlugPenArea / ACF.HEATPlungingReduction) * ACF.KEtoRHA
+	R5P = ACE_CalcPenetration(ACF_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea * ACF.HEATPlungingReduction)
 
 	acfmenupanel:CPanelText("SlugDisplay", "Penetrator Mass : " .. (math.floor(Data.SlugMass * 10000) / 10) .. " g \nPenetrator Caliber : " .. (math.floor(Data.SlugCaliber * 100) / 10) .. " mm \nPenetrator Velocity : " .. math.floor(Data.MuzzleVel + Data.SlugMV) .. " m/s \nMax Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n100m pen: " .. math.floor(R1P, 0) .. "mm @ " .. math.floor(R1V, 0) .. " m\\s\n200m pen: " .. math.floor(R2P, 0) .. "mm @ " .. math.floor(R2V, 0) .. " m\\s\n400m pen: " .. math.floor(R3P, 0) .. "mm @ " .. math.floor(R3V, 0) .. " m\\s\n800m pen: " .. math.floor(R4P, 0) .. "mm @" .. math.floor(R4V, 0) .. " m\\s\n\nIf using Plunging Fuse: " .. math.floor(R5P, 0) .. "mm @ " .. math.floor(R5V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.\n") --Proj muzzle penetration (Name, Desc)
 end

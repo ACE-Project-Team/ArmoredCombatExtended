@@ -212,7 +212,7 @@ function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	end
 
 	-- RHA Penetration
-	local maxPenetration = (Energy.Penetration / FrArea) * ACF.KEtoRHA
+	local maxPenetration = ACE_CalcPenetration(Energy, FrArea)
 
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5

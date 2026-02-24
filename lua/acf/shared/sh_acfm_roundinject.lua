@@ -8,22 +8,7 @@ include("acf/shared/sh_acfm_getters.lua")
 
 
 local function checkIfDataIsMissile(data)
-
-	local guns = ACF.Weapons.Guns
-	local class = guns[data.Id]
-
-	if not (class and class.gunclass) then
-		if oldDisplayData then
-			oldDisplayData(data)
-		end
-		return
-	end
-
-	local classes = ACF.Classes.GunClass
-	class = classes[class.gunclass]
-
-	return class.type and class.type == "missile"
-
+	return ACE_IsAmmoMissileType(data)
 end
 
 
@@ -60,16 +45,23 @@ function ACFM_ModifyRoundDisplayFuncs()
 				local MuzzleVel = data.MuzzleVel
 				local slugMV = data.SlugMV
 				local slugMV2 = data.SlugMV2
+				local PenArea = data.PenArea
 
-				data.MuzzleVel = 0
-				data.SlugMV = (slugMV or 0) * (ACF_GetGunValue(data.Id, "penmul") or 1.2)
-				data.SlugMV2 = (slugMV2 or 0) * (ACF_GetGunValue(data.Id, "penmul") or 1.2)
+				local PenMul = ACF_GetGunValue(data.Id, "penmul") or 1.2
+				local VelMul = ACF_GetGunValue(data.Id, "velmul") or 3
+				local CalMul = ACF_GetGunValue(data.Id, "calmul") or 1
+
+				data.MuzzleVel = (MuzzleVel or 0) * VelMul
+				data.SlugMV = (slugMV or 0) * PenMul
+				data.SlugMV2 = (slugMV2 or 0) * PenMul
+				data.PenArea = (PenArea or data.PenArea or 0) * CalMul
 
 				local ret = oldDisplayData(data)
 
 				data.SlugMV = slugMV
 				data.SlugMV2 = slugMV2
 				data.MuzzleVel = MuzzleVel
+				data.PenArea = PenArea
 
 				return ret
 			end
@@ -132,7 +124,7 @@ function ACFM_ModifyCrateTextFuncs()
 				local fuse	= IsValid(crate) and crate.RoundData8 or data.Data8
 
 				if guidance then
-					guidance = ACFM_CreateConfigurable(guidance, ACF.Guidance, bdata, "guidance")
+					guidance = ACFM_CreateConfigurable(guidance, ACF.Guidance, data, "guidance")
 					if guidance and guidance.Name ~= "Dumb" then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = guidance.Name
@@ -143,7 +135,7 @@ function ACFM_ModifyCrateTextFuncs()
 				end
 
 				if fuse then
-					fuse = ACFM_CreateConfigurable(fuse, ACF.Fuse, bdata, "fuses")
+					fuse = ACFM_CreateConfigurable(fuse, ACF.Fuse, data, "fuses")
 					if fuse then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = fuse.Name

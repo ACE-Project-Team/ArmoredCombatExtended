@@ -16,6 +16,7 @@ this.Name = ClassName
 
 this.Altitude = 0
 this.Above = true
+this.Active = false
 
 
 this.desc = "When specified with a target position, this fuse will detonate the missile once it crosses the altitude of the target position."
@@ -24,31 +25,33 @@ function this:Configure(Missile)
 	self.TimeStarted = CurTime()
 	Missile.IgnitionDelay = self.StartDelay
 	self.Primer = math.max(Missile.MinStartDelay,self.Primer)
+	self.Active = false
 
 	local launcher = Missile.Launcher
 
 	if not IsValid(launcher) then
-		return {}
+		return
 	end
 
-	local posVec = launcher.TargPos or vector_origin
+	local posVec = launcher.TargPos
+	if not isvector(posVec) then return end
+
 	local TarZ = posVec.z
-
-	if TarZ != 0 then
-		local MissileZ = Missile:GetPos().z
-		if MissileZ > TarZ then
-			self.Above = true
-		else
-			self.Above = false
-		end
-		self.Altitude = TarZ
+	local MissileZ = Missile:GetPos().z
+	if MissileZ > TarZ then
+		self.Above = true
+	else
+		self.Above = false
 	end
+	self.Altitude = TarZ
+	self.Active = true
 end
 
 -- Do nothing, projectiles auto-detonate on contact anyway.
 function this:GetDetonate(missile)
 
 	if not self:IsArmed() then return false end
+	if not self.Active then return false end
 
 	local MissileZ = missile:GetPos().z
 

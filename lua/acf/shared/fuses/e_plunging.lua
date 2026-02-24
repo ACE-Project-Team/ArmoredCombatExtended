@@ -76,7 +76,7 @@ function this:GetDetonate(missile)
 			missile.Flight = missile:GetUp() * -missile.Flight:Length() * 0.01
 
 			missile.Bulletdata2.SlugMV = missile.Bulletdata2.SlugMV * 0.3
-			missile.Bulletdata2.SlugMV2 = missile.Bulletdata2.SlugMV * 0.3
+			missile.Bulletdata2.SlugMV2 = missile.Bulletdata2.SlugMV2 * 0.3
 
 			missile:SetAngles(missile.Flight:Angle())
 			missile:Detonate()

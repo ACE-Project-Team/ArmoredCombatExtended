@@ -632,8 +632,9 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		local WeightFactor = MatData.massMod or 1
 		-- local Max_Spall_Mass = 20
 
-		local Velocityfactor = 0.2
+		local Velocityfactor = 0.12
 		local Max_Spall_Vel = 7000
+		local MassFactor = 6
 		
 		local Max_Spalls = 128
 
@@ -644,11 +645,14 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		-- print("Cal: ".. Caliber)
 		-- print("Cal: ".. Cal_In_MM)
 
-		local Spall = math.min(math.floor(Caliber * HEFiller * SpallMul * 5) * ACF.SpallMult, Max_Spalls)
+		local EquivalentFillerKg = math.max(HEFiller / math.max(ACF.HEPower or 1, 1), 0)
+		local Spall = math.min(math.floor(Caliber * math.sqrt(EquivalentFillerKg) * SpallMul * 3) * ACF.SpallMult, Max_Spalls)
+		if Spall <= 0 then return end
 		local TotalWeight = (Spall / (Cal_In_MM * (PI / 180)))
 		local SpallWeight = ((TotalWeight / (Spall / 10)) + (ArmorMul + WeightFactor))
-		local SpallVel = ((HEFiller * Velocityfactor) / SpallWeight)
-		local SpallArea = (TotalWeight / SpallWeight)
+		local SpallVel = ((HEFiller * Velocityfactor) / math.max(SpallWeight, 0.1))
+		SpallWeight = SpallWeight * MassFactor
+		local SpallArea = 4 * (TotalWeight / SpallWeight)
 		local SpallEnergy = ACF_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
 		
 		-- print("AR: " .. SpallArea)
@@ -1199,21 +1203,30 @@ do
 		APCR = true,
 		HVAP = true
 	}
-	local GunTable = ACF.Weapons.Guns
-	local GunClasses = ACF.Classes.GunClass
-
 	local function IsMissileAmmoData( bullet )
-		if not bullet then return false end
-		local roundType = bullet.Type
-		if roundType == "GLATGM" or roundType == "GLATGM-HE" then
-			return true
-		end
+		local gunClass = ACE_GetAmmoGunClass(bullet)
+		if not gunClass then return false end
 
-		local id = bullet.Id
-		local gun = (id and GunTable and GunTable[id]) or nil
-		local gunclass = (gun and gun.gunclass) or bullet.GunClass
-		local classData = gunclass and GunClasses and GunClasses[gunclass] or nil
+		local classes = ACF and ACF.Classes and ACF.Classes.GunClass
+		local classData = classes and classes[gunClass] or nil
+
 		return classData and classData.type == "missile" or false
+	end
+
+	local function ResolveCookoffRoundType(ent, bullet)
+		return ACE_ResolveAmmoType(ent, bullet)
+	end
+
+	local function GetCookoffBlastMass(bullet, roundType)
+		return ACE_GetAmmoCookoffBlastMass(roundType, bullet)
+	end
+
+	local function GetCookoffAmmoCount(roundType, ammo, isMissile)
+		return ACE_GetAmmoCookoffAmmoCount(roundType, ammo, isMissile)
+	end
+
+	local function GetCookoffExplosionClass(roundType, isMissile)
+		return ACE_GetAmmoCookoffClass(roundType, isMissile)
 	end
 
 	--converts what would be multiple simultaneous cache detonations into one large explosion
@@ -1244,15 +1257,18 @@ do
 			DebugExplosion("FuelCalc", "Fuel", Fuel, "Capacity", Capacity, "Type", Type, "FuelScale", FuelExplosionScale, "HEWeight", HEWeight)
 		else
 
-			local HE       = ent.BulletData.FillerMass	or 0
+			local RoundTypeCook = ResolveCookoffRoundType(ent, ent.BulletData)
+			local HE       = GetCookoffBlastMass(ent.BulletData, RoundTypeCook)
 			local Propel   = ent.BulletData.PropMass	or 0
 			local Ammo     = ent.Ammo					or 0
 			local IsMissile = IsMissileAmmoData(ent.BulletData)
-			local PropScale = IsMissile and 0.35 or 1
-			local AmmoScale = IsMissile and MissileExplosionScale or AmmoExplosionScale
+			local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
+			local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
+			local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
+			local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
-			HEWeight = ( ( HE + Propel * PropScale * ( ACF.PBase / ACF.HEPower ) ) * Ammo ) * AmmoScale
-			DebugExplosion("AmmoCalc", "HE", HE, "Propel", Propel, "Ammo", Ammo, "PropScale", PropScale, "AmmoScale", AmmoScale, "HEWeight", HEWeight, "EntIndex", ent:EntIndex())
+			HEWeight = ( ( HE + Propel * PropScale * ( ACF.PBase / ACF.HEPower ) ) * AmmoCount ) * AmmoScale
+			DebugExplosion("AmmoCalc", "Type", RoundTypeCook, "HE", HE, "Propel", Propel, "Ammo", Ammo, "AmmoCount", AmmoCount, "PropScale", PropScale, "AmmoScale", AmmoScale, "HEWeight", HEWeight, "EntIndex", ent:EntIndex())
 		end
 		DebugExplosion(
 			"Config",
@@ -1319,8 +1335,8 @@ do
 			remove
 		)
 		if (HEWeight or 0) <= 0 then
-			DebugExplosion("Adjust", "ZeroHEWeight", HEWeight, "UsingMin", MinHEWeight, "RoundType", RoundType, "RoundId", RoundId)
-			HEWeight = MinHEWeight
+			DebugExplosion("Adjust", "ZeroHEWeight", HEWeight, "RoundType", RoundType, "RoundId", RoundId)
+			HEWeight = 0
 		end
 
 		table.insert(ExplodePos, Pos)
@@ -1399,19 +1415,22 @@ do
 
 							if Found.RoundType == "Refill" then Found:Remove() continue end
 
-							local HE       = Found.BulletData.FillerMass	or 0
+							local RoundTypeCook = ResolveCookoffRoundType(Found, Found.BulletData)
+							local HE       = GetCookoffBlastMass(Found.BulletData, RoundTypeCook)
 							local Propel   = Found.BulletData.PropMass	or 0
 							local Ammo     = Found.Ammo					or 0
 							local IsMissile = IsMissileAmmoData(Found.BulletData)
-							local PropScale = IsMissile and 0.35 or 1
-							local AmmoScale = IsMissile and MissileExplosionScale or AmmoExplosionScale
+							local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
+							local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
+							local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
+							local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
 							local AmmoHEWeight = ( HE + Propel * PropScale * ACF.APAmmoDetonateFactor * ( ACF.PBase / ACF.HEPower))
 							if AmmoHEWeight > HighestHEWeight then
 								HighestHEWeight = AmmoHEWeight
 							end
 
-							FoundHEWeight = ( AmmoHEWeight * Ammo ) * AmmoScale
+							FoundHEWeight = ( AmmoHEWeight * AmmoCount ) * AmmoScale
 							local RoundType = Found.BulletData and Found.BulletData.Type or "nil"
 							local IsKinetic = HE <= 0 and KineticRoundTypes[RoundType]
 							if IsKinetic then
@@ -1438,7 +1457,7 @@ do
 								"Found",
 								Found:EntIndex(),
 								"Type",
-								RoundType,
+								RoundTypeCook,
 								"RoundId",
 								Found.BulletData and Found.BulletData.Id or "nil",
 								"Caliber",
@@ -1447,6 +1466,8 @@ do
 								Found.BulletData and Found.BulletData.ProjMass or "nil",
 								"Ammo",
 								Ammo,
+								"AmmoCount",
+								AmmoCount,
 								"HE",
 								HE,
 								"Propel",
@@ -1529,6 +1550,10 @@ do
 			DebugExplosion("Adjust", "ZeroHEWeight", HEWeight, "UsingMin", MinHEWeight)
 			HEWeight = MinHEWeight
 		end
+		if MaxHE and HEWeight > MaxHE then
+			DebugExplosion("Clamp", "Reason", "HEWeightOverMax", "Before", HEWeight, "MaxHE", MaxHE)
+			HEWeight = MaxHE
+		end
 
 		Radius	= ACE_CalculateHERadius( HEWeight )
 
@@ -1552,9 +1577,6 @@ do
 			"HighestHEWeight",
 			HighestHEWeight
 		)
-		if MaxHE and HEWeight > MaxHE then
-			DebugExplosion("ClampSuggest", "Reason", "HEWeightOverMax", "HEWeight", HEWeight, "MaxHE", MaxHE)
-		end
 		ACF_HE( AvgPos , vector_origin , HEWeight , HEWeight , Inflictor , ent, ent, BlastPenRatio )
 
 		--util.Effect not working during MP workaround. Waiting a while fixes the issue.

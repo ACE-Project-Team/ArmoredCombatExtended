@@ -80,7 +80,7 @@ function Round.getDisplayData(Data)
 	local Energy		= ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local FragMass	= Data.ProjMass - Data.FillerMass
 
-	GUIData.MaxPen	= (Energy.Penetration / Data.PenArea) * ACF.KEtoRHA
+	GUIData.MaxPen	= ACE_CalcPenetration(Energy, Data.PenArea)
 	GUIData.BlastRadius = Data.FillerMass ^ 0.33 * 8
 	GUIData.Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag),2)
 	GUIData.FragMass	= FragMass / GUIData.Fragments

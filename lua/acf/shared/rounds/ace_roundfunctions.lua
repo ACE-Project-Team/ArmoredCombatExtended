@@ -91,7 +91,7 @@ do
 		local D0 = DragCoef * V0 ^ 2 / ACF.DragDiv -- initial drag
 		local K1 = (D0 / (V0 ^ (3 / 2))) ^ -1 -- estimated drag coefficient
 		local Vel = math.max(math.sqrt(V0) - ((Range * 39.37) / (2 * K1)), 0) ^ 2
-		local Pen = (ACF_Kinetic(Vel, ProjMass, LimitVel).Penetration / PenArea) * ACF.KEtoRHA
+		local Pen = ACE_CalcPenetration(ACF_Kinetic(Vel, ProjMass, LimitVel), PenArea)
 
 		return Vel * 0.0254, Pen
 	end

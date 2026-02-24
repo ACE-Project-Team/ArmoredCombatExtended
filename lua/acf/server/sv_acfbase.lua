@@ -115,7 +115,6 @@ local IGNORED_CLASSES = {
 	gmod_ghost = true,
 	prop_ragdoll = true,
 	ace_debris = true,
-	sent_prop2mesh = true,
 }
 
 function ACF_Check( Entity )
@@ -126,7 +125,7 @@ function ACF_Check( Entity )
 	if not ( physobj:IsValid() and (physobj:GetMass() or 0) > 0 and not Entity:IsWorld() and not Entity:IsWeapon() ) then return false end
 
 	local Class = Entity:GetClass()
-	if IGNORED_CLASSES[Class] or ( Class ~= "func_breakable" and string.find( Class , "func_" )) then return false end
+	if IGNORED_CLASSES[Class] or (ACF.TraceFilter and ACF.TraceFilter[Class]) or ( Class ~= "func_breakable" and string.find( Class , "func_" )) then return false end
 	if Entity.Exploding then return false end
 
 	if not Entity.ACF or (Entity.ACF and isnumber(Entity.ACF.Material)) then

@@ -5,7 +5,8 @@ include("acf/shared/sh_ace_functions.lua")
 
 local IsEnt = ACE_IsEnt
 
-local MIN_DETAIL_PTS = 300
+local pointCfg = ACE.PointCostConfig or {}
+local MIN_DETAIL_PTS = tonumber(pointCfg.MinDetailPoints) or 300
 
 -- Build a readable label for detail entries.
 local function ACE_GetEntityLabel(ent)
@@ -185,7 +186,9 @@ local function ACE_CalcNonAmmoSubsystem(ents, subsystem, minDetailPts)
 			if eclass == subsystem then
 				local pts
 				if subsystem == "Crew" then
-					pts = tonumber(ACE.CrewSeatCostFlat) or 250
+					pts = tonumber(ACE.CrewSeatPointCost)
+						or tonumber((ACE.PointCostConfig or {}).CrewSeatFlat)
+						or 250
 				else
 					pts = ACE_GetEntPoints(ent)
 				end
@@ -241,11 +244,8 @@ function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
 	if rpsTotal <= 0 then return 0 end
 
 	local cfg = ACE.AmmoCostConfig or {}
-	local refRps = cfg.RpsRef or 0
-	if refRps <= 0 then return 0 end
-
-	local rpsExp = cfg.RpsExp or 1
-	local rpsFactor = (rpsTotal / refRps) ^ rpsExp
+	local rpsFactor = ACE_GetRofThreatFactor(rpsTotal, cfg)
+	if rpsFactor <= 0 then return 0 end
 	local roundPts = ACE_GetAmmoRoundPoints(bdata)
 	if roundPts <= 0 then return 0 end
 
@@ -287,6 +287,8 @@ function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
 		Capacity = rounds,
 		MaxPen = maxPen,
 		Rps = rpsTotal,
+		Rpm = rpsTotal * 60,
+		RofFactor = rpsFactor,
 		ReadyCount = readyCount,
 		StowCount = stowCount,
 		ReadyCost = readyCost,
@@ -691,10 +693,19 @@ ACE_CalcContraptionArmor = function(ent)
 	end
 
 	-- Critical components are sampled for forward armor bias.
+	local function isEmptyAmmoCrate(ent)
+		if not IsEnt(ent) or ent:GetClass() ~= "acf_ammo" then return false end
+		return (tonumber(ent.Ammo) or 0) <= 0
+	end
+
 	local criticals = {}
 	for _, cent in ipairs(contraptionEnts) do
 		if IsEnt(cent) then
 			local cls = cent:GetClass()
+			if cls == "acf_ammo" and isEmptyAmmoCrate(cent) then
+				continue
+			end
+
 			if cls == "acf_ammo" or cls == "acf_fueltank" or cls == "acf_engine"
 				or cls == "ace_crewseat_gunner" or cls == "ace_crewseat_loader" or cls == "ace_crewseat_driver" then
 				criticals[#criticals + 1] = cent
@@ -838,6 +849,9 @@ ACE_CalcContraptionArmor = function(ent)
 				if not skip then
 					local cls = hitEnt:GetClass()
 					local skipArmor = ignoredArmor[cls] or not ACF_Check(hitEnt)
+					if not skipArmor and cls == "acf_ammo" and isEmptyAmmoCrate(hitEnt) then
+						skipArmor = true
+					end
 					if skipArmor then
 						skip = true
 					elseif ACF_CheckClips(hitEnt, tr.HitPos) then

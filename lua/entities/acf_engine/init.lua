@@ -137,7 +137,7 @@ do
 		}
 		local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
 		local FallBackCost = (Engine.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[Engine.FuelType] or 1)
-		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
+		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointCostMultiplier)
 
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
 
@@ -241,7 +241,7 @@ function ENT:Update( ArgsTable )
 	}
 	local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
 	local FallBackCost = (self.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[self.FuelType] or 1)
-	self.ACEPoints			= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
+	self.ACEPoints			= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointCostMultiplier)
 
 	self.TorqueScale		= ACF.TorqueScale[self.EngineType]
 

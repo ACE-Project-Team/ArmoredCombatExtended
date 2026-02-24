@@ -129,13 +129,32 @@ ACF.LargeEngineThreshold = 100 --Engine size in hp required to need a driver
 ACF.LargeGunsRequireGunners = 1 --Should engines over a certain hp need a driver? Modified by console commands.
 ACF.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 
-ACF.PointsLimit = 10000 --The maximum legal pointvalue
-ACF.MaxWeight = 200000 --The max weight in Kg
+ACF.PointsLimit = 10000 -- The maximum legal point value.
+ACF.MaxWeight   = 200000 -- The max weight in kg.
 
-ACE.CannonPointMul = 0.85 --Multiplier for cannon point cost
-ACE.EnginePointMul = 0.69 --Multiplier for engine cost in points
-ACF.PointsPerTon   = ACF.PointsPerTon or 42 -- Legacy cost per ton for the Manufacturing Cost indicator.
-ACE.AmmoPerTon     = 100 --Point cost per ton of ammo
+ACE.PointCostConfig = ACE.PointCostConfig or {
+    ArmorFrontWeight = 1.0, -- Front armor contribution in armor points.
+    ArmorSideWeight  = 2.5, -- Side armor contribution in armor points.
+    ArmorScale       = 4.0, -- Final armor points multiplier.
+    CrewSeatFlat     = 250, -- Flat point cost per crew seat entity.
+    MinDetailPoints  = 300 -- Minimum points to list an entry in armor tool breakdown.
+}
+
+ACE.GunPointCostMultiplier    = tonumber(ACE.GunPointCostMultiplier) or tonumber(ACE.CannonPointMul) or 0.85 -- Multiplier for gun/cannon point cost.
+ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69 -- Multiplier for engine point cost.
+ACF.LegacyManufacturingPointsPerTon = tonumber(ACF.LegacyManufacturingPointsPerTon) or tonumber(ACF.PointsPerTon) or 42 -- Legacy manufacturing cost coefficient per ton.
+ACE.LegacyAmmoPointsPerTon    = tonumber(ACE.LegacyAmmoPointsPerTon) or tonumber(ACE.AmmoPerTon) or 100 -- Legacy non-missile ammo points per ton.
+ACE.CrewSeatPointCost         = tonumber(ACE.CrewSeatPointCost)
+    or tonumber(ACE.CrewSeatCostFlat)
+    or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.CrewSeatFlat)
+    or 250 -- Flat point cost per crew seat.
+
+-- Backward-compatible aliases (deprecated names).
+ACE.CannonPointMul = ACE.GunPointCostMultiplier
+ACE.EnginePointMul = ACE.EnginePointCostMultiplier
+ACF.PointsPerTon = ACF.LegacyManufacturingPointsPerTon
+ACE.AmmoPerTon = ACE.LegacyAmmoPointsPerTon
+ACE.CrewSeatCostFlat = ACE.CrewSeatPointCost
 
 -- Deprecated: armor mass-based cost has been replaced by LOS armor scan.
 --
@@ -166,8 +185,6 @@ ACE.AmmoTypeFactors = {
     Refill = 0
 }
 
-
-
 ACE.LegacyMatCostTables = ACE.LegacyMatCostTables or {
     Alum = 1.2 * (0.221 / 0.34), -- 20% cost increase for ~25% weight reduction.
     CHA = 0.8 * (0.98 / 1.25), -- 25% heavier for ~20% cost reduction.
@@ -178,17 +195,15 @@ ACE.LegacyMatCostTables = ACE.LegacyMatCostTables or {
     RHA = 1
 }
 ACE.AmmoCostConfig = {
-    BaseRoundPts = 120, -- Base points per round before scaling.
-    RefPen = 720, -- Reference penetration (mm) for pen scaling.
+    BaseRoundPts = 385, -- Tuned so 25x APFSDS @ 750mm at 12 RPM is ~3333 pts (120/125mm class).
+    RefPen = 700, -- Reference penetration (mm) for pen scaling.
     RefCaliber = 100, -- Reference caliber (mm) for caliber scaling.
-    PenExp = 1.4, -- Penetration curve exponent.
+    RofKneeRpm = 14, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
     RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
     BlastExp = 1.1, -- Blast curve exponent.
     BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
     HeUtilWeight = 1.3, -- HE utility weight from filler mass per caliber.
     HeUtilExp = 0.5, -- HE utility exponent for filler per caliber.
-    RpsRef = 1 / 7, -- Reference rounds per second for ROF scaling.
-    RpsExp = 0.825, -- ROF curve exponent (+10%).
     ReadyRackBase = 3000, -- Ready rack baseline: base / caliber(mm).
     ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
     ReadyRackLowBoost = 1.5, -- Low-caliber boost (20mm hits 300 at base 3000).
@@ -210,7 +225,7 @@ ACE.MissileGuidanceFactors = {
     Dumb = 0.3,
     Straight_Running = 0.45,
     GPS = 0.6,
-    Antimissile = 0.6,
+    Antimissile = 1,
     AntiRadiation = 0.7,
     Beam_Riding = 0.7,
     GPS_TerrainAvoidant = 0.8,
@@ -220,9 +235,9 @@ ACE.MissileGuidanceFactors = {
     Acoustic_Straight = 1.0,
     Acoustic_Helical = 1.0,
     Laser = 1.2,
-    Infrared = 1.2,
-    Top_Attack_IR = 1.5,
-    Radar = 1.5
+    Infrared = 2.7,
+    Top_Attack_IR = 3,
+    Radar = 1.2
 }
 
 -- Armor tool UX timing.

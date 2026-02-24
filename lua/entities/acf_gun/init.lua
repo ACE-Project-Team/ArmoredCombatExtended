@@ -172,7 +172,7 @@ do
 		Gun.Class           = Lookup.gunclass
 		Gun.Heat            = ACE.AmbientTemp
 		Gun.LinkRangeMul    = math.max(Gun.Caliber / 10,1) ^ 1.2
-		Gun.ACEPoints		= (Lookup.acepoints or 0.404) * ACE.CannonPointMul
+		Gun.ACEPoints		= (Lookup.acepoints or 0.404) * ACE.GunPointCostMultiplier
 		Gun.RequiresGunner	= false
 		local GunnerExcluded	= Lookup.gunnerexception or false
 

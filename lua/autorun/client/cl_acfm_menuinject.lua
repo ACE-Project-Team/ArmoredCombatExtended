@@ -13,6 +13,25 @@ end
 
 local ACFEnts = ACF.Weapons
 
+local function FormatWithCommas(Value, Decimals)
+	local Number = tonumber(Value)
+	if not Number then return tostring(Value or 0) end
+
+	if Decimals and Decimals > 0 then
+		local Format = "%." .. Decimals .. "f"
+		local Text = string.format(Format, Number)
+		local Whole, Fraction = Text:match("^(%-?%d+)%.(%d+)$")
+
+		if Whole and Fraction then
+			return string.Comma(tonumber(Whole) or 0) .. "." .. Fraction
+		end
+
+		return Text
+	end
+
+	return string.Comma(math.floor(Number + 0.5))
+end
+
 function SetMissileGUIEnabled(_, enabled, gundata)
 
 	if enabled then
@@ -217,8 +236,11 @@ function CreateRackSelectGUI(node)
 				acfmenupanel:CPanelText("RackTitle", rack.name or "Missing Name","DermaDefaultBold")
 				acfmenupanel:CPanelText("RackDesc", (rack.desc or "Missing Desc") .. "\n")
 
-				acfmenupanel:CPanelText("RackEweight", "Weight when empty : " .. (rack.weight or "Missing weight") .. "kg")
-				acfmenupanel:CPanelText("RackFweight", "Weight when fully loaded : " .. ( (rack.weight or 0) + (table.Count(rack.mountpoints) * node.mytable.weight) ) .. "kg")
+				local EmptyWeight = tonumber(rack.weight) or 0
+				local FullWeight = EmptyWeight + (table.Count(rack.mountpoints) * (tonumber(node.mytable.weight) or 0))
+
+				acfmenupanel:CPanelText("RackEweight", "Weight when empty : " .. FormatWithCommas(EmptyWeight, 1) .. "kg")
+				acfmenupanel:CPanelText("RackFweight", "Weight when fully loaded : " .. FormatWithCommas(FullWeight, 1) .. "kg")
 				acfmenupanel:CPanelText("Rack_Year", "Year : " .. rack.year .. "\n")
 			end
 		end
@@ -238,7 +260,14 @@ function CreateRackSelectGUI(node)
 
 	local default = node.mytable.rack
 	for _, Value in pairs( ACF_GetCompatibleRacks(node.mytable.id) ) do
-		acfmenupanel.CData.RackSelect:AddChoice( Value, Value, Value == default )
+		local Display = Value
+		local Rack = ACF.Weapons.Racks[Value]
+		if Rack then
+			local RackWeight = tonumber(Rack.weight) or 0
+			Display = string.format("%s (%skg)", Value, FormatWithCommas(RackWeight, 1))
+		end
+
+		acfmenupanel.CData.RackSelect:AddChoice( Display, Value, Value == default )
 	end
 
 

@@ -672,7 +672,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	self.ReloadDelay = ACF_GetRackValue(BulletData, "reloaddelay") or ACF_GetGunValue(BulletData.Id, "reloaddelay") or 1
 	self.Inaccuracy = ACF_GetRackValue(BulletData, "inaccuracy") or ACF_GetGunValue(BulletData.Id, "inaccuracy") or 0
 
-	missile.ACEPoints = CalculateMissileCost(BulletData)
+	missile.ACEPoints = CalculateMissileCost(Crate.BulletData)
 
 	if missile:IsValid() then
 		self:EmitSound("acf_extra/tankfx/gnomefather/reload12.wav", 500, 110)
@@ -1047,9 +1047,10 @@ do
 	--Jank terrible bad hardcoded function to copy bullet data over so it can be spawned by the missle. Has variables to convert every type of round data. There has to be a better way.
 	function BulletDataMath(self)
 
+		local SourceData = self.Bulletdata2 or self.BulletData or {}
 
 		self.Bulletdata2 = {}
-		self.Bulletdata2.Type = self.BulletData.Type
+		self.Bulletdata2.Type = SourceData.Type or self.BulletData.Type
 
 		--print(self.Bulletdata2.Type)
 
@@ -1059,18 +1060,18 @@ do
 			self.Bulletdata2.FuseLength = 0.2 --The missile exploded. The shell shouldn't travel across the map.
 		end
 
-		self.Bulletdata2.Id = self.BulletData.Id
-		self.Bulletdata2.Caliber = self.BulletData.Caliber
-		self.Bulletdata2.PropLength = self.BulletData.PropLength --Volume of the case as a cylinder * Powder density converted from g to kg
-		self.Bulletdata2.ProjLength = self.BulletData.ProjLength --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
-		self.Bulletdata2.Data5 = self.BulletData.BoomFillerMass or self.BulletData.FillerMass or 0 --He Filler or Flechette count
-		self.Bulletdata2.Data6 = self.BulletData.Data6 or 55 --HEAT ConeAng or Flechette Spread
-		self.Bulletdata2.Data7 = self.BulletData.Data7
-		self.Bulletdata2.Data8 = self.BulletData.Data8
-		self.Bulletdata2.Data9 = self.BulletData.Data9
-		self.Bulletdata2.Data10 = self.BulletData.Data10 -- Tracer
-		self.Bulletdata2.Data13 = self.BulletData.Data13 or 55 --THEAT ConeAng2
-		self.Bulletdata2.Data14 = self.BulletData.Data14 or 0.05 --THEAT HE Allocation
+		self.Bulletdata2.Id = SourceData.Id or self.BulletData.Id
+		self.Bulletdata2.Caliber = SourceData.Caliber or self.BulletData.Caliber
+		self.Bulletdata2.PropLength = SourceData.PropLength or self.BulletData.PropLength --Volume of the case as a cylinder * Powder density converted from g to kg
+		self.Bulletdata2.ProjLength = SourceData.ProjLength or self.BulletData.ProjLength --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
+		self.Bulletdata2.Data5 = SourceData.BoomFillerMass or SourceData.FillerMass or self.BulletData.BoomFillerMass or self.BulletData.FillerMass or 0 --He Filler or Flechette count
+		self.Bulletdata2.Data6 = SourceData.Data6 or self.BulletData.Data6 or 55 --HEAT ConeAng or Flechette Spread
+		self.Bulletdata2.Data7 = SourceData.Data7 or self.BulletData.Data7
+		self.Bulletdata2.Data8 = SourceData.Data8 or self.BulletData.Data8
+		self.Bulletdata2.Data9 = SourceData.Data9 or self.BulletData.Data9
+		self.Bulletdata2.Data10 = SourceData.Data10 or self.BulletData.Data10 -- Tracer
+		self.Bulletdata2.Data13 = SourceData.Data13 or self.BulletData.Data13 or 55 --THEAT ConeAng2
+		self.Bulletdata2.Data14 = SourceData.Data14 or self.BulletData.Data14 or 0.05 --THEAT HE Allocation
 
 		--print(self.BulletData.Data14)
 
@@ -1080,9 +1081,9 @@ do
 
 		--
 		self.Bulletdata2.AmmoType = self.Bulletdata2.Type
-		self.Bulletdata2.FrArea = 3.1416 * (self.BulletData.Caliber / 2) ^ 2
-		self.Bulletdata2.ProjMass = self.BulletData.FrArea * (self.BulletData.ProjLength * 7.9 / 1000)
-		self.Bulletdata2.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+		self.Bulletdata2.FrArea = 3.1416 * (self.Bulletdata2.Caliber / 2) ^ 2
+		self.Bulletdata2.ProjMass = self.Bulletdata2.FrArea * (self.Bulletdata2.ProjLength * 7.9 / 1000)
+		self.Bulletdata2.PropMass = self.Bulletdata2.FrArea * (self.Bulletdata2.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 
 
 		self.Bulletdata2.FillerMass = self.Bulletdata2.Data5
@@ -1293,53 +1294,9 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 end
 
 do
-	local DefaultGuidanceFactors = {
-		Dumb = 0.3,
-		Straight_Running = 0.45,
-		GPS = 0.6,
-		Antimissile = 0.6,
-		AntiRadiation = 0.7,
-		Beam_Riding = 0.7,
-		GPS_TerrainAvoidant = 0.8,
-		SACLOS = 0.75,
-		Semiactive = 0.85,
-		Wire = 1.0,
-		Acoustic_Straight = 1.0,
-		Acoustic_Helical = 1.0,
-		Laser = 1.2,
-		Infrared = 1.2,
-		Top_Attack_IR = 1.5,
-		Radar = 1.5
-	}
-
 	-- Calculates per-missile points for rack/ammo entities.
 	-- ATGMs use the same performance model as gun ammo, blended with legacy pointcost for continuity.
 	function CalculateMissileCost(BulletData)
-		local legacyPts = ACF_GetRackValue(BulletData, "pointcost") or ACF_GetGunValue(BulletData.Id, "pointcost") or 0
-		local guid = BulletData.Data7 or "Dumb"
-		local guidanceFactors = ACE.MissileGuidanceFactors or DefaultGuidanceFactors
-		local factor = guidanceFactors[guid] or guidanceFactors.Dumb or 1
-
-		local gunClass = ACF_GetGunValue(BulletData.Id, "gunclass")
-		local basePts = legacyPts
-
-		if gunClass == "ATGM" then
-			local cfg = ACE.ATGMCostConfig or {}
-			local perfPts = ACE_GetAmmoRoundPoints(BulletData)
-			local perfMul = cfg.PerformanceMul or 1
-			local legacyWeight = math.Clamp(cfg.LegacyWeight or 0, 0, 1)
-			local minBase = cfg.MinBase or 25
-
-			if perfPts > 0 then
-				basePts = perfPts * perfMul
-				if legacyPts > 0 and legacyWeight > 0 then
-					basePts = basePts * (1 - legacyWeight) + legacyPts * legacyWeight
-				end
-			end
-
-			basePts = math.max(basePts, minBase)
-		end
-
-		return basePts * factor
+		return ACE_CalcMissileLegacyRoundCost(BulletData)
 	end
 end

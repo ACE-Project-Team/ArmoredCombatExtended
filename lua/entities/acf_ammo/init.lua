@@ -30,66 +30,14 @@ local function IsMachineGunAmmo( ent )
 	return gunclass == "MG"
 end
 
-local GLATGM_TYPES = {
-	GLATGM = true,
-	["GLATGM-HE"] = true
-}
-
-local MISSILE_WARHEAD_OVERRIDES = {
-	GLATGM = "HEAT",
-	["GLATGM-HE"] = "HE"
-}
-
 local function IsMissileAmmo( ent )
 	local bullet = ent and ent.BulletData or {}
 	local id = bullet.Id or ent.RoundId
-	local roundType = bullet.Type or (ACF.RoundTypes and ACF.RoundTypes[id] and ACF.RoundTypes[id].Type) or nil
 	local gun = (id and GunTable and GunTable[id]) or nil
 	local gunclass = (gun and gun.gunclass) or bullet.GunClass or ent.GunClass
 	local classData = gunclass and GunClasses and GunClasses[gunclass] or nil
 
-	if GLATGM_TYPES[roundType] then
-		return true
-	end
-
-	if GLATGM_TYPES[id] then
-		return true
-	end
-
 	return (classData and classData.type == "missile") or false
-end
-
-local function ResolveWarheadType( bullet )
-	local roundType = bullet and bullet.Type or nil
-	local heatTypes = {
-		HEAT = true,
-		THEAT = true,
-		HEATFS = true,
-		THEATFS = true
-	}
-	local heTypes = {
-		HE = true,
-		HESH = true,
-		HEFS = true
-	}
-
-	if roundType and GLATGM_TYPES[roundType] then
-		return MISSILE_WARHEAD_OVERRIDES[roundType] or "HE"
-	end
-
-	if roundType and heatTypes[roundType] then
-		return roundType
-	end
-
-	if roundType and heTypes[roundType] then
-		return "HE"
-	end
-
-	if roundType and ACF.RoundTypes and ACF.RoundTypes[roundType] then
-		return roundType
-	end
-
-	return "HE"
 end
 
 local function SpawnMiniHEFlash(ent, pos, radius)
@@ -136,6 +84,12 @@ local function GetCookoffConfig( ent, severity )
 		maxRounds = math.Clamp(math.ceil(maxRounds * 4), 20, 220)
 	end
 	local minRounds = math.Clamp(math.ceil(maxRounds * 0.35), 2, maxRounds)
+
+	if IsMissileAmmo(ent) then
+		-- Missile cookoff should be short and sporadic, not prolonged autocannon-like detonation.
+		maxRounds = math.Clamp(maxRounds, 1, 3)
+		minRounds = math.Clamp(math.ceil(maxRounds * 0.4), 1, maxRounds)
+	end
 
 	return {
 		SizeFactor = sizeFactor,
@@ -749,10 +703,9 @@ do
 			debugoverlay.Text(self:GetPos() + Vector(0,0,10), "Total Ammo Mass: " .. self.AmmoMassMax .. "kgs", 20 )
 
 			if WeaponType ~= "missile" then
-				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.AmmoPerTon)
+				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.LegacyAmmoPointsPerTon)
 			else
-				local BulletData2 = ACFM_CompactBulletData(self)
-				local MissileCost = CalculateMissileCost(BulletData2)
+				local MissileCost = CalculateMissileCost(self.BulletData)
 				self.ACEPoints = Capacity * MissileCost
 			end
 
@@ -962,12 +915,15 @@ function ENT:Think()
 					CookoffBullet.ProjMass = (CookoffBullet.ProjMass or 0) * 0.5
 					CookoffBullet.PropMass = (CookoffBullet.PropMass or 0) * 0.5
 					CookoffBullet.FillerMass = (CookoffBullet.FillerMass or 0) * 0.75
+					CookoffBullet.BoomFillerMass = (CookoffBullet.BoomFillerMass or CookoffBullet.FillerMass or 0) * 0.75
 					CookoffBullet.MuzzleVel	= (CookoffBullet.MuzzleVel or 0) * 0.75
+					local IsMissile = IsMissileAmmo(self)
 					local CookoffType = CrateType
-					if IsMissileAmmo( self ) then
-						CookoffType = ResolveWarheadType( CookoffBullet )
-						CookoffBullet.Type = CookoffType
+					if not ACF.RoundTypes[CookoffType] then
+						CookoffType = CrateType
 					end
+					CookoffBullet.Type = CookoffType
+
 					self.CreateShell = ACF.RoundTypes[CookoffType].create
 					self:CreateShell( CookoffBullet )
 
@@ -990,9 +946,12 @@ function ENT:Think()
 								util.Effect( "ACF_Scaled_Explosion", HEFlash )
 							end )
 
-							local HE       = self.BulletData.FillerMass	or 0
-							local Propel   = self.BulletData.PropMass	or 0
-							local HEWeight = ((HE + Propel * ACF.APAmmoDetonateFactor * (ACF.PBase / ACF.HEPower)) * ACF.BoomMult)
+							local MiniRoundType = self.BulletData.Type
+							local MiniClass = ACE_GetAmmoCookoffClass(MiniRoundType, IsMissile)
+							local HE = ACE_GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
+							local Propel = self.BulletData.PropMass or 0
+							local PropScale = ACE_GetAmmoCookoffPropScale(MiniClass)
+							local HEWeight = ((HE + Propel * PropScale * ACF.APAmmoDetonateFactor * (ACF.PBase / ACF.HEPower)) * ACF.BoomMult)
 							local RunHE = self.CookoffHEToggle
 							self.CookoffHEToggle = not self.CookoffHEToggle
 

@@ -145,13 +145,13 @@ ACF_defineGun("50mmBAL", {
 	model = "models/tankgun_new/tankgun_50mm.mdl",
 	sound = "ace_weapons/multi_sound/50mm_multi.mp3",
 	gunclass = "AL",
-	caliber = 7.5,
+	caliber = 5,
 	weight = 900,
 	year = 1960,
 	rofmod = 1.2,
 	round = {
-		maxlength = 78,
-		propweight = 3.8
+		maxlength = 63,
+		propweight = 2.1
 	},
 	acepoints = 2000
 } )
@@ -162,13 +162,13 @@ ACF_defineGun("75mmBAL", {
 	model = "models/tankgun_new/tankgun_75mm.mdl",
 	sound = "ace_weapons/multi_sound/75mm_multi.mp3",
 	gunclass = "AL",
-	caliber = 5,
+	caliber = 7.5,
 	weight = 1400,
 	year = 1960,
 	rofmod = 1.2,
 	round = {
-		maxlength = 63,
-		propweight = 2.1
+		maxlength = 78,
+		propweight = 3.8
 	},
 	acepoints = 2400
 } )

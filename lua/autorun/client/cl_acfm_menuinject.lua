@@ -213,7 +213,8 @@ function CreateRackSelectGUI(node)
 		acfmenupanel.CData.RackSelect = vgui.Create( "DComboBox", acfmenupanel.CustomDisplay )
 		acfmenupanel.CData.RackSelect:SetSize(100, 30)
 
-		acfmenupanel.CData.RackSelect.OnSelect = function( _ , _ , data )
+		acfmenupanel.CData.RackSelect.OnSelect = function( panel, index, _, data )
+			data = data or panel:GetOptionData(index)
 			RunConsoleCommand( "acfmenu_data9", data )
 
 			local rack = ACF.Weapons.Racks[data]
@@ -307,7 +308,8 @@ function ModifyACFMenu(panel)
 
 	end
 
-	local rootNodes = HomeNode.ChildNodes:GetChildren()  --lets find all our folder inside of Main menu
+	local rootNodes = HomeNode and HomeNode.ChildNodes and HomeNode.ChildNodes:GetChildren()  -- lets find all our folders inside the main menu
+	if not rootNodes then return false end
 
 	local gunsNode
 
@@ -319,44 +321,55 @@ function ModifyACFMenu(panel)
 		end
 	end
 
-	if gunsNode then
-		local classNodes = gunsNode.ChildNodes:GetChildren()
-		local gunClasses = ACF.Classes.GunClass
+	if not (gunsNode and gunsNode.ChildNodes) then return false end
 
-		for _, node in pairs(classNodes) do
-			local gunNodeElement = node.ChildNodes
+	local classNodes = gunsNode.ChildNodes:GetChildren()
+	local gunClasses = ACF.Classes.GunClass
+	local foundAnyChildren = false
+	local patchedAny = false
+	local foundAnyMissileEntries = false
 
-			if gunNodeElement then
-				local gunNodes = gunNodeElement:GetChildren()
+	for _, node in pairs(classNodes) do
+		local gunNodeElement = node.ChildNodes
+		if not gunNodeElement then continue end
 
-				for _, gun in pairs(gunNodes) do
-					local class = gunClasses[gun.mytable.gunclass]
+		local gunNodes = gunNodeElement:GetChildren()
+		if #gunNodes > 0 then
+			foundAnyChildren = true
+		end
 
-					if (class and class.type == "missile") and not gun.ACFMOverridden then
-						local oldclick = gun.DoClick
+		for _, gun in pairs(gunNodes) do
+			if not (gun.mytable and gun.mytable.gunclass) then continue end
 
-						gun.DoClick = function(self)
-							oldclick(self)
-							CreateRackSelectGUI(self)
-						end
+			local class = gunClasses[gun.mytable.gunclass]
 
-						gun.ACFMOverridden = true
+			if class and class.type == "missile" then
+				foundAnyMissileEntries = true
+
+				if not gun.ACFMOverridden then
+					local oldclick = gun.DoClick
+
+					gun.DoClick = function(self)
+						oldclick(self)
+						CreateRackSelectGUI(self)
 					end
+
+					gun.ACFMOverridden = true
+					patchedAny = true
 				end
-			else
-				ErrorNoHalt("ACFM: Unable to find guns for class " .. node:GetText() .. ".\n")
 			end
 		end
-	else
-		ErrorNoHalt("ACFM: Unable to find the ACF Guns node.")
 	end
+
+	return foundAnyChildren and (patchedAny or foundAnyMissileEntries)
 
 end
 
 function FindACFMenuPanel()
 	if acfmenupanel then
-		ModifyACFMenu(acfmenupanel)
-		timer.Remove("FindACFMenuPanel")
+		if ModifyACFMenu(acfmenupanel) then
+			timer.Remove("FindACFMenuPanel")
+		end
 	end
 end
 

@@ -115,6 +115,7 @@ local IGNORED_CLASSES = {
 	gmod_ghost = true,
 	prop_ragdoll = true,
 	ace_debris = true,
+	sent_prop2mesh = true,
 }
 
 function ACF_Check( Entity )

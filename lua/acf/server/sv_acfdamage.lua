@@ -635,7 +635,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		local Velocityfactor = 0.12
 		local Max_Spall_Vel = 7000
 		local MassFactor = 6
-		
+
 		local Max_Spalls = 128
 
 		-- print("HE: " .. HEFiller)
@@ -654,7 +654,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		SpallWeight = SpallWeight * MassFactor
 		local SpallArea = 4 * (TotalWeight / SpallWeight)
 		local SpallEnergy = ACF_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
-		
+
 		-- print("AR: " .. SpallArea)
 
 		-- print("TW: " .. TotalWeight)

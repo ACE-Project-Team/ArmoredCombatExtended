@@ -366,10 +366,8 @@ function ModifyACFMenu(panel)
 end
 
 function FindACFMenuPanel()
-	if acfmenupanel then
-		if ModifyACFMenu(acfmenupanel) then
-			timer.Remove("FindACFMenuPanel")
-		end
+	if acfmenupanel and ModifyACFMenu(acfmenupanel) then
+		timer.Remove("FindACFMenuPanel")
 	end
 end
 

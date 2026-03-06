@@ -26,6 +26,7 @@ function ENT:Initialize()
 end
 
 function MakeACE_Crewseat_Gunner(Owner, Pos, Angle, Id, EntityData)
+	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
 	Id = Id or "Crewseat_Gunner"

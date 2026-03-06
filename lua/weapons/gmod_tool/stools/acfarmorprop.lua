@@ -186,7 +186,6 @@ function TOOL:Reload( trace )
 
 	local Contraption = ent:GetContraption() or nil
 	local details = Contraption and Contraption.ACEPointsDetails or nil
-	local armorLines = Contraption and Contraption.ACEArmorDetails or nil
 	local PointVal		= 0
 
 	local PtsArmor = 0
@@ -412,6 +411,25 @@ local function ACE_GetAmmoCostForCaliber(con, caliberMm)
 	return total
 end
 
+-- Sum ammo points for crates compatible with a rack.
+local function ACE_GetAmmoCostForRack(con, rack)
+	if not con or not con.ents or not IsValid(rack) then return 0 end
+	if not ACF_CanLinkRack or not rack.Id then return 0 end
+
+	local total = 0
+
+	for ent in pairs(con.ents) do
+		if IsValid(ent) and ent:GetClass() == "acf_ammo" then
+			local bdata = ent.BulletData
+			if istable(bdata) and ACF_CanLinkRack(rack.Id, bdata.Id, bdata, rack) then
+				total = total + (ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0)
+			end
+		end
+	end
+
+	return total
+end
+
 -- Resolve point category for a class.
 local function ACE_GetPointsCategory(ent)
 	if not IsValid(ent) then return nil end
@@ -424,7 +442,7 @@ end
 
 -- Compute popup points and label for an entity.
 -- Order: entity points, gun-caliber ammo total, then category total.
-local ArmorPopupDebug = SERVER and CreateConVar("ace_debug_armor_popup", "0", FCVAR_ARCHIVE, "Debug armor popup per-entity contribution lookup.", 0, 1) or nil
+local ArmorPopupDebug = SERVER and CreateConVar("acf_debug_armor_popup", "0", FCVAR_ARCHIVE, "Debug armor popup per-entity contribution lookup.", 0, 1) or nil
 local ArmorPopupDebugLast = {}
 
 local function ACE_DebugArmorPopup(ply, ent, con, matchedRow)
@@ -474,6 +492,14 @@ local function ACE_GetPopupPoints(ent, ply)
 			end
 
 			return points, label
+		end
+	end
+
+	-- Racks fall back to the ammo cost of crates compatible with this rack.
+	if cls == "acf_rack" then
+		local ammoCost = ACE_GetAmmoCostForRack(con, ent)
+		if ammoCost > 0 then
+			return ammoCost, "Total Rack Ammo Cost"
 		end
 	end
 

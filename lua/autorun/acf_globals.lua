@@ -39,9 +39,9 @@ ACF.SWEPInaccuracyMul      = 0.5
 ---------------------------------- Debris ----------------------------------
 
 ACF.DebrisIgniteChance    = 0.25
-ACF.DebrisScale           = 20                        -- Ignore debris that is less than this bounding radius.
-ACF.DebrisChance          = 0.5
-ACF.DebrisLifeTime        = 60
+ACF.DebrisScale           = 10                        -- Ignore debris that is less than this bounding radius.
+ACF.DebrisChance          = 1
+ACF.DebrisLifeTime        = 30
 
 ---------------------------------- Fuel & fuel Tank config ----------------------------------
 
@@ -107,6 +107,7 @@ ACF.TraceFilter       = {        -- entities that cause issue with acf and shoul
     prop_vehicle_crane   = true,
     prop_dynamic         = true,
     npc_strider          = true,
+    sent_prop2mesh       = true,
     worldspawn           = true, --The worldspawn in infinite maps is fake. Since the IsWorld function will not do something to avoid this case, that i will put it here.
 
 }
@@ -134,7 +135,7 @@ ACF.MaxWeight   = 200000 -- The max weight in kg.
 
 ACE.PointCostConfig = ACE.PointCostConfig or {
     ArmorFrontWeight = 1.0, -- Front armor contribution in armor points.
-    ArmorSideWeight  = 2.5, -- Side armor contribution in armor points.
+    ArmorSideWeight  = 2.2, -- Side armor contribution in armor points.
     ArmorScale       = 4.0, -- Final armor points multiplier.
     CrewSeatFlat     = 250, -- Flat point cost per crew seat entity.
     MinDetailPoints  = 300 -- Minimum points to list an entry in armor tool breakdown.
@@ -195,10 +196,11 @@ ACE.LegacyMatCostTables = ACE.LegacyMatCostTables or {
     RHA = 1
 }
 ACE.AmmoCostConfig = {
-    BaseRoundPts = 385, -- Tuned so 25x APFSDS @ 750mm at 12 RPM is ~3333 pts (120/125mm class).
+    BaseRoundPts = 340, -- Tuned so 25x APFSDS @ 750mm at 12 RPM is ~3333 pts (120/125mm class).
     RefPen = 700, -- Reference penetration (mm) for pen scaling.
     RefCaliber = 100, -- Reference caliber (mm) for caliber scaling.
-    RofKneeRpm = 14, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
+    RofKneeRpm = 8, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
+    MinRofRpm = 6, -- Minimum RPM factored into ROF threat scaling.
     RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
     BlastExp = 1.1, -- Blast curve exponent.
     BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
@@ -324,7 +326,7 @@ if SERVER then
     CreateConVar("sbox_max_acf_ammo", 100)                    -- ammo limit
     CreateConVar("sbox_max_acf_misc", 100)                    -- misc ents limit
     CreateConVar("sbox_max_acf_rack", 24)                    -- Racks limit
-    CreateConVar("sbox_max_ace_crewseat", 100)
+    CreateConVar("sbox_max_acf_crewseat", 100)
     CreateConVar("acf_mines_max", 50)                        -- The mine limit
     CreateConVar("acf_meshvalue", 1)
 
@@ -434,16 +436,44 @@ if SERVER then
     cvars.AddChangeCallback("acf_spalling_multipler", ACF_CVarChangeCallback)
     cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
     cvars.AddChangeCallback("acf_debris_lifetime", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legacyrecoil", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_enginesrequirefuel", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largeenginesneeddriver", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largeenginethreshold", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largegunsneedgunner", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largegunthreshold", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_enable_dp", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legacyrecoil", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_enginesrequirefuel", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largeenginesneeddriver", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largeenginethreshold", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largegunsneedgunner", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largegunthreshold", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_enable_dp", ACF_CVarChangeCallback)
+
+-- Apply archived/server convars at startup so values persist across restarts and reconnects.
+local startupSync = {
+    "acf_healthmod",
+    "acf_armormod",
+    "acf_ammomod",
+    "acf_spalling",
+    "acf_spalling_multipler",
+    "acf_gunfire",
+    "acf_debris_lifetime",
+    "acf_debris_children",
+    "acf_explosions_scaled_he_max",
+    "acf_explosions_scaled_ents_max",
+    "acf_legacyrecoil",
+    "acf_legality_enginesrequirefuel",
+    "acf_legality_largeenginesneeddriver",
+    "acf_legality_largeenginethreshold",
+    "acf_legality_largegunsneedgunner",
+    "acf_legality_largegunthreshold",
+    "acf_enable_dp"
+}
+
+for _, name in ipairs(startupSync) do
+    local convar = GetConVar(name)
+    if convar then
+        ACF_CVarChangeCallback(name, nil, convar:GetString())
+    end
+end
 
 elseif CLIENT then
 ---------------------------------- Clientside Convars ----------------------------------

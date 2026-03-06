@@ -25,6 +25,7 @@ function ENT:Initialize()
 end
 
 function MakeACE_Crewseat_Driver(Owner, Pos, Angle, Id, EntityData)
+	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
 	Id = Id or "Crewseat_Driver"

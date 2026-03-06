@@ -713,13 +713,14 @@ ACE_CalcContraptionArmor = function(ent)
 		end
 	end
 
-	local ignoredArmor = {
-		acf_gun = true,
-		acf_rack = true,
+	local ignoredArmor = table.Copy(ACF.TraceFilter or {})
+	table.Merge(ignoredArmor, {
+		acf_gun = false,
+		acf_rack = false,
 		ace_crewseat_gunner = true,
 		ace_crewseat_loader = true,
 		ace_crewseat_driver = true
-	}
+	})
 
 	-- Build an orthonormal basis from a direction.
 	local function basisFromDir(dir)
@@ -1186,3 +1187,4 @@ function ACE_EnsureArmor(con, baseEnt, force)
 end
 
 _G.ACE_EnsureArmor = ACE_EnsureArmor
+

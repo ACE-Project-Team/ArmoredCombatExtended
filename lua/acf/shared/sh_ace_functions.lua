@@ -870,102 +870,6 @@ function ACE_SafeRound1(value)
 	return math.Round(ACE_SafeNonNegative(value), 1)
 end
 
-do
-	-- Ensure all ACE/ACF traces respect ACF.TraceFilter, even when a local filter
-	-- is missing or incomplete in a specific trace call site.
-	if util and not ACE._TraceFilterWrapped then
-		local RawTraceLine = util.TraceLine
-		local RawTraceHull = util.TraceHull
-		local RawQuickTrace = util.QuickTrace
-		local RawLegacyTraceLine = util.LegacyTraceLine
-
-		local function shouldIgnoreByClass(ent)
-			if not IsValid(ent) then return false end
-
-			local class = ent:GetClass()
-			if not class or class == "" then return false end
-
-			local ignored = ACF and ACF.TraceFilter
-			return ignored and ignored[class] or false
-		end
-
-		local function normalizeFilter(filter)
-			if isfunction(filter) then
-				return function(ent)
-					if shouldIgnoreByClass(ent) then return true end
-					return filter(ent)
-				end
-			end
-
-			if IsValid(filter) then
-				return function(ent)
-					if shouldIgnoreByClass(ent) then return true end
-					return ent == filter
-				end
-			end
-
-			if istable(filter) then
-				local lookup = {}
-				for _, item in pairs(filter) do
-					if IsValid(item) then
-						lookup[item] = true
-					end
-				end
-
-				return function(ent)
-					if shouldIgnoreByClass(ent) then return true end
-					return lookup[ent] or false
-				end
-			end
-
-			return function(ent)
-				return shouldIgnoreByClass(ent)
-			end
-		end
-
-		if isfunction(RawTraceLine) then
-			util.TraceLine = function(traceData)
-				if not istable(traceData) then
-					return RawTraceLine(traceData)
-				end
-
-				traceData.filter = normalizeFilter(traceData.filter)
-				return RawTraceLine(traceData)
-			end
-		end
-
-		if isfunction(RawTraceHull) then
-			util.TraceHull = function(traceData)
-				if not istable(traceData) then
-					return RawTraceHull(traceData)
-				end
-
-				traceData.filter = normalizeFilter(traceData.filter)
-				return RawTraceHull(traceData)
-			end
-		end
-
-		if isfunction(RawQuickTrace) then
-			util.QuickTrace = function(startPos, delta, filter)
-				return RawQuickTrace(startPos, delta, normalizeFilter(filter))
-			end
-		end
-
-		if isfunction(RawLegacyTraceLine) then
-			util.LegacyTraceLine = function(traceData)
-				if not istable(traceData) then
-					return RawLegacyTraceLine(traceData)
-				end
-
-				traceData.filter = normalizeFilter(traceData.filter)
-				return RawLegacyTraceLine(traceData)
-			end
-		end
-
-		ACE._TraceFilterWrapped = true
-	end
-end
-
 function ACE_FormatDetailLabel(ent)
 	if not ACE_IsEnt(ent) then return "Unknown" end
 
@@ -1006,10 +910,55 @@ end
 function ACE_GetMissileGuidanceFactor(guidanceValue)
 	local factors = ACE.MissileGuidanceFactors or {}
 	local fallback = tonumber(factors.Dumb) or 1
-	local name = ACE_GetConfigurableName(guidanceValue, "Dumb")
-	local factor = tonumber(factors[name]) or fallback
 
-	return math.max(factor, 0)
+	local function normalizeName(name)
+		if type(name) ~= "string" or name == "" then return nil end
+		return (name:gsub("%s+", "_"):gsub("%-", "_"))
+	end
+
+	local function resolveFactorFromName(name)
+		name = normalizeName(name)
+		if not name then return nil end
+
+		local direct = tonumber(factors[name])
+		if direct then return direct end
+
+		local lower = string.lower(name)
+		for key, value in pairs(factors) do
+			if string.lower(tostring(key)) == lower then
+				return tonumber(value)
+			end
+		end
+
+		return nil
+	end
+
+	-- Direct string forms, including configurable "Name:arg=val".
+	if type(guidanceValue) == "string" then
+		local name = ACE_GetConfigurableName(guidanceValue, "Dumb")
+		local factor = resolveFactorFromName(name) or resolveFactorFromName(guidanceValue) or fallback
+		return math.max(factor, 0)
+	end
+
+	-- Configurable/table forms used at runtime by missile entities.
+	if istable(guidanceValue) then
+		local candidates = {
+			guidanceValue.Name,
+			guidanceValue.name,
+			guidanceValue.ClassName,
+			guidanceValue.class,
+			guidanceValue.GuidanceName,
+			guidanceValue.Guidance,
+			guidanceValue.Type
+		}
+
+		for _, candidate in ipairs(candidates) do
+			local factor = resolveFactorFromName(candidate)
+			if factor then return math.max(factor, 0) end
+		end
+	end
+
+	return math.max(fallback, 0)
 end
 
 -- Resolve the gun class string for ammo bullet data.
@@ -1124,6 +1073,14 @@ function ACE_IsATGMCostAmmo(bdata)
 	return ACE_GetAmmoGunClass(bdata) == "ATGM"
 end
 
+-- Resolve guidance scaling used by missile point/threat math.
+local function ACE_GetAmmoGuidancePenFactor(bdata)
+	if not bdata or not ACE_IsAmmoMissileType(bdata) then return 1 end
+	-- Guidance should act as an upward threat modifier in pen-space, not make
+	-- missiles artificially cheap when using low-end guidance packages.
+	return math.max(ACE_GetMissileGuidanceFactor(bdata.Data7), 1)
+end
+
 -- Calculate per-missile legacy points (manufacturing-cost basis), including guidance.
 function ACE_CalcMissileLegacyRoundCost(bdata)
 	if not istable(bdata) then return 0 end
@@ -1152,8 +1109,12 @@ function ACE_CalcMissileLegacyRoundCost(bdata)
 		end
 
 		basePts = math.max(basePts, minBase)
+
+		-- Guidance is already applied in missile threat/penetration scaling for ATGM perf points.
+		return math.max(basePts, 0)
 	end
 
+	-- Non-ATGM missile racks still use legacy pointcost, so guidance is applied here.
 	return math.max(basePts, 0) * factor
 end
 
@@ -1186,7 +1147,8 @@ function ACE_GetRofThreatFactor(rps, cfg)
 	local kneeRpm = tonumber(cfg.RofKneeRpm) or 0
 	if kneeRpm <= 0 then return 0 end
 
-	local rpm = rpsValue * 60
+	local minRpm = tonumber(cfg.MinRofRpm) or 0
+	local rpm = math.max(rpsValue * 60, minRpm)
 	return rpm / (rpm + kneeRpm)
 end
 
@@ -1213,7 +1175,7 @@ end
 function ACE_GetAmmoRoundPoints(bdata)
 	if not bdata then return 0 end
 
-	local maxPen = ACE_GetAmmoMaxPen(bdata)
+	local maxPen = ACE_GetAmmoMaxPen(bdata) * ACE_GetAmmoGuidancePenFactor(bdata)
 	local blastMass = ACE_GetAmmoBlastMass(bdata)
 	if maxPen <= 0 and blastMass <= 0 then return 0 end
 
@@ -1262,7 +1224,7 @@ end
 function ACE_GetAmmoThreatWeight(bdata)
 	if not bdata then return 0 end
 
-	local maxPen = ACE_GetAmmoMaxPen(bdata)
+	local maxPen = ACE_GetAmmoMaxPen(bdata) * ACE_GetAmmoGuidancePenFactor(bdata)
 	local blastMass = ACE_GetAmmoBlastMass(bdata)
 	if maxPen <= 0 and blastMass <= 0 then return 0 end
 

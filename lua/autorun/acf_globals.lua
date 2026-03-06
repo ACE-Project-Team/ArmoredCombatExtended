@@ -326,7 +326,7 @@ if SERVER then
     CreateConVar("sbox_max_acf_ammo", 100)                    -- ammo limit
     CreateConVar("sbox_max_acf_misc", 100)                    -- misc ents limit
     CreateConVar("sbox_max_acf_rack", 24)                    -- Racks limit
-    CreateConVar("sbox_max_acf_crewseat", 100)
+    CreateConVar("sbox_max_ace_crewseat", 100)
     CreateConVar("acf_mines_max", 50)                        -- The mine limit
     CreateConVar("acf_meshvalue", 1)
 

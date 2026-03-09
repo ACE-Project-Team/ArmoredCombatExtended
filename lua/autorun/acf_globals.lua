@@ -107,6 +107,7 @@ ACF.TraceFilter       = {        -- entities that cause issue with acf and shoul
     prop_vehicle_crane   = true,
     prop_dynamic         = true,
     npc_strider          = true,
+    sent_prop2mesh       = true,
     worldspawn           = true, --The worldspawn in infinite maps is fake. Since the IsWorld function will not do something to avoid this case, that i will put it here.
 
 }
@@ -134,7 +135,7 @@ ACF.MaxWeight   = 200000 -- The max weight in kg.
 
 ACE.PointCostConfig = ACE.PointCostConfig or {
     ArmorFrontWeight = 1.0, -- Front armor contribution in armor points.
-    ArmorSideWeight  = 2.5, -- Side armor contribution in armor points.
+    ArmorSideWeight  = 1.8, -- Side armor contribution in armor points.
     ArmorScale       = 4.0, -- Final armor points multiplier.
     CrewSeatFlat     = 250, -- Flat point cost per crew seat entity.
     MinDetailPoints  = 300 -- Minimum points to list an entry in armor tool breakdown.
@@ -163,7 +164,7 @@ ACE.AmmoTypeFactors = {
     AP = 0.5,
     APHE = 0.6,
     APDS = 1.0,
-    APFSDS = 1.2,
+    APFSDS = 1.05,
     HVAP = 0.7,
     HEAT = 0.75,
     HEATFS = 0.8,
@@ -176,9 +177,9 @@ ACE.AmmoTypeFactors = {
     CAP = 0.6,
     CHEAT = 0.8,
     CHE = 0.25,
-    CHF = 0,
-    SM = 0,
-    FLR = 0,
+    CHF = 1,
+    SM = 1,
+    FLR = 1,
     FL = 0.3,
     GLATGM = 0.75,
     ["GLATGM-HE"] = 0.25,
@@ -195,10 +196,11 @@ ACE.LegacyMatCostTables = ACE.LegacyMatCostTables or {
     RHA = 1
 }
 ACE.AmmoCostConfig = {
-    BaseRoundPts = 385, -- Tuned so 25x APFSDS @ 750mm at 12 RPM is ~3333 pts (120/125mm class).
+    BaseRoundPts = 340, -- Base per-round scaling before penetration, caliber, ammo type, and RoF threat are applied.
     RefPen = 700, -- Reference penetration (mm) for pen scaling.
     RefCaliber = 100, -- Reference caliber (mm) for caliber scaling.
-    RofKneeRpm = 14, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
+    RofKneeRpm = 22, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
+    MinRofRpm = 4, -- Minimum RPM factored into ROF threat scaling. Set to 0 to use actual sustained RPM.
     RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
     BlastExp = 1.1, -- Blast curve exponent.
     BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
@@ -434,16 +436,44 @@ if SERVER then
     cvars.AddChangeCallback("acf_spalling_multipler", ACF_CVarChangeCallback)
     cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
     cvars.AddChangeCallback("acf_debris_lifetime", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legacyrecoil", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_enginesrequirefuel", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largeenginesneeddriver", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largeenginethreshold", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largegunsneedgunner", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_legality_largegunthreshold", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_enable_dp", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legacyrecoil", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_enginesrequirefuel", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largeenginesneeddriver", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largeenginethreshold", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largegunsneedgunner", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_legality_largegunthreshold", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_enable_dp", ACF_CVarChangeCallback)
+
+-- Apply archived/server convars at startup so values persist across restarts and reconnects.
+local startupSync = {
+    "acf_healthmod",
+    "acf_armormod",
+    "acf_ammomod",
+    "acf_spalling",
+    "acf_spalling_multipler",
+    "acf_gunfire",
+    "acf_debris_lifetime",
+    "acf_debris_children",
+    "acf_explosions_scaled_he_max",
+    "acf_explosions_scaled_ents_max",
+    "acf_legacyrecoil",
+    "acf_legality_enginesrequirefuel",
+    "acf_legality_largeenginesneeddriver",
+    "acf_legality_largeenginethreshold",
+    "acf_legality_largegunsneedgunner",
+    "acf_legality_largegunthreshold",
+    "acf_enable_dp"
+}
+
+for _, name in ipairs(startupSync) do
+    local convar = GetConVar(name)
+    if convar then
+        ACF_CVarChangeCallback(name, nil, convar:GetString())
+    end
+end
 
 elseif CLIENT then
 ---------------------------------- Clientside Convars ----------------------------------

@@ -1999,17 +1999,23 @@ function ACE_GetEntLegacyCost(ent, massOverride)
 		return math.max(rawMm * perMm * hpCostMul, 0)
 	end
 
-	-- Missile ammo crates: derive manufacturing cost from missile round points so guidance
-	-- always affects legacy cost even when ACEPoints isn't initialized yet.
+	-- Ammo crates: derive manufacturing cost from per-round ammo pricing so
+	-- manufacturing scales with round performance and the amount stored.
 	if class == "acf_ammo" then
 		local bdata = ent.BulletData
-		if istable(bdata) and ACE_IsAmmoMissileType(bdata) then
-			local perRound = ACE_CalcMissileLegacyRoundCost(bdata)
+		if istable(bdata) then
+			local perRound
+			if ACE_IsAmmoMissileType(bdata) then
+				perRound = ACE_CalcMissileLegacyRoundCost(bdata)
+			else
+				perRound = ACE_GetAmmoRoundPoints(bdata)
+			end
+
 			if perRound > 0 then
 				local rounds = tonumber(ent.Capacity) or tonumber(ent.Ammo) or 0
 				rounds = math.max(rounds, 1)
 
-				return perRound * rounds
+				return perRound * rounds * 10
 			end
 		end
 	end

@@ -172,6 +172,16 @@ function ACF_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 end
 
+local function ACF_CanDamagePlayer(Target, Attacker)
+	if not (IsValid(Target) and Target:IsPlayer()) then return true end
+	if IsValid(Attacker) and Attacker == Target then return true end
+	if Target:HasGodMode() then return false end
+
+	local canTakeDamage = hook.Run("PlayerShouldTakeDamage", Target, Attacker)
+
+	return canTakeDamage ~= false
+end
+
 
 
 function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
@@ -272,18 +282,19 @@ function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	local HitRes = ACF_CalcDamage( Target , Energy , FrArea , Angle  , Type)
 	local Driver = Entity:GetDriver()
 	local validd = Driver:IsValid()
+	local canDamageDriver = validd and ACF_CanDamagePlayer(Driver, Inflictor)
 
 	--In case of HitRes becomes NAN. That means theres no damage, so leave it as 0
 	if HitRes.Damage ~= HitRes.Damage then HitRes.Damage = 0 end
 
-	if validd then
+	if canDamageDriver then
 		local dmg = 40
 		Driver:TakeDamage( HitRes.Damage * dmg , Inflictor, Gun )
 	end
 
 	HitRes.Kill = false
 	if HitRes.Damage >= Entity.ACF.Health then --Drivers will no longer survive seat destruction
-		if validd then
+		if canDamageDriver then
 			Driver:Kill()
 		end
 		HitRes.Kill = true
@@ -311,6 +322,14 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 
 	local IsPly = false
 	if Entity:IsPlayer() then IsPly = true end
+	if IsPly and not ACF_CanDamagePlayer(Entity, Inflictor) then
+		return {
+			Damage = 0,
+			Overkill = 0,
+			Loss = 0,
+			Kill = false
+		}
+	end
 
 	if IsPly then
 		BodyArmor = 3 * (1 + Entity:Armor() / 100) --Thickness of armor to determine if any damage taken. Having 200 armor has a 3x body armor mult.

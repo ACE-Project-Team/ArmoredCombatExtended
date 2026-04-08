@@ -702,10 +702,11 @@ function ENT:Think()
 		Wire_TriggerOutput(self, "AmmoCount", Ammo)
 
 
+		local isEmpty = self.BulletData.Type == "Empty"
 		if self.MagSize then
-			Wire_TriggerOutput(self, "Shots Left", self.MagSize - self.CurrentShot)
+			Wire_TriggerOutput(self, "Shots Left", isEmpty and 0 or (self.MagSize - self.CurrentShot))
 		else
-			Wire_TriggerOutput(self, "Shots Left", 1)
+			Wire_TriggerOutput(self, "Shots Left", isEmpty and 0 or 1)
 		end
 
 		self:SetNWString("GunType", self.Id)
@@ -720,8 +721,13 @@ function ENT:Think()
 	end
 
 	if self.NextFire <= Time then
-		self.Ready = true
-		Wire_TriggerOutput(self, "Ready", 1)
+		if self.BulletData.Type and self.BulletData.Type ~= "Empty" then
+			self.Ready = true
+			Wire_TriggerOutput(self, "Ready", 1)
+		else
+			self.Ready = false
+			Wire_TriggerOutput(self, "Ready", 0)
+		end
 
 		if self.MagSize and self.MagSize == 1 then
 			self.CurrentShot = 0

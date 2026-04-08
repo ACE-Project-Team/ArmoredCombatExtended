@@ -251,6 +251,7 @@ ACE.ArmorScanConfig = ACE.ArmorScanConfig or {
     RegionSnap = 2,
     TraceHullSize = 3,
     TraceMaxSteps = 128,
+    TracePadding = 64,
     ResultQuantizeMm = 1.0 -- Quantize scan outputs to reduce tiny trace jitter.
 }
 

@@ -189,6 +189,8 @@ local function ACE_CalcNonAmmoSubsystem(ents, subsystem, minDetailPts)
 					pts = tonumber(ACE.CrewSeatPointCost)
 						or tonumber((ACE.PointCostConfig or {}).CrewSeatFlat)
 						or 250
+				elseif subsystem == "Firepower" and cls == "acf_gun" then
+					pts = ACE_GetGunFirepowerPoints(ent)
 				else
 					pts = ACE_GetEntPoints(ent)
 				end

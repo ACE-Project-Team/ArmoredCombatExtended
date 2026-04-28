@@ -1259,8 +1259,58 @@ function ACE_GetAmmoThreatWeight(bdata)
 	return threatFactor
 end
 
+-- Compute a gun's configured sustained RPS from its current setup.
+function ACE_GetGunConfiguredRps(ent, rofLimit)
+	if not ACE_IsEnt(ent) or ent:GetClass() ~= "acf_gun" then return 0 end
+
+	local bdata = ent.BulletData or {}
+	local roundVolume = tonumber(bdata.RoundVolume)
+	if not roundVolume or roundVolume <= 0 then
+		local reload = tonumber(ent.ReloadTime)
+		if reload and reload > 0 then return 1 / reload end
+
+		local rof = tonumber(ent.RateOfFire)
+		if rof and rof > 0 then return rof / 60 end
+
+		return 0
+	end
+
+	local adj = tonumber(bdata.LengthAdj) or 1
+	local fireRateModifier = (tonumber(ent.RoFmod) or 1) * (tonumber(ent.PGRoFmod) or 1)
+
+	local crate = bdata.Crate and Entity(bdata.Crate) or nil
+	if ACE_IsEnt(crate) and crate.RoFMul then
+		fireRateModifier = fireRateModifier * (crate.RoFMul + 1)
+	end
+
+	local defaultReloadTime = ((math.max(roundVolume, (tonumber(ent.MinLengthBonus) or 0) / adj) / 500) ^ 0.60) * fireRateModifier
+	local lowestReloadTime = defaultReloadTime
+	local maxRof = tonumber(ent.maxrof) or 0
+	rofLimit = tonumber(rofLimit) or 0
+
+	if rofLimit > 0 and maxRof > 0 then
+		maxRof = math.min(maxRof, rofLimit)
+	elseif rofLimit > 0 then
+		maxRof = rofLimit
+	end
+
+	if maxRof > 0 then
+		lowestReloadTime = 60 / maxRof
+	end
+
+	local reloadTime = math.max(defaultReloadTime, lowestReloadTime)
+
+	if reloadTime <= 0 then return 0 end
+
+	return 1 / reloadTime
+end
+
 -- Compute sustained rounds per second for a gun/rack.
 function ACE_GetEntRps(ent)
+	if ACE_IsEnt(ent) and ent:GetClass() == "acf_gun" then
+		return ACE_GetGunConfiguredRps(ent, ent.ROFLimit)
+	end
+
 	local reload = ent.ReloadTime
 	if reload and reload > 0 then return 1 / reload end
 
@@ -1268,6 +1318,27 @@ function ACE_GetEntRps(ent)
 	if rof and rof > 0 then return rof / 60 end
 
 	return 0
+end
+
+-- Scale a gun's firepower points by its current ROF threat relative to its base ROF.
+function ACE_GetGunFirepowerPoints(ent)
+	if not ACE_IsEnt(ent) or ent:GetClass() ~= "acf_gun" then
+		return tonumber(ent and ent.ACEPoints) or 0
+	end
+
+	local basePoints = tonumber(ent.ACEPoints) or 0
+	if basePoints <= 0 then return 0 end
+
+	local currentRps = ACE_GetEntRps(ent)
+	local baseRps = ACE_GetGunConfiguredRps(ent, 0)
+	if currentRps <= 0 or baseRps <= 0 then return basePoints end
+
+	local cfg = ACE.AmmoCostConfig or {}
+	local currentThreat = ACE_GetRofThreatFactor(currentRps, cfg)
+	local baseThreat = ACE_GetRofThreatFactor(baseRps, cfg)
+	if currentThreat <= 0 or baseThreat <= 0 then return basePoints end
+
+	return basePoints * math.min(currentThreat / baseThreat, 1)
 end
 
 -- Collect per-gun RPS totals and rack entities for a contraption.

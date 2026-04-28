@@ -11,6 +11,16 @@ local GunTable = ACF.Weapons.Guns
 local CrewLinkDistBase = 200
 local AmmoLinkDistBase = 512
 
+local function MarkGunPointStateDirty(Gun)
+	if not ACE_MarkSubsystemDirty then return end
+
+	local Contraption = Gun.GetContraption and Gun:GetContraption() or nil
+	if not Contraption then return end
+
+	ACE_MarkSubsystemDirty(Contraption, "Firepower")
+	ACE_MarkSubsystemDirty(Contraption, "Ammo")
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -558,10 +568,15 @@ function ENT:TriggerInput(iname, value)
 	elseif iname == "ROFLimit" then
 		-- Set the rate of fire limit if value is greater than 0
 		local lowestROF = 0.1
+		local oldLimit = self.ROFLimit
 		if value > 0 then
 			self.ROFLimit = math.max(value, lowestROF) -- Limit the rate of fire
 		else
 			self.ROFLimit = 0
+		end
+
+		if oldLimit ~= self.ROFLimit then
+			MarkGunPointStateDirty(self)
 		end
 	end
 end

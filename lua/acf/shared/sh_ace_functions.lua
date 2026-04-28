@@ -1989,10 +1989,10 @@ end
 function ACE_GetEntLegacyCost(ent, massOverride)
 	if not ACE_IsEnt(ent) then return 0 end
 
-	local points = ent.ACEPoints or 0
-	if points ~= 0 then return points end
-
 	local class = ent:GetClass()
+	local points = ent.ACEPoints or 0
+	if class ~= "acf_ammo" and points ~= 0 then return points end
+
 	local acf = ent.ACF or {}
 
 	-- Armor props: derive manufacturing cost from raw thickness (mm), then apply ductility scalar.

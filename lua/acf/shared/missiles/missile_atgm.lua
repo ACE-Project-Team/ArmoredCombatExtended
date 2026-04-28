@@ -449,83 +449,6 @@ ACF_defineGun("FGM-148 ASM", {
 
 } )
 
-ACF_defineGun("Kh-39 LMUR", {
-	name			= "Kh-39 LMUR Missile",
-	desc			= "Description here please.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 141 m/s\nMax Kinetic Pen: 667 mm",
-	model			= "missiles/unfolded_lmur.mdl",		-- model to spawn on menu
-	effect			= "ACE_MissileSmall",
-	effectbooster	= "ACE_MissileSmall",
-	gunclass		= "ATGM",
-	rack			= "1x Javelin",								-- Which rack to spawn this missile on?
-	length			= 67 * 2.53, --Convert to ammocrate units
-	caliber			= 20,										-- Real diameter (200 mm).
-	weight			= 105,										-- Don't scale down the weight though!  --was 97.2
-	year			= 2011,										-- year
-	modeldiameter	= 7,--Already in ammocrate units
-
-	round = {
-		rocketmdl			= "missiles/unfolded_lmur.mdl",
-		rackmdl				= "missiles/folded_lmur.mdl",
-		firedelay			= 4,
-		reloadspeed			= 10,
-		reloaddelay			= 25.0,
-
-		maxlength			= 60,							-- Length of missile. Used for ammo properties.
-		propweight			= 1,							-- Motor mass - motor casing. Used for ammo properties.
-
-		armour				= 13,							-- Armour effectiveness of casing, in mm
-
-		turnrate			= 200,							--Turn rate of missile at max deflection per 100 m/s
-		finefficiency		= 1.0,							--Fraction of speed redirected every second at max deflection
-		thrusterturnrate	= 0,							--Max turnrate from thrusters regardless of speed. Active only if the missile motor is active.
-
-		thrust				= 55,							-- Acceleration in m/s.
-		burntime			= 6,							-- time in seconds for rocket motor to burn at max proppelant.
-		startdelay			= 0,
-
-		launchkick			= 13,							-- Speed missile starts with on launch in m/s
-
-		--Technically if you were crazy you could use boost instead of your rocket motor to get thrust independent of burn. Maybe on torpedoes.
-
-		boostacceleration	= 100,							-- Acceleration in m/s of boost motor. Main Engine is not burning at this time.
-		boostertime			= 0.25,							-- Time in seconds for booster runtime
-		boostdelay			= 0,							-- Delay in seconds before booster activates.
-
-		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
-
-		dragcoef			= 0.003,						-- percent speed loss per second
-		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
-		datalink			= false,
-		predictiondelay		= 0.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-
-		penmul			= math.sqrt(2.5),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
-		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
-		velmul			= 7,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 400
-	},
-
-	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
-	guidance		= {"Dumb", "Infrared", "Top_Attack_IR", "Laser"},				-- here you have Laser for those top attacks, feel free to build one.
-
-	fuses			= {"Contact", "Optical", "Timed", "Altitude"},
-
-	seekcone		= 1.5,										-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
-	viewcone		= 120,										-- getting outside this cone will break the lock.  Divided by 2.
-	racks			= {									-- a whitelist for racks that this missile can load into.
-						["1xRK"] = true,
-						["2xRK"] = true,
-						["3xRK"] = true,
-						["4xRK"] = true,
-						["1xRK_small"] = true,
-						["2x AGM-114"] = true,
-						["4x AGM-114"] = true
-					},
-
-	armdelay	= 0.15,										-- minimum fuse arming delay
-	SeekSensitivity    = 40
-
-} )
-
 
 ACF_defineGun("Spike-LR ASM", {
 	name			= "Spike LR Missile",
@@ -625,7 +548,7 @@ ACF_defineGun("Kh-39 LMUR", {
 		reloadspeed			= 10,
 		reloaddelay			= 25.0,
 
-		maxlength			= 190,							-- Length of missile. Used for ammo properties.
+		maxlength			= 100,							-- Length of missile. Used for ammo properties.
 		propweight			= 1,							-- Motor mass - motor casing. Used for ammo properties.
 
 		armour				= 13,							-- Armour effectiveness of casing, in mm
@@ -653,10 +576,10 @@ ACF_defineGun("Kh-39 LMUR", {
 		datalink			= true,
 		predictiondelay		= 0.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		penmul			= math.sqrt(2.5),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
-		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
-		velmul			= 7,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 400
+		penmul			= math.sqrt(1.35),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
+		calmul			= 0.2,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
+		velmul			= 4,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
+		pointcost			= 700
 	},
 
 	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -665,7 +588,7 @@ ACF_defineGun("Kh-39 LMUR", {
 	fuses			= {"Contact", "Optical", "Timed", "Altitude"},
 
 	seekcone		= 1.5,										-- getting inside this cone will get you locked.  Divided by 2 ('seekcone = 40' means 80 degrees total.)	--was 25
-	viewcone		= 120,										-- getting outside this cone will break the lock.  Divided by 2.
+	viewcone		= 80,										-- getting outside this cone will break the lock.  Divided by 2.
 	racks			= {									-- a whitelist for racks that this missile can load into.
 						["1xRK"] = true,
 						["2xRK"] = true,
@@ -680,7 +603,6 @@ ACF_defineGun("Kh-39 LMUR", {
 	SeekSensitivity    = 40
 
 } )
-
 -- The 9M120 Ataka, a laser guided missile with high anti-tank effectiveness.
 ACF_defineGun("Ataka ASM", { --id
 	name			= "9M120 Ataka Missile",

@@ -580,22 +580,6 @@ ACE_CalcContraptionArmor = function(ent)
 		contraptionSet[comp] = true
 	end
 
-	-- Prefer the largest gun as a forward-direction anchor.
-	local mainGun
-	for _, candidate in ipairs(contraptionEnts) do
-		if IsEnt(candidate) and candidate:GetClass() == "acf_gun" then
-			local m = candidate:GetModel()
-			local validModel = m ~= "models/launcher/20mmsl.mdl"
-				and m ~= "models/launcher/40mmsl.mdl"
-				and m ~= "models/launcher/40mmgl.mdl"
-			if validModel and (not mainGun
-				or (candidate.Caliber or 0) > (mainGun.Caliber or 0)
-				or ((candidate.Caliber or 0) == (mainGun.Caliber or 0) and candidate:EntIndex() < mainGun:EntIndex())) then
-				mainGun = candidate
-			end
-		end
-	end
-
 	-- Normalize a vector or return nil.
 	local function normalizeOrNil(vec)
 		if not vec then return nil end
@@ -617,67 +601,34 @@ ACE_CalcContraptionArmor = function(ent)
 		return (-gravity):GetNormalized()
 	end
 
+	local function getWorldPlaneBasis(up)
+		local seedFront = flattenToPlane(Vector(1, 0, 0), up)
+			or flattenToPlane(Vector(0, 1, 0), up)
+			or Vector(1, 0, 0)
+		local seedSide = normalizeOrNil(up:Cross(seedFront)) or Vector(0, 1, 0)
+
+		return seedFront, seedSide
+	end
+
+	local origin = Vector(0, 0, 0)
+	local originCount = 0
+	for _, comp in ipairs(contraptionEnts) do
+		if not IsEnt(comp) then continue end
+		origin = origin + comp:WorldSpaceCenter()
+		originCount = originCount + 1
+	end
+	origin = originCount > 0 and (origin / originCount) or ent:WorldSpaceCenter()
+
 	-- Detect sphered wheel props.
 	local function isMakeSpherical(e)
 		local override = e and e.RenderOverride
 		return override and tostring(override):find("MakeSpherical") ~= nil
 	end
 
-	-- Estimate left/right from Axis constraints attached to makespherical wheels.
-	local function getWheelAxisSide(base, up)
-		if not IsEnt(base) or not constraint or not constraint.FindConstraints then return nil end
-		local cons = constraint.FindConstraints(base, "Axis")
-		if not istable(cons) or #cons == 0 then return nil end
-
-		local axisSum = Vector(0, 0, 0)
-		local count = 0
-
-		for _, con in ipairs(cons) do
-			if con and (con.Ent1 == base or con.Ent2 == base) then
-				local other = (con.Ent1 == base) and con.Ent2 or con.Ent1
-				if IsEnt(other) and isMakeSpherical(other) then
-					local localAxis = (con.Ent1 == base) and con.LNorm1 or con.LNorm2
-					if localAxis then
-						local axisWorld = base:LocalToWorld(localAxis) - base:GetPos()
-						axisWorld = axisWorld - up * axisWorld:Dot(up)
-						axisWorld = normalizeOrNil(axisWorld)
-
-						if axisWorld then
-							if count > 0 and axisWorld:Dot(axisSum) < 0 then axisWorld = -axisWorld end
-							axisSum = axisSum + axisWorld
-							count = count + 1
-						end
-					end
-				end
-			end
-		end
-
-		return (count > 0) and normalizeOrNil(axisSum) or nil
-	end
-
-	-- Build a stable basis: up from gravity, front from gun/base, side from wheels when available.
-	local upDir = getWorldUp()
-
-	local rawFront = IsEnt(mainGun) and -mainGun:GetForward() or (ent:GetForward() * -1)
-	local frontDir = flattenToPlane(rawFront, upDir) or normalizeOrNil(rawFront) or Vector(1, 0, 0)
-
-	-- Wheel axis is preferred for side; fall back to perpendiculars if missing.
-	local sideDir = getWheelAxisSide(ent, upDir)
-		or normalizeOrNil(upDir:Cross(frontDir))
-		or normalizeOrNil(ent:GetRight())
-		or Vector(0, 1, 0)
-
-	sideDir = normalizeOrNil(sideDir - frontDir * sideDir:Dot(frontDir)) or sideDir
-
-	local adjustedFront = normalizeOrNil(sideDir:Cross(upDir))
-	if adjustedFront and adjustedFront:Dot(frontDir) < 0 then adjustedFront = -adjustedFront end
-	frontDir = adjustedFront or frontDir
-
-	local debugDraw = ACE.ArmorDebugCvar and ACE.ArmorDebugCvar:GetBool() or false
-
 	-- Compute world-space bounds for a prop.
-	local function getBoundsWorld(prop)
+	local function getBoundsWorld(prop, scale)
 		local mins, maxs = prop:OBBMins(), prop:OBBMaxs()
+		scale = scale or 0.75
 		local corners = {
 			Vector(mins.x, mins.y, mins.z),
 			Vector(mins.x, mins.y, maxs.z),
@@ -689,10 +640,243 @@ ACE_CalcContraptionArmor = function(ent)
 			Vector(maxs.x, maxs.y, maxs.z)
 		}
 		for i, v in ipairs(corners) do
-			corners[i] = prop:LocalToWorld(v * 0.75)
+			corners[i] = prop:LocalToWorld(v * scale)
 		end
 		return corners
 	end
+
+	local function getShapeSampleWeight(comp)
+		local size = comp:OBBMaxs() - comp:OBBMins()
+		local volume = math.abs(size.x * size.y * size.z)
+
+		return math.max(volume ^ (1 / 3), 1)
+	end
+
+	local function addAligned(sum, vec, weight)
+		vec = normalizeOrNil(vec)
+		if not vec then return sum end
+
+		if sum:LengthSqr() > 1e-6 and vec:Dot(sum) < 0 then vec = -vec end
+
+		return sum + vec * (weight or 1)
+	end
+
+	-- Estimate left/right from wheel positions relative to their constrained bases.
+	local function getWheelBaseSide(ents, up)
+		if not constraint or not constraint.FindConstraints then return nil, 0 end
+
+		local sideSum = Vector(0, 0, 0)
+		local seenPairs = {}
+		local pairCount = 0
+
+		for _, base in ipairs(ents) do
+			if not IsEnt(base) then continue end
+			if isMakeSpherical(base) then continue end
+
+			local cons = constraint.FindConstraints(base, "Axis")
+			if not istable(cons) then continue end
+
+			for _, con in ipairs(cons) do
+				if not con or (con.Ent1 ~= base and con.Ent2 ~= base) then continue end
+
+				local other = (con.Ent1 == base) and con.Ent2 or con.Ent1
+				if not IsEnt(other) or not isMakeSpherical(other) then continue end
+
+				local pairKey = math.min(base:EntIndex(), other:EntIndex()) .. ":" .. math.max(base:EntIndex(), other:EntIndex())
+				if seenPairs[pairKey] then continue end
+				seenPairs[pairKey] = true
+
+				local rel = flattenToPlane(other:WorldSpaceCenter() - base:WorldSpaceCenter(), up)
+				if not rel then continue end
+				local relLen = rel:Length()
+				if relLen <= 1e-6 then continue end
+
+				sideSum = addAligned(sideSum, rel, relLen)
+				pairCount = pairCount + 1
+			end
+		end
+
+		return normalizeOrNil(sideSum), pairCount
+	end
+
+	-- Build a horizontal basis from the contraption footprint.
+	local function getShapeBasis(ents, up)
+		local seedFront, seedSide = getWorldPlaneBasis(up)
+		local points = {}
+		local totalWeight = 0
+		local sumX = 0
+		local sumY = 0
+
+		for _, comp in ipairs(ents) do
+			if not IsEnt(comp) or isMakeSpherical(comp) then continue end
+
+			local rel = comp:WorldSpaceCenter() - origin
+			local px = rel:Dot(seedFront)
+			local py = rel:Dot(seedSide)
+			local weight = getShapeSampleWeight(comp)
+
+			points[#points + 1] = { x = px, y = py, w = weight }
+			totalWeight = totalWeight + weight
+			sumX = sumX + px * weight
+			sumY = sumY + py * weight
+		end
+
+		if totalWeight <= 1e-6 then return nil, nil end
+
+		local meanX = sumX / totalWeight
+		local meanY = sumY / totalWeight
+		local covXX = 0
+		local covXY = 0
+		local covYY = 0
+
+		for _, point in ipairs(points) do
+			local dx = point.x - meanX
+			local dy = point.y - meanY
+			local weight = point.w or 1
+			covXX = covXX + dx * dx * weight
+			covXY = covXY + dx * dy * weight
+			covYY = covYY + dy * dy * weight
+		end
+
+		if covXX <= 1e-6 and covYY <= 1e-6 then return nil, nil end
+
+		local majorX, majorY
+		if math.abs(covXY) <= 1e-6 then
+			if covXX >= covYY then
+				majorX, majorY = 1, 0
+			else
+				majorX, majorY = 0, 1
+			end
+		else
+			local trace = covXX + covYY
+			local disc = math.sqrt(math.max((covXX - covYY) ^ 2 + 4 * covXY * covXY, 0))
+			local lambda = 0.5 * (trace + disc)
+			majorX = covXY
+			majorY = lambda - covXX
+		end
+
+		local majorAxis = normalizeOrNil(seedFront * majorX + seedSide * majorY)
+		local minorAxis = majorAxis and normalizeOrNil(up:Cross(majorAxis)) or nil
+		if not majorAxis or not minorAxis then return nil, nil end
+
+		return majorAxis, minorAxis
+	end
+
+	local function getEntOrientationWeight(comp)
+		local size = comp:OBBMaxs() - comp:OBBMins()
+		return math.max(size:Length(), 1)
+	end
+
+	local function getAxisSpan(ents, axis)
+		local minDot = math.huge
+		local maxDot = -math.huge
+
+		for _, comp in ipairs(ents) do
+			if not IsEnt(comp) then continue end
+
+			for _, corner in ipairs(getBoundsWorld(comp, 1)) do
+				local dot = corner:Dot(axis)
+				if dot < minDot then minDot = dot end
+				if dot > maxDot then maxDot = dot end
+			end
+		end
+
+		if minDot == math.huge or maxDot == -math.huge then return 0 end
+
+		return maxDot - minDot
+	end
+
+	-- Resolve which principal axis is forward/side using contraption-wide orientation agreement.
+	local function resolveBasisFromVotes(ents, up, axisA, axisB, wheelSide, wheelPairs)
+		if not axisA or not axisB then return nil, nil end
+
+		local spanA = getAxisSpan(ents, axisA)
+		local spanB = getAxisSpan(ents, axisB)
+		local abScore = spanA
+		local baScore = spanB
+		local abFrontSign = 0
+		local abSideSign = 0
+		local baFrontSign = 0
+		local baSideSign = 0
+
+		for _, comp in ipairs(ents) do
+			if not IsEnt(comp) or isMakeSpherical(comp) then continue end
+
+			local class = comp:GetClass()
+			local forward = flattenToPlane(comp:GetForward(), up)
+			local right = flattenToPlane(comp:GetRight(), up)
+			if not forward and not right then continue end
+
+			local weight = getEntOrientationWeight(comp)
+			local weaponWeight = (class == "acf_gun" or class == "acf_rack") and 1.5 or 1
+			local scoreAB = ((forward and math.abs(forward:Dot(axisA))) or 0) + ((right and math.abs(right:Dot(axisB))) or 0)
+			local scoreBA = ((forward and math.abs(forward:Dot(axisB))) or 0) + ((right and math.abs(right:Dot(axisA))) or 0)
+
+			abScore = abScore + scoreAB * weight
+			baScore = baScore + scoreBA * weight
+
+			if forward then
+				abFrontSign = abFrontSign + forward:Dot(axisA) * weight * weaponWeight
+				baFrontSign = baFrontSign + forward:Dot(axisB) * weight * weaponWeight
+			end
+			if right then
+				abSideSign = abSideSign + right:Dot(axisB) * weight
+				baSideSign = baSideSign + right:Dot(axisA) * weight
+			end
+		end
+
+		if wheelSide then
+			local wheelWeight = math.max(wheelPairs or 0, 1) * 2
+			abScore = abScore + math.abs(wheelSide:Dot(axisB)) * wheelWeight
+			baScore = baScore + math.abs(wheelSide:Dot(axisA)) * wheelWeight
+			abSideSign = abSideSign + wheelSide:Dot(axisB) * wheelWeight
+			baSideSign = baSideSign + wheelSide:Dot(axisA) * wheelWeight
+		end
+
+		local frontAxis, sideAxis, frontSign, sideSign
+		if abScore >= baScore then
+			frontAxis, sideAxis = axisA, axisB
+			frontSign, sideSign = abFrontSign, abSideSign
+		else
+			frontAxis, sideAxis = axisB, axisA
+			frontSign, sideSign = baFrontSign, baSideSign
+		end
+
+		if frontSign < 0 then
+			frontAxis = -frontAxis
+		end
+
+		local rightHandedSide = normalizeOrNil(up:Cross(frontAxis))
+		if sideSign < 0 or (math.abs(sideSign) <= 1e-6 and rightHandedSide and sideAxis:Dot(rightHandedSide) < 0) then
+			sideAxis = -sideAxis
+		end
+
+		return frontAxis, sideAxis
+	end
+
+	-- Build a stable basis: shape first, then wheel evidence, then simple entity-axis fallback.
+	local upDir = getWorldUp()
+	local wheelSide, wheelPairs = getWheelBaseSide(contraptionEnts, upDir)
+	local shapeMajor, shapeMinor = getShapeBasis(contraptionEnts, upDir)
+	local frontDir, sideDir = resolveBasisFromVotes(contraptionEnts, upDir, shapeMajor, shapeMinor, wheelSide, wheelPairs)
+	local worldFront = getWorldPlaneBasis(upDir)
+
+	frontDir = frontDir
+		or shapeMajor
+		or worldFront
+		or Vector(1, 0, 0)
+	sideDir = sideDir
+		or wheelSide
+		or normalizeOrNil(upDir:Cross(frontDir))
+		or Vector(0, 1, 0)
+
+	sideDir = normalizeOrNil(sideDir - frontDir * sideDir:Dot(frontDir)) or sideDir
+
+	local adjustedFront = normalizeOrNil(sideDir:Cross(upDir))
+	if adjustedFront and adjustedFront:Dot(frontDir) < 0 then adjustedFront = -adjustedFront end
+	frontDir = adjustedFront or frontDir
+
+	local debugDraw = ACE.ArmorDebugCvar and ACE.ArmorDebugCvar:GetBool() or false
 
 	-- Critical components are sampled for forward armor bias.
 	local function isEmptyAmmoCrate(ent)
@@ -701,6 +885,7 @@ ACE_CalcContraptionArmor = function(ent)
 	end
 
 	local criticals = {}
+	local fallbackCriticals = {}
 	for _, cent in ipairs(contraptionEnts) do
 		if IsEnt(cent) then
 			local cls = cent:GetClass()
@@ -711,8 +896,14 @@ ACE_CalcContraptionArmor = function(ent)
 			if cls == "acf_ammo" or cls == "acf_fueltank" or cls == "acf_engine"
 				or cls == "ace_crewseat_gunner" or cls == "ace_crewseat_loader" or cls == "ace_crewseat_driver" then
 				criticals[#criticals + 1] = cent
+			elseif cls == "acf_gun" or cls == "acf_rack" then
+				fallbackCriticals[#fallbackCriticals + 1] = cent
 			end
 		end
+	end
+
+	if #criticals == 0 and #fallbackCriticals > 0 then
+		criticals = fallbackCriticals
 	end
 
 	local ignoredArmor = table.Copy(ACF.TraceFilter or {})
@@ -753,12 +944,45 @@ ACE_CalcContraptionArmor = function(ent)
 		return area, (maxU - minU) * 0.5, (maxV - minV) * 0.5
 	end
 
+	-- Sample the actual world-space extent instead of component-local right/up axes.
+	local function getSamplePoints(comp)
+		local samples = getBoundsWorld(comp, 0.95)
+		samples[#samples + 1] = comp:WorldSpaceCenter()
+
+		return samples
+	end
+
 	local frontU, frontV = basisFromDir(frontDir)
 	local sideU, sideV = basisFromDir(sideDir)
 
 	local scanCfg = ACE.ArmorScanConfig or {}
 	local regionSnap = scanCfg.RegionSnap or 2
-	local origin = ent:WorldSpaceCenter()
+	local tracePadding = scanCfg.TracePadding or 64
+
+	local function getProjectionRange(dir)
+		local minDot = math.huge
+		local maxDot = -math.huge
+
+		for _, comp in ipairs(contraptionEnts) do
+			if not IsEnt(comp) then continue end
+
+			for _, corner in ipairs(getBoundsWorld(comp, 1)) do
+				local dot = corner:Dot(dir)
+				if dot < minDot then minDot = dot end
+				if dot > maxDot then maxDot = dot end
+			end
+		end
+
+		if minDot == math.huge or maxDot == -math.huge then
+			local centerDot = origin:Dot(dir)
+			return centerDot, centerDot
+		end
+
+		return minDot, maxDot
+	end
+
+	local frontMin = getProjectionRange(frontDir)
+	local sideMin, sideMax = getProjectionRange(sideDir)
 
 	-- Build a region bucket key.
 	local function regionKey(pos, u, v)
@@ -905,30 +1129,21 @@ ACE_CalcContraptionArmor = function(ent)
 	local compContrib = {}
 
 	for _, comp in ipairs(criticals) do
-		local center = comp:WorldSpaceCenter()
-		local size = comp:OBBMaxs() - comp:OBBMins()
-		local maxDim = math.max(size.x, size.y, size.z)
-		local frontDist = math.max(maxDim * 1.5, 200)
-		local sideNear = math.max(maxDim * 0.75, 100)
-		local sideFar = math.max(maxDim * 3, 500)
-		local sideBack = math.max(maxDim * 0.25, 50)
-
 		local frontArea = projectedData(comp, frontDir)
 		local sideArea = projectedData(comp, sideDir)
+		local compFrontMin = math.huge
+		local compSideMin = math.huge
+		local compSideMax = -math.huge
 
-		local up = comp:GetUp()
-		local right = comp:GetRight()
+		for _, corner in ipairs(getBoundsWorld(comp, 1)) do
+			local frontDot = corner:Dot(frontDir)
+			local sideDot = corner:Dot(sideDir)
+			if frontDot < compFrontMin then compFrontMin = frontDot end
+			if sideDot < compSideMin then compSideMin = sideDot end
+			if sideDot > compSideMax then compSideMax = sideDot end
+		end
 
-		local halfUp = up * (size.z * 0.5 * 0.95)
-		local halfRight = right * (size.y * 0.5 * 0.95)
-
-		local samples = {
-			center + halfUp + halfRight,
-			center + halfUp - halfRight,
-			center - halfUp + halfRight,
-			center - halfUp - halfRight,
-			center
-		}
+		local samples = getSamplePoints(comp)
 
 		local sampleCount = #samples
 		local weightF = (sampleCount > 0) and (frontArea / sampleCount) or 0
@@ -937,9 +1152,15 @@ ACE_CalcContraptionArmor = function(ent)
 		local compSideWeight = 0
 
 		for _, pt in ipairs(samples) do
+			local pointFrontDot = pt:Dot(frontDir)
+			local pointSideDot = pt:Dot(sideDir)
+			local frontDist = math.max(pointFrontDot - frontMin, pointFrontDot - compFrontMin, 0) + tracePadding
+			local sideNegDist = math.max(pointSideDot - sideMin, pointSideDot - compSideMin, 0) + tracePadding
+			local sidePosDist = math.max(sideMax - pointSideDot, compSideMax - pointSideDot, 0) + tracePadding
+
 			local frontVal = losFiltered(pt - frontDir * frontDist, pt, comp)
-			local sideValA = losFiltered(pt - sideDir * sideNear, pt, comp)
-			local sideValB = losFiltered(pt + sideDir * sideFar, pt - sideDir * sideBack, comp)
+			local sideValA = losFiltered(pt - sideDir * sideNegDist, pt, comp)
+			local sideValB = losFiltered(pt + sideDir * sidePosDist, pt, comp)
 
 			local sideVal = 0
 			if sideValA > 0 and (sideValB <= 0 or sideValA <= sideValB) then

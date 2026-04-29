@@ -1,0 +1,34 @@
+VertexLitGeneric
+{
+	$basetexture "models/missiles/lmur/main_rgb"
+	$bumpmap "models/missiles/lmur/main_n"
+	$surfaceprop Metal
+
+	$envmap "models/missiles/lmur/specularity_00"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.10 0.10 0.10]"
+
+	$phong 1
+	$phongexponenttexture "models/missiles/lmur/main_e"
+	$phongfresnelranges "[1 0.1 0]"
+	$phongalbedotint 1
+	$phongboost 1.01
+	$phongalbedoboost 10
+
+	$rimlight 1
+	$rimlightexponent 100
+	$rimlightboost 1
+
+	$rimmask 1
+
+	Proxies
+	{
+		MwEnvMapTint
+		{
+			min 0
+			max 1
+			envmap "\specularity_00"
+			color "[0.098 0.098 0.098]"
+		}
+	}
+}

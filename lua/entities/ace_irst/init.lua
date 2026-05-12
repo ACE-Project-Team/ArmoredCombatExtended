@@ -213,7 +213,7 @@ function ENT:ScanForContraptions()
 	local IDs			= {}
 	local Distances		= {}
 
-	local SelfContraption = self:GetContraption()
+	local SelfContraption = self:CFW_GetContraption()
 	local SelfForward = self:GetForward()
 	local SelfPos = self:GetPos()
 	local MinTrackingHeat = ACE.AmbientTemp + self.HeatAboveAmbient

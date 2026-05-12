@@ -254,7 +254,7 @@ function ENT:ScanForContraptions()
 	local IDs = {}
 	self.AcquiredTargets		= {}
 
-	local SelfContraption = self:GetContraption()
+	local SelfContraption = self:CFW_GetContraption()
 	local SelfPos = self:WorldSpaceCenter()
 	local SelfForward = self:GetForward()
 	local SearchCone = self.Cone

@@ -1574,7 +1574,7 @@ end
 -- Resolve a contraption wrapper for an entity.
 function ACE_GetContraptionFromEntity(ent)
 	if not ACE_IsEnt(ent) or not ent.GetContraption then return end
-	local con = ent:GetContraption()
+	local con = ent:CFW_GetContraption()
 	if not con or not con.ents or table.IsEmpty(con.ents) then return end
 	return con
 end

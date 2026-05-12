@@ -23,7 +23,7 @@ function ACE_DoContraptionLegalCheck(checkEnt)
 		if IsEnt(checkEnt) then checkEnt.CanLegalCheck = true end
 	end)
 
-	local con = checkEnt:GetContraption() or {}
+	local con = checkEnt:CFW_GetContraption() or {}
 	if table.IsEmpty(con) then return end
 
 	ACE_CheckLegalCont(con)
@@ -318,7 +318,7 @@ do
 
 		OldSetMass(self, mass)
 
-		local con = ent.GetContraption and ent:GetContraption()
+		local con = ent.GetContraption and ent:CFW_GetContraption()
 		if not con then return end
 
 		local delta = (ent._AcePts or 0) - oldPts

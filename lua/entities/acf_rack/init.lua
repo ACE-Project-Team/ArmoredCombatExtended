@@ -356,7 +356,7 @@ function ENT:Think()
 		Wire_TriggerOutput(self, "Shots Left", self.CurMissile)
 		self:TrimDistantCrates()
 
-		self.SelfContraption = self:GetContraption() or {}
+		self.SelfContraption = self:CFW_GetContraption() or {}
 	end
 
 	if self.GuidanceActive then

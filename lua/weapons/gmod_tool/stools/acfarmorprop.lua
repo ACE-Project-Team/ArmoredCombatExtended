@@ -60,7 +60,7 @@ local function ApplySettings( _, ent, data )
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
 	end
 
-	local con = ent:GetContraption()
+	local con = ent:CFW_GetContraption()
 
 	-- Rebuild contraption points when material changes to keep totals consistent.
 	if con then ACE_RemPts(con, ent) end
@@ -184,7 +184,7 @@ function TOOL:Reload( trace )
 
 	local power		= tonumber(data.Power) or 0
 
-	local Contraption = ent:GetContraption() or nil
+	local Contraption = ent:CFW_GetContraption() or nil
 	local details = Contraption and Contraption.ACEPointsDetails or nil
 	local PointVal		= 0
 
@@ -468,7 +468,7 @@ local function ACE_GetPopupPoints(ent, ply)
 	local points = 0
 
 	if cls == "acf_ammo" and ACE_GetAmmoCratePointsForContraption then
-		local con = ent:GetContraption()
+		local con = ent:CFW_GetContraption()
 		points = ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0
 	elseif ACE_GetEntPoints then
 		points = ACE_GetEntPoints(ent) or 0
@@ -477,7 +477,7 @@ local function ACE_GetPopupPoints(ent, ply)
 	local label = "Entity Cost"
 	if points ~= 0 then return points, label end
 
-	local con = ent:GetContraption()
+	local con = ent:CFW_GetContraption()
 
 	-- Guns fall back to the ammo cost for their own caliber.
 	if cls == "acf_gun" then

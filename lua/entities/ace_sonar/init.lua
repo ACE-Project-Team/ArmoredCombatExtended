@@ -1000,7 +1000,7 @@ function ENT:Think()
 	if self.Active and self.Legal then
 
 		self.SelfPos = self:WorldSpaceCenter()
-		self.SelfContraption = self:GetContraption() or {}
+		self.SelfContraption = self:CFW_GetContraption() or {}
 
 		if not table.IsEmpty(self.SelfContraption) then
 			self.SelfBasePlate = self.SelfContraption:GetACEBaseplate()

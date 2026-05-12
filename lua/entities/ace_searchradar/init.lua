@@ -282,7 +282,7 @@ function ENT:Think()
 		local Velocities = {}
 		local IDs = {}
 
-		local SelfContraption = self:GetContraption()
+		local SelfContraption = self:CFW_GetContraption()
 		local SelfPos = self:WorldSpaceCenter()
 		local SelfForward = self:GetForward()
 		local ConeClutterSize = self.ConeInducedGCTRSize

@@ -75,7 +75,7 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 	ent.ACF.Ductility = duct / 100
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
-	local con = ent:GetContraption()
+	local con = ent:CFW_GetContraption()
 	if con then ACE_RemPts(con, ent) end --Stupid roundabout fix. But only executed when the mat is changed. Hey if it works.
 
 	ent.ACF.Material = mat

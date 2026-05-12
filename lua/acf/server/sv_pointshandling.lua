@@ -549,7 +549,7 @@ ACE_CalcContraptionArmor = function(ent)
 
 	-- Resolve direction vectors and scan LOS armor samples.
 
-	local contraption = ent.GetContraption and ent:GetContraption() or nil
+	local contraption = ent.GetContraption and ent:CFW_GetContraption() or nil
 	local contraptionId = contraption and ACE_GetContraptionIndex and ACE_GetContraptionIndex(contraption)
 		or (ent.ACF and ent.ACF.ContraptionId)
 

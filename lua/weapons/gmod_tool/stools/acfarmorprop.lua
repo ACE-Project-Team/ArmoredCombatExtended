@@ -14,10 +14,12 @@ if CLIENT then
 	TOOL.Information = {
 		{ name = "left" },
 		{ name = "right" },
-		{ name = "reloadhint" }
+		{ name = "reloadhint" },
+		{ name = "reloadfull" }
 	}
 
-	language.Add("tool.acfarmorprop.reloadhint", "Get information about contraption (double-tap R for preview values)")
+	language.Add("tool.acfarmorprop.reloadhint", "Reload: Get information about contraption")
+	language.Add("tool.acfarmorprop.reloadfull", "Shift + Reload: Get full point readout")
 end
 
 -- Shared panel state used across panel rebuilds to keep UI controls stable.
@@ -69,6 +71,10 @@ local function ApplySettings( _, ent, data )
 		ent.ACF = ent.ACF or {}
 		ent.ACF.Material = data.Material
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
+	end
+
+	if ACE_ClearArmorPointCache then
+		ACE_ClearArmorPointCache(ent)
 	end
 
 	if con then ACE_AddPts(con, ent) end
@@ -148,13 +154,6 @@ function TOOL:Reload( trace )
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
 
-	local ply = self:GetOwner()
-	local now = CurTime()
-	local lastReload = ply.ACE_ArmorReloadLast or 0
-	local doubleTapWindow = ACE.ArmorPreviewTapWindow or 0.35
-	local doubleTap = (now - lastReload) <= doubleTapWindow
-	ply.ACE_ArmorReloadLast = now
-
 	-- Coerce numeric values and guard NaN/inf.
 	local function safeNumber(value)
 		value = tonumber(value) or 0
@@ -164,17 +163,8 @@ function TOOL:Reload( trace )
 		return value
 	end
 
-	local function normalizePointDetails(rawDetails)
-		local source = istable(rawDetails) and rawDetails or {}
-		local details = {
-			Items = istable(source.Items) and source.Items or {},
-			AmmoLines = {},
-			ArmorLines = {}
-		}
-
-		return details
-	end
-
+	local ply = self:GetOwner()
+	local fullReadout = ply:KeyDown(IN_SPEED)
 	local data		= ACF_CalcMassRatio(ent, true) or {}
 
 	local total		= tonumber(ent.acftotal) or 0
@@ -185,27 +175,19 @@ function TOOL:Reload( trace )
 	local power		= tonumber(data.Power) or 0
 
 	local Contraption = ent:CFW_GetContraption() or nil
-	local details = Contraption and Contraption.ACEPointsDetails or nil
+	if Contraption and ACE_EnsureContraptionPoints then
+		ACE_EnsureContraptionPoints(Contraption, ent, false)
+	end
+
 	local PointVal		= 0
 
 	local PtsArmor = 0
 	local PtsEngine = 0
 	local PtsFirepower = 0
 	local PtsAmmo = 0
-	local PtsAmmoReady = 0
-	local PtsAmmoBackup = 0
-	local AmmoReadyRounds = 0
-	local AmmoBackupRounds = 0
 	local PtsCrew = 0
 	local PtsElectronics = 0
-	local ArmorDirty = false
 	local ArmorInitMissing = false
-	local HypoUsed = false
-	local HypoFront = 0
-	local HypoSide = 0
-	local HypoPts = 0
-	local HypoRequested = doubleTap
-	local LegacyCost = 0
 
 	if Contraption ~= nil then
 		local pointsPerType = Contraption.ACEPointsPerType or {}
@@ -214,80 +196,14 @@ function TOOL:Reload( trace )
 		PtsEngine = safeNumber(pointsPerType.Engines)
 		PtsFirepower = safeNumber(pointsPerType.Firepower)
 		PtsAmmo = safeNumber(pointsPerType.Ammo)
-		PtsAmmoReady = safeNumber(pointsPerType.AmmoReady)
-		PtsAmmoBackup = safeNumber(pointsPerType.AmmoBackup)
-		AmmoReadyRounds = safeNumber(pointsPerType.AmmoReadyRounds)
-		AmmoBackupRounds = safeNumber(pointsPerType.AmmoBackupRounds)
 		PtsCrew = safeNumber(pointsPerType.Crew)
 		PtsElectronics = safeNumber(pointsPerType.Electronics)
-		ArmorDirty = Contraption.ACEArmorDirty and Contraption.ACEArmorCalculated
 		ArmorInitMissing = not Contraption.ACEArmorCalculated
 	else
 		PointVal = safeNumber(ACE_GetEntPoints(ent))
 	end
 
-	if Contraption ~= nil then
-		LegacyCost = safeNumber(ACE_CalcContraptionLegacyCost and ACE_CalcContraptionLegacyCost(Contraption, ent) or 0)
-	else
-		LegacyCost = safeNumber(ACE_GetEntLegacyCost and ACE_GetEntLegacyCost(ent) or 0)
-	end
-
-	local frontArm, sideArm = 0, 0
-	if Contraption ~= nil and Contraption.ACEArmorCalculated then
-		frontArm = safeNumber(Contraption.ACEArmorFront)
-		sideArm = safeNumber(Contraption.ACEArmorSide)
-	elseif Contraption == nil and ACE_GetArmorScan then
-		frontArm, sideArm = ACE_GetArmorScan(ent)
-		frontArm = safeNumber(frontArm)
-		sideArm = safeNumber(sideArm)
-	end
-
-	if doubleTap and ACE_GetArmorScan then
-		local nextAllowed = ply.ACE_ArmorHypoNext or 0
-		if now < nextAllowed then
-			local wait = math.max(0, nextAllowed - now)
-			ply:ChatPrint(string.format("[ACE] Armor preview is on cooldown (%.1fs).", wait))
-		else
-			local scanEnt = ent
-			if Contraption and Contraption.GetACEBaseplate then
-				local base = Contraption:GetACEBaseplate()
-				if IsValid(base) then
-					scanEnt = base
-				end
-			end
-			HypoFront, HypoSide = ACE_GetArmorScan(scanEnt)
-			HypoFront = safeNumber(HypoFront)
-			HypoSide = safeNumber(HypoSide)
-			HypoPts = safeNumber(ACE_CalcArmorPoints(HypoFront, HypoSide))
-			HypoUsed = true
-			if ACE_CalcNonArmorPoints and Contraption then
-				local nonArmor, totals, hypoDetails = ACE_CalcNonArmorPoints(Contraption, scanEnt)
-				PointVal = safeNumber(nonArmor + HypoPts)
-				PtsArmor = safeNumber(HypoPts)
-				PtsEngine = safeNumber(totals.Engines)
-				PtsFirepower = safeNumber(totals.Firepower)
-				PtsAmmo = safeNumber(totals.Ammo)
-				PtsAmmoReady = safeNumber(totals.AmmoReady)
-				PtsAmmoBackup = safeNumber(totals.AmmoBackup)
-				AmmoReadyRounds = safeNumber(totals.AmmoReadyRounds)
-				AmmoBackupRounds = safeNumber(totals.AmmoBackupRounds)
-				PtsCrew = safeNumber(totals.Crew)
-				PtsElectronics = safeNumber(totals.Electronics)
-				details = hypoDetails
-			end
-			local cooldown = ACE.ArmorPreviewCooldown or 5
-			ply.ACE_ArmorHypoNext = now + cooldown
-		end
-	end
-
-	if HypoUsed then
-		frontArm = HypoFront
-		sideArm = HypoSide
-	end
-
-	local netDetails = normalizePointDetails(details)
-
-	local GeneralTb	= { data.MaterialMass or {}, data.MaterialPercent or {}, netDetails }
+	local GeneralTb	= { data.MaterialMass or {}, data.MaterialPercent or {} }
 	local ToJSON		= util.TableToJSON( GeneralTb )
 	local Compressed	= util.Compress(ToJSON) or ""
 
@@ -297,32 +213,20 @@ function TOOL:Reload( trace )
 		net.WriteFloat(parenttotal)
 		net.WriteFloat(physratio)
 		net.WriteFloat(power)
-		net.WriteFloat(LegacyCost)
 		net.WriteFloat(PointVal)
 		net.WriteFloat(PtsArmor)
+		net.WriteBool(ArmorInitMissing)
+		net.WriteBool(fullReadout)
 		net.WriteFloat(PtsEngine)
 		net.WriteFloat(PtsFirepower)
 		net.WriteFloat(PtsAmmo)
-		net.WriteFloat(PtsAmmoReady)
-		net.WriteFloat(PtsAmmoBackup)
-		net.WriteFloat(AmmoReadyRounds)
-		net.WriteFloat(AmmoBackupRounds)
 		net.WriteFloat(PtsCrew)
 		net.WriteFloat(PtsElectronics)
-		net.WriteFloat(frontArm)
-		net.WriteFloat(sideArm)
-		net.WriteBool(ArmorDirty)
-		net.WriteBool(ArmorInitMissing)
-		net.WriteBool(HypoRequested)
-		net.WriteBool(HypoUsed)
-		net.WriteFloat(HypoFront)
-		net.WriteFloat(HypoSide)
-		net.WriteFloat(HypoPts)
 
 		net.WriteUInt(#Compressed, 16)
 		net.WriteData(Compressed, #Compressed)
 
-	net.Send(self:GetOwner())
+	net.Send(ply)
 
 end
 
@@ -361,74 +265,110 @@ local PointClassToType = {
 	ace_wind_sensor = "Electronics"
 }
 
--- Resolve ammo caliber in millimeters.
-local function ACE_GetAmmoCaliberMm(bdata)
-	if not bdata then return 0 end
+local function ACE_GetDPSCostByTypeForGun(con, gun)
+	local breakdown = {}
+	if not con or not con.ents or not IsValid(gun) then return breakdown end
 
-	local best = math.max(
-		bdata.Caliber or 0,
-		bdata.SlugCaliber or 0,
-		bdata.SlugCaliber2 or 0,
-		bdata.JetCaliber or 0
-	)
+	local totalFirepower = ACE_GetGunFirepowerPoints and ACE_GetGunFirepowerPoints(gun) or 0
+	if totalFirepower <= 0 then return breakdown end
 
-	if best <= 0 and bdata.Id then
-		best = ACF_GetGunValue(bdata.Id, "caliber") or 0
-	end
-
-	return best * 10
-end
-
--- Resolve gun caliber in millimeters.
-local function ACE_GetGunCaliberMm(ent)
-	if not IsValid(ent) then return 0 end
-
-	local cal = ent.Caliber or 0
-	if cal <= 0 and ent.Id then
-		cal = ACF_GetGunValue(ent.Id, "caliber") or 0
-	end
-
-	return cal * 10
-end
-
--- Sum ammo points for a given caliber.
-local function ACE_GetAmmoCostForCaliber(con, caliberMm)
-	if not con or not con.ents or caliberMm <= 0 then return 0 end
-
-	local target = math.floor(caliberMm + 0.5)
-	local total = 0
-	-- Sum ammo crate points that match the gun caliber.
-
+	local weights = {}
+	local totalWeight = 0
 	for ent in pairs(con.ents) do
 		if IsValid(ent) and ent:GetClass() == "acf_ammo" then
-			local cal = ACE_GetAmmoCaliberMm(ent.BulletData)
-			if cal > 0 and math.floor(cal + 0.5) == target then
-				total = total + (ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0)
+			local bdata = ent.BulletData
+			if istable(bdata) and bdata.Id == gun.Id then
+				local _, detail = ACE_GetAmmoCratePointsForContraption(ent, con, ent)
+				local weight = (detail and detail.RawAmmoCost) or 0
+				local ammoType = (bdata and bdata.Type) or "Ammo"
+				ammoType = ammoType ~= "" and ammoType or "Ammo"
+				if weight > 0 then
+					weights[ammoType] = (weights[ammoType] or 0) + weight
+					totalWeight = totalWeight + weight
+				end
 			end
 		end
 	end
 
-	return total
+	if totalWeight <= 0 then return breakdown end
+
+	local totalDPS = math.max(totalFirepower - totalWeight, 0)
+	if totalDPS <= 0 then return breakdown end
+
+	for ammoType, weight in pairs(weights) do
+		breakdown[ammoType] = totalDPS * (weight / totalWeight)
+	end
+
+	return breakdown
 end
 
--- Sum ammo points for crates compatible with a rack.
-local function ACE_GetAmmoCostForRack(con, rack)
-	if not con or not con.ents or not IsValid(rack) then return 0 end
-	if not ACF_CanLinkRack or not rack.Id then return 0 end
+local function ACE_GetAmmoCostByTypeForRack(con, rack)
+	local breakdown = {}
+	if not con or not con.ents or not IsValid(rack) then return breakdown end
+	if not ACF_CanLinkRack or not rack.Id then return breakdown end
 
-	local total = 0
+	local totalFirepower = ACE_GetGunFirepowerPoints and ACE_GetGunFirepowerPoints(rack) or 0
+	if totalFirepower <= 0 then return breakdown end
 
+	local weights = {}
+	local totalWeight = 0
 	for ent in pairs(con.ents) do
 		if IsValid(ent) and ent:GetClass() == "acf_ammo" then
 			local bdata = ent.BulletData
 			if istable(bdata) and ACF_CanLinkRack(rack.Id, bdata.Id, bdata, rack) then
-				total = total + (ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0)
+				local _, detail = ACE_GetAmmoCratePointsForContraption(ent, con, ent)
+				local weight = (detail and detail.RawAmmoCost) or 0
+				local ammoType = bdata.Type or "Ammo"
+				ammoType = ammoType ~= "" and ammoType or "Ammo"
+				if weight > 0 then
+					weights[ammoType] = (weights[ammoType] or 0) + weight
+					totalWeight = totalWeight + weight
+				end
 			end
 		end
 	end
 
-	return total
+	if totalWeight <= 0 then return breakdown end
+
+	local totalDPS = math.max(totalFirepower - totalWeight, 0)
+	if totalDPS <= 0 then return breakdown end
+
+	for ammoType, weight in pairs(weights) do
+		breakdown[ammoType] = totalDPS * (weight / totalWeight)
+	end
+
+	return breakdown
 end
+
+local function ACE_FormatPoints(points)
+	points = math.Round(tonumber(points) or 0, 1)
+	local whole = math.floor(points)
+	local frac = math.floor((points - whole) * 10 + 0.5)
+	local text = string.Comma(whole)
+	if frac > 0 then text = text .. "." .. frac end
+	return text .. "pts"
+end
+
+local function ACE_FormatTypeBreakdown(breakdown)
+	local entries = {}
+
+	for ammoType, points in pairs(breakdown or {}) do
+		if points > 0 then
+			entries[#entries + 1] = tostring(ammoType) .. " " .. ACE_FormatPoints(points)
+		end
+	end
+
+	table.sort(entries)
+	return table.concat(entries, ", ")
+end
+
+local CostLabelByCategory = {
+	Engines = "Mobility Cost",
+	Firepower = "DPS Cost",
+	Ammo = "Raw Ammo Cost",
+	Crew = "Crew Cost",
+	Electronics = "Electronics Cost"
+}
 
 -- Resolve point category for a class.
 local function ACE_GetPointsCategory(ent)
@@ -462,82 +402,71 @@ local function ACE_DebugArmorPopup(ply, ent, con, matchedRow)
 end
 
 local function ACE_GetPopupPoints(ent, ply)
-	if not IsValid(ent) then return 0, "Entity Cost" end
+	if not IsValid(ent) then return 0, "Entity Cost", "" end
 
 	local cls = ent:GetClass()
-	local points = 0
-
-	if cls == "acf_ammo" and ACE_GetAmmoCratePointsForContraption then
-		local con = ent:CFW_GetContraption()
-		points = ACE_GetAmmoCratePointsForContraption(ent, con, ent) or 0
-	elseif ACE_GetEntPoints then
-		points = ACE_GetEntPoints(ent) or 0
-	end
-
-	local label = "Entity Cost"
-	if points ~= 0 then return points, label end
-
 	local con = ent:CFW_GetContraption()
+	local armorPoints = ACE_GetArmorPoints and ACE_GetArmorPoints(ent) or 0
+	local componentPoints = 0
+	local lines = {}
 
-	-- Guns fall back to the ammo cost for their own caliber.
-	if cls == "acf_gun" then
-		local gunCal = ACE_GetGunCaliberMm(ent)
-		local ammoCost = ACE_GetAmmoCostForCaliber(con, gunCal)
-		if ammoCost > 0 then
-			points = ammoCost
-			if gunCal > 0 then
-				label = string.format("Total Ammo Cost (%dmm)", math.floor(gunCal + 0.5))
-			else
-				label = "Total Ammo Cost"
-			end
+	if armorPoints > 0 then
+		lines[#lines + 1] = "Armor Cost: " .. ACE_FormatPoints(armorPoints)
+	end
 
-			return points, label
+	if cls == "acf_engine" or cls == "acf_gearbox" then
+		componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
+		if componentPoints > 0 then
+			lines[#lines + 1] = CostLabelByCategory.Engines .. ": " .. ACE_FormatPoints(componentPoints)
+		end
+	elseif cls == "acf_gun" then
+		local ammoByType = ACE_GetDPSCostByTypeForGun(con, ent)
+		local text = ACE_FormatTypeBreakdown(ammoByType)
+
+		for _, points in pairs(ammoByType) do
+			componentPoints = componentPoints + points
+		end
+
+		if text ~= "" then
+			lines[#lines + 1] = CostLabelByCategory.Firepower .. ": " .. text
+		end
+	elseif cls == "acf_rack" then
+		local ammoByType = ACE_GetAmmoCostByTypeForRack(con, ent)
+		local text = ACE_FormatTypeBreakdown(ammoByType)
+
+		for _, points in pairs(ammoByType) do
+			componentPoints = componentPoints + points
+		end
+
+		if text ~= "" then
+			lines[#lines + 1] = CostLabelByCategory.Firepower .. ": " .. text
+		end
+	elseif cls == "acf_ammo" and ACE_GetAmmoCratePointsForContraption then
+		local _, detail = ACE_GetAmmoCratePointsForContraption(ent, con, ent)
+		componentPoints = (detail and detail.RawAmmoCost) or 0
+		if componentPoints > 0 then
+			lines[#lines + 1] = CostLabelByCategory.Ammo .. ": " .. ACE_FormatPoints(componentPoints)
+		end
+	else
+		local category = ACE_GetPointsCategory(ent)
+		if category == "Crew" and ACE_GetCrewSeatPointCost then
+			componentPoints = ACE_GetCrewSeatPointCost(ent)
+		else
+			componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
+		end
+		if componentPoints > 0 and category and category ~= "Armor" and category ~= "Ignore" then
+			local label = CostLabelByCategory[category] or (category .. " Cost")
+			lines[#lines + 1] = label .. ": " .. ACE_FormatPoints(componentPoints)
 		end
 	end
 
-	-- Racks fall back to the ammo cost of crates compatible with this rack.
-	if cls == "acf_rack" then
-		local ammoCost = ACE_GetAmmoCostForRack(con, ent)
-		if ammoCost > 0 then
-			return ammoCost, "Total Rack Ammo Cost"
-		end
+	local total = armorPoints + componentPoints
+	if total <= 0 then
+		return 0, "Entity Cost", ""
 	end
 
-	if con and ACE_EnsureArmor then
-		ACE_EnsureArmor(con, ent, false)
-	end
-
-	local pointsPerType = con and con.ACEPointsPerType or nil
-	local category = pointsPerType and ACE_GetPointsCategory(ent) or nil
-
-	-- Armor props should use only their per-entity contribution from the armor detail table.
-	if category == "Armor" then
-		local matchedRow = nil
-		if con and istable(con.ACEArmorDetails) then
-			local idx = ent:EntIndex()
-			for _, row in ipairs(con.ACEArmorDetails) do
-				if istable(row) and row.EntIndex == idx then
-					matchedRow = row
-					local armorPts = tonumber(row.Points) or 0
-					ACE_DebugArmorPopup(ply, ent, con, matchedRow)
-					return armorPts, "Entity Armor Cost"
-				end
-			end
-		end
-
-		ACE_DebugArmorPopup(ply, ent, con, matchedRow)
-		-- Never fall back armor entities to total armor category in popup.
-		return 0, "Entity Armor Cost"
-	end
-
-	local categoryPts = category and pointsPerType[category] or 0
-	categoryPts = tonumber(categoryPts) or 0
-	if categoryPts > 0 then
-		points = categoryPts
-		label = "Total " .. category .. " Cost"
-	end
-
-	return points, label
+	ACE_DebugArmorPopup(ply, ent, con, nil)
+	return total, "Entity Cost", table.concat(lines, "\n")
 end
 
 -- Update hover popup data for the active tool.
@@ -558,7 +487,7 @@ function TOOL:Think()
 
 		local Mat = ent.ACF.Material or "RHA"
 		local MatData = ACE_GetMaterialData( Mat )
-		local AcePts, pointsLabel = ACE_GetPopupPoints(ent, ply)
+		local AcePts, pointsLabel, pointBreakdown = ACE_GetPopupPoints(ent, ply)
 
 		if not MatData then return end
 
@@ -571,7 +500,7 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "Material", MatData.sname or "RHA")
 		self.Weapon:SetNWString( "PointCostLabel", pointsLabel )
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
-		self.Weapon:SetNWFloat( "CostValue", ACE_GetEntLegacyCost and ACE_GetEntLegacyCost(ent) or 0 )
+		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
 
 	else
 
@@ -584,7 +513,7 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "Material", "RHA" )
 		self.Weapon:SetNWString( "PointCostLabel", "Entity Cost" )
 		self.Weapon:SetNWFloat( "PointCost", 0 )
-		self.Weapon:SetNWFloat( "CostValue", 0 )
+		self.Weapon:SetNWString( "PointCostBreakdown", "" )
 	end
 
 	self.AimEntity = ent
@@ -596,35 +525,25 @@ if CLIENT then
 
 	local getPhrase = language.GetPhrase
 
-	-- Normalize legacy material values stored in client convars.
-	local function ACE_MaterialCheck( Material )
+	-- Estimate the selected armor settings with the same formula used for armor cost.
+	local function ACE_GetArmorPointPreview(armor, health, matData)
+		if not matData or not ACE_GetArmorPointConfig then return 0 end
 
-		-- Map legacy numeric ids to string ids.
-		local BackCompMat = {
-			"RHA",
-			"CHA",
-			"Cer",
-			"Rub",
-			"ERA",
-			"Alum",
-			"Texto"
-		}
+		local cfg = ACE_GetArmorPointConfig()
+		local curve = tonumber(matData.curve) or 1
+		local effKE = tonumber(matData.effectiveness) or 1
+		local effCHEM = tonumber(matData.HEATeffectiveness or matData.effectiveness) or effKE
+		local weightedEff = effKE * cfg.KEWeight + effCHEM * cfg.ChemWeight
+		local armorMod = ACF.ArmorMod or 1
+		local effectiveMm = ((tonumber(armor) or 0) ^ curve) * weightedEff / math.max(armorMod, 0.001)
+		local hp = tonumber(health) or 0
 
-		-- If the convar holds a legacy id, replace it with the modern id.
-		if isnumber(tonumber(Material)) then
+		if effectiveMm <= 0 or hp <= 0 then return 0 end
 
-			local Mat_ID = math.Clamp(Material + 1, 1,7)
-			Material = BackCompMat[Mat_ID]
-
-			-- Write back the normalized material id.
-			RunConsoleCommand( "acfarmorprop_material", Material )
-		end
+		return cfg.SurvivabilityScale * cfg.ArmorCostMultiplier
+			* ((effectiveMm / math.max(cfg.DamageReferenceMm, 1)) ^ cfg.SurvivabilityArmorExponent)
+			* ((hp / math.max(cfg.SurvivabilityHPReference, 1)) ^ cfg.SurvivabilityHPExponent)
 	end
-
-	-- Delay normalization to allow client convars to initialize.
-	timer.Simple(0.1, function()
-		ACE_MaterialCheck( GetConVar("acfarmorprop_material"):GetString() )
-	end )
 
 	-- Helper to add centered help text; mirrors PANEL:CPanelText for this file.
 	local function ArmorPanelText( name, panel, desc, font )
@@ -715,9 +634,6 @@ if CLIENT then
 
 		panel:NumSlider( "#tool.acfarmorprop.ductility", "acfarmorprop_ductility", -80, 80 )
 		panel:ControlHelp( "#tool.acfarmorprop.ductilitydesc" )
-
-		panel:CheckBox( "Show full points readout", "acf_armor_readout_full" )
-		panel:ControlHelp( "Toggle the extended points readout shown on reload." )
 
 		MaterialTable(panel)
 
@@ -812,347 +728,106 @@ if CLIENT then
 		local Color3 = Color(255,255,100)
 		local Color4 = Color(255,191,0)
 
-		local total		= math.Round( net.ReadFloat(), 1 )
-		local phystotal	= math.Round( net.ReadFloat(), 1 )
-		local parenttotal	= math.Round( net.ReadFloat(), 1 )
-		local physratio	= math.Round( net.ReadFloat(), 1 )
-		local power		= net.ReadFloat() -- Preserve precision for hp/ton calculation.
-		local LegacyCost	= math.Round( net.ReadFloat(), 1 )
-		local CostDisplay	= math.Round( LegacyCost * 100, 0 )
-		local CostDisplayText = string.Comma(math.max(math.floor(CostDisplay), 0))
-
-
-		local hpton		= math.Round( power / (total / 1000), 1 )
+		local total = math.Round( net.ReadFloat(), 1 )
+		local phystotal = math.Round( net.ReadFloat(), 1 )
+		local parenttotal = math.Round( net.ReadFloat(), 1 )
+		local physratio = math.Round( net.ReadFloat(), 1 )
+		local power = net.ReadFloat() -- Preserve precision for hp/ton calculation.
 
 		local PointVal	= math.Round( net.ReadFloat(), 1 )
 		local PtsArmor = math.Round( net.ReadFloat(), 1 )
+
+		local ArmorInitMissing = net.ReadBool()
+		local FullReadout = net.ReadBool()
 		local PtsEngine = math.Round( net.ReadFloat(), 1 )
 		local PtsFirepower = math.Round( net.ReadFloat(), 1 )
 		local PtsAmmo = math.Round( net.ReadFloat(), 1 )
-		local PtsAmmoReady = math.Round( net.ReadFloat(), 1 )
-		local PtsAmmoBackup = math.Round( net.ReadFloat(), 1 )
-		net.ReadFloat()
-		local _ = math.Round( net.ReadFloat(), 0 )
 		local PtsCrew = math.Round( net.ReadFloat(), 1 )
 		local PtsElectronics = math.Round( net.ReadFloat(), 1 )
-
-		local quantStep = (ACE and ACE.ArmorScanConfig and ACE.ArmorScanConfig.ResultQuantizeMm) or 0
-		local armDigits = 2
-		if quantStep >= 1 then
-			armDigits = 0
-		elseif quantStep >= 0.1 then
-			armDigits = 1
-		end
-
-		local FrontArm = math.Round( net.ReadFloat(), armDigits )
-		local SideArm = math.Round( net.ReadFloat(), armDigits )
-		local ArmorDirty = net.ReadBool()
-		local ArmorInitMissing = net.ReadBool()
-		local HypoRequested = net.ReadBool()
-		local HypoUsed = net.ReadBool()
-		net.ReadFloat()
-		net.ReadFloat()
-		net.ReadFloat()
 
 		local compressedLen = net.ReadUInt(16)
 		local Compressed = compressedLen > 0 and net.ReadData(compressedLen) or nil
 		local Decompress = Compressed and util.Decompress(Compressed) or nil
 		local FromJSON = Decompress and util.JSONToTable(Decompress) or nil
+		FromJSON = istable(FromJSON) and FromJSON or { {}, {} }
 
 	local Sep = "\n"
 
 	local Tabletxt	= {}
+	local hpton = total > 0 and math.Round(power / (total / 1000), 1) or 0
 
-	-- Format ammo line items for the readout.
-	local function formatAmmoLines(lines)
-		if not istable(lines) then return {} end
-
-		local hideBackup = false
-		if ACE and ACE.AmmoCostConfig then
-			hideBackup = (tonumber(ACE.AmmoCostConfig.StowFactor) or 0) == 0
-		end
-
-		local entries = {}
-		for _, entry in ipairs(lines) do
-			local count = tonumber(entry.Count or entry.count or 0) or 0
-			local state = tostring(entry.State or entry.state or "")
-			if not (hideBackup and state == "BACKUP") and count > 0 then
-				entries[#entries + 1] = {
-					count = math.floor(count + 0.5),
-					caliber = tonumber(entry.Caliber or entry.caliber or 0) or 0,
-					atype = tostring(entry.Type or entry.type or "Ammo"),
-					state = state,
-				points = tonumber(entry.Points or entry.points or 0) or 0
-				}
-			end
-		end
-
-		table.sort(entries, function(a, b)
-			if a.points == b.points then
-				if a.caliber == b.caliber then
-					if a.atype == b.atype then
-						if a.state == b.state then
-							return a.count > b.count
-						end
-						return a.state == "READY"
-					end
-					return a.atype < b.atype
-				end
-				return a.caliber > b.caliber
-			end
-			return a.points > b.points
-		end)
-
-		local formatted = {}
-		for _, entry in ipairs(entries) do
-			local calText = entry.caliber > 0 and string.format("%dmm", entry.caliber) or "0mm"
-			local stateLabel = entry.state
-			if hideBackup and entry.state == "READY" then
-				stateLabel = ""
-			end
-
-			local costText = ""
-			if entry.state == "READY" and entry.points > 0 then
-				costText = string.format(" - %.1fpts", entry.points)
-			end
-
-			formatted[#formatted + 1] = string.format("%dx%s %s%s%s", entry.count, calText, entry.atype, stateLabel ~= "" and " " .. stateLabel or "", costText)
-		end
-
-		return formatted
+	local function addPointsLine(label, points)
+		if points <= 0 then return end
+		table.Add(Tabletxt, { Color4, label .. ": ", Color3, points .. "pts" .. Sep })
 	end
 
-	-- Percent helper for readout lines.
-	local function pct(part, total)
-		if total <= 0 then return 0 end
-		return math.Round(part / total * 100, 0)
-	end
-
-	local function getMaxReadoutLines()
-		return 3
-	end
-
-	-- Prebuild readout labels and summary rows.
-	local PTBreakdownHeader = { Color2, "<|", Color1, "|============|", Color2, "[- Cost Breakdown -]", Color1, "|============|", Color2, "|>" .. Sep }
-
-	local Title = { Color2, "<|", Color1, "|============|", Color2, "[- Contraption Summary -]", Color1, "|============|", Color2, "|>" .. Sep }
-	local SummaryPoints
-	if PointVal > ACF.PointsLimit then
-		local OverPoints = PointVal - ACF.PointsLimit
-		SummaryPoints = { Color4, "-Points Cost: ", Color1, "" .. PointVal .. "pts", Color2, "  -  ", Color1, OverPoints .. " pts over" .. Sep }
+	if FullReadout then
+		table.Add(Tabletxt, { Color2, "<|", Color1, "|============|", Color2, "[- Cost Breakdown -]", Color1, "|============|", Color2, "|>" .. Sep })
+		addPointsLine("Points", PointVal)
+		addPointsLine("Armor Cost", PtsArmor)
+		addPointsLine("Mobility Cost", PtsEngine)
+		addPointsLine("Raw Ammo Cost", PtsAmmo)
+		addPointsLine("DPS Cost", PtsFirepower)
+		addPointsLine("Crew Cost", PtsCrew)
+		addPointsLine("Electronics Cost", PtsElectronics)
+		table.Add(Tabletxt, { Color2, "<|", Color1, "|==========================================|", Color2, "|>" .. Sep })
 	else
-		SummaryPoints = { Color4, "-Points Cost: ", Color3, "" .. PointVal .. "pts" .. Sep }
-	end
-
-	local SummaryCost = { Color4, "-Manufacturing Cost: ", Color3, "$" .. CostDisplayText .. Sep }
-	local TMass2 = {
-		Color4, "-Mass Ratio: ", Color3, "" .. phystotal .. "kg",
-		Color4, " physical, ", Color3, "" .. parenttotal .. "kg",
-		Color4, " parented / ", Color3, physratio .. "%", Color4, " physical )" .. Sep
-	}
-
-	local Engine = {
-		Color4, "-Total Power: ", Color3, "" .. math.Round(power, 1),
-		Color4, " hp -> ", Color3, "" .. hpton, Color4, " hp/ton" .. Sep
-	}
-
-	local function formatArmorLines(lines)
-		if not istable(lines) then return {} end
-
-		local entries = {}
-		for _, entry in ipairs(lines) do
-			if istable(entry) then
-				entries[#entries + 1] = {
-					label = tostring(entry.Label or entry.label or "Armor Segment"),
-					points = tonumber(entry.Points or entry.points) or 0,
-				}
-			end
-		end
-
-		table.sort(entries, function(a, b)
-			if a.points == b.points then
-				return a.label < b.label
-			end
-			return a.points > b.points
-		end)
-
-		local formatted = {}
-		for _, entry in ipairs(entries) do
-			formatted[#formatted + 1] = string.format("%s: %.1f pts", entry.label, entry.points)
-		end
-
-		return formatted
-	end
-
-	local function normalizeDecodedDetails(raw)
-		if not istable(raw) then
-			return { Items = {}, AmmoLines = {}, ArmorLines = {} }
-		end
-		return {
-			Items = istable(raw.Items) and raw.Items or {},
-			AmmoLines = istable(raw.AmmoLines) and raw.AmmoLines or {},
-			ArmorLines = istable(raw.ArmorLines) and raw.ArmorLines or {}
-		}
-	end
-
-	local Details = normalizeDecodedDetails(FromJSON and FromJSON[3] or nil)
-	local ammoLines = formatAmmoLines(Details.AmmoLines)
-	local armorLines = formatArmorLines(Details.ArmorLines)
-
-	-- Full readout is optional; collapsed mode only shows warnings and cost.
-	local showBreakdown = not (ArmorInitMissing and not HypoUsed)
-	local fullReadout = true
-	local fullReadoutCvar = GetConVar( "acf_armor_readout_full" )
-	if fullReadoutCvar then
-		fullReadout = fullReadoutCvar:GetBool()
-	end
-
-	if not fullReadout then
-		showBreakdown = false
-	end
-	-- Condensed mode shows warnings and core totals only.
-	if not showBreakdown then
-		if ArmorDirty then
-			table.Add(Tabletxt, { Color1, "[!] Armor cost dirty; respawn to recalc." .. Sep })
-		elseif ArmorInitMissing and not HypoUsed and not HypoRequested then
-			table.Add(Tabletxt, {
-				Color1,
-				"[!] ARMOR COST NOT INITIALIZED. ",
-				Color2,
-				"Something terrible has happened. Please forward this to the devs. Frankly I don't even know how you got here." .. Sep
-			})
-		end
-		if not ArmorInitMissing and fullReadout then
-			table.Add(Tabletxt, { Color4, "Manufacturing Cost: ", Color3, "$" .. CostDisplayText .. Sep })
-		end
-	else
-		Tabletxt = table.Add(Tabletxt, PTBreakdownHeader)
-		if HypoUsed then
-			table.Add(Tabletxt, { Color2, "[i] Preview mode (no points applied). Respawn to apply." .. Sep })
-		end
-
-		local TPoints = {}
-		local totalLabel = HypoUsed and "Points Cost (preview): " or "Points Cost: "
-		if PointVal > ACF.PointsLimit then
-			local OverPoints = PointVal - ACF.PointsLimit
-			TPoints = {
-				Color4, totalLabel, Color1, "" .. PointVal .. "pts",
-				Color2, "  -  ", Color1, OverPoints .. " pts over" .. Sep
-			}
-		else
-			TPoints = { Color4, totalLabel, Color3, "" .. PointVal .. "pts" .. Sep }
-		end
-		table.Add(Tabletxt, TPoints)
-		table.Add(Tabletxt, { Color4, "Manufacturing Cost: ", Color3, "$" .. CostDisplayText .. Sep })
-		if ArmorDirty then
-			table.Add(Tabletxt, { Color1, "[!] Armor cost dirty; respawn to recalc." .. Sep })
-		elseif ArmorInitMissing and not HypoUsed then
-			table.Add(Tabletxt, { Color1, "[!] ARMOR COST NOT INITIALIZED. ", Color2, "Unfreeze or enter vehicle." .. Sep })
-		end
-
-		local FractionalPts = "/" .. PointVal
-		local armFmt = string.format("front=%%.%dfmm  side=%%.%dfmm", armDigits, armDigits)
+		table.Add(Tabletxt, { Color2, "<|", Color1, "|============|", Color2, "[- Contraption Summary -]", Color1, "|============|", Color2, "|>" .. Sep })
 		table.Add(Tabletxt, {
-			Color4, "Armor scan: ", Color3, string.format(armFmt, FrontArm, SideArm) .. Sep
+			Color4, "-Mass Ratio: ", Color3, "" .. phystotal .. "kg",
+			Color4, " physical, ", Color3, "" .. parenttotal .. "kg",
+			Color4, " parented / ", Color3, physratio .. "%", Color4, " physical )" .. Sep
 		})
-		table.Add(Tabletxt, { Color4, "Armor: ", Color3, "(" .. pct(PtsArmor, PointVal) .. "%) - ", PtsArmor .. FractionalPts .. Sep })
-		if #armorLines > 0 then
-			local maxArmorLines = getMaxReadoutLines()
-			for i, line in ipairs(armorLines) do
-				if i > maxArmorLines then
-					table.Add(Tabletxt, { Color3, "    ..." .. (#armorLines - maxArmorLines) .. " more" .. Sep })
-					break
-				end
-				table.Add(Tabletxt, { Color3, "    " .. line .. Sep })
-			end
-		end
-		table.Add(Tabletxt, { Color4, "Engines: ", Color3, "(" .. pct(PtsEngine, PointVal) .. "%) - ", PtsEngine .. FractionalPts .. Sep })
-		if PtsFirepower > 0 then
-			table.Add(Tabletxt, {
-				Color4, "Firepower: ", Color3,
-				"(" .. pct(PtsFirepower, PointVal) .. "%) - ", PtsFirepower .. FractionalPts .. Sep
-			})
-		end
-		if PtsAmmo > 0 or #ammoLines > 0 or PtsAmmoReady > 0 or PtsAmmoBackup > 0 then
-			table.Add(Tabletxt, { Color4, "Ammo: ", Color3, "(" .. pct(PtsAmmo, PointVal) .. "%) - ", PtsAmmo .. FractionalPts .. Sep })
-			if #ammoLines > 0 then
-				local maxAmmoLines = getMaxReadoutLines()
-				for i, line in ipairs(ammoLines) do
-					if i > maxAmmoLines then
-						table.Add(Tabletxt, { Color3, "    ..." .. (#ammoLines - maxAmmoLines) .. " more" .. Sep })
-						break
-					end
-					table.Add(Tabletxt, { Color3, "    " .. line .. Sep })
-				end
-			end
-		end
-		table.Add(Tabletxt, { Color4, "Crew: ", Color3, "(" .. pct(PtsCrew, PointVal) .. "%) - ", PtsCrew .. FractionalPts .. Sep })
-		table.Add(Tabletxt, {
-			Color4, "Electronics: ", Color3,
-			"(" .. pct(PtsElectronics, PointVal) .. "%) - ", PtsElectronics .. FractionalPts .. Sep
-		})
-	end
 
-	Tabletxt = table.Add(Tabletxt, Title)
-	if not fullReadout then
-		Tabletxt = table.Add(Tabletxt, SummaryPoints)
-		Tabletxt = table.Add(Tabletxt, SummaryCost)
-	end
-	Tabletxt = table.Add(Tabletxt, TMass2)
-
-
-	local Count = 0
-	for material, _ in pairs(FromJSON[1]) do
-		local Percent = math.Round(FromJSON[2][material] * 100, 1)
-		local MatText = material .. ": "
-		local MassText = math.Round(Percent, 0) .. "%  "
-
-		Count = Count + 1
-			if Count > 7 then
-				Count = 0
-				table.Add(Tabletxt,{ Color4, MatText})
-				table.Add(Tabletxt,{ Color3, MassText .. Sep})
-			else
-				table.Add(Tabletxt,{ Color4, MatText})
-				table.Add(Tabletxt,{ Color3, MassText})
-			end
-
+		local count = 0
+		for material, _ in pairs(FromJSON[1]) do
+			local percent = math.Round((FromJSON[2][material] or 0) * 100, 1)
+			count = count + 1
+			table.Add(Tabletxt, { Color4, material .. ": ", Color3, math.Round(percent, 0) .. "%  " .. (count > 7 and Sep or "") })
+			if count > 7 then count = 0 end
 		end
 
-		table.Add(Tabletxt,{ Color4, Sep})
+		table.Add(Tabletxt, { Color4, Sep })
 
-		Count = 0
-		for material, mass in pairs( FromJSON[1] ) do
-			local MatText = material .. ": "
-			local MassText = math.Round(mass,1) .. "kg  "
-
-			Count = Count + 1
-			if Count >= 3 then
-				Count = 0
-				table.Add(Tabletxt,{ Color4, MatText})
-				table.Add(Tabletxt,{ Color3, MassText .. Sep})
-			else
-				table.Add(Tabletxt,{ Color4, MatText})
-				table.Add(Tabletxt,{ Color3, MassText})
-			end
-
+		count = 0
+		for material, mass in pairs(FromJSON[1]) do
+			count = count + 1
+			table.Add(Tabletxt, { Color4, material .. ": ", Color3, math.Round(mass, 1) .. "kg  " .. (count >= 3 and Sep or "") })
+			if count >= 3 then count = 0 end
 		end
 
+		table.Add(Tabletxt, { Color3, Sep })
 
-		table.Add(Tabletxt,{Color3,Sep})
-
-		Tabletxt = table.Add(Tabletxt,TbStr)
-
-		local TMass = {}
 		if total > ACF.MaxWeight then
-			local OverTons = total - ACF.MaxWeight
-			TMass		= { Color4, "-Total Mass: ", Color1, "" .. math.Truncate(total / 1000,1) .. " tons", Color4, " / ", Color1, "" .. total .. "kg", Color2, "  -  ", Color1, OverTons .. " kg over" .. Sep }
+			table.Add(Tabletxt, {
+				Color4, "-Total Mass: ", Color1, "" .. math.Truncate(total / 1000, 1) .. " tons",
+				Color4, " / ", Color1, "" .. total .. "kg",
+				Color2, "  -  ", Color1, math.Round(total - ACF.MaxWeight, 1) .. " kg over" .. Sep
+			})
 		else
-			TMass		= { Color4, "-Total Mass: ", Color3, "" .. math.Truncate(total / 1000,1) .. " tons", Color4, " / ", Color3, "" .. total .. "kg" .. Sep }
+			table.Add(Tabletxt, {
+				Color4, "-Total Mass: ", Color3, "" .. math.Truncate(total / 1000, 1) .. " tons",
+				Color4, " / ", Color3, "" .. total .. "kg" .. Sep
+			})
 		end
 
-		Tabletxt = table.Add(Tabletxt,TMass)
-		Tabletxt = table.Add(Tabletxt,Engine)
+		table.Add(Tabletxt, {
+			Color4, "-Total Power: ", Color3, "" .. math.Round(power, 1),
+			Color4, " hp -> ", Color3, "" .. hpton, Color4, " hp/ton" .. Sep
+		})
+
+		local pointsColor = PointVal > ACF.PointsLimit and Color1 or Color3
+		table.Add(Tabletxt, { Color4, "-Total Point Cost: ", pointsColor, PointVal .. "pts" })
+		if PointVal > ACF.PointsLimit then
+			table.Add(Tabletxt, { Color2, "  -  ", Color1, math.Round(PointVal - ACF.PointsLimit, 1) .. " pts over" })
+		end
+
+		table.Add(Tabletxt, { Color2, "\n<|", Color1, "|===============================================|", Color2, "|>" .. Sep })
+	end
+
+	if ArmorInitMissing then
+		table.Add(Tabletxt, { Color1, Sep .. "[!] ARMOR POINTS NOT INITIALIZED. ", Color2, "Unfreeze or enter vehicle." })
+	end
 
 		chat.AddText(unpack(Tabletxt))
 
@@ -1167,9 +842,9 @@ if CLIENT then
 		getPhrase("tool.acfarmorprop.mass") .. ": %s\n" ..
 		getPhrase("tool.acfarmorprop.armor") .. ": %s\n" ..
 		getPhrase("tool.acfarmorprop.health") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.material") .. ": %s\n\n" ..
-		"%s" ..
-		"Manufacturing Cost: $%s"
+		getPhrase("tool.acfarmorprop.material") .. ": %s\n" ..
+		"Entity Cost: %s\n\n" ..
+		"%s"
 
 	-- Draw the hover tooltip and popup text.
 	function TOOL:DrawHUD()
@@ -1182,7 +857,7 @@ if CLIENT then
 		local material	= self.Weapon:GetNWString( "Material" )
 		local pointLabel		= self.Weapon:GetNWString( "PointCostLabel", "Entity Cost" )
 		local acepointcost	= self.Weapon:GetNWFloat( "PointCost" )
-		local acecost		= self.Weapon:GetNWFloat( "CostValue", 0 )
+		local pointBreakdown = self.Weapon:GetNWString( "PointCostBreakdown", "" )
 
 		local area		= GetConVar( "acfarmorprop_area" ):GetFloat()
 		local ductility	= GetConVar( "acfarmorprop_ductility" ):GetFloat()
@@ -1193,20 +868,15 @@ if CLIENT then
 
 		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
 		mass = math.min( mass, 50000 )
+		local afterCost = ACE_GetArmorPointPreview(armor, health, MatData)
 
 		local pointLine = ""
 		if acepointcost > 0 then
-			local roundedPoints = math.Round(acepointcost, 1)
-			local whole = math.floor(roundedPoints)
-			local frac = math.floor((roundedPoints - whole) * 10 + 0.5)
-			local pointText = string.Comma(whole)
-			if frac > 0 then
-				pointText = pointText .. "." .. frac
+			pointLine = string.format("%s: %s\n", pointLabel, ACE_FormatPoints(acepointcost))
+			if pointBreakdown ~= "" then
+				pointLine = pointLine .. pointBreakdown .. "\n"
 			end
-			pointLine = string.format("%s: %spts\n", pointLabel, pointText)
 		end
-
-		local costText = string.Comma(math.max(math.Round(acecost * 100, 0), 0))
 
 		local text = string.format(overlayTextFormat,
 			math.Round(curmass, 2),
@@ -1217,8 +887,8 @@ if CLIENT then
 			math.Round(armor, 2),
 			math.Round(health, 2),
 			MatData.sname,
-			pointLine,
-			costText
+			ACE_FormatPoints(afterCost),
+			pointLine
 		)
 
 		local pos = ent:WorldSpaceCenter()

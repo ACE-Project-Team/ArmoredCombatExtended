@@ -134,69 +134,66 @@ ACF.PointsLimit = 10000 -- The maximum legal point value.
 ACF.MaxWeight   = 200000 -- The max weight in kg.
 
 ACE.PointCostConfig = ACE.PointCostConfig or {
-    ArmorFrontWeight = 1.0, -- Front armor contribution in armor points.
-    ArmorSideWeight  = 1.8, -- Side armor contribution in armor points.
-    ArmorScale       = 4.0, -- Final armor points multiplier.
-    CrewSeatFlat     = 250, -- Flat point cost per crew seat entity.
+    CrewSeatFlat     = 100, -- Flat point cost for driver and gunner seats.
+    LoaderSeatFlat   = 300, -- Flat point cost per loader seat.
     MinDetailPoints  = 300 -- Minimum points to list an entry in armor tool breakdown.
 }
 
-ACE.GunPointCostMultiplier    = tonumber(ACE.GunPointCostMultiplier) or tonumber(ACE.CannonPointMul) or 0.85 -- Multiplier for gun/cannon point cost.
 ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69 -- Multiplier for engine point cost.
-ACF.LegacyManufacturingPointsPerTon = tonumber(ACF.LegacyManufacturingPointsPerTon) or tonumber(ACF.PointsPerTon) or 42 -- Legacy manufacturing cost coefficient per ton.
-ACE.LegacyAmmoPointsPerTon    = tonumber(ACE.LegacyAmmoPointsPerTon) or tonumber(ACE.AmmoPerTon) or 100 -- Legacy non-missile ammo points per ton.
+ACE.GunPointCostMultiplier    = tonumber(ACE.GunPointCostMultiplier) or tonumber(ACE.CannonPointMul) or 0.85 -- Multiplier for gun/cannon point cost.
+ACE.AmmoPointsPerTon          = tonumber(ACE.AmmoPointsPerTon) or 100 -- Non-missile ammo crate points per ton.
 ACE.CrewSeatPointCost         = tonumber(ACE.CrewSeatPointCost)
     or tonumber(ACE.CrewSeatCostFlat)
     or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.CrewSeatFlat)
-    or 250 -- Flat point cost per crew seat.
+    or 100 -- Flat point cost for driver and gunner seats.
+ACE.LoaderSeatPointCost       = tonumber(ACE.LoaderSeatPointCost)
+    or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.LoaderSeatFlat)
+    or 300 -- Flat point cost per loader seat.
+ACE.ArmorPointConfig = ACE.ArmorPointConfig or {
+    KEWeight = 0.7, -- Share of KE effectiveness in normalized armor thickness.
+    ChemWeight = 0.3, -- Share of chemical effectiveness in normalized armor thickness.
+    DamageReferenceMm = 50, -- Armor point reference thickness.
+    SurvivabilityScale = 100, -- Armor points per 50mm/100HP survivability unit.
+    ArmorCostMultiplier = 0.2, -- Final armor cost multiplier.
+    SurvivabilityArmorExponent = 1.4, -- Armor thickness contribution to armor points.
+    SurvivabilityHPExponent = 0.45, -- HP contribution to armor points.
+    SurvivabilityHPReference = 75 -- HP baseline for armor points.
+}
 
 -- Backward-compatible aliases (deprecated names).
-ACE.CannonPointMul = ACE.GunPointCostMultiplier
 ACE.EnginePointMul = ACE.EnginePointCostMultiplier
-ACF.PointsPerTon = ACF.LegacyManufacturingPointsPerTon
-ACE.AmmoPerTon = ACE.LegacyAmmoPointsPerTon
+ACE.CannonPointMul = ACE.GunPointCostMultiplier
 ACE.CrewSeatCostFlat = ACE.CrewSeatPointCost
 
--- Deprecated: armor mass-based cost has been replaced by LOS armor scan.
---
 -- Ammo cost scoring config for the ACE legality system.
 ACE.AmmoTypeFactors = {
-    AP = 0.5,
-    APHE = 0.6,
-    APDS = 1.0,
-    APFSDS = 1.05,
-    HVAP = 0.7,
-    HEAT = 0.75,
+    AP = 1,
+    APHE = 1.1,
+    APDS = 0.9,
+    APFSDS = 0.9,
+    HVAP = 0.8,
+    HEAT = 0.7,
     HEATFS = 0.8,
-    THEAT = 0.95,
+    THEAT = 0.9,
     THEATFS = 1.0,
-    HESH = 0.4,
+    HESH = 1,
     HE = 0.66,
     HEFS = 0.715,
-    HP = 0.1,
-    CAP = 0.6,
+    HP = 1,
+    CAP = 1,
     CHEAT = 0.8,
     CHE = 0.25,
     CHF = 1,
     SM = 1,
     FLR = 1,
-    FL = 0.3,
+    FL = 1,
     GLATGM = 0.75,
-    ["GLATGM-HE"] = 0.25,
+    ["GLATGM-HE"] = 0.75,
     Refill = 0
 }
 
-ACE.LegacyMatCostTables = ACE.LegacyMatCostTables or {
-    Alum = 1.2 * (0.221 / 0.34), -- 20% cost increase for ~25% weight reduction.
-    CHA = 0.8 * (0.98 / 1.25), -- 25% heavier for ~20% cost reduction.
-    Cer = 1.4 * (2.05 / 1.4), -- 50% more protection/kg for ~40% cost increase.
-    ERA = 2.0 * (2.5 / 2.0),
-    Rub = 1.5 * (0.05 / 0.2),
-    Texto = 1.4 * (0.5 / 0.35),
-    RHA = 1
-}
 ACE.AmmoCostConfig = {
-    BaseRoundPts = 340, -- Base per-round scaling before penetration, caliber, ammo type, and RoF threat are applied.
+    BaseRoundPts = 320, -- Base per-round scaling before penetration, caliber, ammo type, and RoF threat are applied.
     RefPen = 700, -- Reference penetration (mm) for pen scaling.
     RefCaliber = 100, -- Reference caliber (mm) for caliber scaling.
     RofKneeRpm = 22, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
@@ -208,17 +205,12 @@ ACE.AmmoCostConfig = {
     HeUtilExp = 0.5, -- HE utility exponent for filler per caliber.
     ReadyRackBase = 3000, -- Ready rack baseline: base / caliber(mm).
     ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
-    ReadyRackLowBoost = 1.5, -- Low-caliber boost (20mm hits 300 at base 3000).
-    StowFactor = 0.0, -- Cost multiplier for stowed rounds.
-    TailFactor = 0, -- Extra discount per round beyond tail start (0 disables).
-    TailStartMultiplier = 2 -- Tail start = readyCap * multiplier.
+    ReadyRackLowBoost = 1.5 -- Low-caliber boost (20mm hits 300 at base 3000).
 }
 
--- ATGM rack/ammo pricing blend.
--- Performance uses the same ammo threat model as guns; legacy keeps continuity with existing per-missile pointcost.
+-- ATGM rack/ammo pricing.
 ACE.ATGMCostConfig = {
     PerformanceMul = 1.0, -- Multiplier for performance-derived base points.
-    LegacyWeight = 0.2, -- 0 = pure performance, 1 = pure legacy pointcost.
     MinBase = 1 -- Safety floor before guidance multiplier.
 }
 
@@ -240,19 +232,6 @@ ACE.MissileGuidanceFactors = {
     Infrared = 2.7,
     Top_Attack_IR = 3,
     Radar = 1.2
-}
-
--- Armor tool UX timing.
-ACE.ArmorPreviewTapWindow = ACE.ArmorPreviewTapWindow or 0.35 -- Seconds between reload taps to trigger preview.
-ACE.ArmorPreviewCooldown = ACE.ArmorPreviewCooldown or 5 -- Seconds between preview requests per player.
-
--- Armor scan tuning values for LOS trace consistency.
-ACE.ArmorScanConfig = ACE.ArmorScanConfig or {
-    RegionSnap = 2,
-    TraceHullSize = 3,
-    TraceMaxSteps = 128,
-    TracePadding = 64,
-    ResultQuantizeMm = 1.0 -- Quantize scan outputs to reduce tiny trace jitter.
 }
 
 ---------------------------------- Misc & other ----------------------------------
@@ -310,7 +289,7 @@ ACE.DustMaterialColor = {
     Dirt       = Color(93,80,56,150),
     Sand       = Color(225,202,130,150),
     Glass      = Color(255,255,255,50),
-    Snow      = Color(255,255,255,50),
+    Snow       = Color(255,255,255,50),
     Wood       = Color(117,101,70,150)
 }
 
@@ -430,13 +409,13 @@ if SERVER then
         end
     end
 
-    cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_ammomod", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_spalling", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_spalling_multipler", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
-    cvars.AddChangeCallback("acf_debris_lifetime", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_ammomod", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_spalling", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_spalling_multipler", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("acf_debris_lifetime", ACF_CVarChangeCallback)
 cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
 cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
 cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
@@ -484,7 +463,6 @@ elseif CLIENT then
     CreateClientConVar( "acf_sens_scopes", 0.2, true, false, "Reduce mouse sensitivity by this amount when zoomed in with scopes on ACE SWEPs.", 0.01, 1)
     CreateClientConVar( "acf_tinnitus", 1, true, false, "Allows the ear tinnitus effect to be applied when an explosive was detonated too close to your position, improving the inmersion during combat.", 0, 1 )
     CreateClientConVar( "acf_sound_volume", 100, true, false, "Adjusts the volume of explosions and gunshots.", 0, 100 )
-    CreateClientConVar( "acf_armor_readout_full", 0, true, false, "Show full armor readout in the ACF armor tool.", 0, 1 )
 
 end
 
@@ -709,7 +687,3 @@ AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")
 
 print("[ACE | INFO]- Done!")
-
-
-
-

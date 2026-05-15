@@ -165,8 +165,7 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 
 	Rack.MaxMissile = table.Count(gundef.mountpoints) or 1
 	Rack.ReloadTime = gundef.magreload or 1 --Replace with fixed time delay rather than multiplier
-	Rack.ACEPoints	= (100 + (Rack.MaxMissile-1) * 50)
-	--Rack.ACEPoints	= 200
+	Rack.ACEPoints	= 0
 
 	local gunclass = RackClasses[Rack.Class] or ErrorNoHalt("Couldn't find the " .. tostring(Rack.Class) .. " gun-class!")
 
@@ -1295,8 +1294,8 @@ end
 
 do
 	-- Calculates per-missile points for rack/ammo entities.
-	-- ATGMs use the same performance model as gun ammo, blended with legacy pointcost for continuity.
+	-- ATGMs use the same performance model as gun ammo.
 	function CalculateMissileCost(BulletData)
-		return ACE_CalcMissileLegacyRoundCost(BulletData)
+		return ACE_CalcMissileRoundPoints(BulletData)
 	end
 end

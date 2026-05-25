@@ -93,15 +93,19 @@ local function ACE_BuildAmmoLineList(ammoLines)
 end
 
 
--- Build per-contraption ammo cache inputs.
+-- Build per-contraption ammo cache inputs. Order matters: the ready-rack alloc
+-- weights each crate by its effective rounds, and "effective rounds" includes
+-- the rack pre-load reserve -- so build the reserve first, then feed it in.
 local function ACE_BuildAmmoCache(ents)
 	local gunRpsById, racks = ACE_BuildGunRpsAndRacks(ents)
-	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents)
+	local rackReserve = ACE_BuildRackReserveAlloc(ents, racks)
+	local readyAlloc  = ACE_BuildAmmoReadyAlloc(ents, rackReserve)
 
 	return {
-		GunRpsById = gunRpsById,
-		Racks = racks,
-		ReadyAlloc = readyAlloc
+		GunRpsById  = gunRpsById,
+		Racks       = racks,
+		ReadyAlloc  = readyAlloc,
+		RackReserve = rackReserve
 	}
 end
 
@@ -121,10 +125,11 @@ local function ACE_CalcAmmoSubsystem(ents, minDetailPts)
 	local gunRpsById = ammoCache.GunRpsById
 	local racks = ammoCache.Racks
 	local readyAlloc = ammoCache.ReadyAlloc
+	local rackReserve = ammoCache.RackReserve
 
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) and ent:GetClass() == "acf_ammo" then
-			local _, detail = ACE_CalcAmmoCratePoints(ent, gunRpsById, racks, readyAlloc)
+			local _, detail = ACE_CalcAmmoCratePoints(ent, gunRpsById, racks, readyAlloc, rackReserve)
 			if detail then
 				local rawCost = detail.RawAmmoCost or 0
 				local dpsCost = detail.DPSCost or 0
@@ -199,12 +204,20 @@ end
 -- ============================================================
 
 -- Calculate the points value for an ammo crate.
-function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
+function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc, rackReserve)
 	if not IsEnt(crate) then return 0 end
 	local bdata = crate.BulletData
 	if not bdata then return 0 end
 
-	local rounds = crate.Capacity or 0
+	-- Effective rounds = loose rounds in this crate + missiles pre-loaded into
+	-- linked rack tubes that this crate could feed. The reserve portion comes
+	-- from ACE_BuildRackReserveAlloc, which distributes each rack's MaxMissile
+	-- across its compatible crates using the same rule that credits rack RPS
+	-- to a crate below. Without the reserve, an 8-tube rack primed from a
+	-- 2-round crate would price as if only those 2 loose rounds existed.
+	local crateCapacity = crate.Capacity or 0
+	local reserveRounds = (rackReserve and rackReserve[crate]) or 0
+	local rounds = crateCapacity + reserveRounds
 	if rounds <= 0 then return 0 end
 
 	local maxPen = ACE_GetAmmoMaxPen(bdata)

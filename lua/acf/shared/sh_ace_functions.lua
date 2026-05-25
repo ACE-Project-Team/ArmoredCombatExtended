@@ -1572,18 +1572,23 @@ function ACE_GetContraptionEntities(con, fallbackEnt)
 end
 
 -- Allocate ready-rack rounds across ammo crates.
-function ACE_BuildAmmoReadyAlloc(ents)
+function ACE_BuildAmmoReadyAlloc(ents, rackReserve)
 	local cfg = ACE.AmmoCostConfig or {}
 	if (cfg.ReadyRackBase or 0) <= 0 then return nil end
 
 	local groups = {}
-	-- Group ammo crates by caliber and weight by per-round cost.
+	-- Group ammo crates by caliber and weight each entry by its per-round cost.
+	-- A crate's "rounds" include any rack pre-load assigned to it by
+	-- ACE_BuildRackReserveAlloc, so the per-crate clamp (math.min later in this
+	-- function) won't strip the rack reserve back out -- and so the weighting
+	-- doesn't under-credit crates whose racks are primed full.
 
 	for _, ent in ipairs(ents) do
 		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" then
 			local bdata = ent.BulletData
 			if bdata then
-				local rounds = ent.Capacity or 0
+				local reserve = (rackReserve and rackReserve[ent]) or 0
+				local rounds = (ent.Capacity or 0) + reserve
 				if rounds > 0 then
 					local ammoId = bdata.Id
 					if ammoId then
@@ -1668,6 +1673,124 @@ function ACE_BuildAmmoReadyAlloc(ents)
 	return next(alloc) and alloc or nil
 end
 
+-- Collect every ammo crate in 'ents' that currently holds rounds. Rack
+-- reserve only flows from crates with positive Capacity (an empty crate
+-- couldn't have loaded the rack in the first place) and a valid BulletData Id.
+local function ACE_CollectLoadedAmmoCrates(ents)
+	local crates = {}
+	for _, ent in ipairs(ents) do
+		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" then
+			local bdata = ent.BulletData
+			if bdata and bdata.Id and (tonumber(ent.Capacity) or 0) > 0 then
+				crates[#crates + 1] = ent
+			end
+		end
+	end
+	return crates
+end
+
+-- For one rack, decide how its MaxMissile pre-load gets split across the
+-- crates it can feed from. Returns {crate -> share}, or nil if the rack has
+-- no slots, no Id, or no compatible crates.
+--
+-- Splits by ammo threat weight (high-pen / big-blast rounds get the larger
+-- share). If every candidate has zero threat the split is even. Uses
+-- largest-remainder rounding so shares stay integer; EntIndex tiebreaks so
+-- identical setups allocate identically across re-scans.
+local function ACE_AllocateRackPreload(rack, crates)
+	local maxMissile = tonumber(rack.MaxMissile) or 0
+	if maxMissile <= 0 or not rack.Id then return nil end
+
+	-- Gather candidate crates and their threat weights.
+	local candidates, totalWeight = {}, 0
+	for _, crate in ipairs(crates) do
+		local bdata = crate.BulletData
+		if ACF_CanLinkRack(rack.Id, bdata.Id, bdata, rack) then
+			local weight = math.max(ACE_GetAmmoThreatWeight(bdata), 0)
+			candidates[#candidates + 1] = { crate = crate, weight = weight }
+			totalWeight = totalWeight + weight
+		end
+	end
+	if #candidates == 0 then return nil end
+
+	-- Even split when no candidate carries any threat (e.g. all Refill).
+	if totalWeight <= 0 then
+		for _, entry in ipairs(candidates) do entry.weight = 1 end
+		totalWeight = #candidates
+	end
+
+	-- Each crate takes its whole share first; track the fractional remainder.
+	local remaining = maxMissile
+	for _, entry in ipairs(candidates) do
+		local raw        = maxMissile * entry.weight / totalWeight
+		entry.wholeShare = math.floor(raw)
+		entry.remainder  = raw - entry.wholeShare
+		remaining        = remaining - entry.wholeShare
+	end
+
+	-- Hand the leftover slots to whichever crates were closest to rounding up.
+	table.sort(candidates, function(a, b)
+		if a.remainder == b.remainder then
+			return a.crate:EntIndex() < b.crate:EntIndex()
+		end
+		return a.remainder > b.remainder
+	end)
+
+	for _, entry in ipairs(candidates) do
+		if remaining <= 0 then break end
+		entry.wholeShare = entry.wholeShare + 1
+		remaining = remaining - 1
+	end
+
+	local shares = {}
+	for _, entry in ipairs(candidates) do
+		if entry.wholeShare > 0 then
+			shares[entry.crate] = entry.wholeShare
+		end
+	end
+	return next(shares) and shares or nil
+end
+
+-- Spread each rack's MaxMissile pre-load across the ammo crates that could
+-- feed it, so the rounds sitting in rack tubes count toward the feeding
+-- crate's points. Without this, a 2-round crate would price for 2 even when
+-- its 8-tube rack is fully primed and ready to dump them.
+--
+-- "Could feed it" means ACF_CanLinkRack returns true -- the same compatibility
+-- rule ACE_CalcAmmoCratePoints uses to credit a rack's RPS to a crate. Keep
+-- the two checks in lockstep: if you change which crates a rack contributes
+-- RPS to, change which crates it contributes reserve to as well.
+--
+-- 'racks' is optional; pass the list from ACE_BuildGunRpsAndRacks to skip the
+-- re-scan. Returns {crate -> reserve_rounds}, or nil if nothing was allocated.
+function ACE_BuildRackReserveAlloc(ents, racks)
+	if not ACF_CanLinkRack then return nil end
+
+	if not racks then
+		racks = {}
+		for _, ent in ipairs(ents) do
+			if ACE_IsEnt(ent) and ent:GetClass() == "acf_rack" then
+				racks[#racks + 1] = ent
+			end
+		end
+	end
+	if #racks == 0 then return nil end
+
+	local crates = ACE_CollectLoadedAmmoCrates(ents)
+	if #crates == 0 then return nil end
+
+	local alloc = {}
+	for _, rack in ipairs(racks) do
+		local shares = ACE_AllocateRackPreload(rack, crates)
+		if shares then
+			for crate, count in pairs(shares) do
+				alloc[crate] = (alloc[crate] or 0) + count
+			end
+		end
+	end
+
+	return next(alloc) and alloc or nil
+end
 
 
 -- ============================================================
@@ -1702,18 +1825,24 @@ function ACE_GetAmmoCratePointsForContraption(crate, con, fallbackEnt)
 
 	if con and con.ACEAmmoCache then
 		local cache = con.ACEAmmoCache
-		return ACE_CalcAmmoCratePoints(crate, cache.GunRpsById or {}, cache.Racks or {}, cache.ReadyAlloc)
+		return ACE_CalcAmmoCratePoints(crate, cache.GunRpsById or {}, cache.Racks or {}, cache.ReadyAlloc, cache.RackReserve)
 	end
 
 	local ents = ACE_GetContraptionEntities(con, fallbackEnt or crate)
 
 	local gunRpsById, racks = ACE_BuildGunRpsAndRacks(ents)
 
-	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents)
-	local pts, detail = ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc)
+	local rackReserve = ACE_BuildRackReserveAlloc(ents, racks)
+	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents, rackReserve)
+	local pts, detail = ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc, rackReserve)
 
 	if con then
-		con.ACEAmmoCache = { GunRpsById = gunRpsById, Racks = racks, ReadyAlloc = readyAlloc }
+		con.ACEAmmoCache = {
+			GunRpsById = gunRpsById,
+			Racks = racks,
+			ReadyAlloc = readyAlloc,
+			RackReserve = rackReserve
+		}
 	end
 
 	return pts, detail

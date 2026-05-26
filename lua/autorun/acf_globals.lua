@@ -188,7 +188,7 @@ ACE.AmmoTypeFactors = {
     FLR = 1,
     FL = 1,
     GLATGM = 0.75,
-    ["GLATGM-HE"] = 0.75,
+    ["GLATGM-HE"] = 0.495,
     Refill = 0
 }
 

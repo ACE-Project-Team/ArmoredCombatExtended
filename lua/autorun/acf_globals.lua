@@ -210,13 +210,18 @@ ACE.AmmoCostConfig = {
 
 -- Per-missile pricing. Applies to every missile type -- the cost model is
 -- unified on performance points (pen + blast + caliber + ammo type, with
--- guidance folded in via the pen factor). Tune via PerformanceMul / MinBase
--- here, or adjust the bullet data on the missile itself; do NOT re-add the
--- legacy per-missile `pointcost` fields that used to live in each missile
--- definition under lua/acf/shared/missiles/ -- those were hand-tuned static
--- values that disagreed with the performance model and have been removed.
+-- guidance folded in via the pen factor). PerformanceMul is applied inside
+-- ACE_GetAmmoRoundPoints for missile-type ammo, so it reaches BOTH the
+-- ammo crate path (ACE_CalcAmmoCratePoints) and the per-missile path
+-- (ACE_CalcMissileRoundPoints) -- this is the single knob for "how much
+-- should missiles cost relative to gun ammo of equivalent threat".
+-- Tune via PerformanceMul / MinBase here, or adjust the bullet data on
+-- the missile itself; do NOT re-add the legacy per-missile `pointcost`
+-- fields that used to live in each missile definition under
+-- lua/acf/shared/missiles/ -- those were hand-tuned static values that
+-- disagreed with the performance model and have been removed.
 ACE.MissileCostConfig = {
-    PerformanceMul = 1.0, -- Multiplier on ACE_GetAmmoRoundPoints output.
+    PerformanceMul = 3.0, -- Multiplier on missile ACE_GetAmmoRoundPoints output.
     MinBase = 1 -- Floor so low-threat missiles still register a cost.
 }
 

@@ -1171,19 +1171,16 @@ local function ACE_GetAmmoGuidancePenFactor(bdata)
 	return ACE_GetMissileGuidanceFactor(bdata.Data7)
 end
 
--- Calculate per-missile points. Every missile type uses the same performance
--- model: penetration and blast threat from ACE_GetAmmoRoundPoints (which
--- already folds in guidance through the pen factor and ammo-type weighting),
--- scaled by MissileCostConfig.PerformanceMul, with MissileCostConfig.MinBase
--- as a floor so low-threat missiles still register a cost.
+-- Calculate per-missile points. Delegates to ACE_GetAmmoRoundPoints, which
+-- already applies MissileCostConfig.PerformanceMul for missile ammo; this
+-- function just adds the MinBase floor so low-threat missiles still register.
 function ACE_CalcMissileRoundPoints(bdata)
 	if not istable(bdata) then return 0 end
 
 	local cfg = ACE.MissileCostConfig or {}
-	local perfMul = tonumber(cfg.PerformanceMul) or 1
 	local minBase = tonumber(cfg.MinBase) or 1
 
-	return math.max(ACE_GetAmmoRoundPoints(bdata) * perfMul, minBase)
+	return math.max(ACE_GetAmmoRoundPoints(bdata), minBase)
 end
 
 -- Determine whether an ammo type should use HE utility scaling.
@@ -1284,8 +1281,17 @@ function ACE_GetAmmoRoundPoints(bdata)
 	end
 
 	local calFactor = calMm / refCal
+	local roundPts = baseRound * threatFactor * calFactor * typeFactor
 
-	return baseRound * threatFactor * calFactor * typeFactor
+	-- Missiles get their own multiplier on top so MissileCostConfig is the one
+	-- knob that tunes missile pricing for both the ammo crate path
+	-- (ACE_CalcAmmoCratePoints) and the per-missile path (ACE_CalcMissileRoundPoints).
+	if ACE_IsAmmoMissileType(bdata) then
+		local mcfg = ACE.MissileCostConfig or {}
+		roundPts = roundPts * (tonumber(mcfg.PerformanceMul) or 1)
+	end
+
+	return roundPts
 end
 
 -- Calculate threat weight for ready-rack allocation.

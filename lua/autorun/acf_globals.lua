@@ -208,10 +208,12 @@ ACE.AmmoCostConfig = {
     ReadyRackLowBoost = 1.5 -- Low-caliber boost (20mm hits 300 at base 3000).
 }
 
--- ATGM rack/ammo pricing.
-ACE.ATGMCostConfig = {
-    PerformanceMul = 1.0, -- Multiplier for performance-derived base points.
-    MinBase = 1 -- Safety floor before guidance multiplier.
+-- Per-missile pricing. Applies to every missile type -- the cost model is
+-- unified on performance points (pen + blast + caliber + ammo type, with
+-- guidance folded in via the pen factor).
+ACE.MissileCostConfig = {
+    PerformanceMul = 1.0, -- Multiplier on ACE_GetAmmoRoundPoints output.
+    MinBase = 1 -- Floor so low-threat missiles still register a cost.
 }
 
 -- Guidance multipliers applied on top of missile base cost.
@@ -238,7 +240,7 @@ ACE.MissileGuidanceFactors = {
 
 ACF.LargeCaliber        = 10 --Gun caliber in CM to be considered a large caliber gun, 10cm = 100mm
 
-ACF.SpallDamageMult        = 0.01
+ACF.SpallDamageMult     = 0.01
 ACF.APDamageMult        = 2                        -- AP Damage Multipler            -1.1
 ACF.APHEDamageMult      = 1.75                    -- APHE Damage Multipler
 ACF.APDSDamageMult      = 3                    -- APDS Damage Multipler

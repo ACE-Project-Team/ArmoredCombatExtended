@@ -1153,14 +1153,6 @@ function ACE_IsAmmoMissileType(bdata)
 	return classData and classData.type == "missile" or false
 end
 
--- Determine whether bullet data should use ATGM-style missile costing.
-function ACE_IsATGMCostAmmo(bdata)
-	if not bdata then return false end
-	if ACE_IsGLATGMAmmoType(bdata.Type) then return true end
-
-	return ACE_GetAmmoGunClass(bdata) == "ATGM"
-end
-
 -- Resolve guidance scaling used by missile point/threat math. The factor from
 -- ACE.MissileGuidanceFactors maps directly onto the missile's pen multiplier:
 -- entries below 1 represent unreliable guidance that often misses and scale
@@ -1179,37 +1171,19 @@ local function ACE_GetAmmoGuidancePenFactor(bdata)
 	return ACE_GetMissileGuidanceFactor(bdata.Data7)
 end
 
--- Calculate per-missile base points, including guidance.
+-- Calculate per-missile points. Every missile type uses the same performance
+-- model: penetration and blast threat from ACE_GetAmmoRoundPoints (which
+-- already folds in guidance through the pen factor and ammo-type weighting),
+-- scaled by MissileCostConfig.PerformanceMul, with MissileCostConfig.MinBase
+-- as a floor so low-threat missiles still register a cost.
 function ACE_CalcMissileRoundPoints(bdata)
 	if not istable(bdata) then return 0 end
 
-	local ammoId = bdata.Id
-	local rackPointCost = ACF_GetRackValue and ACF_GetRackValue(bdata, "pointcost")
-	local gunPointCost = ACF_GetGunValue and ACF_GetGunValue(ammoId, "pointcost")
-	local configuredPts = tonumber(rackPointCost or 0) or tonumber(gunPointCost or 0) or 0
-	configuredPts = math.max(configuredPts, 0)
+	local cfg = ACE.MissileCostConfig or {}
+	local perfMul = tonumber(cfg.PerformanceMul) or 1
+	local minBase = tonumber(cfg.MinBase) or 1
 
-	local factor = ACE_GetMissileGuidanceFactor(bdata.Data7)
-	local basePts = configuredPts
-
-	if ACE_IsATGMCostAmmo(bdata) then
-		local cfg = ACE.ATGMCostConfig or {}
-		local perfPts = ACE_GetAmmoRoundPoints(bdata)
-		local perfMul = tonumber(cfg.PerformanceMul) or 1
-		local minBase = tonumber(cfg.MinBase) or 25
-
-		if perfPts > 0 then
-			basePts = perfPts * perfMul
-		end
-
-		basePts = math.max(basePts, minBase)
-
-		-- Guidance is already applied in missile threat/penetration scaling for ATGM perf points.
-		return math.max(basePts, 0)
-	end
-
-	-- Non-ATGM missiles use their configured rack/gun point value.
-	return math.max(basePts, 0) * factor
+	return math.max(ACE_GetAmmoRoundPoints(bdata) * perfMul, minBase)
 end
 
 -- Determine whether an ammo type should use HE utility scaling.

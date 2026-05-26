@@ -69,7 +69,6 @@ ACF_defineGun("SPG-9 ASR", { --id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.2),	-- 215.9 HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 50
 
 	},
 
@@ -138,7 +137,6 @@ ACF_defineGun("RS82 ASR", { --id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.3),	-- 215.9 HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 50
 	},
 
 	ent        = "acf_missile_to_rack", -- A workaround ent which spawns an appropriate rack for the missile.
@@ -207,7 +205,6 @@ ACF_defineGun("HVAR ASR", { --id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.4),	-- 215.9 HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 65
 	},
 
 	ent        = "acf_missile_to_rack", -- A workaround ent which spawns an appropriate rack for the missile.
@@ -275,7 +272,6 @@ ACF_defineGun("S-24 ASR", { --id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.4),	-- 215.9 HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 80
 	},
 
 	ent        = "acf_missile_to_rack", -- A workaround ent which spawns an appropriate rack for the missile.

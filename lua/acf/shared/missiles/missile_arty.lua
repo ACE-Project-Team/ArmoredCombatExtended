@@ -69,7 +69,6 @@ ACF_defineGun("Type 63 RA", {							-- id
 		dragcoef			= 0.00025,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 333,
 
 
 
@@ -147,7 +146,6 @@ ACF_defineGun("SAKR-10 RA", {							-- id
 		dragcoef			= 0.00025,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 333,
 
 	},
 
@@ -225,7 +223,6 @@ ACF_defineGun("RW61 RA", {								-- id
 		predictiondelay		= 1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.4),						-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 667,
 	},
 
 	ent        = "acf_missile_to_rack",					-- A workaround ent which spawns an appropriate rack for the missile.
@@ -295,7 +292,6 @@ ACF_defineGun("M26 RA", {							-- id
 
 		dragcoef			= 0.00025,						-- percent speed loss per second
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 667,
 
 	},
 
@@ -366,7 +362,6 @@ ACF_defineGun("SS-40 RA", {								-- id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul            = math.sqrt(0.2),					-- 139 HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 500,
 	},
 
 	ent        = "acf_missile_to_rack",					-- A workaround ent which spawns an appropriate rack for the missile.
@@ -438,7 +433,6 @@ ACF_defineGun("M31 RA", {							-- id
 		dragcoef			= 0.002,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 333,
 
 	},
 
@@ -508,7 +502,6 @@ ACF_defineGun("ATACMS RA", {						-- id
 		datalink			= true,
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 833
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -584,7 +577,6 @@ ACF_defineGun("9M79-1", {						-- id
 		datalink			= false,
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 4000
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.

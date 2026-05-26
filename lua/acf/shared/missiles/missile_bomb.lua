@@ -54,7 +54,6 @@ ACF_defineGun("50kgBOMB", {						-- id
 		penmul      = math.sqrt(0.05),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 50
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -111,7 +110,6 @@ ACF_defineGun("100kgBOMB", {						-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 100
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -167,7 +165,6 @@ ACF_defineGun("250kgBOMB", {						-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 250
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -223,7 +220,6 @@ ACF_defineGun("500kgBOMB", {						-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 750
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -276,7 +272,6 @@ ACF_defineGun("1000kgBOMB", {					-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 3000 --divided by 3 for unguided
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -328,7 +323,6 @@ ACF_defineGun("Mk82Bomb", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 333,
 
 
 
@@ -392,7 +386,6 @@ ACF_defineGun("Mk83Bomb", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 833,
 
 		penmul      = math.sqrt(0.15),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
@@ -451,7 +444,6 @@ ACF_defineGun("Mk84Bomb", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 1667,
 
 		penmul      = math.sqrt(0.2),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
@@ -512,7 +504,6 @@ ACF_defineGun("100kgGBOMB", {					-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 100
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.
@@ -570,7 +561,6 @@ ACF_defineGun("250kgGBOMB", {					-- id
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 250
 	},
 
 	ent        = "acf_missile_to_rack",			-- A workaround ent which spawns an appropriate rack for the missile.

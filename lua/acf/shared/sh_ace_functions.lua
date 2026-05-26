@@ -1166,8 +1166,14 @@ end
 -- factor directly keeps all three paths consistent: every missile with a
 -- MissileGuidanceFactors entry has that guidance factor into its cost.
 -- Non-missile ammo is unaffected.
+--
+-- GLATGM family rounds are explicitly excluded: they are launched from
+-- grenade launchers (gun-class ammo), not racks, and should be priced like
+-- any other gun ammo with their AmmoTypeFactor doing the work -- no
+-- missile-class guidance premium.
 local function ACE_GetAmmoGuidancePenFactor(bdata)
 	if not bdata or not ACE_IsAmmoMissileType(bdata) then return 1 end
+	if ACE_IsGLATGMAmmoType(bdata.Type) then return 1 end
 	return ACE_GetMissileGuidanceFactor(bdata.Data7)
 end
 
@@ -1285,8 +1291,11 @@ function ACE_GetAmmoRoundPoints(bdata)
 
 	-- Missiles get their own multiplier on top so MissileCostConfig is the one
 	-- knob that tunes missile pricing for both the ammo crate path
-	-- (ACE_CalcAmmoCratePoints) and the per-missile path (ACE_CalcMissileRoundPoints).
-	if ACE_IsAmmoMissileType(bdata) then
+	-- (ACE_CalcAmmoCratePoints) and the per-missile path
+	-- (ACE_CalcMissileRoundPoints). GLATGM family rounds opt out: they are
+	-- gun-class grenade-launcher ammo, not rack-fired missiles, and pay through
+	-- their AmmoTypeFactor (0.75) like any other gun round.
+	if ACE_IsAmmoMissileType(bdata) and not ACE_IsGLATGMAmmoType(bdata.Type) then
 		local mcfg = ACE.MissileCostConfig or {}
 		roundPts = roundPts * (tonumber(mcfg.PerformanceMul) or 1)
 	end

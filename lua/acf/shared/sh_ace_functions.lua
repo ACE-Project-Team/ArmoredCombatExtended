@@ -1161,12 +1161,22 @@ function ACE_IsATGMCostAmmo(bdata)
 	return ACE_GetAmmoGunClass(bdata) == "ATGM"
 end
 
--- Resolve guidance scaling used by missile point/threat math.
+-- Resolve guidance scaling used by missile point/threat math. The factor from
+-- ACE.MissileGuidanceFactors maps directly onto the missile's pen multiplier:
+-- entries below 1 represent unreliable guidance that often misses and scale
+-- threat-per-round down, entries above 1 represent premium seekers that
+-- consistently land hits and scale threat up.
+--
+-- A previous version wrapped the return in math.max(factor, 1), which left
+-- the above-1 entries alone but neutered every below-1 entry to 1. That made
+-- the missile ammo crate path and the ATGM perf-points path disagree with
+-- the non-ATGM rack path, which multiplies by the raw factor. Applying the
+-- factor directly keeps all three paths consistent: every missile with a
+-- MissileGuidanceFactors entry has that guidance factor into its cost.
+-- Non-missile ammo is unaffected.
 local function ACE_GetAmmoGuidancePenFactor(bdata)
 	if not bdata or not ACE_IsAmmoMissileType(bdata) then return 1 end
-	-- Guidance should act as an upward threat modifier in pen-space, not make
-	-- missiles artificially cheap when using low-end guidance packages.
-	return math.max(ACE_GetMissileGuidanceFactor(bdata.Data7), 1)
+	return ACE_GetMissileGuidanceFactor(bdata.Data7)
 end
 
 -- Calculate per-missile base points, including guidance.

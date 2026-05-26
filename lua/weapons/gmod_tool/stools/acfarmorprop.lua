@@ -302,6 +302,39 @@ local function ACE_GetDPSCostByTypeForGun(con, gun)
 	return breakdown
 end
 
+-- Cost of the missiles currently sitting in this rack's tubes, broken down by
+-- ammo type. The cost itself is already paid through the feeding crate's
+-- RawAmmoCost (rack reserve adds rounds to readyCount in ACE_BuildRackReserveAlloc),
+-- so this is purely informational for the rack popup -- it tells the user
+-- "your rack carries X pts of Y missiles in its tubes" without re-summing into
+-- the rack's own componentPoints, which would double-count against the crate.
+local function ACE_GetRackReserveCostByType(con, rack)
+	local breakdown = {}
+	if not con or not IsValid(rack) then return breakdown end
+	if not ACE_GetRackPreloadAlloc or not ACE_GetAmmoCratePointsForContraption then return breakdown end
+
+	local alloc = ACE_GetRackPreloadAlloc(rack, con, rack)
+	if not alloc then return breakdown end
+
+	for crate, share in pairs(alloc) do
+		if IsValid(crate) and share > 0 then
+			local _, detail = ACE_GetAmmoCratePointsForContraption(crate, con, crate)
+			if detail then
+				local readyCount = detail.ReadyCount or 0
+				local cost = detail.RawAmmoCost or 0
+				if readyCount > 0 and cost > 0 then
+					local perMissile = cost / readyCount
+					local ammoType = detail.Type
+					ammoType = (ammoType and ammoType ~= "") and ammoType or "Ammo"
+					breakdown[ammoType] = (breakdown[ammoType] or 0) + perMissile * share
+				end
+			end
+		end
+	end
+
+	return breakdown
+end
+
 local function ACE_GetAmmoCostByTypeForRack(con, rack)
 	local breakdown = {}
 	if not con or not con.ents or not IsValid(rack) then return breakdown end
@@ -441,6 +474,14 @@ local function ACE_GetPopupPoints(ent, ply)
 		if text ~= "" then
 			lines[#lines + 1] = CostLabelByCategory.Firepower .. ": " .. text
 		end
+
+		local reserveByType = ACE_GetRackReserveCostByType(con, ent)
+		local reserveText = ACE_FormatTypeBreakdown(reserveByType)
+		if reserveText ~= "" then
+			-- Informational: the cost shown here is already paid through the
+			-- linked crate's RawAmmoCost, so it is NOT added to componentPoints.
+			lines[#lines + 1] = "Loaded Missiles (on crates): " .. reserveText
+		end
 	elseif cls == "acf_ammo" and ACE_GetAmmoCratePointsForContraption then
 		local _, detail = ACE_GetAmmoCratePointsForContraption(ent, con, ent)
 		componentPoints = (detail and detail.RawAmmoCost) or 0
@@ -462,11 +503,14 @@ local function ACE_GetPopupPoints(ent, ply)
 
 	local total = armorPoints + componentPoints
 	if total <= 0 then
-		return 0, "Entity Cost", ""
+		return 0, "Entity Cost", "", 0
 	end
 
 	ACE_DebugArmorPopup(ply, ent, con, nil)
-	return total, "Entity Cost", table.concat(lines, "\n")
+	-- 4th return is the non-armor component cost; the HUD adds it to the
+	-- armor preview so the "after change" estimate reflects what the entity
+	-- will actually cost (e.g. ammo + new armor), not just the new armor.
+	return total, "Entity Cost", table.concat(lines, "\n"), componentPoints
 end
 
 -- Update hover popup data for the active tool.
@@ -487,7 +531,7 @@ function TOOL:Think()
 
 		local Mat = ent.ACF.Material or "RHA"
 		local MatData = ACE_GetMaterialData( Mat )
-		local AcePts, pointsLabel, pointBreakdown = ACE_GetPopupPoints(ent, ply)
+		local AcePts, pointsLabel, pointBreakdown, componentCost = ACE_GetPopupPoints(ent, ply)
 
 		if not MatData then return end
 
@@ -500,6 +544,7 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "Material", MatData.sname or "RHA")
 		self.Weapon:SetNWString( "PointCostLabel", pointsLabel )
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
+		self.Weapon:SetNWFloat( "PointCostNonArmor", componentCost or 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
 
 	else
@@ -513,6 +558,7 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "Material", "RHA" )
 		self.Weapon:SetNWString( "PointCostLabel", "Entity Cost" )
 		self.Weapon:SetNWFloat( "PointCost", 0 )
+		self.Weapon:SetNWFloat( "PointCostNonArmor", 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", "" )
 	end
 
@@ -857,6 +903,7 @@ if CLIENT then
 		local material	= self.Weapon:GetNWString( "Material" )
 		local pointLabel		= self.Weapon:GetNWString( "PointCostLabel", "Entity Cost" )
 		local acepointcost	= self.Weapon:GetNWFloat( "PointCost" )
+		local nonArmorCost	= self.Weapon:GetNWFloat( "PointCostNonArmor", 0 )
 		local pointBreakdown = self.Weapon:GetNWString( "PointCostBreakdown", "" )
 
 		local area		= GetConVar( "acfarmorprop_area" ):GetFloat()
@@ -868,7 +915,11 @@ if CLIENT then
 
 		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
 		mass = math.min( mass, 50000 )
-		local afterCost = ACE_GetArmorPointPreview(armor, health, MatData)
+		-- Future entity cost is the new armor preview plus whatever the entity
+		-- already pays for non-armor reasons (ammo cost on a crate, firepower
+		-- contribution on a gun/rack, crew flat, etc.). Without this, ammo
+		-- crates and racks would preview their new cost as armor-only.
+		local afterCost = ACE_GetArmorPointPreview(armor, health, MatData) + nonArmorCost
 
 		local pointLine = ""
 		if acepointcost > 0 then

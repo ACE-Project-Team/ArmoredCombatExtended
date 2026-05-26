@@ -1791,6 +1791,20 @@ function ACE_BuildRackReserveAlloc(ents, racks)
 	return next(alloc) and alloc or nil
 end
 
+-- Public per-rack version of ACE_AllocateRackPreload, for callers (e.g. the
+-- armor tool popup) that have a single rack and want to see which crates
+-- fill its tubes. Returns {crate -> reserve_rounds} or nil.
+function ACE_GetRackPreloadAlloc(rack, con, fallbackEnt)
+	if not ACE_IsEnt(rack) or rack:GetClass() ~= "acf_rack" then return nil end
+	if not ACF_CanLinkRack then return nil end
+
+	local ents = ACE_GetContraptionEntities(con, fallbackEnt or rack)
+	local crates = ACE_CollectLoadedAmmoCrates(ents)
+	if #crates == 0 then return nil end
+
+	return ACE_AllocateRackPreload(rack, crates)
+end
+
 
 -- ============================================================
 -- ACE parsing/get helpers

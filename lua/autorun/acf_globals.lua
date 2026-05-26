@@ -216,22 +216,22 @@ ACE.ATGMCostConfig = {
 
 -- Guidance multipliers applied on top of missile base cost.
 ACE.MissileGuidanceFactors = {
-    Dumb = 0.3,
-    Straight_Running = 0.45,
-    GPS = 0.6,
+    Dumb = 0.5,
+    Straight_Running = 0.6,
     Antimissile = 1,
-    AntiRadiation = 0.7,
-    Beam_Riding = 0.7,
-    GPS_TerrainAvoidant = 0.8,
-    SACLOS = 0.75,
-    Semiactive = 0.85,
-    Wire = 1.0,
-    Acoustic_Straight = 1.0,
-    Acoustic_Helical = 1.0,
-    Laser = 1.2,
-    Infrared = 2.7,
-    Top_Attack_IR = 3,
-    Radar = 1.2
+    Radar = 1.4,
+    Semiactive = 1.4,
+    AntiRadiation = 1,
+    Wire = 1,
+    Laser = 1,
+    SACLOS = 1,
+    Beam_Riding = 1,
+    Infrared = 1.5,
+    Top_Attack_IR = 1.8,
+    GPS = 0.8,
+    GPS_TerrainAvoidant = 0.9,
+    Acoustic_Straight = 1,
+    Acoustic_Helical = 1
 }
 
 ---------------------------------- Misc & other ----------------------------------

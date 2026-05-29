@@ -464,7 +464,37 @@ function SWEP:Think()
 
 	self:HandleRecoil()
 	self:OnThink()
+
+--DEEPSEEKDEEPSEEKDEEPSEEKDEEPSEEKDEEPSEEK
+
+	-- Force speed on both sides
+	local zoom = self:GetZoomState()
+	local owner = self:GetOwner()
+	if IsValid(owner) and owner:IsPlayer() then
+		local mul = self.CarrySpeedMul or 1
+		local baseWalk = self.NormalPlayerWalkSpeed or 250
+		local baseRun = self.NormalPlayerRunSpeed or 500
+		local targetWalk, targetRun
+		if zoom then
+			targetWalk = baseWalk * 0.5 * mul
+			targetRun = baseRun * 0.5 * mul
+		else
+			targetWalk = baseWalk * mul
+			targetRun = baseRun * mul
+		end
+		-- Let's limit the maximum base speed (as in the original)
+		targetWalk = math.min(targetWalk, baseWalk)
+		targetRun = math.min(targetRun, baseRun)
+
+		if owner:GetWalkSpeed() ~= targetWalk then
+			owner:SetWalkSpeed(targetWalk)
+		end
+		if owner:GetRunSpeed() ~= targetRun then
+			owner:SetRunSpeed(targetRun)
+		end
+	end
 end
+
 
 function SWEP:OnReload()
 end
@@ -519,6 +549,10 @@ function SWEP:Deploy()
 	local owner = self:GetOwner()
 	if not owner:IsPlayer() then
 		owner:SetMaxLookDistance( 10000 )
+
+	if SERVER then
+    self:SetOwnerZoomSpeed(self:GetZoomState())
+    end
 	end
 end
 
@@ -531,11 +565,11 @@ function SWEP:SetOwnerZoomSpeed(setSpeed)
 
 	if IsValid(owner) and owner:IsPlayer() then
 		if setSpeed then
-			owner:SetWalkSpeed(math.min(self.NormalPlayerWalkSpeed * 0.5 * self.CarrySpeedMul, self.NormalPlayerWalkSpeed))
-			owner:SetRunSpeed(math.min(self.NormalPlayerRunSpeed * 0.5 * self.CarrySpeedMul, self.NormalPlayerRunSpeed))
+			owner:SetWalkSpeed((self.NormalPlayerWalkSpeed * 0.5 * self.CarrySpeedMul))
+			owner:SetRunSpeed((self.NormalPlayerRunSpeed * 0.5 * self.CarrySpeedMul))
 		elseif self.NormalPlayerWalkSpeed and self.NormalPlayerRunSpeed then
-			owner:SetWalkSpeed(math.min(self.NormalPlayerWalkSpeed * self.CarrySpeedMul, self.NormalPlayerWalkSpeed))
-			owner:SetRunSpeed(math.min(self.NormalPlayerRunSpeed * self.CarrySpeedMul, self.NormalPlayerRunSpeed))
+			owner:SetWalkSpeed(( self.NormalPlayerWalkSpeed * self.CarrySpeedMul))
+			owner:SetRunSpeed(( self.NormalPlayerRunSpeed * self.CarrySpeedMul))
 		end
 	end
 end

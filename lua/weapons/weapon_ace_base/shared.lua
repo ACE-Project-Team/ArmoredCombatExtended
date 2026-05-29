@@ -550,9 +550,9 @@ function SWEP:Deploy()
 	if not owner:IsPlayer() then
 		owner:SetMaxLookDistance( 10000 )
 
-	if SERVER then
-    self:SetOwnerZoomSpeed(self:GetZoomState())
-    end
+if SERVER then
+self:SetOwnerZoomSpeed(self:GetZoomState())
+end
 	end
 end
 
@@ -565,11 +565,11 @@ function SWEP:SetOwnerZoomSpeed(setSpeed)
 
 	if IsValid(owner) and owner:IsPlayer() then
 		if setSpeed then
-			owner:SetWalkSpeed((self.NormalPlayerWalkSpeed * 0.5 * self.CarrySpeedMul))
-			owner:SetRunSpeed((self.NormalPlayerRunSpeed * 0.5 * self.CarrySpeedMul))
+			owner:SetWalkSpeed( self.NormalPlayerWalkSpeed * 0.5 * self.CarrySpeedMul )
+			owner:SetRunSpeed( self.NormalPlayerRunSpeed * 0.5 * self.CarrySpeedMul )
 		elseif self.NormalPlayerWalkSpeed and self.NormalPlayerRunSpeed then
-			owner:SetWalkSpeed(( self.NormalPlayerWalkSpeed * self.CarrySpeedMul))
-			owner:SetRunSpeed(( self.NormalPlayerRunSpeed * self.CarrySpeedMul))
+			owner:SetWalkSpeed( self.NormalPlayerWalkSpeed * self.CarrySpeedMul )
+			owner:SetRunSpeed( self.NormalPlayerRunSpeed * self.CarrySpeedMul )
 		end
 	end
 end

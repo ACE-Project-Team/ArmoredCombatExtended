@@ -77,7 +77,7 @@ function SWEP:InitBulletData()
 	self.BulletData.Data8 = 0
 	self.BulletData.Data9 = 0
 	self.BulletData.Data10 = 1 -- Tracer
-	self.BulletData.Colour = Color(255, 0, 0)
+	self.BulletData.Colour = Color(0, 255, 0)
 	--
 	self.BulletData.Data13 = 0 --THEAT ConeAng2
 	self.BulletData.Data14 = 0 --THEAT HE Allocation

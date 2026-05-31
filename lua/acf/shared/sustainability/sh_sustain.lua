@@ -279,14 +279,20 @@ if SERVER then
 						nodes2[#nodes2 + 1] = N
 						consider(N, convFactor * convFactor * reachV, nodes2)
 					elseif rec.depth < maxHops and (isCond or (N.IsRelay and N:IsRelay())) then
-						-- Pass-through: a conductor carries power with NO conversion;
-						-- a relay re-boosts (one DC<->AC conversion -> * convFactor).
-						local nextV = isCond and reachV or (reachV * convFactor)
+						-- Pass-through. A conductor carries power with NO conversion and
+						-- costs one hop. A relay (transformer / relay-mode station)
+						-- re-boosts (one DC<->AC conversion -> * convFactor) AND RESETS
+						-- the hop budget, so it acts as a repeater that extends the run
+						-- the way a real substation does - maxHops then only bounds one
+						-- relay-to-relay segment, not the whole line. (The real distance
+						-- limit is the accumulating line loss / voltage sag, not hops.)
+						local nextV     = isCond and reachV or (reachV * convFactor)
+						local nextDepth = isCond and (rec.depth + 1) or 0
 						local f = frames[N]
 						if not f or (not f.settled and nextV > f.v) then
 							local nodes2 = { unpack(rec.nodes) }
 							nodes2[#nodes2 + 1] = N
-							frames[N] = { v = nextV, depth = rec.depth + 1, nodes = nodes2, settled = false }
+							frames[N] = { v = nextV, depth = nextDepth, nodes = nodes2, settled = false }
 						end
 					end
 				end

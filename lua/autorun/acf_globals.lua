@@ -149,7 +149,7 @@ ACF.GridStation3PhaseHeatMul  = 0.6             -- waste-heat multiplier when 3-
 ACF.GridStationLinkRange      = 1500            -- max distance for one station<->station link (chain relays to go further)
 ACF.GridStationMaxLinks       = 6               -- max direct links per station (perf + realism)
 ACF.LinkStretchMul            = 1.5             -- a grid link snaps once stretched past this x its link range (like ACF drivetrain links)
-ACF.GridMaxHops               = 10              -- max relay depth a pull will search
+ACF.GridMaxHops               = 20              -- max nodes in ONE relay-to-relay segment the search walks (a relay/transformer resets it). Just a safety net - the real range limit is line loss/voltage sag.
 ACF.GridCollectorRange        = 400             -- pickup range for vehicle collectors
 ACF.GridCollectorMaxKW        = 1000            -- max pickup rate for collectors (fast tram catenary; still capped by wire ampacity*voltage)
 

@@ -494,7 +494,7 @@ function ENT:Think()
 			if tr.Hit then --and (not tr.HitSky) and util.IsInWorld( tr.HitPos ) -- Removed passing outside the world
 
 				if tr.Entity:IsValid() then
-					local HitCont = tr.Entity:GetContraption() or {}
+					local HitCont = tr.Entity:CFW_GetContraption() or {}
 					if HitCont == self.Contraption then
 						Exit = true
 					end

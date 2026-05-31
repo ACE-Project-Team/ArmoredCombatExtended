@@ -676,7 +676,7 @@ function GenerateMissile(MissileData,Crate,BData) --Shorthand function for gener
 	missile.Buoyancy = MissileData.Buoyancy or 0.5
 
 
-	missile.Contraption = missile.Launcher:GetContraption() or {}
+	missile.Contraption = missile.Launcher:CFW_GetContraption() or {}
 
 	local guidance  = MissileData.GuidanceName
 	local fuse	= MissileData.FuseName

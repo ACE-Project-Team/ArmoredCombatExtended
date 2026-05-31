@@ -310,7 +310,7 @@ function ENT:FindSeatForDriver()
 	local closestDist = math.huge
 	local SeatEnt = nil
 
-	local EngContraption = self:GetContraption()
+	local EngContraption = self:CFW_GetContraption()
 
 	for _, ent in pairs( ACE.critEnts ) do
 
@@ -325,7 +325,7 @@ function ENT:FindSeatForDriver()
 
 		if SqDist > MaxDist then continue end --Outside link range. Continue.
 
-		if EngContraption ~= ent:GetContraption() then continue end --Seatent isn't on the same contraption as the engine. Ignore it.
+		if EngContraption ~= ent:CFW_GetContraption() then continue end --Seatent isn't on the same contraption as the engine. Ignore it.
 
 		if SqDist < closestDist then
 			SeatEnt = ent

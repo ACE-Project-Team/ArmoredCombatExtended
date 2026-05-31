@@ -11,6 +11,15 @@ local GunTable = ACF.Weapons.Guns
 local CrewLinkDistBase = 200
 local AmmoLinkDistBase = 512
 
+local function MarkGunPointStateDirty(Gun)
+	if not ACE_MarkContraptionPointsDirty then return end
+
+	local Contraption = Gun.GetContraption and Gun:GetContraption() or nil
+	if not Contraption then return end
+
+	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -172,7 +181,7 @@ do
 		Gun.Class           = Lookup.gunclass
 		Gun.Heat            = ACE.AmbientTemp
 		Gun.LinkRangeMul    = math.max(Gun.Caliber / 10,1) ^ 1.2
-		Gun.ACEPoints		= (Lookup.acepoints or 0.404) * ACE.GunPointCostMultiplier
+		Gun.ACEPoints		= 0
 		Gun.RequiresGunner	= false
 		local GunnerExcluded	= Lookup.gunnerexception or false
 
@@ -558,10 +567,15 @@ function ENT:TriggerInput(iname, value)
 	elseif iname == "ROFLimit" then
 		-- Set the rate of fire limit if value is greater than 0
 		local lowestROF = 0.1
+		local oldLimit = self.ROFLimit
 		if value > 0 then
 			self.ROFLimit = math.max(value, lowestROF) -- Limit the rate of fire
 		else
 			self.ROFLimit = 0
+		end
+
+		if oldLimit ~= self.ROFLimit then
+			MarkGunPointStateDirty(self)
 		end
 	end
 end
@@ -702,10 +716,11 @@ function ENT:Think()
 		Wire_TriggerOutput(self, "AmmoCount", Ammo)
 
 
+		local isEmpty = self.BulletData.Type == "Empty"
 		if self.MagSize then
-			Wire_TriggerOutput(self, "Shots Left", self.MagSize - self.CurrentShot)
+			Wire_TriggerOutput(self, "Shots Left", isEmpty and 0 or (self.MagSize - self.CurrentShot))
 		else
-			Wire_TriggerOutput(self, "Shots Left", 1)
+			Wire_TriggerOutput(self, "Shots Left", isEmpty and 0 or 1)
 		end
 
 		self:SetNWString("GunType", self.Id)
@@ -720,8 +735,13 @@ function ENT:Think()
 	end
 
 	if self.NextFire <= Time then
-		self.Ready = true
-		Wire_TriggerOutput(self, "Ready", 1)
+		if self.BulletData.Type and self.BulletData.Type ~= "Empty" then
+			self.Ready = true
+			Wire_TriggerOutput(self, "Ready", 1)
+		else
+			self.Ready = false
+			Wire_TriggerOutput(self, "Ready", 0)
+		end
 
 		if self.MagSize and self.MagSize == 1 then
 			self.CurrentShot = 0

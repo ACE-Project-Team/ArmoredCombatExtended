@@ -12,7 +12,7 @@ SWEP.SlotPos = 1 --Priority in which the weapon appears, 1 tries to put it at th
 SWEP.FireRate = 18 --Rounds per second
 
 SWEP.Primary.ClipSize = 300
-SWEP.Primary.DefaultClip = 1800
+SWEP.Primary.DefaultClip = 300
 SWEP.Primary.Automatic = true
 SWEP.Primary.Ammo = "AR2"
 SWEP.Primary.Sound = "ace_weapons/sweps/multi_sound/m249saw_multi.mp3"
@@ -35,7 +35,7 @@ SWEP.HeatMax = 60 --Maximum heat - determines max rate at which recoil is applie
 				--Also determines point at which random spread is at its highest intensity
 				--HeatMax divided by HeatPerShot gives you how many shots until you reach MaxSpread
 
-SWEP.AngularRecoil = 40	--Amount of angular recoil
+SWEP.AngularRecoil = 20	--Amount of angular recoil
 
 --How much the recoil is biased to one side proportional to vertical recoil
 --Positive numbers bias to the right, negative to the left

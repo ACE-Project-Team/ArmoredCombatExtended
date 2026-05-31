@@ -105,8 +105,8 @@ do
 			if tolocal.x <= 0 then continue end
 
 			if CFW then
-				local conLauncher = missile.Launcher and missile.Launcher:GetContraption() or nil
-				local conTarget = HitEnt:GetContraption() or nil
+				local conLauncher = missile.Launcher and missile.Launcher:CFW_GetContraption() or nil
+				local conTarget = HitEnt:CFW_GetContraption() or nil
 
 				if conLauncher and conTarget and conLauncher == conTarget then
 					continue

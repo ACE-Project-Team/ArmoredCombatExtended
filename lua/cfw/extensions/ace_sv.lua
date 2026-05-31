@@ -33,7 +33,7 @@ end
 function CLASS:GetACEBaseplate()
     local curBase = self.aceBaseplate
 
-    if IsValid(curBase) and IsValid(curBase:GetPhysicsObject()) and curBase:GetContraption() == self then
+    if IsValid(curBase) and IsValid(curBase:GetPhysicsObject()) and curBase:CFW_GetContraption() == self then
         return curBase
     end
 

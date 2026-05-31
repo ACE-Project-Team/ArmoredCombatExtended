@@ -64,7 +64,7 @@ function SWEP:DoDrawCrosshair(x, y)
 
 
 	if self.HasScope then
-		local OuterReticleSize = 120 * degrees
+		local OuterReticleSize = 120 * (degrees / 3)
 		if Zoom then
 			surface.SetDrawColor(Color(0, 0, 0, 255))
 				if self.HasScope then
@@ -84,7 +84,7 @@ function SWEP:DoDrawCrosshair(x, y)
 	end
 
 	local ReticuleBarSize = self.ReticuleSize
-	local OffsetDist = 40 * degrees
+	local OffsetDist = 40 * (degrees / 3 )
 
 	surface.SetDrawColor(0, 0, 0, 255)
 	surface.DrawRect(x - 2, y - ReticuleBarSize - OffsetDist - 2, 4, ReticuleBarSize + 4)

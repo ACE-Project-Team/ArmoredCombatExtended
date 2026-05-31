@@ -367,13 +367,29 @@ do
 		local this = getent(self)
 		local tar = getent(target)
 
+		if not IsValid(this) then SF.Throw("Invalid source entity", 2) end
+		if not IsValid(tar) then SF.Throw("Invalid target entity", 2) end
+		if this == tar then SF.Throw("Cannot link entity to itself", 2) end
+
 		checkpermission(instance, this, "entities.acf")
 		checkpermission(instance, tar, "entities.acf")
-		if not (isGun(this) or isEngine(this) or isGearbox(this)) then
-			SF.Throw("Target must be a gun, engine, or gearbox", 2)
+
+		local success, msg
+
+		if this.Link and tar.Link then
+			if tar:GetClass() == "acf_engine" then
+				success, msg = tar:Link(this)
+			else
+				success, msg = this:Link(tar)
+			end
+		elseif this.Link and not tar.Link then
+			success, msg = this:Link(tar)
+		elseif not this.Link and tar.Link then
+			success, msg = tar:Link(this)
+		else
+			SF.Throw("These entities cannot be linked to each other", 2)
 		end
 
-		local success, msg = this:Link(tar)
 		if notify then
 			ACF_SendNotify(instance.player, success, msg)
 		end
@@ -391,13 +407,29 @@ do
 		local this = getent(self)
 		local tar = getent(target)
 
+		if not IsValid(this) then SF.Throw("Invalid source entity", 2) end
+		if not IsValid(tar) then SF.Throw("Invalid target entity", 2) end
+		if this == tar then SF.Throw("Cannot unlink entity from itself", 2) end
+
 		checkpermission(instance, this, "entities.acf")
 		checkpermission(instance, tar, "entities.acf")
-		if not (isGun(this) or isEngine(this) or isGearbox(this)) then
-			SF.Throw("Target must be a gun, engine, or gearbox", 2)
+
+		local success, msg
+
+		if this.Unlink and tar.Unlink then
+			if tar:GetClass() == "acf_engine" then
+				success, msg = tar:Unlink(this)
+			else
+				success, msg = this:Unlink(tar)
+			end
+		elseif this.Unlink and not tar.Unlink then
+			success, msg = this:Unlink(tar)
+		elseif not this.Unlink and tar.Unlink then
+			success, msg = tar:Unlink(this)
+		else
+			SF.Throw("These entities cannot be unlinked from each other", 2)
 		end
 
-		local success, msg = this:Unlink(tar)
 		if notify then
 			ACF_SendNotify(instance.player, success, msg)
 		end

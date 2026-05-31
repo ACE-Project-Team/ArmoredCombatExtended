@@ -67,7 +67,6 @@ ACF_defineGun("BGM-71E ASM", {								-- id
 		calmul			= 0.3,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
 
-		pointcost			= 200
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -139,7 +138,6 @@ ACF_defineGun("9M113 ATGM", {									-- id
 		penmul			= math.sqrt(0.7),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.4,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 3,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 150
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -209,7 +207,6 @@ ACF_defineGun("9M133 ASM", {									-- id
 		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 4,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
 
-		pointcost			= 210
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -283,7 +280,6 @@ ACF_defineGun("AT-3 ASM", { --id
 		calmul			= 0.3,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 6,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
 
-		pointcost			= 50
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -357,7 +353,6 @@ ACF_defineGun("AT-2 ASM", { --id
 		penmul			= math.sqrt(1.55),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.3,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 5.25,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 100
 	},
 
 	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -429,7 +424,6 @@ ACF_defineGun("FGM-148 ASM", {
 		penmul			= math.sqrt(1.1),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 4,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 267
 	},
 
 	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -502,7 +496,6 @@ ACF_defineGun("Spike-LR ASM", {
 		penmul			= math.sqrt(2.5),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 7,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 400
 	},
 
 	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -579,7 +572,6 @@ ACF_defineGun("Kh-39 LMUR", {
 		penmul			= math.sqrt(1.35),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.2,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 4,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 700
 	},
 
 	ent				= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -655,7 +647,6 @@ ACF_defineGun("Ataka ASM", { --id
 		penmul			= math.sqrt(1.134),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.2,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 1.18,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 300
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -729,7 +720,6 @@ ACF_defineGun("AGM-114 ASM", {						--id
 		penmul				= math.sqrt(0.59),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 0.5,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 1.75,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 180
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -804,7 +794,6 @@ ACF_defineGun("Vikhr ASM", { --id
 		penmul			= math.sqrt(1.148),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.2,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 1,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
-		pointcost			= 150
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -874,7 +863,6 @@ ACF_defineGun("MGM-166", { --id
 		penmul			= math.sqrt(0.1),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
 		calmul			= 0.000675,	--I guess it was a little too good at transfering energy. Increasing the velocitymul(energy limit) sent tanks to space
 		velmul			= 0.02,
-		pointcost			= 300
 	},
 
 	ent			= "acf_missile_to_rack",						-- A workaround ent which spawns an appropriate rack for the missile.
@@ -944,7 +932,6 @@ ACF_defineGun("MIM-146", {										-- id
 
 
 		penmul			= math.sqrt(0.57),					-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)	--was 0.797
-		pointcost			= 353
 	},
 
 	ent        = "acf_missile_to_rack",					-- A workaround ent which spawns an appropriate rack for the missile.

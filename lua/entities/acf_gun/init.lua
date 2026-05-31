@@ -12,13 +12,12 @@ local CrewLinkDistBase = 200
 local AmmoLinkDistBase = 512
 
 local function MarkGunPointStateDirty(Gun)
-	if not ACE_MarkSubsystemDirty then return end
+	if not ACE_MarkContraptionPointsDirty then return end
 
 	local Contraption = Gun.GetContraption and Gun:GetContraption() or nil
 	if not Contraption then return end
 
-	ACE_MarkSubsystemDirty(Contraption, "Firepower")
-	ACE_MarkSubsystemDirty(Contraption, "Ammo")
+	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
 end
 
 function ENT:Initialize()
@@ -182,7 +181,7 @@ do
 		Gun.Class           = Lookup.gunclass
 		Gun.Heat            = ACE.AmbientTemp
 		Gun.LinkRangeMul    = math.max(Gun.Caliber / 10,1) ^ 1.2
-		Gun.ACEPoints		= (Lookup.acepoints or 0.404) * ACE.GunPointCostMultiplier
+		Gun.ACEPoints		= 0
 		Gun.RequiresGunner	= false
 		local GunnerExcluded	= Lookup.gunnerexception or false
 

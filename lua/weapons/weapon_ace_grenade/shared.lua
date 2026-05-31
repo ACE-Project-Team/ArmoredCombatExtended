@@ -4,7 +4,7 @@ SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Grenades/Mines"
 
 if CLIENT then
-	SWEP.PrintName		= "Frag Grenade"
+	SWEP.PrintName		= "HE Grenade"
 	SWEP.Slot			= 4
 	SWEP.SlotPos		= 3
 end
@@ -31,7 +31,7 @@ SWEP.Primary.Sound			= "weapons/slam/throw.wav"
 SWEP.Primary.NumShots		= 1
 SWEP.Primary.Delay			= 2
 SWEP.Primary.ClipSize		= 1
-SWEP.Primary.DefaultClip	= 20
+SWEP.Primary.DefaultClip	= 5
 SWEP.Primary.Automatic		= false
 SWEP.Primary.Ammo		= "Grenade"
 
@@ -78,7 +78,7 @@ function SWEP:ThrowNade(power, heightoffset)
 			power = 0
 		end
 
-		local aim = owner:GetAimVector() + Vector(0,0,0.1)
+		local aim = owner:GetAimVector() * 9 + Vector(0,0,0.1)
 
 		local ent = ents.Create("ace_grenade")
 		ent:SetPos(owner:GetShootPos() + Vector(0, 0, heightoffset))
@@ -104,7 +104,7 @@ function SWEP:PrimaryAttack()
 
 	self:SendWeaponAnim(ACT_VM_PULLPIN)
 
-	self:ThrowNade(400, -7)  -- Was 5000, now 400 for 0.4kg grenade
+	self:ThrowNade(300, -7)  -- Was 5000, now 300 for 0.3kg grenade
 end
 
 

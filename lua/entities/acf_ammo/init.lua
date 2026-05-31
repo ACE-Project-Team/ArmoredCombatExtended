@@ -715,7 +715,7 @@ do
 			debugoverlay.Text(self:GetPos() + Vector(0,0,10), "Total Ammo Mass: " .. self.AmmoMassMax .. "kgs", 20 )
 
 			if WeaponType ~= "missile" then
-				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.LegacyAmmoPointsPerTon)
+				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.AmmoPointsPerTon)
 			else
 				local MissileCost = CalculateMissileCost(self.BulletData)
 				self.ACEPoints = Capacity * MissileCost

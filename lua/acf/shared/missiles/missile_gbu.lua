@@ -58,7 +58,6 @@ ACF_defineGun("GBU-39", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.1,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 100,
 
 
 
@@ -123,7 +122,6 @@ ACF_defineGun("FAB250-UPMP", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 400,
 
 
 
@@ -187,7 +185,6 @@ ACF_defineGun("227kgGBU", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 333,
 
 
 
@@ -250,7 +247,6 @@ ACF_defineGun("454kgGBU", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 833,
 
 		penmul      = math.sqrt(0.15),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
@@ -308,7 +304,6 @@ ACF_defineGun("909kgGBU", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 1667,
 
 		penmul      = math.sqrt(0.2),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
@@ -367,7 +362,6 @@ ACF_defineGun("WalleyeGBU", {						-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
-		pointcost			= 1250,
 
 		penmul      = math.sqrt(0.5),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		calmul			= 1,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.

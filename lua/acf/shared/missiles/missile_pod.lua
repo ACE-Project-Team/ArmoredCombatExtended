@@ -71,7 +71,6 @@ ACF_defineGun("40mmFFAR", { --id
 		penmul	= math.sqrt(0.5),
 
 		waterthrusttype = 0, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
-		pointcost			= 50
 	},
 
 	ent		= "acf_missile_to_rack", -- A workaround ent which spawns an appropriate rack for the missile.
@@ -143,7 +142,6 @@ ACF_defineGun("70mmFFAR", { --id
 		velmul			= 4,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
 
 		waterthrusttype = 0, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
-		pointcost			= 80
 	},
 
 	ent		= "acf_missile_to_rack", -- A workaround ent which spawns an appropriate rack for the missile.
@@ -212,7 +210,6 @@ ACF_defineGun("S8KO", { --id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
 		penmul	= math.sqrt(0.65),	-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 80
 	},
 
 	ent        = "acf_missile_to_rack",
@@ -286,7 +283,6 @@ ACF_defineGun("Zuni ASR", { --id
 		calmul			= 0.4,	--Adjust this first. Used to balance the damage of kinetic missiles. Multiplier for the projectile caliber. Won't affect HEAT.
 		velmul			= 2,		--Used to balance the penetration of kinetic missiles. Multiplier for the velocity of the projectile on impact.
 
-		pointcost			= 200
 	},
 	ent        = "acf_missile_to_rack",
 	guidance   = {"Dumb"},

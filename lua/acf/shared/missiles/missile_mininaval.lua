@@ -71,7 +71,6 @@ ACF_defineGun("Scaled BGM-109 Tomahawk", {						-- id
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		waterthrusttype 	= 1, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
-		pointcost			= 250
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -155,7 +154,6 @@ ACF_defineGun("Scaled AGM-84 Harpoon", {						-- id
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		waterthrusttype 	= 1, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
-		pointcost			= 1000
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -239,7 +237,6 @@ ACF_defineGun("Scaled Storm Shadow ASM", {						-- id
 		datalink			= true,
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
-		pointcost			= 250
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -322,7 +319,6 @@ ACF_defineGun("Scaled 3M-54 Kalibr", {						-- id
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		penmul            = math.sqrt(1),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
 		waterthrusttype 	= 1, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
-		pointcost			= 250
 	},
 
 	ent        = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -402,7 +398,6 @@ ACF_defineGun("Scaled Black Shark Torp", {						-- id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		waterthrusttype 	= 4, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
 		buoyancy			= 1,
-		pointcost			= 1500,
 	},
 
 	ent		= "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -477,7 +472,6 @@ ACF_defineGun("Scaled G7a Torp", {						-- id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		waterthrusttype 	= 4, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
 		buoyancy			= 1,
-		pointcost			= 1000,
 	},
 
 	ent		= "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -552,7 +546,6 @@ ACF_defineGun("Scaled Mk13 Torp", {						-- id
 		predictiondelay		= 0.25,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 		waterthrusttype 	= 4, 	--0-stops underwater, 1-booster only underwater - DEFAULT, 2-works above and below, 3-underwater only, 4-booster all and under thrust only
 		buoyancy			= 1,
-		pointcost			= 750,
 	},
 
 	ent		= "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -627,7 +620,6 @@ ACF_defineGun("Scaled 9M317ME SAM", {							-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		datalink			= true,
 		predictiondelay		= 0.35,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 333
 	},
 
 	ent                = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.
@@ -702,7 +694,6 @@ ACF_defineGun("Scaled 5V55 SAM", {							-- id
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		datalink			= true,
 		predictiondelay		= 0.35,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
-		pointcost			= 600
 	},
 
 	ent                = "acf_missile_to_rack",				-- A workaround ent which spawns an appropriate rack for the missile.

@@ -208,17 +208,29 @@ if SERVER then
 	-- station to the best-delivering Source that still has charge.
 	------------------------------------------------------------------
 
-	-- Depth-limited search for ALL source paths reachable from `entry`. Returns an
-	-- array of { source, eff, capacity, nodes, srcEff } - the BEST (highest-eff)
-	-- path PER distinct source - sorted best-first. GridPull then shares the load
-	-- across them (merit order), which is how multiple generators feed one grid.
+	-- Best path PER distinct source reachable from `entry`. Returns an array of
+	-- { source, eff, capacity, nodes, srcEff } sorted best-first; GridPull then
+	-- shares the load across them (merit order), which is how multiple generators
+	-- feed one grid.
+	--
+	-- Implemented as a best-first (Dijkstra) search: each conductor/relay node is
+	-- SETTLED exactly once, by the highest efficiency-with-which-it-can-be-reached.
+	-- A meshed or looped grid therefore costs O(V^2), not the FACTORIAL blow-up of
+	-- the old all-paths backtracking walk (which re-walked every permutation of a
+	-- ring and froze the server). Because edge "weights" only ever shrink
+	-- efficiency (each hop and each conversion multiply by a factor <= 1), the
+	-- first time a node is settled it already holds its optimal path - the standard
+	-- Dijkstra guarantee - so we still find the genuinely best route to each source.
 	local function gridFindSources(entry, conv, ignoreEntrySource)
 		if not IsValid(entry) then return {} end
-		local maxHops = ACF.GridMaxHops or 10
-		local bySource = {}   -- source ent -> best path entry
+		local maxHops    = ACF.GridMaxHops or 10
+		local convFactor = 1 - conv
+		local bySource   = {}   -- source ent -> best path entry
 
-		local function consider(source, lineEff, relays, nodes)
-			local eff = ((1 - conv) ^ (2 + relays)) * lineEff
+		-- Record a tappable source. `eff` already folds in the two fixed (source +
+		-- sink) conversions and every relay conversion taken to reach it. We keep
+		-- the best-efficiency path per distinct source.
+		local function consider(source, eff, nodes)
 			-- Throughput is bottlenecked by the weakest node on the path.
 			local cap = math.huge
 			for _, n in ipairs(nodes) do
@@ -235,9 +247,35 @@ if SERVER then
 			end
 		end
 
-		local function visit(node, lineEff, relays, depth, nodes, seen)
+		-- Per-node frame: `v` = efficiency-to-reach (product of every hop loss and
+		-- relay conversion taken so far; the two fixed source+sink conversions are
+		-- applied only when a source is tapped, as convFactor^2).
+		local frames = {}
+		frames[entry] = { v = 1, depth = 0, nodes = { entry }, settled = false }
+
+		-- The entry node may itself be the source (a Collector tapping a source
+		-- station directly, or a Consumer wired straight to one). The search taps
+		-- sources as NEIGHBOURS, never expands through them, so handle the zero-hop
+		-- case explicitly. A capacitor recharging itself passes ignoreEntrySource so
+		-- it draws from the grid AROUND it, not from its own store.
+		if not ignoreEntrySource and entry.IsSource and entry:IsSource()
+			and entry.GridHasEnergy and entry:GridHasEnergy() then
+			consider(entry, convFactor * convFactor, { entry })
+		end
+
+		while true do
+			-- Settle the unsettled frame reachable with the highest efficiency.
+			-- (Linear scan; grids are small and bounded by maxHops, so a heap isn't
+			-- worth the complexity.)
+			local node, rec
+			for n, r in pairs(frames) do
+				if not r.settled and (not rec or r.v > rec.v) then node, rec = n, r end
+			end
+			if not node then break end
+			rec.settled = true
+
 			for _, N in ipairs(node.GridStations or {}) do
-				if IsValid(N) and not seen[N] then
+				if IsValid(N) then
 					local isCond = N.IsConductor and N:IsConductor()
 					-- A physical wire's own resistance (length / cross-section / temp /
 					-- carried voltage, computed in its Think -> ConductorEff) accounts
@@ -249,39 +287,28 @@ if SERVER then
 					else
 						hopEff = 1 - Sustain.Grid.LineLoss(node:GetPos():Distance(N:GetPos()), N.Voltage or 1, true)
 					end
-					local newEff = lineEff * hopEff
-					local nodes2 = { unpack(nodes) }
-					nodes2[#nodes2 + 1] = N
+					local reachV = rec.v * hopEff
 
 					if N.IsSource and N:IsSource() and N.GridHasEnergy and N:GridHasEnergy() then
-						-- A tappable source. The DFS still explores OTHER branches from
-						-- `entry`, so several sources on separate branches are all found
-						-- (consider() keeps the best path per distinct source).
-						consider(N, newEff, relays, nodes2)
-					elseif isCond and depth < maxHops then
-						-- Conductors carry power WITHOUT a DC<->AC conversion (unlike a relay).
-						seen[N] = true
-						visit(N, newEff, relays, depth + 1, nodes2, seen)
-						seen[N] = nil
-					elseif N.IsRelay and N:IsRelay() and depth < maxHops then
-						seen[N] = true
-						visit(N, newEff, relays + 1, depth + 1, nodes2, seen)
-						seen[N] = nil
+						-- Tappable source: a leaf, never expanded through. Considered
+						-- from every node that reaches it, so the best route wins.
+						local nodes2 = { unpack(rec.nodes) }
+						nodes2[#nodes2 + 1] = N
+						consider(N, convFactor * convFactor * reachV, nodes2)
+					elseif rec.depth < maxHops and (isCond or (N.IsRelay and N:IsRelay())) then
+						-- Pass-through: a conductor carries power with NO conversion;
+						-- a relay re-boosts (one DC<->AC conversion -> * convFactor).
+						local nextV = isCond and reachV or (reachV * convFactor)
+						local f = frames[N]
+						if not f or (not f.settled and nextV > f.v) then
+							local nodes2 = { unpack(rec.nodes) }
+							nodes2[#nodes2 + 1] = N
+							frames[N] = { v = nextV, depth = rec.depth + 1, nodes = nodes2, settled = false }
+						end
 					end
 				end
 			end
 		end
-
-		-- The entry node itself may be the source (a Power Collector tapping a
-		-- source station directly, or a Consumer wired straight to one). The DFS
-		-- only inspects neighbours, so handle the zero-hop case explicitly.
-		-- A capacitor recharging itself passes ignoreEntrySource so it draws from
-		-- the grid AROUND it, not from its own store.
-		if not ignoreEntrySource and entry.IsSource and entry:IsSource() and entry.GridHasEnergy and entry:GridHasEnergy() then
-			consider(entry, 1, 0, { entry })
-		end
-
-		visit(entry, 1, 0, 0, { entry }, { [entry] = true })
 
 		local list = {}
 		for _, s in pairs(bySource) do list[#list + 1] = s end
@@ -504,6 +531,14 @@ if SERVER then
 
 	-- From a receiver-side pipe, find the cheapest reachable supply tank.
 	-- Returns { supply, flowCap, pipes, cost } or nil.
+	--
+	-- Best-first (Dijkstra) search over the pipe/pump graph by cumulative friction
+	-- `cost`: each pipe/pump node is SETTLED once, by the lowest cost to reach it,
+	-- so a looped/meshed pipe network costs O(V^2) instead of the FACTORIAL blow-up
+	-- of the old all-paths backtracking walk (which froze the server on a ring of
+	-- pipes). Pumps and flowCap are tracked along that cheapest path; a supply is
+	-- reachable when the cost to its feeding node is within the pressure budget the
+	-- pumps on the way provide.
 	function Sustain.PipeFindSupply(startPipe, receiver)
 		if not IsValid(startPipe) or not IsValid(receiver) then return nil end
 		local PipeLogic    = Sustain.Pipe
@@ -518,35 +553,62 @@ if SERVER then
 				and receiver.CanReceiveFuel and receiver:CanReceiveFuel(tank.FuelType)
 		end
 
-		local function visit(node, cost, pumps, flowCap, depth, pipes, seen)
+		-- Per-node frame: cheapest cumulative friction to reach it, plus the pumps /
+		-- flowCap / pipe list accumulated along that cheapest route.
+		local frames = {}
+		frames[startPipe] = {
+			cost = 0, pumps = 0, flowCap = startPipe.FlowCap or math.huge,
+			depth = 0, pipes = { startPipe }, settled = false,
+		}
+
+		while true do
+			-- Settle the unsettled frame reachable with the LOWEST friction.
+			local node, rec
+			for n, r in pairs(frames) do
+				if not r.settled and (not rec or r.cost < rec.cost) then node, rec = n, r end
+			end
+			if not node then break end
+			rec.settled = true
+
+			-- A supply tank fed by this node is usable if reaching this node stayed
+			-- within the pressure budget its pumps provide.
 			for _, L in ipairs(node.PipeLinks or {}) do
-				if canSupply(L) and cost <= basePressure + pumps * pumpPressure then
-					if not best or cost < best.cost then
-						best = { supply = L, flowCap = flowCap, pipes = pipes, cost = cost }
+				if canSupply(L) and rec.cost <= basePressure + rec.pumps * pumpPressure then
+					if not best or rec.cost < best.cost then
+						best = { supply = L, flowCap = rec.flowCap, pipes = rec.pipes, cost = rec.cost }
 					end
 				end
 			end
-			if depth >= maxHops then return end
-			for _, L in ipairs(node.PipeLinks or {}) do
-				if IsValid(L) and not seen[L] then
-					local cls = L:GetClass()
-					if cls == "ace_fuel_pipe" or cls == "ace_fuel_pump" then
-						local blocked = cls == "ace_fuel_pipe" and L.Condition and L:Condition() <= 0
-						if not blocked then
-							local hopCost  = PipeLogic.HopFriction(node:GetPos():Distance(L:GetPos()), L.BoreArea or 100)
-							local pipes2   = { unpack(pipes) }
-							pipes2[#pipes2 + 1] = L
-							seen[L] = true
-							visit(L, cost + hopCost, pumps + (cls == "ace_fuel_pump" and 1 or 0),
-								math.min(flowCap, L.FlowCap or flowCap), depth + 1, pipes2, seen)
-							seen[L] = nil
+
+			if rec.depth < maxHops then
+				for _, L in ipairs(node.PipeLinks or {}) do
+					if IsValid(L) then
+						local cls = L:GetClass()
+						if cls == "ace_fuel_pipe" or cls == "ace_fuel_pump" then
+							local blocked = cls == "ace_fuel_pipe" and L.Condition and L:Condition() <= 0
+							if not blocked then
+								local hopCost = PipeLogic.HopFriction(node:GetPos():Distance(L:GetPos()), L.BoreArea or 100)
+								local newCost = rec.cost + hopCost
+								local f = frames[L]
+								if not f or (not f.settled and newCost < f.cost) then
+									local pipes2 = { unpack(rec.pipes) }
+									pipes2[#pipes2 + 1] = L
+									frames[L] = {
+										cost    = newCost,
+										pumps   = rec.pumps + (cls == "ace_fuel_pump" and 1 or 0),
+										flowCap = math.min(rec.flowCap, L.FlowCap or rec.flowCap),
+										depth   = rec.depth + 1,
+										pipes   = pipes2,
+										settled = false,
+									}
+								end
+							end
 						end
 					end
 				end
 			end
 		end
 
-		visit(startPipe, 0, 0, startPipe.FlowCap or math.huge, 0, { startPipe }, { [startPipe] = true })
 		return best
 	end
 

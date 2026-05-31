@@ -4,7 +4,6 @@
 	Loads the pure-logic modules and exposes them under ACE.Sustain so the
 	entity files can grab them without caring about include paths. The logic
 	files themselves stay GMod-free so they can be unit-tested with plain lua
-	(see tests/run.lua); this file is the only GMod-aware glue.
 ]]--
 
 ACE = ACE or {}

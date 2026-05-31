@@ -13,7 +13,7 @@ local INCH_TO_M = 0.0254
 
 function ENT:Initialize()
 	self.FuelLink    = {}
-	self.Active      = true
+	self.Active      = false   -- off until wired/toggled on (Active input -> 1)
 	self.MaxPower    = 0
 	self.OutputPower = 0
 	self.AreaSqM     = 0
@@ -184,6 +184,7 @@ end
 
 function ENT:UpdateOverlayText()
 	local txt = "Solar Panel"
+	txt = txt .. "\nActive: " .. (self.Active and "ON" or "OFF (wire Active to 1)")
 	txt = txt .. "\nOutput: " .. math.Round(self.OutputPower or 0, 3) .. " kW"
 	txt = txt .. "\nMax: " .. math.Round(self.MaxPower or 0, 3) .. " kW"
 	txt = txt .. "\nArea: " .. math.Round(self.AreaSqM or 0, 2) .. " m^2"

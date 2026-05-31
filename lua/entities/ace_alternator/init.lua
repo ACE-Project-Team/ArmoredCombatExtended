@@ -19,7 +19,7 @@ local SHAFT_CLASSES = {
 function ENT:Initialize()
 	self.PropLink   = {}     -- spinning shafts we brake / read rpm from
 	self.FuelLink   = {}     -- linked Electric tanks (batteries) to charge
-	self.Active     = true
+	self.Active     = false  -- off until wired/toggled on (Active input -> 1)
 	self.Load       = 0
 	self.RPM        = 0
 	self.OutputPower = 0
@@ -226,6 +226,7 @@ end
 
 function ENT:UpdateOverlayText()
 	local txt = "Alternator"
+	txt = txt .. "\nActive: " .. (self.Active and "ON" or "OFF (wire Active to 1)")
 	txt = txt .. "\nRPM: " .. math.Round(self.RPM or 0, 0)
 	txt = txt .. "\nOutput: " .. math.Round(self.OutputPower or 0, 2) .. " kW"
 	txt = txt .. "\nMax: " .. math.Round(self.MaxPower or 0, 2) .. " kW @ " .. math.Round(self.RatedRPM or 0, 0) .. " RPM"

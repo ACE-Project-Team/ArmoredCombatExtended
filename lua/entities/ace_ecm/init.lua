@@ -17,6 +17,26 @@ function ENT:SpawnFunction( _, trace )
 	return ent
 end
 
+-- ACF-menu spawn factory (also makes it dupe properly). Lets the ECM live in
+-- the menu's Extras section, not just the Q spawnmenu.
+function MakeACE_ECM(Owner, Pos, Angle, Id)
+	if IsValid(Owner) and not Owner:CheckLimit("_ace_ecm") then return false end
+	local ent = ents.Create("ace_ecm")
+	if not IsValid(ent) then return false end
+	ent:SetPos(Pos)
+	ent:SetAngles(Angle)
+	ent:Spawn()
+	ent:Activate()
+	if IsValid(Owner) then
+		ent:CPPISetOwner(Owner)
+		Owner:AddCount("_ace_ecm", ent)
+		Owner:AddCleanup("acfmenu", ent)
+	end
+	return ent
+end
+list.Set("ACFCvars", "ace_ecm", {"id"})
+duplicator.RegisterEntityClass("ace_ecm", MakeACE_ECM, "Pos", "Angle", "Id")
+
 function ENT:Initialize()
 
 	self.ThinkDelay = 0.25 --0.25 second delay, hopefully enough to prevent ECM flashing

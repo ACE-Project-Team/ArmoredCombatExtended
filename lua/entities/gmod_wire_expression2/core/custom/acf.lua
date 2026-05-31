@@ -1606,3 +1606,152 @@ do
 		return ret
 	end
 end
+
+--[[----------------------------------------------------------------
+	Sustainability getters (power generation, fuel gen, batteries)
+]]------------------------------------------------------------------
+do
+	local generators = {
+		ace_alternator       = true,
+		ace_solarpanel       = true,
+		ace_fuel_synth       = true,
+		ace_field_generator  = true,
+	}
+	local fuelMakers = {
+		ace_fuel_synth      = true,
+		ace_field_generator = true,
+	}
+
+	local function isGenerator(ent)
+		return validPhysics(ent) and generators[ent:GetClass()] or false
+	end
+	local function isFuelMaker(ent)
+		return validPhysics(ent) and fuelMakers[ent:GetClass()] or false
+	end
+	local function isBattery(ent)
+		return validPhysics(ent) and ent:GetClass() == "acf_fueltank" and ent.FuelType == "Electric" or false
+	end
+
+	__e2setcost(1)
+
+	-- Electrical output of an ACE generator (alternator/solar), in kW.
+	[nodiscard]
+	e2function number entity:acfGenPower()
+		if not isGenerator(this) then return self:throw("Entity is not an ACE generator", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.OutputPower or 0
+	end
+
+	-- Fuel production rate of an ACE fuel synthesizer / field generator, L/s.
+	[nodiscard]
+	e2function number entity:acfFuelRate()
+		if not isFuelMaker(this) then return self:throw("Entity is not an ACE fuel generator", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.FuelRate or 0
+	end
+
+	-- Remaining capacity (% of design) of an Electric battery (fuel tank).
+	[nodiscard]
+	e2function number entity:acfBatteryHealth()
+		if not isBattery(this) then return self:throw("Entity is not an ACE battery", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return (this.BattHealth or 1) * 100
+	end
+
+	-- Equivalent full charge cycles an Electric battery has been through.
+	[nodiscard]
+	e2function number entity:acfBatteryCycles()
+		if not isBattery(this) then return self:throw("Entity is not an ACE battery", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.BattCycles or 0
+	end
+
+	-- Power moving through a grid entity (transfer station / transformer / power
+	-- line / power collector), in kW.
+	local gridThroughput = {
+		ace_transfer_station = true,
+		ace_transformer      = true,
+		ace_power_line       = true,
+		ace_capacitor        = true,
+		ace_power_collector  = true,
+	}
+	local function isGrid(ent)
+		return validPhysics(ent) and gridThroughput[ent:GetClass()] or false
+	end
+
+	-- Grid NODES that carry a line voltage and capacity (not the collector).
+	local gridNode = {
+		ace_transfer_station = true,
+		ace_transformer      = true,
+		ace_power_line       = true,
+		ace_capacitor        = true,
+	}
+	local function isGridNode(ent)
+		return validPhysics(ent) and gridNode[ent:GetClass()] or false
+	end
+	local function isCollector(ent)
+		return validPhysics(ent) and ent:GetClass() == "ace_power_collector" or false
+	end
+
+	[nodiscard]
+	e2function number entity:acfThroughput()
+		if not isGrid(this) then return self:throw("Entity is not an ACE grid entity", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Throughput or 0
+	end
+
+	-- Line voltage of a grid node (transfer station / transformer / power line).
+	[nodiscard]
+	e2function number entity:acfVoltage()
+		if not isGridNode(this) then return self:throw("Entity is not an ACE grid node", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Voltage or 0
+	end
+
+	-- Throughput capacity (kW) a grid node can carry.
+	[nodiscard]
+	e2function number entity:acfGridCapacity()
+		if not isGridNode(this) then return self:throw("Entity is not an ACE grid node", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return (this.GridCapacity and this:GridCapacity()) or 0
+	end
+
+	-- 1 when a grid node can reach an energised source through the grid.
+	[nodiscard]
+	e2function number entity:acfGridLive()
+		if not isGridNode(this) then return self:throw("Entity is not an ACE grid node", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return (ACE.Sustain and ACE.Sustain.GridHasSource and ACE.Sustain.GridHasSource(this)) and 1 or 0
+	end
+
+	-- Transfer station mode: 0 idle, 1 source, 2 sink, 3 relay.
+	[nodiscard]
+	e2function number entity:acfGridMode()
+		if not validPhysics(this) or this:GetClass() ~= "ace_transfer_station" then return self:throw("Entity is not a Transfer Station", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Mode or 0
+	end
+
+	-- Power Collector: 1 when it is currently picking power up from the grid.
+	[nodiscard]
+	e2function number entity:acfConnected()
+		if not isCollector(this) then return self:throw("Entity is not a Power Collector", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Connected and 1 or 0
+	end
+
+	-- Power Collector: distance (units) to the grid node it is drawing from, or -1
+	-- when nothing live is in range. Useful for pantograph alignment / HUDs.
+	[nodiscard]
+	e2function number entity:acfWireDistance()
+		if not isCollector(this) then return self:throw("Entity is not a Power Collector", -1) end
+		if restrictInfo(self.player, this) then return -1 end
+		return this.SourceDist or -1
+	end
+
+	-- Maximum pickup range (units) of a Power Collector.
+	[nodiscard]
+	e2function number acfWireRange()
+		return ACF.GridCollectorRange or 400
+	end
+end

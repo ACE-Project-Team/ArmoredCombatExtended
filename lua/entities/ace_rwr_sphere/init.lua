@@ -17,6 +17,24 @@ function ENT:SpawnFunction( _, trace )
 	return ent
 end
 
+function MakeACE_RWR_Sphere(Owner, Pos, Angle, Id)
+	if IsValid(Owner) and not Owner:CheckLimit("_ace_rwr_sphere") then return false end
+	local ent = ents.Create("ace_rwr_sphere")
+	if not IsValid(ent) then return false end
+	ent:SetPos(Pos)
+	ent:SetAngles(Angle)
+	ent:Spawn()
+	ent:Activate()
+	if IsValid(Owner) then
+		ent:CPPISetOwner(Owner)
+		Owner:AddCount("_ace_rwr_sphere", ent)
+		Owner:AddCleanup("acfmenu", ent)
+	end
+	return ent
+end
+list.Set("ACFCvars", "ace_rwr_sphere", {"id"})
+duplicator.RegisterEntityClass("ace_rwr_sphere", MakeACE_RWR_Sphere, "Pos", "Angle", "Id")
+
 function ENT:Initialize()
 
 	self.ThinkDelay = 0.1

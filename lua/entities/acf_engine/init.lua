@@ -688,13 +688,23 @@ function ENT:CalcRPM()
 		local Consumption
 
 		if self.FuelType == "Electric" then
+			-- Electrical draw scales with the actual power put to the shaft
+			-- (Torque*RPM/9548.8 = kW). Route it through the battery's DrawEnergy
+			-- so MOTORING (not just charging) respects the cell's discharge
+			-- efficiency, C-rate cap and internal-resistance HEAT, instead of a raw
+			-- Fuel subtraction. DrawEnergy already decrements the cell.
 			Consumption = (self.Torque * self.FlyRPM / 9548.8) * self.FuelUse * DeltaTime
+			if isfunction(Tank.DrawEnergy) then
+				Tank:DrawEnergy(Consumption, DeltaTime)
+			else
+				Tank.Fuel = math.max(Tank.Fuel - Consumption, 0)
+			end
 		else
 			local Load = 0.3 + self.Throttle * 0.7 -- the heck are these magic numbers?
 			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACF.FuelDensity[Tank.FuelType]
+			Tank.Fuel = math.max(Tank.Fuel - Consumption,0)
 		end
 
-		Tank.Fuel = math.max(Tank.Fuel - Consumption,0)
 		self.HasFuel = true
 		Wire_TriggerOutput(self, "Fuel Use", math.Round(60 * Consumption / DeltaTime,3))
 	else
@@ -906,15 +916,12 @@ do
 			return false, "You can only link gearboxes, fueltanks or crewseats!"
 		end
 
-		-- Gear links
 		if Target:GetClass() == "acf_gearbox" then
 			return self:LinkGearbox( Target )
 		end
-		-- Fuel links
 		if Target:GetClass() == "acf_fueltank" then
 			return self:LinkFuel( Target )
 		end
-		-- Crew links
 		if Target:GetClass() == "ace_crewseat_driver" then
 			return self:LinkCrew( Target )
 		end
@@ -926,15 +933,12 @@ do
 			return false, "You can only unlink gearboxes, fueltanks or crewseats!"
 		end
 
-		-- Gear links
 		if Target:GetClass() == "acf_gearbox" then
 			return self:UnlinkGearbox( Target )
 		end
-		-- Fuel links
 		if Target:GetClass() == "acf_fueltank" then
 			return self:UnlinkFuel( Target )
 		end
-		-- Crew links
 		if Target:GetClass() == "ace_crewseat_driver" then
 			return self:UnlinkCrew( Target )
 		end

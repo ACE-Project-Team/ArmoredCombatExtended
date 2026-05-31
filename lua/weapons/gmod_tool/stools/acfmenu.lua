@@ -106,7 +106,8 @@ function TOOL:LeftClick( trace )
 
 			Ent:Activate()
 			Ent:DropToFloor()
-			Ent:GetPhysicsObject():EnableMotion( false )
+			local EntPhys = Ent:GetPhysicsObject()
+			if IsValid( EntPhys ) then EntPhys:EnableMotion( false ) end
 
 			undo.Create( entClass )
 				undo.AddEntity( Ent )
@@ -146,21 +147,35 @@ function TOOL:DeselectAll()
 end
 
 local function linkEnts(e1, e2, unlink)
+	local verb = unlink and "Unlink" or "Link"
+
+	-- Preferred order: the historical master-aware ordering (keeps engine/gearbox
+	-- semantics intact).
+	local first, second
 	if e1.IsMaster and e2:GetClass() ~= "acf_engine" and (e1:GetClass() ~= "acf_gearbox" or e2:GetClass() ~= "acf_gearbox") then
-		if unlink then
-			return e1:Unlink(e2)
-		else
-			return e1:Link(e2)
-		end
+		first, second = e1, e2
 	elseif e2.IsMaster then
-		if unlink then
-			return e2:Unlink(e1)
-		else
-			return e2:Link(e1)
-		end
+		first, second = e2, e1
 	else
-		return false, "Neither entity is a master entity"
+		first, second = e1, e2
 	end
+
+	-- Try the preferred direction, then the reverse, so LINK ORDER NEVER MATTERS
+	-- (e.g. alternator<->gearbox, consumer<->station both work either way). The
+	-- per-entity Link/Unlink validate their own target, so a wrong-direction
+	-- attempt simply fails and we fall back to the other one.
+	local lastMsg
+	if isfunction(first[verb]) then
+		local ok, msg = first[verb](first, second)
+		if ok then return ok, msg end
+		lastMsg = msg
+	end
+	if second ~= first and isfunction(second[verb]) then
+		local ok, msg = second[verb](second, first)
+		if ok then return ok, msg end
+		lastMsg = msg or lastMsg
+	end
+	return false, lastMsg or "Neither entity is a master entity"
 end
 
 function TOOL:RightClick( trace )

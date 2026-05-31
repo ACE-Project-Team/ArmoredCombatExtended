@@ -26,6 +26,20 @@ local MobilityTable     = {}
 local Crewseats         = {}
 local Extras            = {}
 
+local AlternatorTable   = {}
+local SolarPanelTable   = {}
+local FuelSynthTable    = {}
+local FieldGenTable     = {}
+local FuelPlugTable     = {}
+local FuelSocketTable   = {}
+local FuelPipeTable     = {}
+local TransferStationTable = {}
+local TransformerTable  = {}
+local PowerLineTable    = {}
+local ConsumerTable     = {}
+local CapacitorTable    = {}
+local ExplosiveTable    = {}
+
 local GSoundData        = {}
 local ModelData         = {}
 local MineData          = {}
@@ -86,6 +100,71 @@ local extras_base = {
 	type   = "Extras"
 }
 
+local alternator_base = {
+	ent    = "ace_alternator",
+	type   = "Alternators"
+}
+
+local solar_base = {
+	ent    = "ace_solarpanel",
+	type   = "SolarPanels"
+}
+
+local fuelsynth_base = {
+	ent    = "ace_fuel_synth",
+	type   = "FuelSynths"
+}
+
+local fieldgen_base = {
+	ent    = "ace_field_generator",
+	type   = "FieldGenerators"
+}
+
+local fuelplug_base = {
+	ent    = "ace_fuel_plug",
+	type   = "FuelPlugs"
+}
+
+local fuelsocket_base = {
+	ent    = "ace_fuel_socket",
+	type   = "FuelSockets"
+}
+
+local fuelpipe_base = {
+	ent    = "ace_fuel_pipe",
+	type   = "FuelPipes"
+}
+
+local transferstation_base = {
+	ent    = "ace_transfer_station",
+	type   = "TransferStations"
+}
+
+local transformer_base = {
+	ent    = "ace_transformer",
+	type   = "Transformers"
+}
+
+local powerline_base = {
+	ent    = "ace_power_line",
+	type   = "PowerLines"
+}
+
+local consumer_base = {
+	ent    = "ace_power_consumer",
+	type   = "Consumers"
+}
+
+local capacitor_base = {
+	ent    = "ace_capacitor",
+	type   = "Capacitors"
+}
+
+local explosive_base = {
+	ent    = "ace_explosive",
+	type   = "Explosives"
+}
+
 -- add gui stuff to base classes if this is client
 -- more required stuff for the menu. Janky as fuck
 if CLIENT then
@@ -120,6 +199,46 @@ if CLIENT then
 
 	extras_base.guicreate    = function( _, Table ) ACEExtrasGUICreate( Table ) end or nil
 	extras_base.guiupdate    = function() return end
+
+	alternator_base.guicreate = function( _, Table ) ACEAlternatorGUICreate( Table ) end or nil
+	alternator_base.guiupdate = function( _, Table ) ACEAlternatorGUIUpdate( Table ) end or nil
+
+	solar_base.guicreate = function( _, Table ) ACESolarGUICreate( Table ) end or nil
+	solar_base.guiupdate = function( _, Table ) ACESolarGUIUpdate( Table ) end or nil
+
+	fuelsynth_base.guicreate = function( _, Table ) ACEFuelSynthGUICreate( Table ) end or nil
+	fuelsynth_base.guiupdate = function( _, Table ) ACEFuelSynthGUIUpdate( Table ) end or nil
+
+	fieldgen_base.guicreate = function( _, Table ) ACEFieldGenGUICreate( Table ) end or nil
+	fieldgen_base.guiupdate = function( _, Table ) ACEFieldGenGUIUpdate( Table ) end or nil
+
+	-- Plug and socket share one combined connector GUI (with a dropdown).
+	fuelplug_base.guicreate = function( _, Table ) ACEFuelConnectorGUICreate( Table ) end or nil
+	fuelplug_base.guiupdate = function( _, Table ) ACEFuelConnectorGUIUpdate( Table ) end or nil
+
+	fuelsocket_base.guicreate = function( _, Table ) ACEFuelConnectorGUICreate( Table ) end or nil
+	fuelsocket_base.guiupdate = function( _, Table ) ACEFuelConnectorGUIUpdate( Table ) end or nil
+
+	fuelpipe_base.guicreate = function( _, Table ) ACEFuelConnectorGUICreate( Table ) end or nil
+	fuelpipe_base.guiupdate = function( _, Table ) ACEFuelConnectorGUIUpdate( Table ) end or nil
+
+	transferstation_base.guicreate = function( _, Table ) ACETransferStationGUICreate( Table ) end or nil
+	transferstation_base.guiupdate = function( _, Table ) ACETransferStationGUIUpdate( Table ) end or nil
+
+	transformer_base.guicreate = function( _, Table ) ACETransformerGUICreate( Table ) end or nil
+	transformer_base.guiupdate = function( _, Table ) ACETransformerGUIUpdate( Table ) end or nil
+
+	powerline_base.guicreate = function( _, Table ) ACEPowerLineGUICreate( Table ) end or nil
+	powerline_base.guiupdate = function( _, Table ) ACEPowerLineGUIUpdate( Table ) end or nil
+
+	consumer_base.guicreate = function( _, Table ) ACEConsumerGUICreate( Table ) end or nil
+	consumer_base.guiupdate = function( _, Table ) ACEConsumerGUIUpdate( Table ) end or nil
+
+	capacitor_base.guicreate = function( _, Table ) ACECapacitorGUICreate( Table ) end or nil
+	capacitor_base.guiupdate = function( _, Table ) ACECapacitorGUIUpdate( Table ) end or nil
+
+	explosive_base.guicreate = function( _, Table ) ACEExplosiveGUICreate( Table ) end or nil
+	explosive_base.guiupdate = function( _, Table ) ACEExplosiveGUIUpdate( Table ) end or nil
 end
 
 -- some factory functions for defining ents
@@ -246,6 +365,97 @@ function ACF_DefineRadar( id, data )
 	data.id = id
 	table.Inherit( data, radar_base )
 	Radars[ id ] = data
+end
+
+-- Alternator definition
+function ACE_DefineAlternator( id, data )
+	data.id = id
+	table.Inherit( data, alternator_base )
+	AlternatorTable[ id ] = data
+end
+
+-- Solar panel definition
+function ACE_DefineSolarPanel( id, data )
+	data.id = id
+	table.Inherit( data, solar_base )
+	SolarPanelTable[ id ] = data
+end
+
+-- Fuel synthesizer definition
+function ACE_DefineFuelSynth( id, data )
+	data.id = id
+	table.Inherit( data, fuelsynth_base )
+	FuelSynthTable[ id ] = data
+end
+
+-- Field generator definition
+function ACE_DefineFieldGenerator( id, data )
+	data.id = id
+	table.Inherit( data, fieldgen_base )
+	FieldGenTable[ id ] = data
+end
+
+-- Fuel plug definition (supply-side nozzle)
+function ACE_DefineFuelPlug( id, data )
+	data.id = id
+	table.Inherit( data, fuelplug_base )
+	FuelPlugTable[ id ] = data
+end
+
+-- Fuel socket definition (receiver-side port)
+function ACE_DefineFuelSocket( id, data )
+	data.id = id
+	table.Inherit( data, fuelsocket_base )
+	FuelSocketTable[ id ] = data
+end
+
+-- Fuel pipe definition (long-distance link between two sockets)
+function ACE_DefineFuelPipe( id, data )
+	data.id = id
+	table.Inherit( data, fuelpipe_base )
+	FuelPipeTable[ id ] = data
+end
+
+-- Transfer station definition (DC<->AC grid converter)
+function ACE_DefineTransferStation( id, data )
+	data.id = id
+	table.Inherit( data, transferstation_base )
+	TransferStationTable[ id ] = data
+end
+
+-- Transformer definition (AC voltage step-up/step-down, optional rectifier)
+function ACE_DefineTransformer( id, data )
+	data.id = id
+	table.Inherit( data, transformer_base )
+	TransformerTable[ id ] = data
+end
+
+-- Power line definition (scalable physical conductor / catenary)
+function ACE_DefinePowerLine( id, data )
+	data.id = id
+	table.Inherit( data, powerline_base )
+	PowerLineTable[ id ] = data
+end
+
+-- Power consumer definition (scalable grid load)
+function ACE_DefineConsumer( id, data )
+	data.id = id
+	table.Inherit( data, consumer_base )
+	ConsumerTable[ id ] = data
+end
+
+-- Capacitor definition (scalable fast buffer node)
+function ACE_DefineCapacitor( id, data )
+	data.id = id
+	table.Inherit( data, capacitor_base )
+	CapacitorTable[ id ] = data
+end
+
+-- Explosive charge definition
+function ACE_DefineExplosive( id, data )
+	data.id = id
+	table.Inherit( data, explosive_base )
+	ExplosiveTable[ id ] = data
 end
 
 -- Radar Class definition
@@ -384,7 +594,10 @@ do
 		"sounds",
 		"tools",
 		"crewseats",
-		"extras"
+		"extras",
+		"power",
+		"solar",
+		"explosives"
 	}
 
 	for _, folder in ipairs(folders) do
@@ -417,6 +630,19 @@ ACF.Weapons.Radars          = Radars
 ACF.Weapons.Tools           = Tools
 ACF.Weapons.Crewseats       = Crewseats
 ACF.Weapons.Extras          = Extras
+ACF.Weapons.Alternators     = AlternatorTable
+ACF.Weapons.SolarPanels     = SolarPanelTable
+ACF.Weapons.FuelSynths      = FuelSynthTable
+ACF.Weapons.FieldGenerators = FieldGenTable
+ACF.Weapons.FuelPlugs       = FuelPlugTable
+ACF.Weapons.FuelSockets     = FuelSocketTable
+ACF.Weapons.FuelPipes       = FuelPipeTable
+ACF.Weapons.TransferStations = TransferStationTable
+ACF.Weapons.Transformers    = TransformerTable
+ACF.Weapons.PowerLines      = PowerLineTable
+ACF.Weapons.Consumers       = ConsumerTable
+ACF.Weapons.Capacitors      = CapacitorTable
+ACF.Weapons.Explosives      = ExplosiveTable
 ACE.MuzzleFlashes           = MuzzleFlashTable
 
 --Small reminder of Mobility table. Still being used in stuff like starfall/e2. This can change

@@ -2,7 +2,9 @@
 ACF.FuelDensity = { --kg/liter
 	Diesel = 0.832,
 	Petrol = 0.745,
-	Electric = 1.35 -- li-ion --WAS 3.1
+	Electric = 1.35, -- li-ion --WAS 3.1
+	Oil = 0.88,      -- crude oil: refinery input only, not an engine fuel
+	Universal = 0.745, -- typeless tank: assigns to whatever first fills it (density placeholder; real type takes over on fill)
 }
 
 ACF.Efficiency = { --how efficient various engine types are, higher is worse

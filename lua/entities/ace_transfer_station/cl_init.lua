@@ -1,0 +1,34 @@
+include("shared.lua")
+
+local beamMat = Material("cable/rope")
+
+-- Terminal sits at the top of the box.
+local function topOf(ent)
+	if not IsValid(ent) then return nil end
+	return ent:LocalToWorld(Vector(0, 0, ent:OBBMaxs().z))
+end
+
+function ENT:Draw()
+	-- DoNormalDraw (not DrawModel) so the wiremod port bubble shows on hover.
+	self.BaseClass.DoNormalDraw(self)
+	Wire_Render(self)
+
+	local cv = GetConVar("ace_draw_link_beams")
+	if cv and not cv:GetBool() then return end
+
+	-- Draw a line to each linked station (networked GL1..GLN). Only draw from the
+	-- station with the lower EntIndex so each link is rendered once.
+	local mine = topOf(self)
+	if not mine then return end
+	local n = self:GetNWInt("GLN", 0)
+	if n <= 0 then return end
+
+	render.SetMaterial(beamMat)
+	for i = 1, n do
+		local other = self:GetNWEntity("GL" .. i)
+		if IsValid(other) and self:EntIndex() < other:EntIndex() then
+			local t = topOf(other)
+			if t then render.DrawBeam(mine, t, 3, 0, 1, Color(150, 170, 210)) end
+		end
+	end
+end

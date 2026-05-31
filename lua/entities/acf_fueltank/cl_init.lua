@@ -101,6 +101,21 @@ do
 			acfmenupanel:CPanelText("Cap", "")
 			acfmenupanel:CPanelText("Mass", "")
 
+			local emptyDefault = GetConVar("acf_fueltank_spawnempty"):GetBool()
+			-- Make sure the very first spawn (before any toggle) honours the setting.
+			RunConsoleCommand("acfmenu_data4", emptyDefault and "1" or "0")
+
+			local SpawnEmptyCheck = vgui.Create("DCheckBoxLabel")
+			SpawnEmptyCheck:SetText("Spawn Empty")
+			SpawnEmptyCheck:SetDark(true)
+			SpawnEmptyCheck:SetChecked(emptyDefault)
+			SpawnEmptyCheck:SizeToContents()
+			function SpawnEmptyCheck:OnChange(val)
+				RunConsoleCommand("acf_fueltank_spawnempty", val and "1" or "0")
+				RunConsoleCommand("acfmenu_data4", val and "1" or "0")
+			end
+			MainPanel:AddItem(SpawnEmptyCheck)
+
 		end
 
 		local CrateNewCat = vgui.Create( "DCollapsibleCategory" )	-- Create a collapsible category

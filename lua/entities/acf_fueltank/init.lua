@@ -12,7 +12,7 @@ do
 
 	local FueltankWireDescs = {
 		--Inputs
-		["Refuel"]	= "Allows to this tank to supply other fuel tanks.\n Fuel type must be equal to the tank which you want to supply.",
+		["Refuel"]	= "Supply mode: wirelessly tops up other ACTIVE, same-type tanks in range (idle if none qualify).",
 
 		--Outputs
 		["Fuel"]        = "Returns the current fuel level.",
@@ -43,13 +43,37 @@ do
 		self.Legal            = true
 		self.LegalIssues      = ""
 
-		self.Inputs = Wire_CreateInputs( self, { "Active", "Refuel Duty (" .. FueltankWireDescs["Refuel"] .. ")" } )
+		-- Keep wire NAMES short (the wiring tool shows the name; a long one runs off
+		-- screen) and pass the long text as the separate DESCRIPTIONS argument.
+		self.Inputs = Wire_CreateInputs( self,
+			{ "Active", "Refuel Duty" },
+			{ "Switches this tank into the system (1 = on). Inactive tanks neither supply nor accept.",
+			  FueltankWireDescs["Refuel"] }
+		)
 		self.Outputs = WireLib.CreateSpecialOutputs( self,
-			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
-			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
+			{ "Fuel", "Capacity", "Leaking", "State", "Battery Health", "Temperature", "Power", "Entity" },
+			{ "NORMAL", "NORMAL", "NORMAL", "NORMAL", "NORMAL", "NORMAL", "NORMAL", "ENTITY" },
+			{ FueltankWireDescs["Fuel"], FueltankWireDescs["Capacity"], FueltankWireDescs["Leaking"],
+			  "Battery: 0 idle, 1 charging, 2 discharging, 3 both",
+			  "Battery: % of design capacity",
+			  "Battery temperature, C",
+			  "Battery net kW: + charging, - discharging",
+			  "This entity" }
 		)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
+
+		-- Battery wear state, only used by Electric tanks (see InitBattery).
+		-- Deliberately NOT persisted through duplication: a freshly built copy
+		-- gets a brand-new battery, which is what players expect.
+		self.BattHealth     = 1
+		self.BattCycles     = 0
+		self.BattThroughput = 0
+		self.PendingHeatJ   = 0
+		self.BattState      = 0      -- 0 idle, 1 charging, 2 discharging, 3 both
+		self.BattInTick     = 0      -- energy charged in (kWh) accumulated this think
+		self.BattOutTick    = 0      -- energy delivered out (kWh) accumulated this think
+		self.BattNetKW      = 0      -- net power (+ charging, - discharging)
 
 		self.Master = {} --engines linked to this tank
 		ACF.FuelTanks = ACF.FuelTanks or {} --master list of acf fuel tanks
@@ -177,7 +201,9 @@ do
 	local function ClampScale( Scale )
 		if not isvector( Scale ) then return end
 
-		local MinSize = ACF.CrateMinimumSize
+		-- Fuel tanks / batteries may scale smaller than ammo crates (down to 1x1x1)
+		-- so you can build a tiny battery; its overlay auto-switches kWh -> Wh.
+		local MinSize = ACF.SustainMinimumSize or ACF.CrateMinimumSize
 		local MaxSize = ACF.CrateMaximumSize
 
 		Scale.x = math.Clamp( math.Round(Scale.x, 1), MinSize, MaxSize)
@@ -198,7 +224,7 @@ do
 		return Scale
 	end
 
-	function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+	function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4)
 
 		if IsValid(Owner) and not Owner:CheckLimit("_acf_misc") then return false end
 
@@ -277,6 +303,12 @@ do
 			Tank.LastMass = 1
 			Tank:UpdateFuelTank(Id, Data1, Data2)
 
+			local forceEmpty = GetConVar("acf_fueltank_forceempty")
+			if Data4 == "1" or (forceEmpty and forceEmpty:GetBool()) then
+				Tank.Fuel = 0
+				Tank:UpdateFuelMass()
+			end
+
 			Owner:AddCount( "_acf_misc", Tank )
 			Owner:AddCleanup( "acfmenu", Tank )
 
@@ -289,8 +321,8 @@ do
 	end
 end
 
-list.Set( "ACFCvars", "acf_fueltank", {"id", "data1", "data2", "data3"} )
-duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
+list.Set( "ACFCvars", "acf_fueltank", {"id", "data1", "data2", "data3", "data4"} )
+duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape", "SpawnEmpty" )
 
 
 local Wall = 0.03937 --wall thickness in inches (1mm)
@@ -347,13 +379,19 @@ function ENT:UpdateFuelTank(_, _, Data2)
 	end
 
 	self.FuelType      = Data2
+	-- A "Universal" tank is typeless until something fills it, then it takes on
+	-- that fuel's type; once drained it reverts to Universal (see AddFuel/Think).
+	self.IsUniversal   = (Data2 == "Universal")
 	self.IsExplosive   = self.FuelType ~= "Electric" and false or true
 	self.NoLinks       = TankData and (TankData.nolinks == true) or false
 
 	if self.FuelType == "Electric" then
 		self.Liters   = self.Capacity --batteries capacity is different from internal volume
-		self.Capacity = self.Capacity * ACF.LiIonED
+		self.Capacity = self.Capacity * ACF.LiIonED  --full design capacity (kWh)
+		self:InitBattery()                            --applies wear -> usable Capacity
 		self.Fuel     = pct * self.Capacity
+	elseif self.IsUniversal then
+		self.Fuel	= 0   -- typeless tanks always start empty; they assign on first fill
 	else
 		self.Fuel	= pct * self.Capacity
 	end
@@ -385,8 +423,21 @@ function ENT:UpdateOverlayText()
 	if self.FuelType == "Electric" then
 
 		text = text .. "\nCurrent Charge Level:"
-		text = text .. "\n-  " .. math.Round( self.Fuel, 1 ) .. " / " .. math.Round( self.Capacity, 1 ) .. " kWh"
+		text = text .. "\n-  " .. ACE.FormatEnergy( self.Fuel ) .. " / " .. ACE.FormatEnergy( self.Capacity )
 		text = text .. "\n-  " .. math.Round( self.Fuel * 3.6, 1 ) .. " / " .. math.Round( self.Capacity * 3.6, 1) .. " MJ"
+		text = text .. "\nBattery Health: " .. math.Round( (self.BattHealth or 1) * 100, 1 ) .. "%  (" .. math.Round( self.BattCycles or 0, 0 ) .. " cycles)"
+		text = text .. "\nTemp: " .. math.Round( self.Heat or (ACE.AmbientTemp or 20), 0 ) .. " C"
+		local stName = ({ [0] = "Idle", [1] = "Charging", [2] = "Discharging", [3] = "Charging & discharging" })[self.BattState or 0] or "Idle"
+		text = text .. "\n" .. stName
+		if math.abs(self.BattNetKW or 0) > 0.01 then
+			text = text .. "  (" .. (self.BattNetKW > 0 and "+" or "") .. math.Round(self.BattNetKW, 1) .. " kW)"
+		end
+		-- Show the heat-derated rate cap so players see why a hot battery slows down.
+		local rateCap = (self.BattMaxRate or 0) * ACE.Sustain.Battery.RateDerate(self.Heat or 20)
+		text = text .. "\nMax rate: " .. math.Round(rateCap, 1) .. " kW"
+		if rateCap < (self.BattMaxRate or 0) - 0.05 then
+			text = text .. " (hot - derated from " .. math.Round(self.BattMaxRate or 0, 1) .. ")"
+		end
 
 	else
 
@@ -430,6 +481,111 @@ function ENT:UpdateFuelMass()
 
 	self:UpdateOverlayText()
 
+end
+
+--[[----------------------------------------------------------------
+	Battery behaviour (Electric tanks only)
+
+	Electric fuel tanks are Li-Ion batteries: they have a charge-rate cap,
+	round-trip losses, and wear (capacity fades with cycles). The pure logic
+	lives in ACE.Sustain.Battery; these methods bind it to the tank's own
+	self.Fuel (charge) / self.Capacity (usable) fields so the rest of the
+	fuel-tank code keeps working unchanged.
+]]------------------------------------------------------------------
+function ENT:InitBattery()
+	self.BattBaseCapacity = self.Capacity                         -- design capacity (kWh)
+	self.BattHealth       = self.BattHealth or 1
+	self.BattCycles       = self.BattCycles or 0
+	self.BattThroughput   = self.BattThroughput or 0
+	self.BattMaxRate      = self.BattBaseCapacity * (ACF.BatteryChargeRateC or 2)  -- kW cap
+	self.Capacity         = self.BattBaseCapacity * self.BattHealth  -- usable after wear
+	self.Heat             = self.Heat or (ACE.AmbientTemp or 20)
+	self.PendingHeatJ     = self.PendingHeatJ or 0
+	self.GridSourceEff    = ACF.BatteryChargeEff or 0.95   -- one-way discharge eff (grid grosses up by it)
+end
+
+-- Run one battery step (requestKWh: + charge / - discharge) and write the
+-- mutated state back onto the tank. Heat is buffered and applied in Think.
+function ENT:BattStep(requestKWh, dt)
+	local s = {
+		baseCapacity  = self.BattBaseCapacity,
+		capacity      = self.Capacity,
+		charge        = self.Fuel,
+		health        = self.BattHealth,
+		cycleCount    = self.BattCycles,
+		throughput    = self.BattThroughput,
+		-- Charge/discharge power cap = this battery's own C-rate, reduced as it
+		-- heats up (a hot battery cannot move power as fast). No wire override:
+		-- when one battery charges another, THIS (the moving) battery's derated
+		-- rate is what limits the transfer.
+		maxChargeRate = self.BattMaxRate * ACE.Sustain.Battery.RateDerate(self.Heat or 20),
+	}
+
+	local r = ACE.Sustain.Battery.Step(s, requestKWh, dt, {
+		chargeEff       = ACF.BatteryChargeEff,
+		degradePerCycle = ACF.BatteryDegradePerCycle,
+	})
+
+	self.Capacity       = s.capacity
+	self.Fuel           = s.charge
+	self.BattHealth     = s.health
+	self.BattCycles     = s.cycleCount
+	self.BattThroughput = s.throughput
+	self.PendingHeatJ   = (self.PendingHeatJ or 0) + (r.heatAddJ or 0)
+
+	return r
+end
+
+-- Charge from an external source. Returns energy consumed at the terminals
+-- (kWh) so the caller can debit exactly that from its supply.
+function ENT:ChargeBattery(energyKWh, dt)
+	-- Active means the battery is switched into the electrical system. An inactive
+	-- battery is electrically disconnected: it can neither be charged nor drawn from.
+	if self.FuelType ~= "Electric" or not self.Legal or not self.Active then return 0 end
+	if energyKWh <= 0 then return 0 end
+	local r = self:BattStep(energyKWh, dt)
+	self.BattInTick = (self.BattInTick or 0) + (r.terminal or 0)   -- for the State/Power outputs
+	return r.terminal or 0
+end
+
+-- Discharge to an external load. Returns energy delivered (kWh).
+function ENT:DrawEnergy(wantKWh, dt)
+	if self.FuelType ~= "Electric" or not self.Legal or not self.Active then return 0 end
+	if wantKWh <= 0 or self.Fuel <= 0 then return 0 end
+	local r = self:BattStep(-wantKWh, dt)
+	self.BattOutTick = (self.BattOutTick or 0) + (r.delivered or 0)   -- for the State/Power outputs
+	return r.delivered or 0
+end
+
+-- True if this tank can receive `srcType` liquid: same type, or a still-empty
+-- Universal tank (which will take on that type), and never Electric/Oil mismatch.
+function ENT:CanReceiveFuel(srcType)
+	if not srcType or srcType == "Electric" or not self.Legal then return false end
+	if self.FuelType == srcType then return true end
+	if self.IsUniversal and self.FuelType == "Universal" then return true end
+	return false
+end
+
+-- Add liquid fuel (litres). Returns litres accepted. Electric tanks use
+-- ChargeBattery instead. If a Universal tank is still typeless, the supplier's
+-- fuel type (srcType) assigns it.
+function ENT:AddFuel(liters, srcType)
+	if self.FuelType == "Electric" or not self.Legal then return 0 end
+	if liters <= 0 then return 0 end
+
+	-- Auto-assign a typeless Universal tank to whatever is filling it.
+	if self.IsUniversal and self.FuelType == "Universal" and srcType
+		and srcType ~= "Universal" and srcType ~= "Electric" then
+		self.FuelType = srcType
+		self:SetNWString("WireName", "ACE " .. srcType .. " (Universal) Fuel Tank")
+	end
+
+	local room = self.Capacity - self.Fuel
+	if room <= 0 then return 0 end
+	local add = math.min(liters, room)
+	self.Fuel = self.Fuel + add
+	self:UpdateFuelMass()
+	return add
 end
 
 function ENT:Update( ArgsTable )
@@ -480,44 +636,113 @@ function ENT:Think()
 	--make sure it's not made spherical
 	if self.EntityMods and self.EntityMods.MakeSphericalCollisions then self.Fuel = 0 end
 
+	local dt = CurTime() - (self.LastThink or CurTime())
+	local isBattery = self.FuelType == "Electric"
+
+	-- A Universal tank that's been drained dry reverts to typeless, ready to take
+	-- on a different fuel next time it's filled.
+	if self.IsUniversal and self.FuelType ~= "Universal" and (self.Fuel or 0) <= 0.01 then
+		self.FuelType = "Universal"
+		self:SetNWString("WireName", "ACE Universal Fuel Tank")
+		self:UpdateOverlayText()
+	end
+
 	if self.Leaking > 0 then
 		self:NextThink( CurTime() + 0.25 )
 		self.Fuel = math.max(self.Fuel - self.Leaking,0)
 		self.Leaking = math.Clamp(self.Leaking - (1 / math.max(self.Fuel,1)) ^ 0.5, 0, self.Fuel) --fuel tanks are self healing
 		Wire_TriggerOutput(self, "Leaking", (self.Leaking > 0) and 1 or 0)
 	else
-		self:NextThink( CurTime() + 1 )
+		self:NextThink( CurTime() + (isBattery and 0.5 or 1) )
 	end
 
-	--refuelling
-	if self.Active and self.SupplyFuel and self.Fuel > 0 and self.Legal then
+	--[[ Wireless (radius) charging.
+		Liquid fuel tanks no longer auto-refuel by radius - use a fuel
+		plug/socket. Batteries keep wireless charging for convenience, but
+		it is deliberately slow and lossy (penalised) so a physical plug is
+		always the better option for serious logistics. ]]
+	if isBattery and self.Active and self.SupplyFuel and self.Fuel > 0 and self.Legal then
 		self:NextThink(CurTime())
-		for _,Tank in pairs(ACF.FuelTanks) do
+		local want = (ACF.BatteryRadiusRate or 0.5) * dt / 3600  -- kWh budget this tick
 
-			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel and Tank.Legal then --don't refuel the refuellers, otherwise it'll be one big circlejerk
-				local dist = self:GetPos():Distance(Tank:GetPos())
+		for _, Tank in pairs(ACF.FuelTanks) do
+			if want <= 0 then break end
+			-- Receiver must be a different, legal Electric tank that is itself
+			-- ACTIVE (electrically connected) and is NOT also in supply mode.
+			-- Skipping inactive tanks here is what stops this battery from
+			-- "discharging" (state/sound) into a tank that can't accept charge.
+			if Tank == self or Tank.FuelType ~= "Electric" or Tank.SupplyFuel or not Tank.Legal or not Tank.Active then continue end
+			if (Tank.Capacity - Tank.Fuel) <= 0.01 then continue end
+			if self:GetPos():Distance(Tank:GetPos()) >= ACF.RefillDistance then continue end
 
-				if dist < ACF.RefillDistance and (Tank.Capacity - Tank.Fuel > 0.1) then
-					local exchange = ((self.FuelType == "Electric") and 1 or 15) / 200
-					exchange = math.min(exchange, self.Fuel, Tank.Capacity - Tank.Fuel)
-					self.Fuel = self.Fuel - exchange
-					Tank.Fuel = Tank.Fuel + exchange
+			local drawn = self:DrawEnergy(want, dt)
+			if drawn <= 0 then continue end
+			want = want - drawn
 
-					if Tank.FuelType == "Electric" then
-						if not Tank.PlayedSound and CurTime() > (Tank.NextSoundTime or 0) then
-							sound.Play("ambient/energy/newspark04.wav", Tank:GetPos(), 75, 100, 0.5)
-							Tank.PlayedSound = true
-							Tank.NextSoundTime = CurTime() + 1 -- Adjust the delay time (in seconds) as needed
-						end
-					else
-						if CurTime() > (Tank.NextSoundTime or 0) then
-							sound.Play("vehicles/jetski/jetski_no_gas_start.wav", Tank:GetPos(), 75, 120, 0.5)
-							Tank.NextSoundTime = CurTime() + 1 -- Adjust the delay time (in seconds) as needed
-						end
-					end
-				end
+			-- Penalty: only a fraction of the drawn energy actually lands.
+			local delivered = drawn * (ACF.BatteryRadiusPenalty or 0.35)
+			Tank:ChargeBattery(delivered, dt)
+
+			if CurTime() > (Tank.NextSoundTime or 0) then
+				sound.Play("ambient/energy/newspark04.wav", Tank:GetPos(), 75, 100, 0.5)
+				Tank.NextSoundTime = CurTime() + 1
 			end
 		end
+	end
+
+	-- Wireless (radius) refuel for LIQUID supply tanks: tops up nearby same-type
+	-- active tanks, slower than a plug (ACF.FuelRadiusRate). Mirrors the battery
+	-- branch above but moves litres instead of kWh.
+	if not isBattery and self.Active and self.SupplyFuel and (self.Fuel or 0) > 0 and self.Legal then
+		self:NextThink(CurTime())
+		local budget = (ACF.FuelRadiusRate or 4) * dt   -- litres this tick
+
+		for _, Tank in pairs(ACF.FuelTanks) do
+			if budget <= 0 or (self.Fuel or 0) <= 0 then break end
+			if Tank == self or Tank.FuelType == "Electric" or Tank.SupplyFuel or not Tank.Legal or not Tank.Active then continue end
+			if not (Tank.CanReceiveFuel and Tank:CanReceiveFuel(self.FuelType)) then continue end
+			local room = (Tank.Capacity or 0) - (Tank.Fuel or 0)
+			if room <= 0.01 then continue end
+			if self:GetPos():Distance(Tank:GetPos()) >= ACF.RefillDistance then continue end
+
+			local amount = math.min(budget, self.Fuel, room)
+			if amount <= 0 then continue end
+			self.Fuel = self.Fuel - amount
+			if self.UpdateFuelMass then self:UpdateFuelMass() end
+			Tank:AddFuel(amount, self.FuelType)
+			budget = budget - amount
+
+			if CurTime() > (Tank.NextSoundTime or 0) then
+				sound.Play("ambient/water/water_spray" .. math.random(1, 2) .. ".wav", Tank:GetPos(), 65, 105, 0.4)
+				Tank.NextSoundTime = CurTime() + 1
+			end
+		end
+	end
+
+	-- Publish wireless-supply status for the ACE Conduit overlay.
+	self:SetNWBool("AceSupplying", (self.SupplyFuel and self.Active and (self.Fuel or 0) > 0) or false)
+
+	-- Apply buffered battery heat (charge/discharge losses) and dissipate, then
+	-- publish the battery's activity (state + net power + health + temp).
+	if isBattery then
+		local ambient = ACE.AmbientTemp or 20
+		self.Heat = ACE.Sustain.Heat.HeatStep(self.Heat or ambient, self.PendingHeatJ or 0, self.Mass, 1, ambient, dt)
+		self.PendingHeatJ = 0
+
+		local inE  = self.BattInTick or 0
+		local outE = self.BattOutTick or 0
+		self.BattInTick, self.BattOutTick = 0, 0
+		local st = 0
+		if inE > 0 and outE > 0 then st = 3
+		elseif inE > 0 then st = 1
+		elseif outE > 0 then st = 2 end
+		self.BattState = st
+		self.BattNetKW = (inE - outE) / math.max(dt / 3600, 1e-9)
+
+		Wire_TriggerOutput(self, "State", st)
+		Wire_TriggerOutput(self, "Battery Health", math.Round((self.BattHealth or 1) * 100, 1))
+		Wire_TriggerOutput(self, "Temperature", math.Round(self.Heat or ambient, 1))
+		Wire_TriggerOutput(self, "Power", math.Round(self.BattNetKW, 2))
 	end
 
 	self:UpdateFuelMass()

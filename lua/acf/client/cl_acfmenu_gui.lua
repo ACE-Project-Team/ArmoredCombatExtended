@@ -182,6 +182,18 @@ function PANEL:Init( )
 	AmmoBuildList( Ammo, "High Explosive Rounds", list.Get("HERoundTypes") )	-- HE/HEAT Content
 	AmmoBuildList( Ammo, "Special Purpose Rounds", list.Get("SPECSRoundTypes") ) -- Special Content
 
+	-- Explosives live under Ammo. One entry ("Explosives") that opens the scalable
+	-- charge config directly - shape/size are chosen inside the menu, no extra leaf.
+	for _, Data in pairs(FinalContainer["Explosives"] or {}) do
+		local ExploNode = Ammo:AddNode("Explosives", "icon16/bomb.png")
+		ExploNode.mytable = Data
+		function ExploNode:DoClick()
+			RunConsoleCommand("acfmenu_type", self.mytable.type)
+			acfmenupanel:UpdateDisplay(self.mytable)
+		end
+		break
+	end
+
 	do
 		--[[==================================================
 							Mobility folder
@@ -323,6 +335,18 @@ function PANEL:Init( )
 			end --end radar folder
 		end
 
+		-- RWR / ECM (defined as Extras) live here under Sensors too.
+		for _, Data in pairs(FinalContainer["Extras"] or {}) do
+			if Data.category == "Sensors" then
+				local ItemNode = sensors:AddNode(Data.name or "No Name", ItemIcon2)
+				ItemNode.mytable = Data
+				function ItemNode:DoClick()
+					RunConsoleCommand("acfmenu_type", self.mytable.type)
+					acfmenupanel:UpdateDisplay(self.mytable)
+				end
+			end
+		end
+
 	end
 	do
 	--[[==================================================
@@ -367,22 +391,80 @@ function PANEL:Init( )
 		local extrasNode = HomeNode:AddNode("Extras", "icon16/bricks.png")
 
 		for _, ExtrasData in pairs(FinalContainer["Extras"] or {}) do
-			local ItemNode = extrasNode:AddNode(ExtrasData.name or "No Name", ItemIcon2)
-			ItemNode.mytable = ExtrasData
+			-- Sensors-category (RWR/ECM) show under Sensors; Electricity-category
+			-- (Consumer/Collector) show under Power > Electricity.
+			if ExtrasData.category ~= "Sensors" and ExtrasData.category ~= "Electricity" and ExtrasData.category ~= "Fuel" then
+				local ItemNode = extrasNode:AddNode(ExtrasData.name or "No Name", ItemIcon2)
+				ItemNode.mytable = ExtrasData
 
+				function ItemNode:DoClick()
+					RunConsoleCommand("acfmenu_type", self.mytable.type)
+					acfmenupanel:UpdateDisplay(self.mytable)
+				end
+			end
+		end
+		extrasNode:SetExpanded( false )
+	end
+	do
+
+	--[[==================================================
+					Power folder
+	]]--==================================================
+
+		local powerNode = HomeNode:AddNode("Power", "icon16/lightbulb.png")
+
+		-- Split into two sub-sections: Electricity (generate/move power) and Fuel
+		-- (make/move liquid fuel). Keeps the growing roster organised.
+		local elecNode = powerNode:AddNode("Electricity", "icon16/lightning.png")
+		local fuelNode = powerNode:AddNode("Fuel", "icon16/drink.png") -- "gas_station" is not a Silk icon (rendered as error)
+
+		local function addLeaf(parent, Data, label)
+			local ItemNode = parent:AddNode(label or Data.name or "No Name", ItemIcon2)
+			ItemNode.mytable = Data
 			function ItemNode:DoClick()
 				RunConsoleCommand("acfmenu_type", self.mytable.type)
 				acfmenupanel:UpdateDisplay(self.mytable)
 			end
 		end
+
+		-- Electricity: generators + the station grid + transformers + wires + loads + buffers.
+		for _, key in ipairs({ "Alternators", "SolarPanels", "TransferStations", "Transformers", "PowerLines", "Consumers", "Capacitors" }) do
+			for _, Data in pairs(FinalContainer[key] or {}) do
+				addLeaf(elecNode, Data)
+			end
+		end
+		-- Consumer + train Collector are Extras tagged "Electricity".
+		for _, Data in pairs(FinalContainer["Extras"] or {}) do
+			if Data.category == "Electricity" then addLeaf(elecNode, Data) end
+		end
+
+		-- Fuel: synthesizer, field generator, the long-distance pipe, and the
+		-- plug/socket connector (one entry; a dropdown inside picks which one).
+		for _, key in ipairs({ "FuelSynths", "FieldGenerators" }) do
+			for _, Data in pairs(FinalContainer[key] or {}) do
+				addLeaf(fuelNode, Data)
+			end
+		end
+		for _, Data in pairs(FinalContainer["FuelPlugs"] or {}) do
+			addLeaf(fuelNode, Data, "Fuel Connector")
+			break
+		end
+		-- Refinery (and any other Fuel-tagged Extras).
+		for _, Data in pairs(FinalContainer["Extras"] or {}) do
+			if Data.category == "Fuel" then addLeaf(fuelNode, Data) end
+		end
+
+		powerNode:SetExpanded( false )
+		elecNode:SetExpanded( false )
+		fuelNode:SetExpanded( false )
 	end
 	do
 
 	--[[==================================================
-						Settings folder
+					Settings folder
 	]]--==================================================
 
-	local OptionsNode = TreePanel:AddNode( "Settings" ) --Options folder
+		local OptionsNode = TreePanel:AddNode( "Settings" ) --Options folder
 
 	local CLNod	= OptionsNode:AddNode("Client" , "icon16/user.png") --Client folder
 	local SVNod	= OptionsNode:AddNode("Server", "icon16/cog.png")  --Server folder
@@ -656,7 +738,18 @@ function ACFCLGUICreate()
 	Effects:CheckBox("Draw Mobility rope links", "ACF_MobilityRopeLinks")
 	Effects:ControlHelp( "Allow you to see the links between engines and gearboxes (requires dupe restart)" )
 
+	Effects:CheckBox("Draw ACE grid/fuel link beams", "ace_draw_link_beams")
+	Effects:ControlHelp( "Show the cables drawn between linked sustainability nodes (power lines, fuel pipes, stations, transformers, capacitors)." )
+
 	acfmenupanel.CustomDisplay:AddItem( Effects )
+
+	local Fuel = vgui.Create( "DForm" )
+	Fuel:SetName("Fuel & Power")
+
+	Fuel:CheckBox("Spawn fuel tanks empty by default", "acf_fueltank_spawnempty")
+	Fuel:ControlHelp( "Tick the 'Spawn Empty' box in the fuel tank menu by default, so new tanks and batteries spawn with no fuel/charge." )
+
+	acfmenupanel.CustomDisplay:AddItem( Fuel )
 
 	local DupeSection = vgui.Create( "DForm" )
 	DupeSection:SetName("Dupe Loader")
@@ -726,6 +819,14 @@ function ACFSVGUICreate()	--Serverside folder content
 	--General:ControlHelp( "Changes the year. This will affect the available weaponry (requires restart)." )
 
 	acfmenupanel.CustomDisplay:AddItem( General )
+
+	local Fuel = vgui.Create( "DForm" )
+	Fuel:SetName("Fuel & Power")
+
+	Fuel:CheckBox("Force fuel tanks to spawn empty", "acf_fueltank_forceempty")
+	Fuel:ControlHelp( "Server-wide: every fuel tank and battery spawns empty regardless of the client's 'Spawn Empty' setting. Good for logistics servers." )
+
+	acfmenupanel.CustomDisplay:AddItem( Fuel )
 
 	local Spall = vgui.Create( "DForm" )
 	Spall:SetName("Spalling")
@@ -1513,6 +1614,446 @@ function ACEExtrasGUICreate(Table)
 	end
 
 	acfmenupanel.CustomDisplay:PerformLayout()
+end
+
+--[[=================================================================
+	Scalable power-entity GUI (shared)
+
+	Alternator / solar / fuel synth / field generator all share the same
+	shape + L/W/H size config; only the allowed shapes and the stats readout
+	differ. BuildScalableConfig draws the shared widgets, filters the shape
+	list through the definition's AllowedShapes/BlacklistShapes, keeps the
+	chosen size in acfmenupanel.ScalableCfg[class], writes acfmenu_data1
+	("L:W:H") + acfmenu_data2 (shape), and calls statsFn to render the panel.
+]]--==================================================================
+do
+	local function getCfg(Table)
+		acfmenupanel.ScalableCfg = acfmenupanel.ScalableCfg or {}
+		local key = Table.ent or Table.id or "scalable"
+		local cfg = acfmenupanel.ScalableCfg[key]
+		if not cfg then
+			local d = Table.MenuDefault or {}
+			cfg = {
+				L = d.L or 30, W = d.W or 30, H = d.H or 30,
+				Shape = d.Shape or "Box", Expanded = true,
+			}
+			acfmenupanel.ScalableCfg[key] = cfg
+		end
+		return cfg
+	end
+
+	-- Shapes this definition permits, in ACE.ModelData order.
+	local function allowedShapes(Table)
+		local out, seen = {}, {}
+		for _, v in pairs(ACE.ModelData) do
+			if v.volumefunction and v.Shape and not seen[v.Shape]
+				and ACE.Sustain.Scale.ShapeAllowed(v.Shape, Table) then
+				seen[v.Shape] = true
+				out[#out + 1] = v.Shape
+			end
+		end
+		table.sort(out)
+		return out
+	end
+
+	function BuildScalableConfig(Table, statsFn)
+		if not acfmenupanel.CustomDisplay then return end
+		local MainPanel = acfmenupanel.CustomDisplay
+		local cfg = getCfg(Table)
+
+		acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+		acfmenupanel:CPanelText("Desc", Table.desc)
+
+		local statsKey = (Table.ent or "scalable") .. "Stats"
+
+		local function refresh()
+			local md = ACE.ModelData[cfg.Shape]
+			if not md then return end
+			local vol = md.volumefunction(cfg.L, cfg.W, cfg.H)
+			acfmenupanel:CPanelText(statsKey, "\n" .. statsFn(cfg, vol))
+		end
+
+		local function pushId()
+			local Id = math.Round(cfg.L, 1) .. ":" .. math.Round(cfg.W, 1) .. ":" .. math.Round(cfg.H, 1)
+			RunConsoleCommand("acfmenu_data1", Id)
+			RunConsoleCommand("acfmenu_data2", cfg.Shape)
+			refresh()
+		end
+
+		local Cat = vgui.Create("DCollapsibleCategory")
+		MainPanel:AddItem(Cat)
+		Cat:SetLabel("Size & Shape")
+		Cat:SetExpanded(cfg.Expanded)
+		function Cat:OnToggle(b) cfg.Expanded = b end
+
+		local List = vgui.Create("DPanelList")
+		List:SetSpacing(8)
+		List:EnableHorizontal(false)
+		List:EnableVerticalScrollbar(true)
+		List:SetPaintBackground(false)
+		Cat:SetContents(List)
+
+		local shapes = allowedShapes(Table)
+		if not ACE.Sustain.Scale.ShapeAllowed(cfg.Shape, Table) then
+			cfg.Shape = shapes[1] or "Box"
+		end
+
+		-- Only show the shape selector when there's a real choice.
+		if #shapes > 1 then
+			local Combo = vgui.Create("DComboBox")
+			Combo:SetSize(100, 30)
+			for _, s in ipairs(shapes) do Combo:AddChoice(s) end
+			Combo:SetText(cfg.Shape)
+			Combo.OnSelect = function(_, _, data) cfg.Shape = data pushId() end
+			List:AddItem(Combo)
+		end
+
+		local minS = ACF.SustainMinimumSize or ACF.CrateMinimumSize or 5
+		local maxS = ACF.CrateMaximumSize or 250
+
+		local function slider(label, field)
+			local S = vgui.Create("DNumSlider")
+			S:SetText(label)
+			S:SetDark(true)
+			S:SetMin(minS)
+			S:SetMax(maxS)
+			S:SetDecimals(1)
+			S:SetValue(cfg[field])
+			function S:OnValueChanged(v) cfg[field] = v pushId() end
+			List:AddItem(S)
+		end
+
+		slider("Length", "L")
+		slider("Width", "W")
+		-- Some entities (e.g. solar panels) are inherently flat slabs - their
+		-- thickness doesn't change behaviour, so we lock it to a fixed value and
+		-- hide the slider instead of letting the player waste a dimension on it.
+		if Table.LockH then
+			cfg.H = Table.MenuDefault and Table.MenuDefault.H or minS
+		else
+			slider("Height/Thickness", "H")
+		end
+
+		pushId()
+		MainPanel:PerformLayout()
+	end
+end
+
+--[[=========================  Alternator  =========================]]--
+function ACEAlternatorGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, vol)
+		return "Max Output: " .. math.Round(vol * ACF.AlternatorPowerDensity, 2) .. " kW @ " .. math.Round(ACF.AlternatorRatedRPM or 3000, 0) .. " RPM"
+			.. "\nEfficiency: " .. math.Round((ACF.AlternatorEfficiency or 0.85) * 100, 0) .. "%"
+			.. "\nMass: " .. math.Round(vol * ACF.AlternatorMassPerVolume, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(vol * ACF.AlternatorPointsPerVolume, 0)
+	end)
+end
+function ACEAlternatorGUIUpdate() end
+
+--[[=========================  Solar Panel  ========================]]--
+function ACESolarGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, _)
+		local areaSqM = (cfg.L * cfg.W) * 0.0254 * 0.0254
+		return "Panel Area: " .. math.Round(areaSqM, 2) .. " m^2"
+			.. "\nMax Output: " .. math.Round(areaSqM * ACF.SolarIrradiance * ACF.SolarEfficiency, 3) .. " kW"
+			.. "\nEfficiency: " .. math.Round(ACF.SolarEfficiency * 100, 0) .. "% (less when hot)"
+			.. "\nMass: " .. math.Round(areaSqM * ACF.SolarMassPerArea, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(areaSqM * ACF.SolarPointsPerArea, 0)
+	end)
+end
+function ACESolarGUIUpdate() end
+
+--[[=========================  Fuel Synthesizer  ===================]]--
+function ACEFuelSynthGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, vol)
+		local drawKW = vol * ACF.SynthPowerDensity
+		local fuelLPM = (drawKW / 3600) * ACF.SynthEfficiency / ACF.SynthEnergyPerLiter * 60
+		return "Max Elec Draw: " .. math.Round(drawKW, 2) .. " kW"
+			.. "\nFuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min (at full power)"
+			.. "\nEfficiency: " .. math.Round(ACF.SynthEfficiency * 100, 0) .. "%"
+			.. "\nMass: " .. math.Round(vol * ACF.SynthMassPerVolume, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(vol * ACF.SynthPointsPerVolume, 0)
+	end)
+end
+function ACEFuelSynthGUIUpdate() end
+
+--[[=========================  Field Generator  ====================]]--
+function ACEFieldGenGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, vol)
+		local fuelLPM = vol * ACF.FieldGenRate * 60
+		return "Fuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min"
+			.. "\nHeat: " .. math.Round(vol * ACF.FieldGenHeatDensity, 0) .. " W (runs hot)"
+			.. "\nSelf-powered (no electricity needed)"
+			.. "\nMass: " .. math.Round(vol * ACF.FieldGenMassPerVolume, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(vol * ACF.FieldGenPointsPerVolume, 0)
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+
+	-- Optional: spawn it as the HL2 thumper prop instead of a holo box.
+	local stored = GetConVar("acfmenu_data3")
+	local useThumper = stored and stored:GetString() == "1" or false
+	RunConsoleCommand("acfmenu_data3", useThumper and "1" or "0")
+
+	local ThumperCheck = vgui.Create("DCheckBoxLabel")
+	ThumperCheck:SetText("Use thumper model")
+	ThumperCheck:SetDark(true)
+	ThumperCheck:SetChecked(useThumper)
+	ThumperCheck:SizeToContents()
+	function ThumperCheck:OnChange(v)
+		RunConsoleCommand("acfmenu_data3", v and "1" or "0")
+	end
+	acfmenupanel.CustomDisplay:AddItem(ThumperCheck)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACEFieldGenGUIUpdate() end
+
+--[[=========================  Explosive Charge  ===================]]--
+-- Scalable charge: pick a shape and size; the filler is read from the resulting
+-- physical volume (same HE maths as shells). Pre-built model charges live in the
+-- Q spawnmenu instead.
+function ACEExplosiveGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, vol)
+		local CM3 = 16.387
+		local f   = Table.fillerFraction or 0.65
+		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)
+		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
+		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
+		local radius     = fillerMass ^ 0.33 * 8
+		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
+			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
+			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"
+			.. "\nMass: " .. math.Round(physMass, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(fillerMass * (ACF.ExplosivePointsPerKg or 28), 0)
+	end)
+end
+function ACEExplosiveGUIUpdate() end
+
+--[[=========================  Transfer Station  ==================]]--
+-- Scalable station: size sets capacity (build-fixed), plus a line Voltage slider
+-- (loss/heat tradeoff). data1 = L:W:H, data2 = shape, data3 = voltage.
+function ACETransferStationGUICreate(Table)
+	acfmenupanel.StationCfg = acfmenupanel.StationCfg or { voltage = ACF.GridStationDefaultVoltage or 5, phases = 1 }
+	local cfg = acfmenupanel.StationCfg
+
+	BuildScalableConfig(Table, function(_, vol)
+		local pm  = (cfg.phases == 3) and (ACF.GridStation3PhaseMul or 1.732) or 1
+		local cap = vol * (ACF.GridStationCapacityPerVolume or 0.0056) * pm
+		return "Capacity: " .. math.Round(cap, 0) .. " kW  (set by size" .. (cfg.phases == 3 and " + 3-phase" or "") .. ", not voltage)"
+			.. "\nPhase: " .. (cfg.phases == 3 and "3-phase (more capacity, cooler)" or "1-phase")
+			.. "\nVoltage: " .. math.Round(cfg.voltage, 0) .. "  (higher = less line loss, but hotter)"
+			.. "\nConversion loss: " .. math.Round(((ACE.Sustain and ACE.Sustain.Grid.ConvLoss) or 0.04) * 100, 0) .. "% per DC<->AC step"
+			.. "\nLink range: " .. math.Round(ACF.GridStationLinkRange or 5000, 0) .. "u (chain nodes to go further)"
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+	RunConsoleCommand("acfmenu_data3", cfg.voltage)
+	RunConsoleCommand("acfmenu_data4", cfg.phases == 3 and "3" or "1")
+
+	local VoltS = vgui.Create("DNumSlider")
+	VoltS:SetText("Voltage")
+	VoltS:SetDark(true)
+	VoltS:SetMin(1)
+	VoltS:SetMax(ACF.GridStationMaxVoltage or 10)
+	VoltS:SetDecimals(0)
+	VoltS:SetValue(cfg.voltage)
+	function VoltS:OnValueChanged(v) cfg.voltage = math.Round(v, 0) RunConsoleCommand("acfmenu_data3", cfg.voltage) end
+	acfmenupanel.CustomDisplay:AddItem(VoltS)
+
+	local Phase = vgui.Create("DCheckBoxLabel")
+	Phase:SetText("3-phase (more capacity, runs cooler)")
+	Phase:SetDark(true)
+	Phase:SetChecked(cfg.phases == 3)
+	Phase:SizeToContents()
+	function Phase:OnChange(v) cfg.phases = v and 3 or 1 RunConsoleCommand("acfmenu_data4", v and "3" or "1") acfmenupanel:UpdateDisplay(Table) end
+	acfmenupanel.CustomDisplay:AddItem(Phase)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACETransferStationGUIUpdate() end
+
+--[[=========================  Transformer  =======================]]--
+-- Scalable box (size sets ampacity) + an Output Voltage slider. data1 = L:W:H,
+-- data2 = shape, data3 = output voltage.
+function ACETransformerGUICreate(Table)
+	acfmenupanel.TransformerCfg = acfmenupanel.TransformerCfg or { voltage = ACF.TransformerDefaultVoltage or 30 }
+	local cfg = acfmenupanel.TransformerCfg
+
+	BuildScalableConfig(Table, function(_, vol)
+		local amp = vol * (ACF.TransformerAmpacityPerVolume or 0.0009)
+		return "Ampacity: " .. math.Round(amp, 1) .. " A"
+			.. "\nCapacity @ " .. math.Round(cfg.voltage, 0) .. " V: " .. math.Round(amp * cfg.voltage, 0) .. " kW"
+			.. "\nEfficiency: " .. math.Round((ACF.TransformerEff or 0.97) * 100, 0) .. "% per pass"
+			.. "\nMass: " .. math.Round(vol * (ACF.TransformerMassPerVolume or 0.01), 1) .. " kg"
+			.. "\n(higher voltage = more capacity + less line loss, but needs real power behind it)"
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+	RunConsoleCommand("acfmenu_data3", cfg.voltage)
+
+	local VoltS = vgui.Create("DNumSlider")
+	VoltS:SetText("Output Voltage")
+	VoltS:SetDark(true)
+	VoltS:SetMin(1)
+	VoltS:SetMax(ACF.TransformerMaxVoltage or 100)
+	VoltS:SetDecimals(0)
+	VoltS:SetValue(cfg.voltage)
+	function VoltS:OnValueChanged(v) cfg.voltage = math.Round(v, 0) RunConsoleCommand("acfmenu_data3", cfg.voltage) end
+	acfmenupanel.CustomDisplay:AddItem(VoltS)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACETransformerGUIUpdate() end
+
+--[[=========================  Power Line  ========================]]--
+-- Scalable conductor: cross-section (W*H) sets ampacity & resistance. data1 =
+-- L:W:H, data2 = shape. No voltage setting - it carries the line's voltage.
+function ACEPowerLineGUICreate(Table)
+	BuildScalableConfig(Table, function(cfg, vol)
+		local s = { cfg.L, cfg.W, cfg.H }
+		table.sort(s)
+		local area = math.max(s[1] * s[2], 1)   -- two shorter dims = gauge
+		local len  = math.max(s[3], 1)          -- longest = length
+		local amp  = area * (ACF.PowerLineAmpacityPerArea or 0.06)
+		local P    = ACE.Sustain and ACE.Sustain.Power
+		local R    = P and P.Resistance(len, area, ACF.PowerLineResistivity or 1.25, 20) or 0
+		local loLo = P and P.ResistiveLoss(R, 10, amp * 10) or 0   -- at full load
+		local loHi = P and P.ResistiveLoss(R, 60, amp * 60) or 0
+		return "Ampacity: " .. math.Round(amp, 1) .. " A (thicker = more)"
+			.. "\nLoss @ full load: " .. math.Round(loLo * 100, 0) .. "% @10V / " .. math.Round(loHi * 100, 1) .. "% @60V"
+			.. "\nMass: " .. math.Round(vol * (ACF.PowerLineMassPerVolume or 0.004), 1) .. " kg"
+	end)
+end
+function ACEPowerLineGUIUpdate() end
+
+--[[=========================  Power Consumer  ====================]]--
+-- Scalable load with an optional "use real model" checkbox. data1 = L:W:H,
+-- data2 = shape, data3 = "1" to spawn the console prop instead of a box.
+function ACEConsumerGUICreate(Table)
+	BuildScalableConfig(Table, function(_, vol)
+		local baseDraw = math.max(vol * (ACF.ConsumerDrawPerVolume or 0.02), 0.1)
+		return "Load (from size): " .. ACE.FormatPower(baseDraw)
+			.. "\n(house ~10kW, building ~100kW, factory ~1MW)"
+			.. "\nWire 'Draw' to override; gets full kW (no loss haircut)."
+			.. "\nMass: " .. math.Round(vol * 0.002, 1) .. " kg"
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+
+	local stored = GetConVar("acfmenu_data3")
+	local useModel = stored and stored:GetString() == "1" or false
+	RunConsoleCommand("acfmenu_data3", useModel and "1" or "0")
+
+	local Check = vgui.Create("DCheckBoxLabel")
+	Check:SetText("Use console model")
+	Check:SetDark(true)
+	Check:SetChecked(useModel)
+	Check:SizeToContents()
+	function Check:OnChange(v) RunConsoleCommand("acfmenu_data3", v and "1" or "0") end
+	acfmenupanel.CustomDisplay:AddItem(Check)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACEConsumerGUIUpdate() end
+
+--[[=========================  Capacitor  =========================]]--
+function ACECapacitorGUICreate(Table)
+	BuildScalableConfig(Table, function(_, vol)
+		local cap  = math.max(vol * (ACF.CapacitorEnergyPerVolume or 0.000015), 0.0005)
+		local rate = math.max(vol * (ACF.CapacitorRatePerVolume or 0.02), 1)
+		return "Store: " .. ACE.FormatEnergy(cap) .. "  (tiny - it's for smoothing, not storage)"
+			.. "\nPower cap: " .. math.Round(rate, 0) .. " kW  (discharges/charges hard)"
+			.. "\nEfficiency: " .. math.Round((ACF.CapacitorEff or 0.97) * 100, 0) .. "%"
+			.. "\nAuto-charges from the grid; supplies nearby loads on spikes."
+			.. "\nMass: " .. math.Round(vol * (ACF.CapacitorMassPerVolume or 0.006), 1) .. " kg"
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+
+	-- Optional prop model (0 = scalable box). Stats still come from the size config.
+	local MODELS = { { "Scalable box", "0" }, { "Pole mount", "1" }, { "Connector", "2" } }
+	local stored = GetConVar("acfmenu_data3")
+	local cur    = stored and stored:GetString() or "0"
+	if cur ~= "0" and cur ~= "1" and cur ~= "2" then cur = "0" end
+	RunConsoleCommand("acfmenu_data3", cur)
+
+	local Combo = vgui.Create("DComboBox")
+	Combo:SetSize(120, 24)
+	for _, m in ipairs(MODELS) do Combo:AddChoice(m[1], m[2]) end
+	for _, m in ipairs(MODELS) do if m[2] == cur then Combo:SetText(m[1]) break end end
+	Combo.OnSelect = function(_, _, _, data) RunConsoleCommand("acfmenu_data3", data) end
+	acfmenupanel.CustomDisplay:AddItem(Combo)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACECapacitorGUIUpdate() end
+
+--[[=========================  Fuel Connector  ====================]]--
+-- Plug and socket live under a single menu entry; this GUI has a dropdown to
+-- choose which one to spawn (re-displaying for the other when switched).
+do
+	local function firstDef(tbl)
+		for _, d in pairs(tbl or {}) do return d end
+	end
+
+	local function fuelConnectorStats(Table, cfg)
+		-- A pipe's flow comes from its BORE (the two shorter dims); its length adds
+		-- friction over distance, not flow. So these stats update with the size.
+		if Table and Table.ent == "ace_fuel_pipe" and cfg then
+			local s = { cfg.L, cfg.W, cfg.H }
+			table.sort(s)
+			local area = math.max(s[1] * s[2], 1)
+			local bore = ACE.Sustain and ACE.Sustain.Pipe.Bore(area)
+			return "Bore flow: " .. math.Round((bore and bore.flowCap) or 0, 2) .. " L/s  (wider bore = more)"
+				.. "\nLength adds friction over distance, not flow."
+				.. "\nTransfer loss: " .. math.Round(ACF.FuelLinkLoss * 100, 0) .. "%"
+		end
+		-- Plug / socket: fixed transfer rates.
+		return "Gas Flow: " .. math.Round(ACF.FuelLinkRate, 1) .. " L/s"
+			.. "\nElectric Flow: " .. math.Round(ACF.FuelLinkRateElec, 1) .. " kW"
+			.. "\nTransfer Loss: " .. math.Round(ACF.FuelLinkLoss * 100, 0) .. "%"
+	end
+
+	function ACEFuelConnectorGUICreate(Table)
+		if not acfmenupanel.CustomDisplay then return end
+
+		RunConsoleCommand("acfmenu_type", Table.type)  -- keep spawn type in sync
+
+		local byEnt = {
+			ace_fuel_plug   = { label = "Fuel Plug",   def = firstDef(ACF.Weapons.FuelPlugs) },
+			ace_fuel_socket = { label = "Fuel Socket", def = firstDef(ACF.Weapons.FuelSockets) },
+			ace_fuel_pipe   = { label = "Fuel Pipe",   def = firstDef(ACF.Weapons.FuelPipes) },
+		}
+		local byLabel = {}
+		for _, v in pairs(byEnt) do byLabel[v.label] = v.def end
+
+		-- A little top padding + a label so the selector isn't flush at the very
+		-- top of the panel (where it was easy to miss / its open list ran off-screen).
+		local spacer = vgui.Create("DPanel")
+		spacer:SetTall(8)
+		spacer.Paint = function() end
+		acfmenupanel.CustomDisplay:AddItem(spacer)
+
+		local lbl = vgui.Create("DLabel")
+		lbl:SetText("Connector type:")
+		lbl:SetDark(true)
+		lbl:SizeToContents()
+		acfmenupanel.CustomDisplay:AddItem(lbl)
+
+		local Combo = vgui.Create("DComboBox")
+		Combo:SetSize(120, 30)
+		Combo:AddChoice("Fuel Plug")
+		Combo:AddChoice("Fuel Socket")
+		Combo:AddChoice("Fuel Pipe")
+		Combo:SetText((byEnt[Table.ent] and byEnt[Table.ent].label) or "Fuel Plug")
+		Combo.OnSelect = function(_, _, label)
+			local target = byLabel[label]
+			if target and target.ent ~= Table.ent then
+				RunConsoleCommand("acfmenu_type", target.type)
+				acfmenupanel:UpdateDisplay(target)
+			end
+		end
+		acfmenupanel.CustomDisplay:AddItem(Combo)
+
+		BuildScalableConfig(Table, function(cfg, vol) return fuelConnectorStats(Table, cfg, vol) end)
+	end
+	function ACEFuelConnectorGUIUpdate() end
 end
 
 if not ACF then ACF = {} end

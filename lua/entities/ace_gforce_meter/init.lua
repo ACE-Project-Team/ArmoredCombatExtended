@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_acf_gforce_meter", 10)
+CreateConVar("sbox_max_ace_gforce_meter", 10)
 
 DEFINE_BASECLASS("base_wire_entity")
 

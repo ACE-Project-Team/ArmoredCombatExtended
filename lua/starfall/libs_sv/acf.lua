@@ -443,6 +443,148 @@ do
 
 		return sanitize(Crew)
 	end
+
+	local genClasses = {
+		ace_alternator      = true,
+		ace_solarpanel      = true,
+		ace_fuel_synth      = true,
+		ace_field_generator = true,
+	}
+	local fuelMakerClasses = {
+		ace_fuel_synth      = true,
+		ace_field_generator = true,
+	}
+
+	--- Electrical output of an ACE generator (alternator/solar), in kW
+	-- @server
+	-- @return number Output power in kW
+	function ents_methods:acfGenPower()
+		local this = getent(self)
+		if not (IsValid(this) and genClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.OutputPower or 0
+	end
+
+	--- Fuel production rate of an ACE fuel synthesizer / field generator, L/s
+	-- @server
+	-- @return number Litres per second
+	function ents_methods:acfFuelRate()
+		local this = getent(self)
+		if not (IsValid(this) and fuelMakerClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.FuelRate or 0
+	end
+
+	--- Remaining capacity (% of design) of an ACE Electric battery
+	-- @server
+	-- @return number Battery health percentage
+	function ents_methods:acfBatteryHealth()
+		local this = getent(self)
+		if not (isFuel(this) and this.FuelType == "Electric") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return (this.BattHealth or 1) * 100
+	end
+
+	--- Equivalent full charge cycles an ACE Electric battery has done
+	-- @server
+	-- @return number Cycle count
+	function ents_methods:acfBatteryCycles()
+		local this = getent(self)
+		if not (isFuel(this) and this.FuelType == "Electric") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.BattCycles or 0
+	end
+
+	local gridClasses = {
+		ace_transfer_station = true,
+		ace_transformer      = true,
+		ace_power_line       = true,
+		ace_capacitor        = true,
+		ace_power_collector  = true,
+	}
+	local gridNodeClasses = {
+		ace_transfer_station = true,
+		ace_transformer      = true,
+		ace_power_line       = true,
+		ace_capacitor        = true,
+	}
+
+	--- Power moving through an ACE grid entity (station/transformer/line/collector), in kW
+	-- @server
+	-- @return number Throughput in kW
+	function ents_methods:acfThroughput()
+		local this = getent(self)
+		if not (IsValid(this) and gridClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Throughput or 0
+	end
+
+	--- Line voltage of an ACE grid node (transfer station / transformer / power line)
+	-- @server
+	-- @return number Voltage
+	function ents_methods:acfVoltage()
+		local this = getent(self)
+		if not (IsValid(this) and gridNodeClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Voltage or 0
+	end
+
+	--- Throughput capacity (kW) an ACE grid node can carry
+	-- @server
+	-- @return number Capacity in kW
+	function ents_methods:acfGridCapacity()
+		local this = getent(self)
+		if not (IsValid(this) and gridNodeClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return (this.GridCapacity and this:GridCapacity()) or 0
+	end
+
+	--- 1 when an ACE grid node can reach an energised source through the grid
+	-- @server
+	-- @return number 1 if live, else 0
+	function ents_methods:acfGridLive()
+		local this = getent(self)
+		if not (IsValid(this) and gridNodeClasses[this:GetClass()]) then return 0 end
+		if restrictInfo(this) then return 0 end
+		return (ACE.Sustain and ACE.Sustain.GridHasSource and ACE.Sustain.GridHasSource(this)) and 1 or 0
+	end
+
+	--- Mode of an ACE Transfer Station: 0 idle, 1 source, 2 sink, 3 relay
+	-- @server
+	-- @return number Mode
+	function ents_methods:acfGridMode()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_transfer_station") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Mode or 0
+	end
+
+	--- 1 when an ACE Power Collector is currently picking up power
+	-- @server
+	-- @return number 1 if connected, else 0
+	function ents_methods:acfConnected()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_power_collector") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Connected and 1 or 0
+	end
+
+	--- Distance (units) from an ACE Power Collector to the node it draws from, or -1
+	-- @server
+	-- @return number Distance in units, -1 when nothing live is in range
+	function ents_methods:acfWireDistance()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_power_collector") then return -1 end
+		if restrictInfo(this) then return -1 end
+		return this.SourceDist or -1
+	end
+
+	--- Maximum pickup range (units) of an ACE Power Collector
+	-- @server
+	-- @return number Range in units
+	function acf_library.wireRange()
+		return ACF.GridCollectorRange or 400
+	end
 end
 
 -- Spawning functions

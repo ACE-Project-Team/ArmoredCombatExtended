@@ -2,6 +2,28 @@ AddCSLuaFile()
 
 local floor, Clamp = math.floor, math.Clamp
 
+ACE = ACE or {}
+
+-- Human-readable energy/power with automatic unit scaling, so a tiny battery
+-- reads "850 Wh" and a huge one "1.2 MWh" instead of an awkward kWh figure, and
+-- a sub-kilowatt draw reads in W. Display only - internal maths stay in kWh/kW.
+function ACE.FormatEnergy(kWh)
+	kWh = tonumber(kWh) or 0
+	local a = math.abs(kWh)
+	if a < 1 then        return string.format("%.0f Wh", kWh * 1000)
+	elseif a < 1000 then return string.format("%.1f kWh", kWh)
+	elseif a < 1e6 then  return string.format("%.2f MWh", kWh / 1000)
+	else                 return string.format("%.2f GWh", kWh / 1e6) end
+end
+
+function ACE.FormatPower(kW)
+	kW = tonumber(kW) or 0
+	local a = math.abs(kW)
+	if a < 1 then        return string.format("%.0f W", kW * 1000)
+	elseif a < 1000 then return string.format("%.1f kW", kW)
+	else                 return string.format("%.2f MW", kW / 1000) end
+end
+
 -- returns last parent in chain, which has physics
 function ACF_GetPhysicalParent( obj )
 	if not IsValid(obj) then return nil end
@@ -799,7 +821,22 @@ ACE.ClassToType = ACE.ClassToType or {
 	ace_sonar = "Electronics",
 	ace_gforce_meter = "Electronics",
 	ace_vheat_source = "Electronics",
-	ace_wind_sensor = "Electronics"
+	ace_wind_sensor = "Electronics",
+	ace_alternator = "Electronics",
+	ace_solarpanel = "Electronics",
+	ace_fuel_synth = "Electronics",
+	ace_field_generator = "Electronics",
+	ace_explosive = "Ammo",
+	ace_explosive_prebuilt = "Ammo",
+	ace_bomb_satchel = "Ammo",
+	ace_bomb_aerial = "Ammo",
+	ace_bomb_barrel = "Ammo",
+	ace_transfer_station = "Electronics",
+	ace_power_consumer = "Electronics",
+	ace_power_collector = "Electronics",
+	ace_power_breaker = "Electronics",
+	ace_refinery = "Electronics",
+	ace_fuel_pump = "Electronics"
 }
 
 ACE.PointSubsystems = ACE.PointSubsystems or {

@@ -50,13 +50,196 @@ ACF.CuIToLiter          = 0.0163871                -- cubic inches to liters
 
 ACF.DriverTorqueBoost   = 1.25                    -- torque multiplier from having a driver
 ACF.FuelRate            = 10                        -- multiplier for fuel usage, 1.0 is approx real world
-ACF.ElecRate            = 4                        -- multiplier for electrics                                --BEFORE to balance: 0.458
+-- Electric motor consumption multiplier. FuelUse = ElecRate/(Efficiency*3600), and
+-- consumption = kW_mech * FuelUse * dt. At 0.8 (with Efficiency 0.8) the draw equals
+-- the mechanical output put to the wheels (~100% effective) - realistic, and slightly
+-- BELOW a real motor's ~1.11x draw (90% efficient), so it's a touch generous. The old
+-- value of 4 made motors burn ~5x their mechanical output.
+ACF.ElecRate            = 0.8                      -- multiplier for electrics (0.8 ≈ realistic, slightly generous)
 ACF.TankVolumeMul       = 1                        -- multiplier for fuel tank capacity, 1.0 is approx real world
+
+---------------------------------- Sustainability / power generation config ----------------------------------
+-- These feed the pure-logic modules in acf/shared/sustainability. All are
+-- tunable; balance curves can be eyeballed with `python tests/sim.py`.
+
+-- Alternator (brake-based generator). Stats scale with shape volume (cu in).
+-- Real reference: a car alternator is ~1-2 kW; this is EV/genset-scale. A default
+-- 20^3 box = 8000 cu in -> 32 kW rated. Output is DC (rectified), to match the
+-- DC batteries it charges. The grid (cables) is the only AC part.
+ACF.AlternatorPowerDensity    = 0.004           -- kW per cu in (rated DC output)
+ACF.AlternatorRefPower        = 32              -- rated output of a default-size unit (for brake scaling)
+ACF.AlternatorRatedRPM        = 3000            -- RPM at which rated output is reached
+ACF.AlternatorBrakeCoeff      = 8               -- base drag strength (scaled by alternator size)
+ACF.AlternatorMassPerVolume   = 0.004           -- kg per cu in
+ACF.AlternatorEfficiency      = 0.85            -- mechanical -> electrical (0-1)
+ACF.AlternatorPointsPerVolume = 0.05            -- points per cu in
+
+-- Solar panel (area-based). "Box only" flat slab.
+ACF.SolarEfficiency           = 0.20            -- conversion efficiency (0-1)
+ACF.SolarIrradiance           = 1.0             -- kW/m^2 peak sunlight
+ACF.SolarMassPerArea          = 5               -- kg per m^2 of panel area
+ACF.SolarPointsPerArea        = 50              -- ACF points per m^2
+ACF.SolarMapLightFloor        = 0.3             -- a dark/night map never drops solar output below this fraction
+
+-- Electric fuel synthesizer (electricity -> liquid fuel).
+ACF.SynthPowerDensity         = 0.02            -- kW electrical draw per cu in
+ACF.SynthEfficiency           = 0.55            -- electrical -> chemical (0-1)
+ACF.SynthEnergyPerLiter       = 9.7             -- kWh chemical per litre of fuel
+ACF.SynthMassPerVolume        = 0.005           -- kg per cu in
+ACF.SynthPointsPerVolume      = 0.05            -- ACF points per cu in
+
+-- Refinery: crude Oil + electricity -> Petrol/Diesel (the output tank's type).
+ACF.RefineryRate              = 0.06            -- max output litres/sec
+ACF.RefineryOilPerLiter       = 1.25           -- litres of crude consumed per litre of product (refining loss)
+ACF.RefineryEnergyPerLiter    = 0.4            -- kWh of electricity per litre of product
+ACF.RefineryHeatFrac          = 1.0            -- fraction of electrical draw (W) turned into process heat while running
+ACF.RefineryThermalMass       = 60             -- kg thermal mass for the heat model (small enough that it actually warms up)
+
+-- Self-powered field generator ("thumper"): slow free fuel, lots of heat.
+ACF.FieldGenRate              = 0.0000015       -- litres/sec per cu in
+ACF.FieldGenHeatDensity       = 6               -- watts of heat per cu in while running (runs HOT)
+ACF.FieldGenMassPerVolume     = 0.004           -- kg per cu in
+ACF.FieldGenPointsPerVolume   = 0.04            -- points per cu in
+ACF.FieldGenThumperModel      = "models/props_combine/combinethumper002.mdl" -- optional real model
+
+-- Battery (extends the Electric fuel tank). See logic_battery for behaviour.
+ACF.BatteryChargeEff          = 0.95            -- one-way charge/discharge efficiency
+ACF.BatteryDegradePerCycle    = 0.0006          -- usable capacity lost per full cycle
+ACF.BatteryMinHealth          = 0.50            -- floor for capacity fade
+-- Charge/discharge power cap = capacity(kWh) * this. Real Li-ion is ~1-3C, but
+-- GMod time is compressed, so this is a GAMEPLAY value: at 50C a 77 kWh battery
+-- accepts up to 3850 kW, charging to 80% (61.6 kWh) in ~60 s on a fast charger.
+-- It only CAPS the rate; motors still draw their realistic kW well under it.
+ACF.BatteryChargeRateC        = 50              -- charge/discharge rate cap (C); high = arcade-fast charging
+ACF.BatteryRadiusPenalty      = 0.35            -- efficiency multiplier for radius (wireless) charging
+ACF.BatteryRadiusRate         = 2000            -- kW base wireless charge rate (penalised; ~700 kW effective)
+
+-- Wireless (radius) liquid refuel: a Supply-mode liquid tank tops up nearby
+-- same-type tanks. Deliberately slower than a physical plug so the plug stays
+-- the better option for serious logistics.
+ACF.FuelRadiusRate            = 4               -- litres/sec wireless (vs 12 L/s through a plug)
+
+-- Fuel plug/socket physical transfer.
+ACF.FuelLinkRate              = 12              -- litres/sec transferred through a plug (gas)
+ACF.FuelLinkRateElec          = 4000           -- kW transferred through a plug (electric; a "supercharger" cable)
+ACF.FuelLinkLoss              = 0.04            -- fraction lost (as heat) during transfer
+
+-- Fuel pipe (link between two tanks/sockets). Wears slowly while in use;
+-- condition is the pipe's ACF health, so the ACE torch repairs it.
+ACF.PipeDecayPerSec           = 1 / 36000       -- condition lost per second while flowing (~10h of continuous flow to break)
+ACF.PipeFlowMul               = 0.75            -- pipe throughput vs a direct plug (slightly less)
+ACF.PipeMaxLength             = 1000            -- max link distance for one pipe segment (chain pipe->pipe for longer)
+ACF.PipeMaxLinks              = 6               -- max links per pipe/pump node
+ACF.PipeMaxHops               = 14              -- max pipe-graph search depth
+ACF.PipeBasePressure          = 1.0             -- pressure budget a supply provides (spends down with friction)
+ACF.PipePumpPressure          = 1.0             -- pressure budget each Pump/Booster adds (place them to extend range)
+
+-- Electric grid: stations are linked directly to each other (no cable entity);
+-- distance loss is computed from world positions in logic_grid. Voltage is the
+-- single IRL lever - higher voltage carries more power AND loses less.
+ACF.GridStationDefaultVoltage = 5               -- default station AC voltage (1-10)
+ACF.GridStationMaxVoltage     = 10
+ACF.GridStationBaseKW         = 30              -- (legacy) kept for back-compat; capacity now comes from size
+ACF.GridStationCapacityPerVolume = 0.0056       -- throughput capacity (kW) per cu in of station hardware (build-fixed; voltage no longer multiplies it)
+-- 3-phase vs single-phase (a station/build option). Real 3-phase delivers smooth,
+-- denser power, so here it's a flag (NOT a waveform sim): 3-phase carries ~sqrt(3)x
+-- more for the same hardware and runs cooler per kW. Single-phase is the default.
+ACF.GridStation3PhaseMul      = 1.732           -- capacity multiplier when wired 3-phase
+ACF.GridStation3PhaseHeatMul  = 0.6             -- waste-heat multiplier when 3-phase (smoother = cooler)
+ACF.GridStationLinkRange      = 1500            -- max distance for one station<->station link (chain relays to go further)
+ACF.GridStationMaxLinks       = 6               -- max direct links per station (perf + realism)
+ACF.GridMaxHops               = 10              -- max relay depth a pull will search
+ACF.GridCollectorRange        = 400             -- pickup range for vehicle collectors
+ACF.GridCollectorMaxKW        = 1000            -- max pickup rate for collectors (fast tram catenary; still capped by wire ampacity*voltage)
+
+-- Station heat / failure: conversion loss becomes heat (idle = cool, busy hub =
+-- hot); pushing past rated capacity overheats it, which slowly damages its ACF
+-- health until it sparks and trips offline (torch-repair to revive). No boom.
+ACF.GridStationHeatPerKW      = 9               -- waste heat (J/s) per kW of throughput (the conversion loss)
+ACF.GridStationOverloadHeatMul= 6               -- heat multiplier on the throughput ABOVE capacity
+ACF.GridStationOverheatTemp   = 140             -- deg C above which it takes damage
+ACF.GridStationDamagePerSec   = 0.03            -- fraction of max health lost per second while overheating
+ACF.GridStationTripHealth     = 0.15            -- health fraction at/below which it trips offline
+ACF.GridStationReviveHealth   = 0.40            -- health fraction it must be torch-repaired back to before it re-energises
+
+-- Transformer: changes AC voltage (step up for transmission, step down for
+-- utilization). It's a grid relay node whose OUTPUT voltage you set; ampacity
+-- (and thus power capacity = ampacity * voltage) comes from its physical size,
+-- so a bigger transformer carries more - voltage is not a free capacity dial.
+-- Voltage is an abstract unit shared with stations and consumer MinVoltage.
+ACF.TransformerAmpacityPerVolume = 0.0009       -- ampacity per cu in of hardware
+ACF.TransformerEff               = 0.97         -- conversion efficiency per pass
+ACF.TransformerDefaultVoltage    = 30           -- default output voltage
+ACF.TransformerMaxVoltage        = 100          -- highest output voltage you can set (HV transmission)
+ACF.TransformerMassPerVolume     = 0.01         -- kg per cu in
+ACF.TransformerPointsPerVolume   = 0.05         -- ACF points per cu in
+ACF.TransformerHeatPerKW         = 6            -- waste heat (J/s) per kW of throughput (the conversion loss)
+ACF.TransformerLinkRange         = 1500         -- max distance to link to another grid node
+ACF.TransformerMaxLinks          = 6            -- max direct links
+ACF.TransformerOverheatTemp      = 150          -- deg C above which it takes damage
+ACF.TransformerDamagePerSec      = 0.03         -- fraction of max health lost per second while overheating
+ACF.TransformerTripHealth        = 0.15         -- health fraction at/below which it trips offline
+ACF.TransformerReviveHealth      = 0.40         -- health it must be torch-repaired back to before re-energising
+
+-- Power line (physical conductor / catenary). A scalable grid node that carries
+-- power WITHOUT a conversion (it's a wire, not a transformer). Cross-section sets
+-- ampacity; a thinner/longer run is more resistive. Chain them along a track for
+-- a tram catenary that collectors pick up from.
+-- Ampacity (A) per sq-in of CROSS-SECTION (two shorter dims). Power a wire can
+-- carry = ampacity x voltage (P=VI), so this tunes the absolute kW a wire moves.
+-- A default 6x6x72 wire (36 sq-in) at voltage 5 carries 36*0.6*5 = ~108 kW, and
+-- ~216 kW at voltage 10 - raising voltage pushes more power through the SAME
+-- wire (the real reason grids transmit at high voltage). The old 0.06 made even
+-- a fat wire cap at single-digit kW, which throttled collectors to ~1 kW.
+ACF.PowerLineAmpacityPerArea  = 0.6             -- ampacity (A) per sq-in of conductor CROSS-SECTION (the two shorter dims)
+ACF.PowerLineResistivity      = 1.25            -- conductor resistivity (copper-ish). Loss = R/voltage^2, R = rho*length/area*(temp). Low voltage bleeds power - step up with a transformer for long runs.
+ACF.PowerLineMassPerVolume    = 0.004           -- kg per cu in
+ACF.PowerLinePointsPerVolume  = 0.02
+ACF.PowerLineHeatPerKW        = 4               -- resistive waste heat (J/s) per kW carried
+ACF.PowerLineLinkRange        = 1200            -- max link distance to another grid node
+ACF.PowerLineMaxLinks         = 6
+ACF.PowerLineOverheatTemp     = 130             -- deg C above which it takes damage
+ACF.PowerLineDamagePerSec     = 0.03
+ACF.PowerLineTripHealth       = 0.10            -- a wire breaks (stops carrying) at this condition
+ACF.PowerLineReviveHealth     = 0.40
+
+-- Capacitor: a fast grid buffer. Tiny energy, huge power - it discharges hard on
+-- a spike and refills slowly from the grid, so a load near it sees smooth power
+-- (peak-shaving) while the grid behind only carries the average. It's a source
+-- node the solver prefers when it's the closest, and it tops itself up each tick.
+ACF.CapacitorEnergyPerVolume  = 0.000015        -- kWh of store per cu in (small)
+ACF.CapacitorRatePerVolume    = 0.02            -- kW charge/discharge cap per cu in (high)
+ACF.CapacitorMassPerVolume    = 0.006           -- kg per cu in
+ACF.CapacitorPointsPerVolume  = 0.04
+ACF.CapacitorEff              = 0.97            -- round-trip efficiency (better than a battery)
+ACF.CapacitorHeatPerKW        = 3               -- waste heat (J/s) per kW of throughput
+
+-- Electric consumer ("house"/machine load).
+ACF.ConsumerDefaultDraw       = 20              -- fallback load (kW) if size can't be read
+ACF.ConsumerDrawPerVolume     = 0.02            -- kW of default load per cu in of consumer (size sets the load; wire "Draw" overrides)
+ACF.ConsumerMinVoltage        = 0               -- default minimum delivered voltage a consumer needs (0 = none; raise per build/def)
+ACF.BatteryNominalVoltage     = 1               -- nominal DC voltage a raw Electric battery presents (low-voltage; can't feed a high-Vmin load without a transformer)
+
+-- Electric breaker / fuse: protects a station; trips it offline on sustained
+-- overcurrent, resets by wire or after a cooldown.
+ACF.BreakerDefaultRating      = 120             -- default trip threshold (kW) until wired
+ACF.BreakerTripDelay          = 0.5             -- seconds over rating before it trips
+ACF.BreakerAutoReset          = 5               -- seconds after tripping before it auto-recloses (0 = manual only)
+
+-- Explosive charge (detonates on a wire input). Uses the same HE filler/frag
+-- maths as HE rounds (ACF.HEDensity etc.) so its blast performance is identical.
+ACF.ExplosiveFillerFraction   = 0.65            -- share of the charge volume that is filler
+ACF.ExplosiveHEMul            = 0.12            -- scales filler mass down so charges aren't absurd for their size
+ACF.ExplosivePointsPerKg      = 28              -- score per kg of filler (deliberately steep)
+ACF.ExplosiveCasingMul        = 0.08            -- the charge's PHYSICAL weight is filler + casing*this (a charge is mostly filler + thin casing, not a solid steel billet - keeps it light enough to carry)
+ACF.ExplosiveCookoffMul       = 4               -- per-hit cook-off chance = (damage/maxHP)*this ... a couple of solid hits set it off
+ACF.ExplosiveCookoffLowHP     = 0.25            -- ...plus this * (1 - health fraction), so a badly damaged charge is on a hair trigger
 
 ---------------------------------- Ammo Crate config ----------------------------------
 
 ACF.CrateMaximumSize    = 250
 ACF.CrateMinimumSize    = 5
+ACF.SustainMinimumSize  = 1               -- sustainability ents (and batteries/tanks) may scale down to 1x1x1
 
 ACF.RefillDistance      = 400                    -- Distance in which ammo crate starts refilling.
 ACF.RefillSpeed         = 250                    -- (ACF.RefillSpeed / RoundMass) / Distance
@@ -327,6 +510,44 @@ if SERVER then
     CreateConVar("sbox_max_acf_misc", 100)                    -- misc ents limit
     CreateConVar("sbox_max_acf_rack", 24)                    -- Racks limit
     CreateConVar("sbox_max_ace_crewseat", 100)
+    CreateConVar("sbox_max_ace_alternator", 10)
+    CreateConVar("sbox_max_ace_solarpanel", 10)
+    CreateConVar("sbox_max_ace_fuel_synth", 10)
+    CreateConVar("sbox_max_ace_field_generator", 10)
+    CreateConVar("sbox_max_ace_fuel_plug", 20)
+    CreateConVar("sbox_max_ace_fuel_socket", 20)
+    CreateConVar("sbox_max_ace_explosive", 20)
+    CreateConVar("sbox_max_ace_fuel_pipe", 30)
+    CreateConVar("sbox_max_ace_transfer_station", 20)
+    CreateConVar("sbox_max_ace_transformer", 20)
+    CreateConVar("sbox_max_ace_power_line", 60)
+    CreateConVar("sbox_max_ace_power_consumer", 30)
+    CreateConVar("sbox_max_ace_capacitor", 20)
+    CreateConVar("sbox_max_ace_power_breaker", 20)
+    CreateConVar("sbox_max_ace_refinery", 20)
+    CreateConVar("sbox_max_ace_fuel_pump", 30)
+    CreateConVar("sbox_max_ace_power_collector", 20)
+    CreateConVar("sbox_max_ace_ecm", 20)
+    CreateConVar("sbox_max_ace_rwr_dir", 20)
+    CreateConVar("sbox_max_ace_rwr_sphere", 20)
+    CreateConVar("sbox_max_acf_opticalcomputer", 20)
+
+    -- When 1, every fuel tank/battery spawns empty regardless of the client's
+    -- per-spawn "Spawn Empty" checkbox. Server-wide logistics toggle.
+    CreateConVar("acf_fueltank_forceempty", 0, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Force all ACE fuel tanks and batteries to spawn empty.")
+
+    -- Draws each solar panel's sun trace, orientation arrows and live values.
+    -- Needs 'developer 1' on the viewing client to render the overlays.
+    CreateConVar("acf_solar_debug", 0, FCVAR_ARCHIVE, "Draw ACE solar panel sun-trace debug overlays (requires developer 1).")
+
+    -- Sun direction for solar panels. Reliable and controllable: set the sun's
+    -- elevation (degrees above the horizon) and compass yaw here. If
+    -- acf_solar_use_envsun is 1 and the map (or you) has an env_sun pointing
+    -- upward, that is used instead.
+    CreateConVar("acf_solar_sun_pitch", 60, FCVAR_ARCHIVE, "Solar: sun elevation above the horizon, degrees (0-90).", 0, 90)
+    CreateConVar("acf_solar_sun_yaw", 45, FCVAR_ARCHIVE, "Solar: sun compass direction, degrees (0-360).", 0, 360)
+    CreateConVar("acf_solar_use_envsun", 1, FCVAR_ARCHIVE, "Solar: use the map's env_sun direction when it points upward.", 0, 1)
+    CreateConVar("acf_solar_use_maplight", 1, FCVAR_ARCHIVE, "Solar: scale output by overall map brightness (a dark/night map yields less). 0 disables.", 0, 1)
     CreateConVar("acf_mines_max", 50)                        -- The mine limit
     CreateConVar("acf_meshvalue", 1)
 
@@ -484,6 +705,7 @@ elseif CLIENT then
     CreateClientConVar( "acf_tinnitus", 1, true, false, "Allows the ear tinnitus effect to be applied when an explosive was detonated too close to your position, improving the inmersion during combat.", 0, 1 )
     CreateClientConVar( "acf_sound_volume", 100, true, false, "Adjusts the volume of explosions and gunshots.", 0, 100 )
     CreateClientConVar( "acf_armor_readout_full", 0, true, false, "Show full armor readout in the ACF armor tool.", 0, 1 )
+    CreateClientConVar( "acf_fueltank_spawnempty", 0, true, false, "Default the fuel tank menu's 'Spawn Empty' checkbox to on.", 0, 1 )
 
 end
 
@@ -502,6 +724,8 @@ include("acf/shared/sh_ace_particles.lua")
 include("acf/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
 include("acf/shared/sh_ace_functions.lua")
+AddCSLuaFile("acf/shared/sustainability/sh_sustain.lua")
+include("acf/shared/sustainability/sh_sustain.lua")
 include("acf/shared/sh_ace_loader.lua")
 include("acf/shared/sh_ace_concommands.lua")
 include("acf/shared/sh_acfm_roundinject.lua")
@@ -544,6 +768,9 @@ elseif CLIENT then
     include("acf/client/gui/cl_acfsetpermission.lua")
 
     CreateClientConVar("ACF_MobilityRopeLinks", "1", true, true)
+    -- Draw the link "cables" between ACE sustainability nodes (power lines, pipes,
+    -- stations, transformers, capacitors). Client-side cosmetic, off = no beams.
+    CreateClientConVar("ace_draw_link_beams", "1", true, false)
 
 end
 

@@ -41,7 +41,7 @@ function ENT:Initialize()
 	Wire_TriggerOutput(self, "Entity", self)
 end
 
-function MakeACE_Refinery(Owner, Pos, Angle, Id)
+function MakeACE_Refinery(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_refinery") then return false end
 	local ent = ents.Create("ace_refinery")
 	if not IsValid(ent) then return false end
@@ -175,7 +175,7 @@ do
 		})
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.RefineryLinks then return end
 		local info = Ent.EntityMods.RefineryLinks
 		for _, idx in ipairs({ info.oil, info.batt, info.out }) do

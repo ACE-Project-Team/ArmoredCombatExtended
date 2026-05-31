@@ -17,7 +17,7 @@ function ENT:SpawnFunction( _, trace )
 	return ent
 end
 
-function MakeACE_RWR_Sphere(Owner, Pos, Angle, Id)
+function MakeACE_RWR_Sphere(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_rwr_sphere") then return false end
 	local ent = ents.Create("ace_rwr_sphere")
 	if not IsValid(ent) then return false end

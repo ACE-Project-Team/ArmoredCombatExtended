@@ -17,7 +17,7 @@ function ENT:SpawnFunction( _, trace )
 	return ent
 end
 
-function MakeACE_OpticalComputer(Owner, Pos, Angle, Id)
+function MakeACE_OpticalComputer(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_acf_opticalcomputer") then return false end
 	local ent = ents.Create("acf_opticalcomputer")
 	if not IsValid(ent) then return false end

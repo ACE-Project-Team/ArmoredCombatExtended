@@ -99,7 +99,6 @@ function Battery.Step(state, requestKWh, dt, cfg)
 	cfg = cfg or {}
 	local eff       = cfg.chargeEff or Battery.ChargeEff
 	local degrade   = cfg.degradePerCycle or Battery.DegradePerCycle
-	local resK      = cfg.internalResK or Battery.InternalResK
 	dt = dt or 0
 
 	local result = { delta = 0, delivered = 0, terminal = 0, heatAddJ = 0, cycles = 0 }

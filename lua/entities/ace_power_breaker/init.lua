@@ -36,7 +36,7 @@ function ENT:Initialize()
 	Wire_TriggerOutput(self, "Entity", self)
 end
 
-function MakeACE_PowerBreaker(Owner, Pos, Angle, Id)
+function MakeACE_PowerBreaker(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_power_breaker") then return false end
 	local ent = ents.Create("ace_power_breaker")
 	if not IsValid(ent) then return false end
@@ -160,7 +160,7 @@ do
 		})
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.BreakerLink then return end
 		local info = Ent.EntityMods.BreakerLink
 		if info.rating then self.Rating = info.rating end

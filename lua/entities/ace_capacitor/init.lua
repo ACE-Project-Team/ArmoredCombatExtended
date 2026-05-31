@@ -338,7 +338,7 @@ do
 		duplicator.StoreEntityModifier(self, "CapacitorLink", { nodes = nodes })
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.CapacitorLink then return end
 		for _, idx in ipairs(Ent.EntityMods.CapacitorLink.nodes or {}) do
 			local S = CreatedEntities[idx]

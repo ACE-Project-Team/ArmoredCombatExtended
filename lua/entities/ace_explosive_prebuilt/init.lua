@@ -136,7 +136,7 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Material  = self.ACF.Material or "RHA"
 end
 
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 

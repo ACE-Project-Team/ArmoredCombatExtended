@@ -147,7 +147,7 @@ end
 -- Cook off when shot. Each hit has a chance to set it off that grows with how
 -- hard the hit was and how damaged the charge already is, so you don't have to
 -- grind its HP all the way to zero - a couple of solid hits will do it.
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 

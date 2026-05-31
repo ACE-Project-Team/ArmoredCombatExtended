@@ -45,76 +45,59 @@ Sustain.Fault      = include(PATH .. "logic_fault.lua")
 ACE.Sustain = Sustain
 
 ------------------------------------------------------------------
--- Networked sun direction (env_sun / Sun Editor aware).
+-- Map sun direction + ambient brightness (SERVER-authoritative).
 --
--- util.GetSunInfo() is the only thing that reads the map's real sun (the one
--- the Sun Editor moves), but it is CLIENT-ONLY. So a client samples it and
--- forwards the direction to the server, which caches it in ACE.SunDir for the
--- solar panels to read. This is the same trick ACF uses to get the sun server
--- side. Traffic is tiny: clients only send when the sun actually changes.
+-- Read straight from the map's own entities on the server (env_sun for the sun
+-- direction, light_environment for the baked sky brightness) - exactly how
+-- wiremod's E2 sunDirection() does it. We deliberately do NOT take this from
+-- clients: util.GetSunInfo() is client-only, but trusting a client to forward
+-- it would let a malicious player spam bogus values every tick and grief
+-- everyone's solar output. Map entities are static and un-spoofable, so the
+-- server reads them itself at load.
 ------------------------------------------------------------------
-ACE.SunDir         = ACE.SunDir or Vector(0, 0, 1)   -- world unit vector toward the sun
-ACE.SunObstruction = ACE.SunObstruction or 0          -- 0 visible .. 1 fully blocked
-ACE.SunLastSync    = ACE.SunLastSync or nil           -- CurTime of last good sync (nil = none yet)
-ACE.MapBrightness  = ACE.MapBrightness or 1           -- 0..1 overall map luminance (1 = bright; lower on dark/night maps)
+ACE.SunDir        = ACE.SunDir or Vector(0, 0, 1)   -- world unit vector toward the sun
+ACE.SunLastSync   = ACE.SunLastSync or nil          -- CurTime of last good read (nil = none yet -> convar fallback)
+ACE.MapBrightness = ACE.MapBrightness or 1          -- 0..1 baked sky luminance (1 = bright; lower on dark/night maps)
 
 if SERVER then
-	util.AddNetworkString("ace_sun_sync")
+	-- Pull the sun direction + sky brightness from the map entities. Safe to call
+	-- repeatedly; only writes ACE.* when it actually finds valid data, so a map
+	-- with no env_sun simply leaves the convar-sun fallback in charge.
+	function ACE.RefreshMapSun()
+		local sunEnt = ents.FindByClass("env_sun")[1]
+		if IsValid(sunEnt) then
+			local kv  = sunEnt:GetKeyValues()
+			local dir = kv and kv.sun_dir
+			if isstring(dir) then dir = Vector(dir) end   -- some builds hand it back as "x y z"
+			if isvector(dir) and dir:LengthSqr() > 0.01 then
+				dir = dir:GetNormalized()
+				if dir.z < 0 then dir = -dir end          -- keep it pointing skyward
+				ACE.SunDir      = dir
+				ACE.SunLastSync = CurTime()
+			end
+		end
 
-	net.Receive("ace_sun_sync", function(_, ply)
-		if not IsValid(ply) then return end
-		local dir    = net.ReadVector()
-		local obs    = net.ReadFloat()
-		local bright = net.ReadFloat()
-		if not isvector(dir) or dir:LengthSqr() < 0.01 then return end
-
-		dir:Normalize()
-		if dir.z < 0 then dir = -dir end   -- keep it pointing skyward
-		ACE.SunDir         = dir
-		ACE.SunObstruction = math.Clamp(obs or 0, 0, 1)
-		ACE.MapBrightness  = math.Clamp(bright or 1, 0, 1)
-		ACE.SunLastSync    = CurTime()
-	end)
-end
-
-if CLIENT then
-	local lastDir, lastObs, lastBright = nil, nil, nil
-
-	-- Sample the map's overall brightness (grayscale luminance of the baked
-	-- lighting, which light_environment feeds) so a dark/night map yields less
-	-- solar power. Cheap: one lightmap lookup per slow tick.
-	local function sampleBrightness()
-		local ply = LocalPlayer()
-		if not IsValid(ply) then return 1 end
-		local c = render.GetLightColor(ply:EyePos() + Vector(0, 0, 16))   -- 0..1 per channel
-		if not c then return 1 end
-		local lum = 0.299 * c.x + 0.587 * c.y + 0.114 * c.z
-		return math.Clamp(lum, 0, 1)
+		local lightEnt = ents.FindByClass("light_environment")[1]
+		if IsValid(lightEnt) then
+			local kv  = lightEnt:GetKeyValues()
+			local lit = kv and kv._light                  -- "R G B brightness"
+			if isstring(lit) then
+				local r, g, b = lit:match("^(%d+)%s+(%d+)%s+(%d+)")
+				if r then
+					-- Grayscale luminance of the sky colour (0..1). Coarser than the
+					-- old client lightmap sample, but server-side and un-spoofable.
+					local lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+					ACE.MapBrightness = math.Clamp(lum, 0, 1)
+				end
+			end
+		end
 	end
 
-	-- Sample the real sun a few seconds after spawn, then poll slowly. Only send
-	-- when something has meaningfully changed, so a static map costs ~one message.
-	timer.Create("ace_sun_sync", 5, 0, function()
-		local info = util.GetSunInfo()
-		if not info or not info.direction then return end
-
-		local dir    = info.direction
-		local obs    = info.obstruction or 0
-		local bright = sampleBrightness()
-		if lastDir and lastObs and lastBright
-			and dir:Distance(lastDir) < 0.02
-			and math.abs(obs - lastObs) < 0.05
-			and math.abs(bright - lastBright) < 0.02 then
-			return
-		end
-		lastDir, lastObs, lastBright = dir, obs, bright
-
-		net.Start("ace_sun_sync")
-			net.WriteVector(dir)
-			net.WriteFloat(obs)
-			net.WriteFloat(bright)
-		net.SendToServer()
-	end)
+	hook.Add("InitPostEntity", "ace_refresh_map_sun", ACE.RefreshMapSun)
+	-- If the addon (re)loads after the map entities already exist - e.g. a mid-
+	-- session lua refresh - InitPostEntity won't fire again, so read once more
+	-- on the next tick to be safe. Map sun is static, so no ongoing polling.
+	timer.Simple(1, ACE.RefreshMapSun)
 end
 
 ------------------------------------------------------------------
@@ -573,10 +556,9 @@ if SERVER then
 			-- A supply tank fed by this node is usable if reaching this node stayed
 			-- within the pressure budget its pumps provide.
 			for _, L in ipairs(node.PipeLinks or {}) do
-				if canSupply(L) and rec.cost <= basePressure + rec.pumps * pumpPressure then
-					if not best or rec.cost < best.cost then
-						best = { supply = L, flowCap = rec.flowCap, pipes = rec.pipes, cost = rec.cost }
-					end
+				if canSupply(L) and rec.cost <= basePressure + rec.pumps * pumpPressure
+					and (not best or rec.cost < best.cost) then
+					best = { supply = L, flowCap = rec.flowCap, pipes = rec.pipes, cost = rec.cost }
 				end
 			end
 

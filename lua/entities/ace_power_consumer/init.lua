@@ -185,7 +185,7 @@ do
 		})
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.ConsumerLink then return end
 		local info = Ent.EntityMods.ConsumerLink
 		if info.draw then self.Draw = info.draw end

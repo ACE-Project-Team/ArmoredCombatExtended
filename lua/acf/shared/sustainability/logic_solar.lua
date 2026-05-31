@@ -13,8 +13,8 @@ Solar.TempCoeff = 0.004   -- fractional power loss per °C above reference
 Solar.RefTemp   = 25      -- °C reference cell temperature
 Solar.MinDerate = 0.30    -- never derate below this
 Solar.SoakJperKW = 8000   -- heat soak: J added per kW of incident sun per second
-                          -- (tuned so a sunlit panel settles around 40-50 C,
-                          --  making the temperature derate actually matter)
+-- (tuned so a sunlit panel settles around 40-50 C, making the temperature derate
+--  actually matter)
 
 --- Electrical output, derate and heat soak for one tick.
 -- @param params table fields:

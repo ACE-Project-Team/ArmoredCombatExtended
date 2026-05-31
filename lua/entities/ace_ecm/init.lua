@@ -19,7 +19,7 @@ end
 
 -- ACF-menu spawn factory (also makes it dupe properly). Lets the ECM live in
 -- the menu's Extras section, not just the Q spawnmenu.
-function MakeACE_ECM(Owner, Pos, Angle, Id)
+function MakeACE_ECM(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_ecm") then return false end
 	local ent = ents.Create("ace_ecm")
 	if not IsValid(ent) then return false end

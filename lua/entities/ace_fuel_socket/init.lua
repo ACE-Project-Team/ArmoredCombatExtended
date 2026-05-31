@@ -255,7 +255,7 @@ do
 		end
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.FuelSocketLink then return end
 		local T = CreatedEntities[Ent.EntityMods.FuelSocketLink.tank]
 		if IsValid(T) and T:GetClass() == "acf_fueltank" then self:Link(T) end

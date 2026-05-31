@@ -53,7 +53,7 @@ function ENT:SpawnFunction(ply, tr)
 end
 
 -- Menu/dupe spawn factory.
-function MakeACE_PowerCollector(Owner, Pos, Angle, Id)
+function MakeACE_PowerCollector(Owner, Pos, Angle, _Id)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_power_collector") then return false end
 	local ent = ents.Create("ace_power_collector")
 	if not IsValid(ent) then return false end
@@ -206,7 +206,7 @@ do
 		end
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.CollectorLink then return end
 		local B = CreatedEntities[Ent.EntityMods.CollectorLink.battery]
 		if IsValid(B) and B:GetClass() == "acf_fueltank" then self:Link(B) end

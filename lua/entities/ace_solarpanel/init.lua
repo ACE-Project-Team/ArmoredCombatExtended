@@ -107,10 +107,10 @@ end
 
 -- Direction pointing toward the sun (unit vector).
 --
--- Prefers the map's REAL sun (the one the Sun Editor controls), which a client
--- forwards to us via util.GetSunInfo() and we cache in ACE.SunDir. If no sun
--- sync has arrived yet (or the env_sun option is off) we fall back to the
--- convar sun (acf_solar_sun_pitch/yaw) so panels still work on any map.
+-- Prefers the map's REAL sun, read SERVER-SIDE from the env_sun entity and
+-- cached in ACE.SunDir (see sh_sustain - never trusts clients). If the map has
+-- no env_sun (or the env_sun option is off) we fall back to the convar sun
+-- (acf_solar_sun_pitch/yaw) so panels still work on any map.
 function ENT:GetSunDirection()
 	if (GetConVar("acf_solar_use_envsun"):GetInt() or 0) ~= 0 and ACE.SunLastSync then
 		local dir = ACE.SunDir
@@ -277,7 +277,7 @@ do
 		end
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.SolarFuelLink then return end
 		local info = Ent.EntityMods.SolarFuelLink
 		if info.entities then

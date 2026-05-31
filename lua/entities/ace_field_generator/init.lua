@@ -286,7 +286,7 @@ do
 		end
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.FieldGenLinks then return end
 		for _, idx in ipairs(Ent.EntityMods.FieldGenLinks.fuel or {}) do
 			local T = CreatedEntities[idx]

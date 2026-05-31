@@ -156,7 +156,7 @@ ACF.GridCollectorMaxKW        = 1000            -- max pickup rate for collector
 -- hot); pushing past rated capacity overheats it, which slowly damages its ACF
 -- health until it sparks and trips offline (torch-repair to revive). No boom.
 ACF.GridStationHeatPerKW      = 9               -- waste heat (J/s) per kW of throughput (the conversion loss)
-ACF.GridStationOverloadHeatMul= 6               -- heat multiplier on the throughput ABOVE capacity
+ACF.GridStationOverloadHeatMul = 6              -- heat multiplier on the throughput ABOVE capacity
 ACF.GridStationOverheatTemp   = 140             -- deg C above which it takes damage
 ACF.GridStationDamagePerSec   = 0.03            -- fraction of max health lost per second while overheating
 ACF.GridStationTripHealth     = 0.15            -- health fraction at/below which it trips offline

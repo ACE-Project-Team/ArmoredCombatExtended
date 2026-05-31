@@ -1741,7 +1741,7 @@ end
 
 --[[=========================  Alternator  =========================]]--
 function ACEAlternatorGUICreate(Table)
-	BuildScalableConfig(Table, function(cfg, vol)
+	BuildScalableConfig(Table, function(_cfg, vol)
 		return "Max Output: " .. math.Round(vol * ACF.AlternatorPowerDensity, 2) .. " kW @ " .. math.Round(ACF.AlternatorRatedRPM or 3000, 0) .. " RPM"
 			.. "\nEfficiency: " .. math.Round((ACF.AlternatorEfficiency or 0.85) * 100, 0) .. "%"
 			.. "\nMass: " .. math.Round(vol * ACF.AlternatorMassPerVolume, 1) .. " kg"
@@ -1765,7 +1765,7 @@ function ACESolarGUIUpdate() end
 
 --[[=========================  Fuel Synthesizer  ===================]]--
 function ACEFuelSynthGUICreate(Table)
-	BuildScalableConfig(Table, function(cfg, vol)
+	BuildScalableConfig(Table, function(_cfg, vol)
 		local drawKW = vol * ACF.SynthPowerDensity
 		local fuelLPM = (drawKW / 3600) * ACF.SynthEfficiency / ACF.SynthEnergyPerLiter * 60
 		return "Max Elec Draw: " .. math.Round(drawKW, 2) .. " kW"
@@ -1779,7 +1779,7 @@ function ACEFuelSynthGUIUpdate() end
 
 --[[=========================  Field Generator  ====================]]--
 function ACEFieldGenGUICreate(Table)
-	BuildScalableConfig(Table, function(cfg, vol)
+	BuildScalableConfig(Table, function(_cfg, vol)
 		local fuelLPM = vol * ACF.FieldGenRate * 60
 		return "Fuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min"
 			.. "\nHeat: " .. math.Round(vol * ACF.FieldGenHeatDensity, 0) .. " W (runs hot)"
@@ -1813,7 +1813,7 @@ function ACEFieldGenGUIUpdate() end
 -- physical volume (same HE maths as shells). Pre-built model charges live in the
 -- Q spawnmenu instead.
 function ACEExplosiveGUICreate(Table)
-	BuildScalableConfig(Table, function(cfg, vol)
+	BuildScalableConfig(Table, function(_cfg, vol)
 		local CM3 = 16.387
 		local f   = Table.fillerFraction or 0.65
 		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)

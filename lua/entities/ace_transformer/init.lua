@@ -236,6 +236,9 @@ function ENT:Think()
 	end
 	if changed then self:NetworkLinks() end
 
+	-- Snap links dragged past the link range (like ACF drivetrain links).
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.TransformerLinkRange or 1500, "grid link")
+
 	-- Throughput accumulated by GridPull this tick.
 	local tp = self.ThroughputAccum
 	self.ThroughputAccum = 0

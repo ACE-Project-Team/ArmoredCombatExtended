@@ -594,6 +594,31 @@ if SERVER then
 		return best
 	end
 
+	-- Break links that have been stretched past `range` (x ACF.LinkStretchMul),
+	-- the way ACF drivetrain links snap when pulled apart. `links` is the node's
+	-- neighbour list (e.g. GridStations); each over-stretched entry is unlinked
+	-- BOTH ways via the entity's own Unlink so the graph + networking stay
+	-- consistent, and the owner gets a chat notice. Returns true if anything broke.
+	-- Cheap: a DistToSqr per link, called from the node's Think.
+	function Sustain.PruneStretchedLinks(ent, links, range, label)
+		if not IsValid(ent) or not links or not range or range <= 0 then return false end
+		local maxD2 = (range * (ACF.LinkStretchMul or 1.5)) ^ 2
+		local pos   = ent:GetPos()
+		local broke = false
+		for k = #links, 1, -1 do
+			local L = links[k]
+			if IsValid(L) and pos:DistToSqr(L:GetPos()) > maxD2 then
+				if ent.Unlink then ent:Unlink(L) else table.remove(links, k) end
+				broke = true
+				local owner = ent.CPPIGetOwner and ent:CPPIGetOwner()
+				if IsValid(owner) then
+					owner:ChatPrint("ACE: a " .. (label or "link") .. " snapped - the nodes were dragged too far apart.")
+				end
+			end
+		end
+		return broke
+	end
+
 	-- Common spawn boilerplate: limit check + ownership + cleanup + overlay.
 	-- factoryCheck is the "_class" string used for CheckLimit/AddCount.
 	function Sustain.FinishSpawn(ent, owner, countKey, wireName)

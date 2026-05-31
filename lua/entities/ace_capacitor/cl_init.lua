@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local beamMat = Material("cable/rope")
+local beamMat = Material("cable/cable2")
 
 local function topOf(ent)
 	if not IsValid(ent) then return nil end

@@ -276,6 +276,10 @@ function ENT:Think()
 	end
 	if changed then self:NetworkLinks() end
 
+	-- Snap links dragged past the link range (like ACF drivetrain links) so a
+	-- moved station doesn't keep a working connection across the whole map.
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 1500, "grid link")
+
 	-- A sink charges its battery by pulling through the grid.
 	if self:IsSink() then
 		local want = self:GridCapacity() * dt / 3600

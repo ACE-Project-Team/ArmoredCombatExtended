@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local beamMat = Material("cable/rope")
+local beamMat = Material("cable/cable2")
 
 -- Conductor terminal: the centre of the segment (the wire body).
 local function nodeOf(ent)

@@ -100,6 +100,10 @@ function ENT:Link(Target)
 	if not IsValid(Target) then return false, "Invalid target!" end
 	local cls = Target:GetClass()
 	if cls == "ace_transfer_station" or cls == "ace_transformer" or cls == "ace_power_line" or cls == "ace_capacitor" then
+		local dist = self:GetPos():Distance(Target:GetPos())
+		if dist > (ACF.GridStationLinkRange or 1500) then
+			return false, "Too far (" .. math.Round(dist, 0) .. "u). Move the consumer closer to the node."
+		end
 		self.Station = Target
 		self:UpdateOverlayText()
 		return true, "Tapped into the grid at that node (its voltage is what this load sees)."
@@ -150,6 +154,18 @@ function ENT:Think()
 	self.Supplied = 0
 	self.Voltage  = 0
 	self.Powered  = false
+
+	-- Snap a grid tap dragged out of range (like ACF drivetrain links). The local
+	-- battery link is left alone - it's a direct on-build connection, not a run.
+	if IsValid(self.Station) then
+		local maxD2 = ((ACF.GridStationLinkRange or 1500) * (ACF.LinkStretchMul or 1.5)) ^ 2
+		if self:GetPos():DistToSqr(self.Station:GetPos()) > maxD2 then
+			local owner = self.CPPIGetOwner and self:CPPIGetOwner()
+			self.Station = nil
+			self:UpdateOverlayText()
+			if IsValid(owner) then owner:ChatPrint("ACE: the consumer's grid link snapped - dragged too far from the node.") end
+		end
+	end
 
 	if self.Active and self.Draw > 0 then
 		local want = self.Draw * dt / 3600

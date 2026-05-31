@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local beamMat = Material("cable/rope")
+local beamMat = Material("cable/cable2")
 
 -- Terminal sits at the top of the box.
 local function topOf(ent)

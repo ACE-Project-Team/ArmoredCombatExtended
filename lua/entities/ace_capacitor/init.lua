@@ -259,6 +259,9 @@ function ENT:Think()
 	end
 	if changed then self:NetworkLinks() end
 
+	-- Snap links dragged past the link range (like ACF drivetrain links).
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 1500, "grid link")
+
 	-- Carried line voltage = highest among neighbours.
 	local v = 0
 	for _, S in ipairs(self.GridStations) do if IsValid(S) and (S.Voltage or 0) > v then v = S.Voltage end end

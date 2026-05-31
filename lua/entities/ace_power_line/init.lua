@@ -249,6 +249,9 @@ function ENT:Think()
 	end
 	if changed then self:NetworkLinks() end
 
+	-- Snap links dragged past the link range (like ACF drivetrain links).
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.PowerLineLinkRange or 1200, "power line link")
+
 	-- Carried line voltage = the highest voltage among neighbours (the line it taps).
 	-- Also track the SPREAD (max-min) among energised neighbours: a large spread
 	-- means this one conductor is bridging two sources at different potentials,

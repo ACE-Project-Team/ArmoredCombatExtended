@@ -349,6 +349,10 @@ function ENT:Think()
 		state = self.Tripped and 2 or (overCurrent > 0 and 1 or 0),
 	})
 
+	-- Publish the battery link so the Conduit overlay can show what feeds/stores at
+	-- this station (the battery is a fuel-side entity, not part of the grid graph).
+	Sustain.NetworkAux(self, { { ent = self.Battery, label = "battery" } })
+
 	Wire_TriggerOutput(self, "Mode", self.Mode)
 	Wire_TriggerOutput(self, "Throughput", math.Round(tp, 2))
 	Wire_TriggerOutput(self, "Energized", self:Energized() and 1 or 0)

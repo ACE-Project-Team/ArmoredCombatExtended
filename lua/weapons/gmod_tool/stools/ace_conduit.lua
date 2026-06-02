@@ -281,6 +281,41 @@ if CLIENT then
 		end
 	end
 
+	-- Draw a device's AUXILIARY links (device -> tank / battery), published under the
+	-- AX prefix by Sustain.NetworkAux. These aren't part of the grid/pipe graph, so
+	-- they're drawn dashed and labelled (oil / power / out / battery) to complete the
+	-- picture - e.g. station -> battery, refinery -> its three tanks.
+	local C_AUX = Color(255, 190, 90)
+	local function drawAux(ent)
+		local n = ent:GetNWInt("AXN", 0)
+		if n <= 0 then return end
+		local ac = ent:WorldSpaceCenter()
+		local a  = ac:ToScreen()
+		if not a.visible then return end
+		for i = 1, n do
+			local other = ent:GetNWEntity("AX" .. i)
+			if IsValid(other) then
+				local b = other:WorldSpaceCenter():ToScreen()
+				if b.visible then
+					-- Dashed line so aux links read differently from graph links.
+					local dx, dy = b.x - a.x, b.y - a.y
+					local len = math.max(math.sqrt(dx * dx + dy * dy), 1)
+					local steps = math.Clamp(math.floor(len / 12), 1, 64)
+					surface.SetDrawColor(C_AUX.r, C_AUX.g, C_AUX.b, 220)
+					for s = 0, steps - 1, 2 do
+						local f1, f2 = s / steps, (s + 1) / steps
+						surface.DrawLine(a.x + dx * f1, a.y + dy * f1, a.x + dx * f2, a.y + dy * f2)
+					end
+					local lbl = ent:GetNWString("AX" .. i .. "L", "")
+					if lbl ~= "" then
+						draw.SimpleText(lbl, "DermaDefault", a.x + dx * 0.5, a.y + dy * 0.5,
+							C_AUX, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+					end
+				end
+			end
+		end
+	end
+
 	-- Draw an entity's FRONT (and TOP) axes so builders can orient direction-
 	-- sensitive parts (fuel plug/socket connect faces, which way a solar panel
 	-- looks, the live face of a station, etc.) without guessing.
@@ -328,9 +363,12 @@ if CLIENT then
 				local live  = ent:GetNWBool("AceLive", false)
 				local state = ent:GetNWInt("AceState", 0)
 				local kw    = ent:GetNWFloat("AceKW", 0)
+				local avg   = ent:GetNWFloat("AceKWAvg", kw)
 				local cap   = ent:GetNWFloat("AceCap", 0)
+				local role  = ent:GetNWString("AceRole", "")
 				local col   = flowColor(state, live, kw, cap)
 				drawLinks(ent, "GL", col)
+				drawAux(ent)
 
 				local scr = ent:WorldSpaceCenter():ToScreen()
 				if scr.visible then
@@ -340,17 +378,23 @@ if CLIENT then
 						lines = { "Collector", live and ("PICKING UP " .. fmtKW(kw)) or "no pickup",
 							(dist >= 0) and ("wire " .. math.Round(dist, 0) .. "u") or "" }
 					else
+						-- Status line names WHY a node looks the way it does: its role
+						-- (source / buffer / relay / sink / wire / off) plus fault state.
+						local status = (state == 2 and "BROKEN") or (state == 1 and "OVERLOAD")
+							or (live and "live" or "no power")
+						if role ~= "" then status = status .. " - " .. role end
 						lines = {
 							ent:GetNWString("WireName", cls),
-							(state == 2 and "BROKEN") or (state == 1 and "OVERLOAD") or (live and "live" or "dead"),
+							status,
 							ent:GetNWFloat("AceV", 0) .. " V   " .. fmtKW(kw) .. " / " .. fmtKW(cap),
-							ent:GetNWFloat("AceHeat", 0) .. " C",
+							"avg " .. fmtKW(avg) .. "   " .. ent:GetNWFloat("AceHeat", 0) .. " C",
 						}
 					end
 					drawLabel(scr, lines, col)
 				end
 			elseif fuel and FUEL[cls] then
 				drawLinks(ent, "PL", Color(120, 180, 255))
+				drawAux(ent)
 				local scr = ent:WorldSpaceCenter():ToScreen()
 				if scr.visible then
 					local col   = Color(120, 180, 255)

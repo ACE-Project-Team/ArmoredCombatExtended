@@ -226,7 +226,12 @@ if SERVER then
 				-- conversion/round-trip loss is charged to the source instead of
 				-- silently shrinking what the consumer gets ("no fridge effect").
 				local srcEff = (IsValid(source) and source.GridSourceEff) or ACF.BatteryChargeEff or 0.95
-				bySource[source] = { source = source, eff = eff, capacity = cap, nodes = nodes, srcEff = srcEff }
+				-- Merit-order tier: real generation/storage is tier 0 and supplies a
+				-- load FIRST; a buffer (capacitor) is a higher tier so it's only tapped
+				-- for the shortfall the real sources can't meet - peak-shaving, like a
+				-- real super-capacitor, instead of a local buffer shielding the grid.
+				local tier = (IsValid(source) and source.GridSourcePriority and source:GridSourcePriority()) or 0
+				bySource[source] = { source = source, eff = eff, capacity = cap, nodes = nodes, srcEff = srcEff, tier = tier }
 			end
 		end
 
@@ -301,7 +306,12 @@ if SERVER then
 
 		local list = {}
 		for _, s in pairs(bySource) do list[#list + 1] = s end
-		table.sort(list, function(a, b) return a.eff > b.eff end)
+		-- Lower tier first (real sources before buffers), then best efficiency. GridPull
+		-- consumes this order, so a load drains primaries before ever touching a buffer.
+		table.sort(list, function(a, b)
+			if a.tier ~= b.tier then return a.tier < b.tier end
+			return a.eff > b.eff
+		end)
 		return list
 	end
 
@@ -495,6 +505,22 @@ if SERVER then
 	-- keeps the churn tiny (far less than the overlay-text these ents already send).
 	-- state: 0 = ok, 1 = overloaded, 2 = broken/tripped.
 	------------------------------------------------------------------
+	-- Node role, derived centrally from the role methods every grid node implements,
+	-- so the overlay can label what each part is DOING (and the buffer is obviously a
+	-- buffer, not a primary source) without each entity having to report it.
+	local function vizRole(ent)
+		if ent.Offline and ent:Offline() then
+			return (ent.Tripped or (ent.GetNWInt and ent:GetNWInt("AceState", 0) == 2)) and "broken" or "off"
+		end
+		if ent.IsConductor and ent:IsConductor() then return "wire" end
+		if ent.IsSink and ent:IsSink() then return "sink" end
+		if ent.IsSource and ent:IsSource() then
+			return (ent.GridSourcePriority and ent:GridSourcePriority() > 0) and "buffer" or "source"
+		end
+		if ent.IsRelay and ent:IsRelay() then return "relay" end
+		return "idle"
+	end
+
 	function Sustain.NetworkViz(ent, d)
 		ent:SetNWFloat("AceV",    math.Round(d.v or 0, 0))
 		ent:SetNWFloat("AceKW",   math.Round(d.kw or 0, 1))
@@ -503,10 +529,37 @@ if SERVER then
 		ent:SetNWFloat("AceDist", math.Round(d.dist or -1, 0))
 		ent:SetNWBool("AceLive",  d.live and true or false)
 		ent:SetNWInt("AceState",  d.state or 0)
+
+		-- Rolling average (EMA) of throughput alongside the instantaneous value, so a
+		-- jittery transient reads as a steady number. ~3 s time-constant.
+		local kw  = d.kw or 0
+		local a   = ent._kwAvg or kw
+		ent._kwAvg = a + (kw - a) * 0.08
+		ent:SetNWFloat("AceKWAvg", math.Round(ent._kwAvg, 1))
+
+		-- What this node is doing right now (source / buffer / relay / sink / wire / off).
+		ent:SetNWString("AceRole", (d.role or vizRole(ent)))
+
 		-- Which linked node this one is currently sending power TO (0 = none).
 		-- Set by Sustain.GridPull each tick and consumed (reset) here.
 		ent:SetNWInt("AceFlowTo", IsValid(ent.FlowToAccum) and ent.FlowToAccum:EntIndex() or 0)
 		ent.FlowToAccum = nil
+	end
+
+	-- Publish a device's AUXILIARY links (the device -> tank/battery links that are
+	-- NOT part of the homogeneous grid/pipe graph), so the Conduit overlay can draw
+	-- the WHOLE chain - e.g. a Transfer Station to its battery, or a Refinery to its
+	-- oil/power/output tanks. `links` is an array of { ent = <ent>, label = <string> }.
+	function Sustain.NetworkAux(ent, links)
+		local n = 0
+		for _, l in ipairs(links or {}) do
+			if l and IsValid(l.ent) then
+				n = n + 1
+				ent:SetNWEntity("AX" .. n, l.ent)
+				ent:SetNWString("AX" .. n .. "L", l.label or "")
+			end
+		end
+		ent:SetNWInt("AXN", n)
 	end
 
 	------------------------------------------------------------------

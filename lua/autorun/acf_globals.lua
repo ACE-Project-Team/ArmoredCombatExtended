@@ -204,16 +204,23 @@ ACF.PowerLineDamagePerSec     = 0.03
 ACF.PowerLineTripHealth       = 0.10            -- a wire breaks (stops carrying) at this condition
 ACF.PowerLineReviveHealth     = 0.40
 
--- Capacitor: a fast grid buffer. Tiny energy, huge power - it discharges hard on
--- a spike and refills slowly from the grid, so a load near it sees smooth power
--- (peak-shaving) while the grid behind only carries the average. It's a source
--- node the solver prefers when it's the closest, and it tops itself up each tick.
+-- Capacitor: a fast grid buffer that behaves like a real peak-shaving super-
+-- capacitor. Tiny energy, huge power. It is NOT a primary source: the grid serves
+-- a load from real generators/batteries FIRST and only taps the capacitor for the
+-- shortfall it can't instantly meet (a demand SPIKE) - so a load near it sees
+-- smooth power while the line behind carries the average. It DISCHARGES hard on a
+-- spike but RECHARGES gently (a trickle from spare capacity), so refilling itself
+-- never creates its own demand peak on the line.
 ACF.CapacitorEnergyPerVolume  = 0.000015        -- kWh of store per cu in (small)
-ACF.CapacitorRatePerVolume    = 0.02            -- kW charge/discharge cap per cu in (high)
+ACF.CapacitorRatePerVolume    = 0.02            -- kW discharge cap per cu in (high - covers spikes)
 ACF.CapacitorMassPerVolume    = 0.006           -- kg per cu in
 ACF.CapacitorPointsPerVolume  = 0.04
 ACF.CapacitorEff              = 0.97            -- round-trip efficiency (better than a battery)
 ACF.CapacitorHeatPerKW        = 3               -- waste heat (J/s) per kW of throughput
+ACF.CapacitorRechargeMul      = 0.2             -- self-recharge rate as a fraction of the discharge cap
+                                                -- (gentle "sip from surplus" so it never spikes the line)
+ACF.GridBufferPriority        = 1               -- merit-order tier for buffers (capacitors): real
+                                                -- sources are tier 0 and always supply load first
 
 -- Electric consumer ("house"/machine load).
 ACF.ConsumerDefaultDraw       = 20              -- fallback load (kW) if size can't be read

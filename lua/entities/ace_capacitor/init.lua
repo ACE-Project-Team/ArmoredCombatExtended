@@ -146,6 +146,9 @@ function ENT:IsRelay()       return false end
 function ENT:IsConductor()   return false end
 function ENT:GridHasEnergy() return (self.Charge or 0) > 0 end
 function ENT:GridCapacity()  return self.MaxRate or 0 end
+-- A buffer, not a primary source: the grid serves loads from real generation/
+-- storage first and only taps the capacitor for the spike they can't meet.
+function ENT:GridSourcePriority() return ACF.GridBufferPriority or 1 end
 
 function ENT:DrawEnergy(wantKWh, dt)
 	if self:Offline() or wantKWh <= 0 or (self.Charge or 0) <= 0 then return 0 end
@@ -267,10 +270,15 @@ function ENT:Think()
 	for _, S in ipairs(self.GridStations) do if IsValid(S) and (S.Voltage or 0) > v then v = S.Voltage end end
 	self.Voltage = v
 
-	-- Top up from the grid (ignoring our own store), capped by rate and room.
+	-- Recharge from the grid (ignoring our own store). It DISCHARGES at the full
+	-- MaxRate to cover a spike, but REFILLS only at a gentle "trickle" fraction of it
+	-- - sipping from spare capacity so topping itself up never spikes the line (a real
+	-- super-capacitor smooths the battery's current, it doesn't add a peak). It's also
+	-- the lowest-priority demander on the grid, so real loads are always served first.
 	if not self:Offline() and (self.Charge or 0) < (self.Capacity or 0) then
-		local room = self.Capacity - self.Charge
-		local want = math.min(room, self.MaxRate * dt / 3600)
+		local room     = self.Capacity - self.Charge
+		local rechRate = self.MaxRate * (ACF.CapacitorRechargeMul or 0.2)
+		local want     = math.min(room, rechRate * dt / 3600)
 		if want > 0 then
 			local got = Sustain.GridPull(self, want, dt, true)   -- true = don't draw from self
 			if got > 0 then self:Step(got, dt) end

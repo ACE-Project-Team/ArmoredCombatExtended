@@ -161,6 +161,15 @@ function ENT:Think()
 	WireLib.TriggerOutput(self, "Oil Draw", math.Round(self.OilDraw, 4))
 	WireLib.TriggerOutput(self, "Elec Draw", math.Round(self.ElecDraw, 2))
 	WireLib.TriggerOutput(self, "Heat", math.Round(self.Heat, 1))
+
+	-- Publish the tank links so the Conduit overlay can draw the whole crude->fuel
+	-- chain (these aren't part of the pipe graph, so the tool can't see them otherwise).
+	Sustain.NetworkAux(self, {
+		{ ent = self.OilTank, label = "oil"   },
+		{ ent = self.Battery, label = "power" },
+		{ ent = self.OutTank, label = "out"   },
+	})
+
 	self:UpdateOverlayText()
 	self:NextThink(CurTime() + 0.25)
 	return true

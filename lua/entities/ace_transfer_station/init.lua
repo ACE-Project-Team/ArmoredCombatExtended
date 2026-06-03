@@ -280,12 +280,19 @@ function ENT:Think()
 	-- moved station doesn't keep a working connection across the whole map.
 	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 1500, "grid link")
 
-	-- A sink charges its battery by pulling through the grid.
-	if self:IsSink() then
-		local want = self:GridCapacity() * dt / 3600
-		local got  = Sustain.GridPull(self, want, dt)
-		if got > 0 and IsValid(self.Battery) and self.Battery.ChargeBattery then
-			self.Battery:ChargeBattery(got * (1 - (Sustain.Grid.ConvLoss or 0.04)), dt)
+	-- A sink charges its battery by pulling through the grid - but only as much as
+	-- the battery can actually STORE this tick. If the destination battery is
+	-- inactive or full it accepts nothing, so we pull nothing (otherwise the grid
+	-- gets drained for energy that just vanishes - the "sink pulls kW but it goes
+	-- nowhere" bug). The pull is grossed up by the conversion loss so the battery
+	-- still receives its full headroom after the AC->DC step.
+	if self:IsSink() and IsValid(self.Battery) and self.Battery.ChargeBattery then
+		local convFactor = 1 - (Sustain.Grid.ConvLoss or 0.04)
+		local headroom   = self.Battery.ChargeHeadroom and self.Battery:ChargeHeadroom(dt) or 0
+		if headroom > 0 and convFactor > 0 then
+			local want = math.min(self:GridCapacity() * dt / 3600, headroom / convFactor)
+			local got  = Sustain.GridPull(self, want, dt)
+			if got > 0 then self.Battery:ChargeBattery(got * convFactor, dt) end
 		end
 	end
 
@@ -397,8 +404,17 @@ do
 		if info.mode then self.Mode = info.mode end
 		if info.voltage then self.Voltage = info.voltage end
 		if info.battery then
-			local B = CreatedEntities[info.battery]
-			if IsValid(B) and B:GetClass() == "acf_fueltank" then self:Link(B) end
+			-- Defer the battery relink a tick: the linked tank may still be finishing
+			-- its own paste (FuelType is set during creation, but ordering across a
+			-- big dupe isn't guaranteed), and Link() rejects a not-yet-Electric tank.
+			-- NOTE: the battery only comes back if it was part of THIS dupe selection -
+			-- weld/area-copy it with the station, or the link can't be restored.
+			local idx = info.battery
+			timer.Simple(0, function()
+				if not IsValid(self) then return end
+				local B = CreatedEntities[idx]
+				if IsValid(B) and B:GetClass() == "acf_fueltank" then self:Link(B) end
+			end)
 		end
 		for _, idx in ipairs(info.stations or {}) do
 			local S = CreatedEntities[idx]

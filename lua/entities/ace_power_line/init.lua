@@ -20,12 +20,12 @@ local GRID_NODES = {
 
 function ENT:Initialize()
 	self.GridStations    = {}          -- linked grid neighbours
-	self.Voltage         = 0           -- line voltage it is CARRYING (derived from neighbours)
+	self.Voltage         = 0           -- line voltage it is CARRYING (path-based, from the solve)
+	self._liveVoltage    = 0           -- carried voltage when live but idle (cached, throttled)
 	self.Throughput      = 0
 	self.ThroughputAccum = 0
 	self.Heat            = ACE.AmbientTemp or 20
 	self.Tripped         = false       -- "broken": stops carrying until torch-repaired
-	self.Active          = true
 	self.Live            = false
 	self.Legal           = true
 	self.SpecialHealth   = true
@@ -33,9 +33,8 @@ function ENT:Initialize()
 	self.NextLiveCheck   = 0
 	self.Resistivity     = ACF.PowerLineResistivity or 1.25
 
-	self.Inputs = WireLib.CreateInputs(self, {
-		"Active",
-	})
+	-- A power line is always a live conductor (no Active input); breakers / damage
+	-- are the only things that take it out of service.
 	self.Outputs = WireLib.CreateOutputs(self, {
 		"Live (1 when carrying power from a source) [NORMAL]",
 		"Carrying (V) [NORMAL]",
@@ -172,7 +171,7 @@ end
 -- Grid role interface. A power line is a CONDUCTOR: it carries power with no
 -- DC<->AC conversion, only resistive/line loss. Never a source/sink/relay.
 ------------------------------------------------------------------
-function ENT:Offline()       return self.Tripped or self.BreakerOpen or not self.Active end
+function ENT:Offline()       return self.Tripped or self.BreakerOpen end
 function ENT:IsConductor()   return not self:Offline() end
 function ENT:IsSource()      return false end
 function ENT:IsSink()        return false end
@@ -215,24 +214,21 @@ function ENT:HealthFrac()
 	return math.Clamp((self.ACF.Health or 0) / self.ACF.MaxHealth, 0, 1)
 end
 
-function ENT:TriggerInput(iname, value)
-	if iname == "Active" then
-		self.Active = value ~= 0
-		self:UpdateOverlayText()
-	end
-end
-
 function ENT:UpdateOverlayText()
 	local txt = "Power Line (conductor)"
 	if self.Tripped then txt = txt .. "  [BROKEN]"
-	elseif self.Shorted then txt = txt .. "  [SHORT CIRCUIT!]"
-	elseif not self.Active then txt = txt .. "  [OFF]" end
+	elseif self.Shorted then txt = txt .. "  [SHORT CIRCUIT!]" end
 	if self.Shorted then
-		txt = txt .. "\n!! Bridging mismatched voltages or massively overloaded - trip a breaker / cut the link"
+		txt = txt .. "\n!! Massively overloaded (current far above ampacity) - trip a breaker / cut the link"
 	end
 	txt = txt .. "\n" .. (self.Live and "LIVE" or "no power") .. "   Carrying: " .. math.Round(self.Voltage or 0, 0) .. " V"
 	txt = txt .. "\nCapacity: " .. math.Round(self:GridCapacity(), 0) .. " kW   Throughput: " .. math.Round(self.Throughput or 0, 1) .. " kW"
-	txt = txt .. "\nResistance loss: " .. math.Round((1 - (self.ConductorEff or 1)) * 100, 1) .. "%"
+	-- Line loss is I^2*R: it's 0 with no current and grows with the power carried,
+	-- so an idle line reads 0% even though it has resistance. Show the live loss and
+	-- say so, so "0%" on an unused line isn't mistaken for a bug.
+	local live = self.Live and (self.Throughput or 0) > 0.01
+	txt = txt .. "\nLine loss: " .. math.Round((1 - (self.ConductorEff or 1)) * 100, 1) .. "%"
+		.. (live and " (at this load)" or " (idle - rises with load)")
 	txt = txt .. "\nTemp: " .. math.Round(self.Heat or 0, 0) .. " C   Condition: " .. math.Round(self:HealthFrac() * 100, 0) .. "%   Links: " .. #self.GridStations
 	self:SetOverlayText(txt)
 end
@@ -252,21 +248,12 @@ function ENT:Think()
 	-- Snap links dragged past the link range (like ACF drivetrain links).
 	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.PowerLineLinkRange or 1200, "power line link")
 
-	-- Carried line voltage = the highest voltage among neighbours (the line it taps).
-	-- Also track the SPREAD (max-min) among energised neighbours: a large spread
-	-- means this one conductor is bridging two sources at different potentials,
-	-- which is a short circuit.
-	local v, minV = 0, nil
-	for _, S in ipairs(self.GridStations) do
-		if IsValid(S) then
-			local sv = S.Voltage or 0
-			if sv > v then v = sv end
-			-- only count nodes that are actually carrying a potential
-			if sv > 0 and (not minV or sv < minV) then minV = sv end
-		end
-	end
-	self.Voltage = v
-	self.VoltageSpread = (minV and v > minV) and (v - minV) or 0
+	-- Path-based carried voltage. The grid solve stamps `_carryV` on this conductor
+	-- when power flows through it (the source/transformer voltage on its segment);
+	-- if it's live but idle, fall back to the cached path voltage. No peer-to-peer
+	-- propagation, so it can't oscillate or "bridge mismatched potentials".
+	self.Voltage   = self._carryV or self._liveVoltage or 0
+	self._carryV   = nil
 
 	-- Throughput accumulated by GridPull this tick.
 	local tp = self.ThroughputAccum
@@ -280,25 +267,25 @@ function ENT:Think()
 		heatJ = heatJ + (tp - cap) * (ACF.PowerLineHeatPerKW or 4) * (ACF.GridStationOverloadHeatMul or 6) * dt
 	end
 
-	-- Short circuit: a conductor bridging mismatched-voltage sources, or carrying
-	-- current far above its ampacity, draws a runaway fault current that heats it
-	-- almost instantly and should trip any breaker in the path.
-	local shortCond, faultKW, shortHeat, shortCause = Sustain.Fault.Short({
-		energized     = (self.Voltage or 0) > 0 and (self.Live or self:Energized()),
-		voltageSpread = self.VoltageSpread or 0,
-		capacityKW    = cap,
-		currentKW     = tp,
+	-- Short circuit: a conductor carrying current far above its ampacity draws a
+	-- runaway fault current that heats it almost instantly and should trip any
+	-- breaker in the path. (Voltage is path-based now, so there is no longer a
+	-- "bridging mismatched potentials" short - only genuine over-current.)
+	local shortCond, faultKW, shortHeat = Sustain.Fault.Short({
+		energized  = (self.Voltage or 0) > 0 and self.Live,
+		capacityKW = cap,
+		currentKW  = tp,
 	})
-	-- Inverse-time protection (like a real relay): a bolted potential-mismatch fault
-	-- ("volt") trips instantly; a pure over-current ("amp") is time-delayed so the
-	-- line rides through inrush/transients instead of melting on a one-tick spike.
+	-- Inverse-time protection (like a real relay): a pure over-current is
+	-- time-delayed so the line rides through inrush/transients instead of melting
+	-- on a one-tick spike.
 	local shorted
-	if shortCond and shortCause == "amp" then
+	if shortCond then
 		self.ShortSince = self.ShortSince or CurTime()
 		shorted = (CurTime() - self.ShortSince) >= (ACF.PowerLineShortHold or 0.4)
 	else
 		self.ShortSince = nil
-		shorted = shortCond   -- "volt" (or none): immediate
+		shorted = false
 	end
 	self.Shorted    = shorted
 	self.ShortFault = faultKW
@@ -310,6 +297,16 @@ function ENT:Think()
 			self.NextShortFX = CurTime() + 0.25
 			self:EmitSound("ambient/energy/spark6.wav", 90, 70)
 		end
+	end
+
+	-- The line loss isn't free: the power bled off as resistive loss is dissipated
+	-- IN the conductor as heat. ConductorEff is last tick's loss fraction, so a
+	-- heavily loaded low-voltage run (high loss) actually warms - the cue to step
+	-- the voltage up. (gross = net / (1 - loss); the loss = gross - net.)
+	local lossFrac = 1 - (self.ConductorEff or 1)
+	if lossFrac > 0.001 and tp > 0 then
+		local lossKW = tp * lossFrac / math.max(1 - lossFrac, 0.1)
+		heatJ = heatJ + lossKW * (ACF.PowerLineHeatPerKW or 4) * dt
 	end
 
 	self.Heat = HeatLogic.HeatStep(self.Heat, heatJ, self.Mass or 5, 1, ambient, dt)
@@ -334,10 +331,13 @@ function ENT:Think()
 		self.Tripped = false
 	end
 
-	-- Live status (throttled - GridHasSource walks the graph).
+	-- Live status + cached path voltage (throttled - the solve walks the graph).
+	-- One query gives both whether a source is reachable and the voltage it puts on
+	-- this conductor, so an idle-but-connected line still displays its voltage.
 	if CurTime() >= self.NextLiveCheck then
 		self.NextLiveCheck = CurTime() + 0.5
-		self.Live = self:Energized()
+		self._liveVoltage = self:Offline() and 0 or Sustain.GridVoltage(self)
+		self.Live = self._liveVoltage > 0
 		self:SetNWBool("Live", self.Live)
 	end
 

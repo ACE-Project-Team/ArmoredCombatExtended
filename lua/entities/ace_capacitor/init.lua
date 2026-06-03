@@ -29,7 +29,7 @@ function ENT:Initialize()
 	self.PendingHeatJ    = 0
 	self.Heat            = ACE.AmbientTemp or 20
 	self.Tripped         = false
-	self.Active          = true
+	self.Active          = false   -- spawns OFF; won't buffer/recharge until switched on
 	self.Legal           = true
 	self.SpecialHealth   = true
 	self.IsScalable      = true

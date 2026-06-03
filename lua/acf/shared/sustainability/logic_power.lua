@@ -157,4 +157,19 @@ function Power.Breakdown(voltage, ratedVoltage)
 	return over > 0 and over or 0
 end
 
+Power.OverVoltHeatK = 80   -- J/s per unit breakdown per kW of load
+
+--- Waste heat (J/s) from feeding an electric load above its rated voltage.
+-- The over-voltage stress (Breakdown, 0 when in spec) scales with the power the
+-- device is drawing, so a bigger load over-volted harder cooks faster. The entity
+-- layer feeds this into its heat model, and the existing heat->damage thresholds
+-- cook its condition - the same way an overloaded conductor burns.
+-- @param breakdown number Power.Breakdown result (0 = in spec)
+-- @param drawKW number the load's power draw
+-- @return number joules/sec of over-voltage heat (0 when in spec)
+function Power.OverVoltageHeat(breakdown, drawKW)
+	if (breakdown or 0) <= 0 then return 0 end
+	return breakdown * math.max(drawKW or 0, 0) * Power.OverVoltHeatK
+end
+
 return Power

@@ -1754,4 +1754,73 @@ do
 	e2function number acfWireRange()
 		return ACF.GridCollectorRange or 400
 	end
+
+	------------------------------------------------------------------
+	-- Fuel Synthesizer / Burner / Transformer extras
+	------------------------------------------------------------------
+	local function isSynth(ent)
+		return validPhysics(ent) and ent:GetClass() == "ace_fuel_synth" or false
+	end
+	local function isBurner(ent)
+		return validPhysics(ent) and ent:GetClass() == "ace_burner" or false
+	end
+	local function isTransformer(ent)
+		return validPhysics(ent) and ent:GetClass() == "ace_transformer" or false
+	end
+
+	-- Synthesizer internal pressure (0-1; cooks off at 1).
+	[nodiscard]
+	e2function number entity:acfSynthPressure()
+		if not isSynth(this) then return self:throw("Entity is not a Fuel Synthesizer", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return (this.PressureFrac and this:PressureFrac()) or 0
+	end
+
+	-- Synthesizer reactor temperature (C).
+	[nodiscard]
+	e2function number entity:acfReactorTemp()
+		if not isSynth(this) then return self:throw("Entity is not a Fuel Synthesizer", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Heat or 0
+	end
+
+	-- Synthesizer petrol output (litres/sec).
+	[nodiscard]
+	e2function number entity:acfSynthPetrol()
+		if not isSynth(this) then return self:throw("Entity is not a Fuel Synthesizer", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.PetrolRate or 0
+	end
+
+	-- Synthesizer diesel output (litres/sec).
+	[nodiscard]
+	e2function number entity:acfSynthDiesel()
+		if not isSynth(this) then return self:throw("Entity is not a Fuel Synthesizer", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.DieselRate or 0
+	end
+
+	-- Fuel Burner: litres/sec it is currently burning.
+	[nodiscard]
+	e2function number entity:acfBurnRate()
+		if not isBurner(this) then return self:throw("Entity is not a Fuel Burner", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Burning or 0
+	end
+
+	-- Fuel Burner: 1 when lit.
+	[nodiscard]
+	e2function number entity:acfBurning()
+		if not isBurner(this) then return self:throw("Entity is not a Fuel Burner", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.Lit and 1 or 0
+	end
+
+	-- Transformer: highest output voltage this unit can hold (scales with size).
+	[nodiscard]
+	e2function number entity:acfMaxVoltage()
+		if not isTransformer(this) then return self:throw("Entity is not a Transformer", 0) end
+		if restrictInfo(self.player, this) then return 0 end
+		return this.MaxVoltage or 0
+	end
 end

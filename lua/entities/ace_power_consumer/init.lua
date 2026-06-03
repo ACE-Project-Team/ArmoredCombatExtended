@@ -5,21 +5,27 @@ include("shared.lua")
 
 DEFINE_BASECLASS("ace_scalability")
 
-local Sustain = ACE.Sustain
+local Sustain    = ACE.Sustain
+local HeatLogic  = Sustain.Heat
+local PowerLogic = Sustain.Power
 
 local CONSUMER_MODEL = "models/props_c17/consolebox01a.mdl"
 
 function ENT:Initialize()
-	self.Station    = nil   -- grid tap (a transfer station) we pull through
-	self.Battery    = nil   -- or a battery for a direct local load
-	self.Draw       = ACF.ConsumerDefaultDraw or 20   -- kW wanted
-	self.MinVoltage = ACF.ConsumerMinVoltage or 0     -- volts required to run (0 = no requirement)
-	self.Supplied   = 0
-	self.Voltage    = 0
-	self.Powered    = false
-	self.Active     = true
-	self.Legal      = true
-	self.IsScalable = true
+	self.Station     = nil   -- grid tap (a transfer station) we pull through
+	self.Battery     = nil   -- or a battery for a direct local load
+	self.Draw        = ACF.ConsumerDefaultDraw or 20   -- kW wanted
+	self.MinVoltage  = ACF.ConsumerMinVoltage or 0     -- volts required to run (0 = no requirement)
+	self.RatedVoltage = ACF.ConsumerRatedVoltage or 120 -- operating voltage; above it the load overheats
+	self.Supplied    = 0
+	self.Voltage     = 0
+	self.Powered     = false
+	self.Active      = false   -- spawns OFF; draws no power until switched on
+	self.Legal       = true
+	self.IsScalable  = true
+	self.SpecialHealth = true
+	self.Heat        = ACE.AmbientTemp or 20
+	self.Tripped     = false   -- cooked by sustained over-voltage; off until it cools
 
 	self.Inputs = WireLib.CreateInputs(self, {
 		"Active",
@@ -30,6 +36,7 @@ function ENT:Initialize()
 		"Supplied (kW actually received) [NORMAL]",
 		"Shortfall (kW not met) [NORMAL]",
 		"Voltage (V delivered) [NORMAL]",
+		"Temperature (C) [NORMAL]",
 		"Entity [ENTITY]",
 	})
 	Wire_TriggerOutput(self, "Entity", self)
@@ -86,6 +93,7 @@ function MakeACE_PowerConsumer(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 
 	local phys = Cons:GetPhysicsObject()
 	if IsValid(phys) then phys:SetMass(Cons.Mass) end
+	Cons:ACF_Activate()
 
 	Sustain.FinishSpawn(Cons, Owner, "_ace_power_consumer", def.name or "Power Consumer")
 	return Cons
@@ -122,6 +130,38 @@ function ENT:Unlink(Target)
 	return false, "That entity is not linked!"
 end
 
+------------------------------------------------------------------
+-- ACF health (condition) - so sustained over-voltage can cook it.
+------------------------------------------------------------------
+function ENT:ACF_Activate(Recalc)
+	self.ACF = self.ACF or {}
+	local phys = self:GetPhysicsObject()
+	if not IsValid(phys) then return end
+
+	self.ACF.Area   = self.ACF.Area or (phys:GetSurfaceArea() * 6.45)
+	self.ACF.Volume = self.ACF.Volume or (phys:GetVolume() * 16.38)
+
+	local Health  = math.max((self.ACF.Volume / ACF.Threshold) / 20, 25)
+	local Percent = 1
+	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
+		Percent = self.ACF.Health / self.ACF.MaxHealth
+	end
+
+	self.ACF.Health    = Health * Percent
+	self.ACF.MaxHealth = Health
+	local Armour = (phys:GetMass() * 1000 / self.ACF.Area / 0.78)
+	self.ACF.Armour    = math.max(Armour, 1) * (0.5 + Percent / 2)
+	self.ACF.MaxArmour = math.max(Armour, 1)
+	self.ACF.Type      = "Prop"
+	self.ACF.Mass      = self.Mass
+	self.ACF.Material  = self.ACF.Material or "RHA"
+end
+
+function ENT:HealthFrac()
+	if not self.ACF or not self.ACF.MaxHealth or self.ACF.MaxHealth <= 0 then return 1 end
+	return math.Clamp((self.ACF.Health or 0) / self.ACF.MaxHealth, 0, 1)
+end
+
 function ENT:TriggerInput(iname, value)
 	if iname == "Active" then
 		self.Active = value ~= 0
@@ -138,13 +178,17 @@ function ENT:UpdateOverlayText()
 	txt = txt .. "\nSource: " .. src
 	txt = txt .. "\nDraw: " .. math.Round(self.Draw or 0, 1) .. " kW"
 	txt = txt .. "\nSupplied: " .. math.Round(self.Supplied or 0, 1) .. " kW"
-	if (self.MinVoltage or 0) > 0 then
-		txt = txt .. "   V: " .. math.Round(self.Voltage or 0, 0) .. " / " .. math.Round(self.MinVoltage, 0)
-	end
-	local status = self.Powered and "POWERED"
-		or (((self.MinVoltage or 0) > 0 and (self.Supplied or 0) > 0 and (self.Voltage or 0) < self.MinVoltage)
-			and "UNDER-VOLTAGE" or "under-supplied")
+	txt = txt .. "\nVoltage: " .. math.Round(self.Voltage or 0, 0) .. " V"
+		.. "  (rated " .. math.Round(self.RatedVoltage or 0, 0)
+		.. (((self.MinVoltage or 0) > 0) and (", min " .. math.Round(self.MinVoltage, 0)) or "") .. ")"
+	local status
+	if self.Tripped then status = "COOKED (over-voltage) - cooling down"
+	elseif self.Powered then status = "POWERED"
+	elseif (self.MinVoltage or 0) > 0 and (self.Supplied or 0) > 0 and (self.Voltage or 0) < self.MinVoltage then status = "UNDER-VOLTAGE"
+	else status = "under-supplied" end
+	if (self.Voltage or 0) > (self.RatedVoltage or 0) then status = status .. "  !! OVER-VOLTAGE - overheating" end
 	txt = txt .. "\n" .. status
+	txt = txt .. "\nTemp: " .. math.Round(self.Heat or 0, 0) .. " C   Condition: " .. math.Round(self:HealthFrac() * 100, 0) .. "%"
 	self:SetOverlayText(txt)
 end
 
@@ -167,7 +211,9 @@ function ENT:Think()
 		end
 	end
 
-	if self.Active and self.Draw > 0 then
+	-- A cooked appliance stays off until it has cooled back down (torch repair not
+	-- required - it's a thermal trip, not physical breakage).
+	if self.Active and not self.Tripped and self.Draw > 0 then
 		local want = self.Draw * dt / 3600
 		local got, volts = 0, 0
 		if IsValid(self.Station) then
@@ -183,10 +229,32 @@ function ENT:Think()
 		self.Powered  = self.Supplied >= self.Draw * 0.99 and volts >= (self.MinVoltage or 0)
 	end
 
+	-- Over-voltage overheats the load: delivered voltage above its rating stresses
+	-- it (Breakdown), heating in proportion to the power it's pulling; sustained
+	-- overheat cooks its condition until it thermally trips. Step the supply down
+	-- with a transformer to keep it in spec. Heat bleeds back to ambient when safe.
+	local ambient   = ACE.AmbientTemp or 20
+	local breakdown = PowerLogic.Breakdown(self.Voltage or 0, self.RatedVoltage or 1)
+	local heatJ     = PowerLogic.OverVoltageHeat(breakdown, self.Supplied or 0) * dt
+	self.Heat = HeatLogic.HeatStep(self.Heat, heatJ, self.Mass or 5, 1, ambient, dt)
+
+	if self.Heat > (ACF.ConsumerOverheatTemp or 130) and self.ACF and self.ACF.MaxHealth then
+		self.ACF.Health = math.max(0, (self.ACF.Health or 0) - self.ACF.MaxHealth * (ACF.ConsumerDamagePerSec or 0.03) * dt)
+	end
+	local hf = self:HealthFrac()
+	if not self.Tripped and (hf <= (ACF.ConsumerTripHealth or 0.10) or self.Heat > (ACF.ConsumerTripTemp or 200)) then
+		self.Tripped = true
+		self.Powered = false
+		self:EmitSound("ambient/energy/spark6.wav", 80, 80)
+	elseif self.Tripped and hf >= (ACF.ConsumerReviveHealth or 0.40) and self.Heat <= ambient + 15 then
+		self.Tripped = false
+	end
+
 	WireLib.TriggerOutput(self, "Powered", self.Powered and 1 or 0)
 	WireLib.TriggerOutput(self, "Supplied", math.Round(self.Supplied, 2))
 	WireLib.TriggerOutput(self, "Shortfall", math.Round(math.max(self.Draw - self.Supplied, 0), 2))
 	WireLib.TriggerOutput(self, "Voltage", math.Round(self.Voltage, 2))
+	WireLib.TriggerOutput(self, "Temperature", math.Round(self.Heat, 1))
 	self:UpdateOverlayText()
 	self:NextThink(CurTime() + 0.25)
 	return true

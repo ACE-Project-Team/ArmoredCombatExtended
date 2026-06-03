@@ -1,4 +1,4 @@
--- ACE Conduit tool
+-- ACE Grid Tool (class id: ace_conduit)
 --
 -- Lays and inspects the sustainability networks (power lines & fuel pipes).
 --
@@ -28,6 +28,10 @@ TOOL.ConfigName = ""
 TOOL.ClientConVar["depth"] = "72"     -- bury depth (units)
 TOOL.ClientConVar["range"] = "2500"   -- overlay range (units)
 TOOL.ClientConVar["show"]  = "2"      -- 0 electric, 1 fuel, 2 both
+TOOL.ClientConVar["freeangle"] = "0"  -- 1 = lay at a fixed player-set angle instead of following the aim
+TOOL.ClientConVar["yaw"]   = "0"      -- free-angle yaw (deg)
+TOOL.ClientConVar["pitch"] = "0"      -- free-angle pitch (deg)
+TOOL.ClientConVar["snap"]  = "15"     -- angle snap increment (deg)
 
 -- Segment types the tool can lay (and their global Make function).
 local LAYABLE = {
@@ -47,7 +51,8 @@ local GRID = {
 local FUEL = {
 	ace_fuel_pipe = true, ace_fuel_pump = true, ace_fuel_socket = true,
 	ace_fuel_plug = true, ace_refinery = true, ace_field_generator = true,
-	ace_fuel_synth = true, acf_fueltank = true,
+	ace_fuel_synth = true, acf_fueltank = true, ace_alternator = true,
+	ace_burner = true,
 }
 
 local function canTouch(ply, ent)
@@ -81,7 +86,7 @@ function TOOL:LeftClick(trace)
 	-- Start / continue a chain only from a layable segment.
 	if IsValid(ent) and LAYABLE[ent:GetClass()] then
 		if CLIENT then return true end
-		if not canTouch(self:GetOwner(), ent) then self:GetOwner():ChatPrint("[ACE Conduit] You don't own that.") return true end
+		if not canTouch(self:GetOwner(), ent) then self:GetOwner():ChatPrint("[ACE Grid Tool] You don't own that.") return true end
 
 		-- If we already have an active chain and click a DIFFERENT existing segment
 		-- of the same kind, JOIN the two runs (link the current anchor to it) before
@@ -89,8 +94,8 @@ function TOOL:LeftClick(trace)
 		if IsValid(self.ChainAnchor) and self.ChainAnchor ~= ent
 			and ent:GetClass() == self.ChainClass and self.ChainAnchor.Link then
 			local ok, msg = self.ChainAnchor:Link(ent)
-			self:GetOwner():ChatPrint(ok and "[ACE Conduit] Joined into the existing run."
-				or ("[ACE Conduit] Couldn't join: " .. (msg or "?")))
+			self:GetOwner():ChatPrint(ok and "[ACE Grid Tool] Joined into the existing run."
+				or ("[ACE Grid Tool] Couldn't join: " .. (msg or "?")))
 		end
 
 		self.ChainAnchor = ent
@@ -98,7 +103,7 @@ function TOOL:LeftClick(trace)
 		self.ChainSizeId = ent.SizeId
 		self.ChainShape  = ent.Shape
 		self.ChainDefId  = ent.Id or LAYABLE[ent:GetClass()].defId
-		self:GetOwner():ChatPrint("[ACE Conduit] Picked up " .. ent:GetClass() .. " - left-click to lay copies, RELOAD to finish.")
+		self:GetOwner():ChatPrint("[ACE Grid Tool] Picked up " .. ent:GetClass() .. " - left-click to lay copies, RELOAD to finish.")
 		return true
 	end
 
@@ -106,9 +111,14 @@ function TOOL:LeftClick(trace)
 	if not trace.Hit then return false end
 	if CLIENT then return self.ChainAnchor ~= nil end
 	if not IsValid(self.ChainAnchor) or not LAYABLE[self.ChainClass or ""] then
-		self:GetOwner():ChatPrint("[ACE Conduit] Left-click an existing power line / fuel pipe first to pick it up.")
+		self:GetOwner():ChatPrint("[ACE Grid Tool] Left-click an existing power line / fuel pipe first to pick it up.")
 		return true
 	end
+
+	-- Rate-limit laying so holding/spamming click can't mass-spawn a wall of
+	-- segments in one tick (and blow the spawn limit instantly).
+	if CurTime() < (self.NextLay or 0) then return true end
+	self.NextLay = CurTime() + (ACF.GridToolLayCooldown or 0.15)
 
 	local ply  = self:GetOwner()
 	local mk   = _G[LAYABLE[self.ChainClass].make]
@@ -117,9 +127,24 @@ function TOOL:LeftClick(trace)
 	-- Snap END-TO-END: aim a direction from the anchor toward where you're looking,
 	-- then place the new segment so its near end meets the anchor's far end (so a
 	-- chain reads as one continuous run instead of segments piled on each other).
+	-- In FREE-ANGLE mode the direction comes from the player-set yaw/pitch (snapped
+	-- to the increment) instead of the aim, so you can turn a run any way you like
+	-- (stacker-style) and still keep the segments butted together and auto-linked.
 	local anchor   = self.ChainAnchor
-	local aimPos   = trace.HitPos + trace.HitNormal * 4
-	local dir      = aimPos - anchor:GetPos()
+	local dir
+	if self:GetClientNumber("freeangle", 0) ~= 0 then
+		local snap = math.max(self:GetClientNumber("snap", 15), 0)
+		local yaw  = self:GetClientNumber("yaw", 0)
+		local pit  = self:GetClientNumber("pitch", 0)
+		if snap > 0 then
+			yaw = math.Round(yaw / snap) * snap
+			pit = math.Round(pit / snap) * snap
+		end
+		dir = Angle(pit, yaw, 0):Forward()
+	else
+		local aimPos = trace.HitPos + trace.HitNormal * 4
+		dir = aimPos - anchor:GetPos()
+	end
 	if dir:LengthSqr() < 1e-6 then dir = anchor:GetForward() end
 	dir:Normalize()
 
@@ -130,10 +155,16 @@ function TOOL:LeftClick(trace)
 	local ang       = lengthAngle(dir)
 
 	local seg = mk(ply, pos, ang, self.ChainDefId, self.ChainSizeId, self.ChainShape)
-	if not IsValid(seg) then self:GetOwner():ChatPrint("[ACE Conduit] Couldn't spawn (limit reached?).") return true end
+	if not IsValid(seg) then self:GetOwner():ChatPrint("[ACE Grid Tool] Couldn't spawn (limit reached?).") return true end
+
+	-- Stacker-style: freeze the laid segment in place so the run stays put and
+	-- reads as one continuous, physically-connected line/pipe instead of a pile of
+	-- props dropping to the floor. (Use the physgun/RMB to unfreeze/reposition.)
+	local segPhys = seg:GetPhysicsObject()
+	if IsValid(segPhys) then segPhys:EnableMotion(false) segPhys:Wake() end
 
 	-- Make the lay Ctrl-Z-able and cleanup-tracked, like a normal spawn.
-	undo.Create("ACE Conduit segment")
+	undo.Create("ACE Grid Tool segment")
 		undo.AddEntity(seg)
 		undo.SetPlayer(ply)
 	undo.Finish()
@@ -141,7 +172,7 @@ function TOOL:LeftClick(trace)
 
 	if anchor.Link then
 		local ok, msg = anchor:Link(seg)
-		if not ok then ply:ChatPrint("[ACE Conduit] Placed, but not linked: " .. (msg or "?")) end
+		if not ok then ply:ChatPrint("[ACE Grid Tool] Placed, but not linked: " .. (msg or "?")) end
 	end
 	self.ChainAnchor = seg   -- continue from the new segment
 	return true
@@ -189,7 +220,7 @@ function TOOL:RightClick(trace)
 	end
 	if IsValid(best) then
 		shift(best, depth, true)
-		ply:ChatPrint("[ACE Conduit] Raised a buried segment.")
+		ply:ChatPrint("[ACE Grid Tool] Raised a buried segment.")
 	end
 	return true
 end
@@ -197,13 +228,13 @@ end
 function TOOL:Reload()
 	if SERVER and self.ChainAnchor then
 		self.ChainAnchor = nil
-		self:GetOwner():ChatPrint("[ACE Conduit] Chain finished.")
+		self:GetOwner():ChatPrint("[ACE Grid Tool] Chain finished.")
 	end
 	return false
 end
 
 if CLIENT then
-	language.Add("tool.ace_conduit.name", "ACE Conduit (lay & inspect wires/pipes)")
+	language.Add("tool.ace_conduit.name", "ACE Grid Tool (lay & inspect wires/pipes)")
 	language.Add("tool.ace_conduit.desc", "Lay power lines and fuel pipes by stacking segments, bury them, and see live grid/fuel readouts.")
 	language.Add("tool.ace_conduit.left", "Pick up a segment / lay the next copy")
 	language.Add("tool.ace_conduit.right", "Bury / raise the aimed segment")
@@ -266,13 +297,17 @@ if CLIENT then
 					if ent:GetNWInt("AceFlowTo", 0) == other:EntIndex() then fromC, toC = ac, bc
 					elseif other:GetNWInt("AceFlowTo", 0) == ei then fromC, toC = bc, ac end
 					if fromC then
-						local t = (CurTime() * 0.6) % 1
-						for k = 0, 2 do
-							local f = (t + k / 3) % 1
+						-- A train of bright dots sliding sender -> receiver. Bigger/brighter
+						-- and more of them than the old faint pips, so flow is obvious.
+						local t = (CurTime() * 0.8) % 1
+						for k = 0, 3 do
+							local f = (t + k / 4) % 1
 							local p = (fromC + (toC - fromC) * f):ToScreen()
 							if p.visible then
-								surface.SetDrawColor(255, 255, 180, 255)
-								surface.DrawRect(p.x - 2, p.y - 2, 4, 4)
+								surface.SetDrawColor(40, 40, 20, 200)
+								surface.DrawRect(p.x - 4, p.y - 4, 8, 8)   -- dark outline for contrast
+								surface.SetDrawColor(255, 245, 120, 255)
+								surface.DrawRect(p.x - 3, p.y - 3, 6, 6)
 							end
 						end
 					end
@@ -292,6 +327,15 @@ if CLIENT then
 		local ac = ent:WorldSpaceCenter()
 		local a  = ac:ToScreen()
 		if not a.visible then return end
+
+		-- Flow on a device<->battery link too (e.g. station <-> battery), so charging
+		-- / discharging is as visible as flow on the grid links. A source/buffer pulls
+		-- FROM the battery (battery -> device); a sink stores INTO it (device ->
+		-- battery). Only animate while the device is actually live.
+		local live = ent:GetNWBool("AceLive", false)
+		local role = ent:GetNWString("AceRole", "")
+		local rev  = (role == "source" or role == "buffer")   -- battery -> device
+
 		for i = 1, n do
 			local other = ent:GetNWEntity("AX" .. i)
 			if IsValid(other) then
@@ -306,6 +350,21 @@ if CLIENT then
 						local f1, f2 = s / steps, (s + 1) / steps
 						surface.DrawLine(a.x + dx * f1, a.y + dy * f1, a.x + dx * f2, a.y + dy * f2)
 					end
+
+					-- Animated pulse along the aux link in the flow direction.
+					if live then
+						local t = (CurTime() * 0.8) % 1
+						for k = 0, 2 do
+							local f  = (t + k / 3) % 1
+							local ff = rev and (1 - f) or f
+							local px, py = a.x + dx * ff, a.y + dy * ff
+							surface.SetDrawColor(40, 30, 10, 200)
+							surface.DrawRect(px - 4, py - 4, 8, 8)
+							surface.SetDrawColor(255, 215, 120, 255)
+							surface.DrawRect(px - 3, py - 3, 6, 6)
+						end
+					end
+
 					local lbl = ent:GetNWString("AX" .. i .. "L", "")
 					if lbl ~= "" then
 						draw.SimpleText(lbl, "DermaDefault", a.x + dx * 0.5, a.y + dy * 0.5,
@@ -347,9 +406,27 @@ if CLIENT then
 		if not IsValid(ply) then return end
 
 		-- Always show the front/top axes of whatever ACE part you're aiming at.
-		local aim = ply:GetEyeTrace().Entity
+		local tr  = ply:GetEyeTrace()
+		local aim = tr.Entity
 		if IsValid(aim) and (GRID[aim:GetClass()] or FUEL[aim:GetClass()]) then
 			drawFront(aim)
+		end
+
+		-- In free-angle mode, preview the direction the next segment will lay so the
+		-- player can dial in the yaw/pitch before clicking.
+		if self:GetClientNumber("freeangle", 0) ~= 0 and tr.Hit then
+			local snap = math.max(self:GetClientNumber("snap", 15), 0)
+			local yaw  = self:GetClientNumber("yaw", 0)
+			local pit  = self:GetClientNumber("pitch", 0)
+			if snap > 0 then yaw = math.Round(yaw / snap) * snap pit = math.Round(pit / snap) * snap end
+			local origin = tr.HitPos + tr.HitNormal * 4
+			local tip    = origin + Angle(pit, yaw, 0):Forward() * 48
+			local a, b   = origin:ToScreen(), tip:ToScreen()
+			if a.visible and b.visible then
+				surface.SetDrawColor(255, 210, 90, 255)
+				surface.DrawLine(a.x, a.y, b.x, b.y)
+				draw.SimpleText("lay dir", "DermaDefault", b.x, b.y, Color(255, 210, 90), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			end
 		end
 		local range = math.Clamp(self:GetClientNumber("range", 2500), 256, 16384)
 		local show  = self:GetClientNumber("show", 2)
@@ -425,12 +502,12 @@ if CLIENT then
 			end
 		end
 
-		draw.SimpleText("ACE Conduit - LMB: pick up / lay segment   RMB: bury/raise   R: finish chain   (aim at a part to see its FRONT/TOP)",
+		draw.SimpleText("ACE Grid Tool - LMB: pick up / lay segment   RMB: bury/raise   R: finish chain   (aim at a part to see its FRONT/TOP)",
 			"DermaDefault", ScrW() * 0.5, ScrH() - 40, color_white, TEXT_ALIGN_CENTER)
 	end
 
 	function TOOL.BuildCPanel(panel)
-		panel:AddControl("Header", { Text = "ACE Conduit", Description = "Spawn a power line / fuel pipe from the ACE menu, then left-click it and stack copies. Right-click buries a segment by the depth below." })
+		panel:AddControl("Header", { Text = "ACE Grid Tool", Description = "Spawn a power line / fuel pipe from the ACE menu, then left-click it and stack copies. Right-click buries a segment by the depth below." })
 		panel:AddControl("ComboBox", {
 			Label = "Overlay",
 			Options = {
@@ -441,5 +518,10 @@ if CLIENT then
 		})
 		panel:AddControl("Slider", { Label = "Bury depth", Command = "ace_conduit_depth", Type = "Float", Min = "0", Max = "512" })
 		panel:AddControl("Slider", { Label = "Overlay range", Command = "ace_conduit_range", Type = "Float", Min = "512", Max = "8000" })
+
+		panel:AddControl("CheckBox", { Label = "Free angle (lay at a set angle, not along the aim)", Command = "ace_conduit_freeangle" })
+		panel:AddControl("Slider", { Label = "Lay yaw", Command = "ace_conduit_yaw", Type = "Float", Min = "-180", Max = "180" })
+		panel:AddControl("Slider", { Label = "Lay pitch", Command = "ace_conduit_pitch", Type = "Float", Min = "-90", Max = "90" })
+		panel:AddControl("Slider", { Label = "Angle snap", Command = "ace_conduit_snap", Type = "Float", Min = "0", Max = "90" })
 	end
 end

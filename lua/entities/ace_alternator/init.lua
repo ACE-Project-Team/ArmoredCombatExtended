@@ -251,6 +251,14 @@ function ENT:Think()
 
 	local hasLoad = self:PruneLinks() > 0   -- valid linked batteries remaining
 
+	-- Publish links (spinning shafts + batteries it charges) so the ACE Grid Tool
+	-- overlay can draw them - these aren't part of the grid/pipe graph. Done every
+	-- tick (even when off) so the wiring is always visible in the tool.
+	local aux = {}
+	for _, L in ipairs(self.PropLink) do if IsValid(L.Ent) then aux[#aux + 1] = { ent = L.Ent, label = "shaft" } end end
+	for _, T in ipairs(self.FuelLink) do if IsValid(T)     then aux[#aux + 1] = { ent = T,     label = "charge" } end end
+	Sustain.NetworkAux(self, aux)
+
 	if not self.Active then
 		self.RPM = 0
 		self.OutputPower = 0

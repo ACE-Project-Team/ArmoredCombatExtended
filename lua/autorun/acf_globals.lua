@@ -87,6 +87,19 @@ ACF.SynthEfficiency           = 0.55            -- electrical -> chemical (0-1)
 ACF.SynthEnergyPerLiter       = 9.7             -- kWh chemical per litre of fuel
 ACF.SynthMassPerVolume        = 0.005           -- kg per cu in
 ACF.SynthPointsPerVolume      = 0.05            -- ACF points per cu in
+-- Realistic gas-to-liquids plant: it makes petrol AND diesel together, split by
+-- reactor temperature (hot = more petrol, cold = more diesel - real Fischer-
+-- Tropsch behaviour). You must give EACH product an outlet tank; a product with
+-- nowhere to go backs up as internal pressure, which throttles output and, if
+-- left to climb, makes the reactor cook off (ACF explosion).
+ACF.SynthReactorTempMin       = 210             -- deg C - low-temp FT (diesel-heavy ~1:2)
+ACF.SynthReactorTempMax       = 340             -- deg C - high-temp FT (petrol-heavy ~2:1)
+ACF.SynthReactorTempDefault   = 275             -- deg C - balanced ~1:1
+ACF.SynthOverpressureSeconds  = 30              -- seconds of fully-blocked output before it cooks off
+ACF.SynthPressureEffFloor     = 0.1             -- worst-case output multiplier at full pressure (never quite 0)
+ACF.SynthHeatPerTempError     = 12              -- extra waste heat (W) per deg C the setpoint is above natural equilibrium, per kW drawn
+ACF.SynthRatedVoltage         = 80              -- pump/electronics operating voltage; above it they overheat (feed it through a transformer)
+ACF.SynthElecTripTemp         = 160             -- deg C the electronics trip the plant offline at (cools back down to restart)
 
 -- Refinery: crude Oil + electricity -> Petrol/Diesel (the output tank's type).
 ACF.RefineryRate              = 0.06            -- max output litres/sec
@@ -95,12 +108,16 @@ ACF.RefineryEnergyPerLiter    = 0.4            -- kWh of electricity per litre o
 ACF.RefineryHeatFrac          = 1.0            -- fraction of electrical draw (W) turned into process heat while running
 ACF.RefineryThermalMass       = 60             -- kg thermal mass for the heat model (small enough that it actually warms up)
 
--- Self-powered field generator ("thumper"): slow free fuel, lots of heat.
+-- Field generator ("thumper"): slow fuel synthesis, lots of heat. It now needs
+-- ELECTRICITY to run its pump - link an Electric battery or a transfer station,
+-- and it only pumps if its power need is met (full power -> full rate).
 ACF.FieldGenRate              = 0.0000015       -- litres/sec per cu in
 ACF.FieldGenHeatDensity       = 6               -- watts of heat per cu in while running (runs HOT)
 ACF.FieldGenMassPerVolume     = 0.004           -- kg per cu in
 ACF.FieldGenPointsPerVolume   = 0.04            -- points per cu in
 ACF.FieldGenThumperModel      = "models/props_combine/combinethumper002.mdl" -- optional real model
+ACF.FieldGenPowerPerVolume    = 0.015           -- kW of electrical draw per cu in (its pump must be fed to run)
+ACF.FieldGenRatedVoltage      = 60              -- operating voltage; above it the pump motor overheats
 
 -- Battery (extends the Electric fuel tank). See logic_battery for behaviour.
 ACF.BatteryChargeEff          = 0.95            -- one-way charge/discharge efficiency
@@ -128,8 +145,10 @@ ACF.FuelLinkLoss              = 0.04            -- fraction lost (as heat) durin
 -- condition is the pipe's ACF health, so the ACE torch repairs it.
 ACF.PipeDecayPerSec           = 1 / 36000       -- condition lost per second while flowing (~10h of continuous flow to break)
 ACF.PipeFlowMul               = 0.75            -- pipe throughput vs a direct plug (slightly less)
-ACF.PipeMaxLength             = 1000            -- max link distance for one pipe segment (chain pipe->pipe for longer)
+ACF.PipeMaxLength             = 300             -- center-to-center fallback cap for a pipe segment / device->pipe link
+ACF.PipeLinkGap               = 80              -- max SURFACE gap between two pipe nodes to link (so long scalable pipes link when their ENDS are close)
 ACF.PipeMaxLinks              = 6               -- max links per pipe/pump node
+ACF.GridToolLayCooldown       = 0.15            -- min seconds between laying grid-tool segments (anti spam-spawn)
 ACF.PipeMaxHops               = 14              -- max pipe-graph search depth
 ACF.PipeBasePressure          = 1.0             -- pressure budget a supply provides (spends down with friction)
 ACF.PipePumpPressure          = 1.0             -- pressure budget each Pump/Booster adds (place them to extend range)
@@ -141,12 +160,14 @@ ACF.GridStationDefaultVoltage = 5               -- default station AC voltage (1
 ACF.GridStationMaxVoltage     = 10
 ACF.GridStationBaseKW         = 30              -- (legacy) kept for back-compat; capacity now comes from size
 ACF.GridStationCapacityPerVolume = 0.0056       -- throughput capacity (kW) per cu in of station hardware (build-fixed; voltage no longer multiplies it)
--- 3-phase vs single-phase (a station/build option). Real 3-phase delivers smooth,
--- denser power, so here it's a flag (NOT a waveform sim): 3-phase carries ~sqrt(3)x
--- more for the same hardware and runs cooler per kW. Single-phase is the default.
+-- 3-phase vs single-phase (a per-STATION build flag - NOT three separate power
+-- lines). Real 3-phase delivers smooth, denser power, so here it's a flag (not a
+-- waveform sim): a 3-phase station carries ~sqrt(3)x more for the same hardware
+-- and runs cooler per kW. You do NOT wire three lines into it; it's one checkbox
+-- on the one station. Single-phase is the default.
 ACF.GridStation3PhaseMul      = 1.732           -- capacity multiplier when wired 3-phase
 ACF.GridStation3PhaseHeatMul  = 0.6             -- waste-heat multiplier when 3-phase (smoother = cooler)
-ACF.GridStationLinkRange      = 1500            -- max distance for one station<->station link (chain relays to go further)
+ACF.GridStationLinkRange      = 800             -- max distance for one station<->station link (chain relays to go further)
 ACF.GridStationMaxLinks       = 6               -- max direct links per station (perf + realism)
 ACF.LinkStretchMul            = 1.5             -- a grid link snaps once stretched past this x its link range (like ACF drivetrain links)
 ACF.GridMaxHops               = 20              -- max nodes in ONE relay-to-relay segment the search walks (a relay/transformer resets it). Just a safety net - the real range limit is line loss/voltage sag.
@@ -171,11 +192,18 @@ ACF.GridStationReviveHealth   = 0.40            -- health fraction it must be to
 ACF.TransformerAmpacityPerVolume = 0.0009       -- ampacity per cu in of hardware
 ACF.TransformerEff               = 0.97         -- conversion efficiency per pass
 ACF.TransformerDefaultVoltage    = 30           -- default output voltage
-ACF.TransformerMaxVoltage        = 100          -- highest output voltage you can set (HV transmission)
+-- Max settable output voltage now SCALES WITH SIZE (bigger hardware = more
+-- insulation = higher voltage it can hold). Per-unit cap = clamp(volume *
+-- VoltagePerVolume, MinMaxVoltage, HardMaxVoltage). Since capacity = ampacity *
+-- voltage, a larger transformer both carries more current AND can step higher.
+ACF.TransformerMaxVoltage        = 100          -- legacy fallback ceiling (kept for older dupes)
+ACF.TransformerVoltagePerVolume  = 0.012        -- max output voltage per cu in of hardware
+ACF.TransformerMinMaxVoltage     = 50           -- smallest transformer can still reach this voltage
+ACF.TransformerHardMaxVoltage    = 1000         -- absolute safety ceiling no transformer exceeds
 ACF.TransformerMassPerVolume     = 0.01         -- kg per cu in
 ACF.TransformerPointsPerVolume   = 0.05         -- ACF points per cu in
 ACF.TransformerHeatPerKW         = 6            -- waste heat (J/s) per kW of throughput (the conversion loss)
-ACF.TransformerLinkRange         = 1500         -- max distance to link to another grid node
+ACF.TransformerLinkRange         = 800          -- max distance to link to another grid node
 ACF.TransformerMaxLinks          = 6            -- max direct links
 ACF.TransformerOverheatTemp      = 150          -- deg C above which it takes damage
 ACF.TransformerDamagePerSec      = 0.03         -- fraction of max health lost per second while overheating
@@ -197,7 +225,7 @@ ACF.PowerLineResistivity      = 1.25            -- conductor resistivity (copper
 ACF.PowerLineMassPerVolume    = 0.004           -- kg per cu in
 ACF.PowerLinePointsPerVolume  = 0.02
 ACF.PowerLineHeatPerKW        = 4               -- resistive waste heat (J/s) per kW carried
-ACF.PowerLineLinkRange        = 1200            -- max link distance to another grid node
+ACF.PowerLineLinkRange        = 1000            -- max link distance to another grid node (the deliberate long-distance carrier)
 ACF.PowerLineMaxLinks         = 6
 ACF.PowerLineOverheatTemp     = 130             -- deg C above which it takes damage
 ACF.PowerLineDamagePerSec     = 0.03
@@ -222,10 +250,26 @@ ACF.CapacitorRechargeMul      = 0.2             -- self-recharge rate as a fract
 ACF.GridBufferPriority        = 1               -- merit-order tier for buffers (capacitors): real
                                                 -- sources are tier 0 and always supply load first
 
+-- Fuel Burner / Flare: link it to a fuel tank and it burns that tank's liquid
+-- fuel at a fixed rate (a flare stack). It does NOT manage tank levels - it just
+-- burns; the player decides what to attach. It's hot and hazardous: stand in the
+-- flame and you take burn damage. FX are serverside (acf_burner_fx).
+ACF.BurnerRatePerVolume       = 0.0006           -- litres/sec burned per cu in of burner volume
+ACF.BurnerMassPerVolume       = 0.004            -- kg per cu in
+ACF.BurnerPointsPerVolume     = 0.02             -- ACF points per cu in
+ACF.BurnerHazardRadius        = 90               -- units; players this close to a lit burner get burned
+ACF.BurnerDamagePerSec        = 14               -- burn damage per second while standing in the flame
+
 -- Electric consumer ("house"/machine load).
 ACF.ConsumerDefaultDraw       = 20              -- fallback load (kW) if size can't be read
 ACF.ConsumerDrawPerVolume     = 0.02            -- kW of default load per cu in of consumer (size sets the load; wire "Draw" overrides)
 ACF.ConsumerMinVoltage        = 0               -- default minimum delivered voltage a consumer needs (0 = none; raise per build/def)
+ACF.ConsumerRatedVoltage      = 120             -- operating voltage; delivered voltage above this overheats the load (step it down with a transformer)
+ACF.ConsumerOverheatTemp      = 130             -- deg C above which over-voltage heat starts cooking condition
+ACF.ConsumerDamagePerSec      = 0.03            -- condition lost/sec while overheating
+ACF.ConsumerTripHealth        = 0.10            -- thermally trips off at this condition
+ACF.ConsumerTripTemp          = 200             -- ...or at this temperature, whichever first
+ACF.ConsumerReviveHealth      = 0.40            -- comes back once cooled and condition recovers above this
 ACF.BatteryNominalVoltage     = 1               -- nominal DC voltage a raw Electric battery presents (low-voltage; can't feed a high-Vmin load without a transformer)
 
 -- Electric breaker / fuse: protects a station; trips it offline on sustained

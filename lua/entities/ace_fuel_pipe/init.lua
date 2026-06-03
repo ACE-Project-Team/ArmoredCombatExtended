@@ -111,9 +111,16 @@ function ENT:Link(Target)
 	if #self.PipeLinks >= (ACF.PipeMaxLinks or MAX_LINKS) then
 		return false, "This pipe already has the maximum number of links!"
 	end
-	local dist = self:GetPos():Distance(Target:GetPos())
-	if dist > (ACF.PipeMaxLength or 2200) then
-		return false, "Too far (" .. math.Round(dist, 0) .. "u). Chain another pipe/pump between them."
+	-- Measure the SURFACE gap (nearest point to nearest point), not center-to-
+	-- center, so two long scalable pipes link when their ENDS are close even though
+	-- their centers are far apart. A couple of NearestPoint passes converge on it;
+	-- linking is rare, so the cost is irrelevant.
+	local pa = self:NearestPoint(Target:WorldSpaceCenter())
+	local pb = Target:NearestPoint(pa)
+	pa = self:NearestPoint(pb)
+	local gap = pa:Distance(pb)
+	if gap > (ACF.PipeLinkGap or 80) then
+		return false, "Too far (" .. math.Round(gap, 0) .. "u gap). Move the pipe ends closer or chain another segment."
 	end
 
 	table.insert(self.PipeLinks, Target)

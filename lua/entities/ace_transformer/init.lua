@@ -11,6 +11,19 @@ local PowerLogic = Sustain.Power
 
 local MAX_LINKS = 6   -- NW slots (shares GL1..GLN with stations so beams render across types)
 
+-- Optional real-prop models (natural size; stats from the prop's real volume).
+local TRANSFORMER_MODELS = {
+	substation_a = "models/props_c17/substation_transformer01a.mdl",
+	substation_b = "models/props_c17/substation_transformer01b.mdl",
+	substation_d = "models/props_c17/substation_transformer01d.mdl",
+}
+
+-- Highest output voltage a transformer of this volume can hold (scales with size).
+local function maxVoltageFor(volume)
+	return math.Clamp(math.Round(volume * (ACF.TransformerVoltagePerVolume or 0.012)),
+		ACF.TransformerMinMaxVoltage or 50, ACF.TransformerHardMaxVoltage or 1000)
+end
+
 -- Classes this can be wired into as a grid neighbour (forward-compat with wires).
 local GRID_NODES = {
 	ace_transfer_station = true,
@@ -26,7 +39,7 @@ function ENT:Initialize()
 	self.ThroughputAccum = 0
 	self.Heat            = ACE.AmbientTemp or 20
 	self.Tripped         = false
-	self.Active          = true
+	self.Active          = false        -- spawns OFF; passes no power until switched on
 	self.Legal           = true
 	self.SpecialHealth   = true        -- ACF health = condition; torch repairs it
 	self.IsScalable      = true
@@ -46,7 +59,7 @@ function ENT:Initialize()
 	Wire_TriggerOutput(self, "Entity", self)
 end
 
-function MakeACE_Transformer(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+function MakeACE_Transformer(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_transformer") then return false end
 
 	local def = ACF.Weapons.Transformers[Id]
@@ -62,30 +75,51 @@ function MakeACE_Transformer(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 	Trans:SetPos(Pos)
 	Trans:Spawn()
 
-	local info = Sustain.ApplyShape(Trans, scaleVec, Data2, def)
-	if not info then Trans:Remove() return false end
+	-- Model: a substation prop at natural size (stats from its real volume), or the
+	-- scalable Box mesh at the configured L:W:H.
+	local modelKey  = tostring(Data4 or "scalable")
+	local propModel = TRANSFORMER_MODELS[modelKey]
+	local vol
 
-	Trans.Id        = Id
-	Trans.SizeId    = Data1
-	Trans.Shape     = Data2
-	Trans.Voltage   = math.Clamp(math.floor(tonumber(Data3) or (ACF.TransformerDefaultVoltage or 30)), 1, ACF.TransformerMaxVoltage or 100)
-	Trans.Ampacity  = info.volume * (ACF.TransformerAmpacityPerVolume or 0.0009)
-	Trans.Mass      = math.max(info.volume * (ACF.TransformerMassPerVolume or 0.01), 5)
-	Trans.ACEPoints = info.volume * (ACF.TransformerPointsPerVolume or 0.05)
+	if propModel then
+		Trans:SetModel(propModel)
+		Trans:PhysicsInit(SOLID_VPHYSICS)
+		Trans:SetMoveType(MOVETYPE_VPHYSICS)
+		Trans:SetSolid(SOLID_VPHYSICS)
+		local p = Trans:GetPhysicsObject()
+		if IsValid(p) then p:Wake() end
+		vol = (IsValid(p) and p:GetVolume() or 0) * 16.38
+		Trans.IsScalable = false
+	else
+		local info = Sustain.ApplyShape(Trans, scaleVec, Data2, def)
+		if not info then Trans:Remove() return false end
+		vol = info.volume
+	end
+	if vol <= 0 then vol = 1 end
+
+	Trans.Id         = Id
+	Trans.SizeId     = Data1
+	Trans.Shape      = Data2
+	Trans.Model4     = modelKey
+	Trans.MaxVoltage = maxVoltageFor(vol)
+	Trans.Voltage    = math.Clamp(math.floor(tonumber(Data3) or (ACF.TransformerDefaultVoltage or 30)), 1, Trans.MaxVoltage)
+	Trans.Ampacity   = vol * (ACF.TransformerAmpacityPerVolume or 0.0009)
+	Trans.Mass       = math.max(vol * (ACF.TransformerMassPerVolume or 0.01), 5)
+	Trans.ACEPoints  = vol * (ACF.TransformerPointsPerVolume or 0.05)
 
 	local phys = Trans:GetPhysicsObject()
 	if IsValid(phys) then phys:SetMass(Trans.Mass) end
 	Trans:ACF_Activate()
 
-	Trans:SetColor(Color(95, 105, 125))   -- steel-blue by default
+	if not propModel then Trans:SetColor(Color(95, 105, 125)) end   -- steel-blue holo; leave props natural
 	Sustain.FinishSpawn(Trans, Owner, "_ace_transformer", def.name or "Transformer")
 
 	Wire_TriggerOutput(Trans, "Voltage", Trans.Voltage)
 	return Trans
 end
 
-list.Set("ACFCvars", "ace_transformer", {"id", "data1", "data2", "data3"})
-duplicator.RegisterEntityClass("ace_transformer", MakeACE_Transformer, "Pos", "Angle", "Id", "SizeId", "Shape", "Voltage")
+list.Set("ACFCvars", "ace_transformer", {"id", "data1", "data2", "data3", "data4"})
+duplicator.RegisterEntityClass("ace_transformer", MakeACE_Transformer, "Pos", "Angle", "Id", "SizeId", "Shape", "Voltage", "Model4")
 
 ENT.SpawnFunction = ACE.Sustain.ScalableSpawn(MakeACE_Transformer, "Transformers")
 
@@ -207,7 +241,7 @@ function ENT:TriggerInput(iname, value)
 		self.Active = value ~= 0
 		self:UpdateOverlayText()
 	elseif iname == "Voltage" then
-		self.Voltage = math.Clamp(math.floor(value or 1), 1, ACF.TransformerMaxVoltage or 100)
+		self.Voltage = math.Clamp(math.floor(value or 1), 1, self.MaxVoltage or ACF.TransformerMaxVoltage or 100)
 		Wire_TriggerOutput(self, "Voltage", self.Voltage)
 		self:UpdateOverlayText()
 	end
@@ -217,7 +251,7 @@ function ENT:UpdateOverlayText()
 	local txt = "Transformer"
 	if self.Tripped then txt = txt .. "  [TRIPPED - overheated]"
 	elseif not self.Active then txt = txt .. "  [OFF]" end
-	txt = txt .. "\nOutput Voltage: " .. (self.Voltage or 0)
+	txt = txt .. "\nOutput Voltage: " .. (self.Voltage or 0) .. " / " .. (self.MaxVoltage or 0) .. " max"
 	txt = txt .. "\nCapacity: " .. math.Round(self:GridCapacity(), 0) .. " kW   Throughput: " .. math.Round(self.Throughput or 0, 1) .. " kW"
 	txt = txt .. "\nTemp: " .. math.Round(self.Heat or 0, 0) .. " C   Condition: " .. math.Round(self:HealthFrac() * 100, 0) .. "%"
 	txt = txt .. "\nLinks: " .. #self.GridStations

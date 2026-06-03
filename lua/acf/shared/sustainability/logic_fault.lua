@@ -25,15 +25,14 @@ Fault.DamagePerKW = 0.20    -- damage/sec contribution per kW of fault current
 Fault.MinDamage   = 6
 Fault.MaxDamage   = 90
 
--- Short circuit: a near-resistanceless fault current. Two ways it happens here:
---  1) A conductor bridges two energised nodes whose VOLTAGES differ by more than
---     ShortVoltageDiff (paralleling mismatched sources - a big potential across a
---     tiny wire resistance drives an enormous current), or
---  2) the current carried exceeds the node's ampacity by ShortFactor (a dead
---     short downstream).
+-- Short circuit: a near-resistanceless fault current. It happens here when the
+-- current carried exceeds the node's ampacity by ShortFactor (a dead short
+-- downstream). Voltage is now PATH-BASED (a conductor carries the voltage of the
+-- source/transformer that energises it, re-referenced at each transformer), so a
+-- conductor can no longer "bridge mismatched potentials" - there is exactly one
+-- voltage on any energised segment - and the old voltage-spread short is gone.
 -- A short dumps ShortHeatJPerKW joules per kW of fault current per second into the
 -- conductor (so it heats almost instantly) and should trip any breaker in the path.
-Fault.ShortVoltageDiff = 8      -- volts of spread across one conductor that counts as a short
 Fault.ShortFactor      = 3      -- current above ampacity*this = a short
 Fault.ShortHeatJPerKW  = 240    -- heat (J/s) per kW of fault current while shorted
 Fault.ShortMaxCurrentX = 12     -- fault current is capped at ampacity*this (avoid runaway numbers)
@@ -74,35 +73,28 @@ function Fault.Arc(s)
 	return { radius = radius, damagePerSec = dmg }
 end
 
---- Detect a short circuit across a conductor.
+--- Detect a short circuit across a conductor (over-current only).
 -- @param s table {
---   energized    - true if any neighbour is live,
---   voltageSpread- max neighbour voltage minus min neighbour voltage,
+--   energized    - true if a live source is reachable through it,
 --   capacityKW   - the conductor's power capacity (ampacity*voltage),
 --   currentKW    - power actually being driven through it }
 -- @return boolean shorted, number faultCurrentKW (the runaway current), number heatJPerSec,
---   string cause ("volt" = bolted potential-mismatch fault, trip instantly;
---   "amp" = over-current overload, protection time-delays it; nil = no short)
+--   string cause ("amp" = over-current overload, protection time-delays it; nil = no short)
 function Fault.Short(s)
 	if not s.energized then return false, 0, 0, nil end
-	local spread = s.voltageSpread or 0
-	local cap    = s.capacityKW or 0
-	local cur    = math.max(s.currentKW or 0, 0)
+	local cap = s.capacityKW or 0
+	local cur = math.max(s.currentKW or 0, 0)
 
-	local byVolt = spread >= Fault.ShortVoltageDiff
-	local byAmp  = cap > 0 and cur > cap * Fault.ShortFactor
-	if not (byVolt or byAmp) then return false, 0, 0, nil end
+	if not (cap > 0 and cur > cap * Fault.ShortFactor) then return false, 0, 0, nil end
 
-	-- Fault current: a voltage-spread short is driven by the potential difference
-	-- across the wire's (small) resistance; we approximate it as a large multiple
-	-- of capacity, capped so the numbers stay sane.
+	-- Fault current is the carried over-current, floored at the trip threshold and
+	-- capped so the numbers stay sane.
 	local faultKW = math.max(cur, cap * Fault.ShortFactor)
-	if byVolt then faultKW = math.max(faultKW, cap * Fault.ShortFactor, cap + spread) end
-	if cap > 0 then faultKW = math.min(faultKW, cap * Fault.ShortMaxCurrentX) end
+	faultKW = math.min(faultKW, cap * Fault.ShortMaxCurrentX)
 
-	-- A bolted (voltage-mismatch) fault is the worst kind - report it as the cause
-	-- so the protection trips instantly; a pure over-current is delayed (inverse-time).
-	return true, faultKW, faultKW * Fault.ShortHeatJPerKW, byVolt and "volt" or "amp"
+	-- A pure over-current is delayed by inverse-time protection (handled by the
+	-- entity layer), so report it as "amp".
+	return true, faultKW, faultKW * Fault.ShortHeatJPerKW, "amp"
 end
 
 return Fault

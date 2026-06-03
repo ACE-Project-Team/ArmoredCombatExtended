@@ -548,6 +548,34 @@ function ENT:ChargeBattery(energyKWh, dt)
 	return r.terminal or 0
 end
 
+-- Max TERMINAL energy (kWh) this battery would actually accept as charge this
+-- tick: 0 when it's disconnected (inactive), full, or non-electric; otherwise the
+-- lesser of its (heat-derated, CV-tapered) charge-rate cap and the headroom left.
+-- A charger (e.g. a sink Transfer Station) sizes its grid pull to this so it never
+-- drains the grid for energy the battery can't store (which would just vanish).
+function ENT:ChargeHeadroom(dt)
+	if self.FuelType ~= "Electric" or not self.Legal or not self.Active then return 0 end
+	dt = dt or 0
+	local cap = self.Capacity or 0
+	if dt <= 0 or cap <= 0 then return 0 end
+
+	local Battery = ACE.Sustain.Battery
+	local maxStep = (self.BattMaxRate or 0) * Battery.RateDerate(self.Heat or 20) * dt / 3600
+
+	-- Charge tapers above the CV threshold (the "slows after ~80%" effect).
+	local soc = (self.Fuel or 0) / cap
+	if soc > Battery.CVThreshold then
+		local f = (1 - soc) / math.max(1 - Battery.CVThreshold, 1e-6)
+		f = math.Clamp(f, Battery.CVMinRate, 1)
+		maxStep = maxStep * f
+	end
+
+	-- Terminal energy needed to fill the remaining room (grossed up by charge eff).
+	local eff  = ACF.BatteryChargeEff or 0.95
+	local room = (eff > 0) and ((cap - (self.Fuel or 0)) / eff) or (cap - (self.Fuel or 0))
+	return math.max(math.min(maxStep, room), 0)
+end
+
 -- Discharge to an external load. Returns energy delivered (kWh).
 function ENT:DrawEnergy(wantKWh, dt)
 	if self.FuelType ~= "Electric" or not self.Legal or not self.Active then return 0 end

@@ -44,7 +44,7 @@ function ENT:Initialize()
 	})
 	Wire_TriggerOutput(self, "Entity", self)
 
-	self.Active = true
+	self.Active = false   -- spawns OFF; picks up no power until switched on
 end
 
 function ENT:SpawnFunction(ply, tr)

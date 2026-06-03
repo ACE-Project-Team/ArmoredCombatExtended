@@ -41,6 +41,22 @@ function Synth.Tick(params)
 	return { fuelMade = fuelMade, elecUsed = elecUsed, heatAddJ = heatAddJ }
 end
 
+--- Product split by reactor temperature (realistic Fischer-Tropsch behaviour).
+-- High-temperature FT (~340 C) favours light products (petrol ~2:1 over diesel);
+-- low-temperature FT (~210 C) favours heavy products (diesel ~2:1 over petrol).
+-- We interpolate linearly between those two endpoints and clamp outside the band.
+-- @param tempC reactor temperature (deg C)
+-- @return petrol fraction, diesel fraction (sum to 1)
+function Synth.ProductSplit(tempC, tMin, tMax)
+	tMin = tMin or 210
+	tMax = tMax or 340
+	local t = tMax > tMin and (tempC - tMin) / (tMax - tMin) or 0.5
+	if t < 0 then t = 0 elseif t > 1 then t = 1 end
+	-- petrol rises from 1/3 (cold) to 2/3 (hot); diesel is the remainder.
+	local petrol = 0.3333 + t * (0.6667 - 0.3333)
+	return petrol, 1 - petrol
+end
+
 --- Self-powered field generator step.
 -- @param params table fields:
 --   literPerSec (base extraction rate),

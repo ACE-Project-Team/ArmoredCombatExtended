@@ -440,7 +440,7 @@ function PANEL:Init( )
 
 		-- Fuel: synthesizer, field generator, the long-distance pipe, and the
 		-- plug/socket connector (one entry; a dropdown inside picks which one).
-		for _, key in ipairs({ "FuelSynths", "FieldGenerators" }) do
+		for _, key in ipairs({ "FuelSynths", "FieldGenerators", "Burners" }) do
 			for _, Data in pairs(FinalContainer[key] or {}) do
 				addLeaf(fuelNode, Data)
 			end
@@ -1769,13 +1769,59 @@ function ACEFuelSynthGUICreate(Table)
 		local drawKW = vol * ACF.SynthPowerDensity
 		local fuelLPM = (drawKW / 3600) * ACF.SynthEfficiency / ACF.SynthEnergyPerLiter * 60
 		return "Max Elec Draw: " .. math.Round(drawKW, 2) .. " kW"
-			.. "\nFuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min (at full power)"
+			.. "\nFuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min (petrol+diesel, full power)"
+			.. "\nNeeds a Petrol AND a Diesel outlet tank, or it overpressures"
 			.. "\nEfficiency: " .. math.Round(ACF.SynthEfficiency * 100, 0) .. "%"
-			.. "\nMass: " .. math.Round(vol * ACF.SynthMassPerVolume, 1) .. " kg"
+			.. "\nMass: " .. math.Round(vol * ACF.SynthMassPerVolume, 1) .. " kg (scalable model)"
 			.. "\nPoints: " .. math.Round(vol * ACF.SynthPointsPerVolume, 0)
 	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+
+	-- Model choice: scalable mesh (uses the size above) or the Cooling Tank prop
+	-- (fixed natural size; its stats come from the prop's real volume). data3.
+	acfmenupanel.SynthCfg = acfmenupanel.SynthCfg or { model = "scalable" }
+	local scfg = acfmenupanel.SynthCfg
+	RunConsoleCommand("acfmenu_data3", scfg.model)
+
+	local ModelBox = vgui.Create("DComboBox")
+	ModelBox:SetText(scfg.model == "coolingtank" and "Cooling Tank (prop)" or "Scalable Box/Cylinder")
+	ModelBox:AddChoice("Scalable Box/Cylinder", "scalable")
+	ModelBox:AddChoice("Cooling Tank (prop, fixed size)", "coolingtank")
+	function ModelBox:OnSelect(_, _, data) scfg.model = data RunConsoleCommand("acfmenu_data3", data) end
+	acfmenupanel.CustomDisplay:AddItem(ModelBox)
+	acfmenupanel.CustomDisplay:PerformLayout()
 end
 function ACEFuelSynthGUIUpdate() end
+
+--[[=========================  Fuel Burner  ========================]]--
+function ACEBurnerGUICreate(Table)
+	BuildScalableConfig(Table, function(_cfg, vol)
+		local lpm = vol * (ACF.BurnerRatePerVolume or 0.0006) * 60
+		return "Burn Rate: " .. math.Round(lpm, 2) .. " L/min (scalable model)"
+			.. "\nLink it to a fuel tank; it burns that tank's fuel."
+			.. "\nHot & hazardous - stand clear of the flame."
+			.. "\nMass: " .. math.Round(vol * (ACF.BurnerMassPerVolume or 0.004), 1) .. " kg"
+			.. "\nPoints: " .. math.Round(vol * (ACF.BurnerPointsPerVolume or 0.02), 0)
+	end)
+
+	if not acfmenupanel.CustomDisplay then return end
+
+	-- Model: the canister flare prop (default, fixed size; stats from its real
+	-- volume) or the scalable Box/Cylinder. data3.
+	acfmenupanel.BurnerCfg = acfmenupanel.BurnerCfg or { model = "canister" }
+	local bcfg = acfmenupanel.BurnerCfg
+	RunConsoleCommand("acfmenu_data3", bcfg.model)
+
+	local ModelBox = vgui.Create("DComboBox")
+	ModelBox:SetText(bcfg.model == "scalable" and "Scalable Box/Cylinder" or "Canister (prop)")
+	ModelBox:AddChoice("Canister (prop, fixed size)", "canister")
+	ModelBox:AddChoice("Scalable Box/Cylinder", "scalable")
+	function ModelBox:OnSelect(_, _, data) bcfg.model = data RunConsoleCommand("acfmenu_data3", data) end
+	acfmenupanel.CustomDisplay:AddItem(ModelBox)
+	acfmenupanel.CustomDisplay:PerformLayout()
+end
+function ACEBurnerGUIUpdate() end
 
 --[[=========================  Field Generator  ====================]]--
 function ACEFieldGenGUICreate(Table)
@@ -1840,7 +1886,7 @@ function ACETransferStationGUICreate(Table)
 		local pm  = (cfg.phases == 3) and (ACF.GridStation3PhaseMul or 1.732) or 1
 		local cap = vol * (ACF.GridStationCapacityPerVolume or 0.0056) * pm
 		return "Capacity: " .. math.Round(cap, 0) .. " kW  (set by size" .. (cfg.phases == 3 and " + 3-phase" or "") .. ", not voltage)"
-			.. "\nPhase: " .. (cfg.phases == 3 and "3-phase (more capacity, cooler)" or "1-phase")
+			.. "\nPhase: " .. (cfg.phases == 3 and "3-phase (+73% capacity & cooler on THIS station - not 3 separate lines)" or "1-phase")
 			.. "\nVoltage: " .. math.Round(cfg.voltage, 0) .. "  (higher = less line loss, but hotter)"
 			.. "\nConversion loss: " .. math.Round(((ACE.Sustain and ACE.Sustain.Grid.ConvLoss) or 0.04) * 100, 0) .. "% per DC<->AC step"
 			.. "\nLink range: " .. math.Round(ACF.GridStationLinkRange or 5000, 0) .. "u (chain nodes to go further)"
@@ -1861,7 +1907,7 @@ function ACETransferStationGUICreate(Table)
 	acfmenupanel.CustomDisplay:AddItem(VoltS)
 
 	local Phase = vgui.Create("DCheckBoxLabel")
-	Phase:SetText("3-phase (more capacity, runs cooler)")
+	Phase:SetText("3-phase (this station only: +73% capacity, runs cooler - NOT 3 separate lines)")
 	Phase:SetDark(true)
 	Phase:SetChecked(cfg.phases == 3)
 	Phase:SizeToContents()
@@ -1875,30 +1921,55 @@ function ACETransferStationGUIUpdate() end
 -- Scalable box (size sets ampacity) + an Output Voltage slider. data1 = L:W:H,
 -- data2 = shape, data3 = output voltage.
 function ACETransformerGUICreate(Table)
-	acfmenupanel.TransformerCfg = acfmenupanel.TransformerCfg or { voltage = ACF.TransformerDefaultVoltage or 30 }
+	acfmenupanel.TransformerCfg = acfmenupanel.TransformerCfg or { voltage = ACF.TransformerDefaultVoltage or 30, model = "scalable" }
 	local cfg = acfmenupanel.TransformerCfg
+	local VoltS   -- forward ref so the stats refresh can grow its max with size
+
+	local function maxVForVol(vol)
+		return math.Clamp(math.Round(vol * (ACF.TransformerVoltagePerVolume or 0.012)),
+			ACF.TransformerMinMaxVoltage or 50, ACF.TransformerHardMaxVoltage or 1000)
+	end
 
 	BuildScalableConfig(Table, function(_, vol)
-		local amp = vol * (ACF.TransformerAmpacityPerVolume or 0.0009)
+		local amp  = vol * (ACF.TransformerAmpacityPerVolume or 0.0009)
+		local maxV = maxVForVol(vol)
+		-- Voltage cap (and so the slider max) grows with the build size.
+		if IsValid(VoltS) then
+			VoltS:SetMax(maxV)
+			if cfg.voltage > maxV then cfg.voltage = maxV VoltS:SetValue(maxV) RunConsoleCommand("acfmenu_data3", maxV) end
+		end
 		return "Ampacity: " .. math.Round(amp, 1) .. " A"
+			.. "\nMax Voltage (from size): " .. maxV .. " V"
 			.. "\nCapacity @ " .. math.Round(cfg.voltage, 0) .. " V: " .. math.Round(amp * cfg.voltage, 0) .. " kW"
 			.. "\nEfficiency: " .. math.Round((ACF.TransformerEff or 0.97) * 100, 0) .. "% per pass"
 			.. "\nMass: " .. math.Round(vol * (ACF.TransformerMassPerVolume or 0.01), 1) .. " kg"
-			.. "\n(higher voltage = more capacity + less line loss, but needs real power behind it)"
+			.. "\n(bigger = higher max voltage AND more capacity; needs real power behind it)"
 	end)
 
 	if not acfmenupanel.CustomDisplay then return end
 	RunConsoleCommand("acfmenu_data3", cfg.voltage)
+	RunConsoleCommand("acfmenu_data4", cfg.model)
 
-	local VoltS = vgui.Create("DNumSlider")
+	VoltS = vgui.Create("DNumSlider")
 	VoltS:SetText("Output Voltage")
 	VoltS:SetDark(true)
 	VoltS:SetMin(1)
-	VoltS:SetMax(ACF.TransformerMaxVoltage or 100)
+	VoltS:SetMax(ACF.TransformerHardMaxVoltage or 1000)
 	VoltS:SetDecimals(0)
 	VoltS:SetValue(cfg.voltage)
 	function VoltS:OnValueChanged(v) cfg.voltage = math.Round(v, 0) RunConsoleCommand("acfmenu_data3", cfg.voltage) end
 	acfmenupanel.CustomDisplay:AddItem(VoltS)
+
+	-- Model choice: scalable box, or a substation prop (fixed size; stats from its
+	-- real volume). data4.
+	local ModelBox = vgui.Create("DComboBox")
+	ModelBox:SetText(cfg.model == "scalable" and "Scalable Box" or "Substation prop")
+	ModelBox:AddChoice("Scalable Box", "scalable")
+	ModelBox:AddChoice("Substation A (prop)", "substation_a")
+	ModelBox:AddChoice("Substation B (prop)", "substation_b")
+	ModelBox:AddChoice("Substation D (prop)", "substation_d")
+	function ModelBox:OnSelect(_, _, data) cfg.model = data RunConsoleCommand("acfmenu_data4", data) end
+	acfmenupanel.CustomDisplay:AddItem(ModelBox)
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 function ACETransformerGUIUpdate() end

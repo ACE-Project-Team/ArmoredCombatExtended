@@ -38,6 +38,7 @@ local TransformerTable  = {}
 local PowerLineTable    = {}
 local ConsumerTable     = {}
 local CapacitorTable    = {}
+local BurnerTable       = {}
 local ExplosiveTable    = {}
 
 local GSoundData        = {}
@@ -160,6 +161,11 @@ local capacitor_base = {
 	type   = "Capacitors"
 }
 
+local burner_base = {
+	ent    = "ace_burner",
+	type   = "Burners"
+}
+
 local explosive_base = {
 	ent    = "ace_explosive",
 	type   = "Explosives"
@@ -236,6 +242,9 @@ if CLIENT then
 
 	capacitor_base.guicreate = function( _, Table ) ACECapacitorGUICreate( Table ) end or nil
 	capacitor_base.guiupdate = function( _, Table ) ACECapacitorGUIUpdate( Table ) end or nil
+
+	burner_base.guicreate = function( _, Table ) ACEBurnerGUICreate( Table ) end or nil
+	burner_base.guiupdate = function( _, Table ) ACEBurnerGUIUpdate( Table ) end or nil
 
 	explosive_base.guicreate = function( _, Table ) ACEExplosiveGUICreate( Table ) end or nil
 	explosive_base.guiupdate = function( _, Table ) ACEExplosiveGUIUpdate( Table ) end or nil
@@ -451,6 +460,13 @@ function ACE_DefineCapacitor( id, data )
 	CapacitorTable[ id ] = data
 end
 
+-- Fuel burner / flare definition (burns liquid fuel from a linked tank)
+function ACE_DefineBurner( id, data )
+	data.id = id
+	table.Inherit( data, burner_base )
+	BurnerTable[ id ] = data
+end
+
 -- Explosive charge definition
 function ACE_DefineExplosive( id, data )
 	data.id = id
@@ -642,6 +658,7 @@ ACF.Weapons.Transformers    = TransformerTable
 ACF.Weapons.PowerLines      = PowerLineTable
 ACF.Weapons.Consumers       = ConsumerTable
 ACF.Weapons.Capacitors      = CapacitorTable
+ACF.Weapons.Burners         = BurnerTable
 ACF.Weapons.Explosives      = ExplosiveTable
 ACE.MuzzleFlashes           = MuzzleFlashTable
 

@@ -8,15 +8,22 @@ DEFINE_BASECLASS("ace_scalability")
 local Sustain    = ACE.Sustain
 local SynthLogic = Sustain.Synth
 local HeatLogic  = Sustain.Heat
+local PowerLogic = Sustain.Power
 
 local THUMP_SOUND = "ambient/machines/thumper_hit.wav"
 
 function ENT:Initialize()
 	self.FuelLink    = {}    -- liquid tanks we fill (direct links)
 	self.PipeLinks   = {}    -- pipes/pumps we feed into (oil flows through the network)
+	self.Battery     = nil   -- Electric tank powering the pump (direct), OR...
+	self.Station     = nil   -- ...a grid node we tap for power
 	self.Active      = false -- off until switched on (wire Active, or USE key)
 	self.Grounded    = false
 	self.FuelRate    = 0
+	self.PowerNeed   = 0     -- kW its pump needs to run at full rate (set in Make)
+	self.PowerFrac   = 0     -- 0..1 fraction of that need currently met
+	self.Voltage     = 0
+	self.RatedVoltage = ACF.FieldGenRatedVoltage or 60
 	self.Heat        = ACE.AmbientTemp or 20
 	self.NextThump   = 0
 	self.NextGroundCheck = 0
@@ -31,6 +38,7 @@ function ENT:Initialize()
 		"Fuel Rate (Litres/sec) [NORMAL]",
 		"Heat (C) [NORMAL]",
 		"Grounded (1 when sitting on the ground) [NORMAL]",
+		"Powered (1 when its pump has the electricity to run) [NORMAL]",
 		"Entity [ENTITY]",
 	})
 
@@ -85,6 +93,7 @@ function MakeACE_FieldGenerator(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 	Gen.Dimensions  = Vector(L, W, H)
 	Gen.LiterPerSec = vol * ACF.FieldGenRate
 	Gen.HeatWatts   = vol * ACF.FieldGenHeatDensity
+	Gen.PowerNeed   = math.max(vol * (ACF.FieldGenPowerPerVolume or 0.015), 0.1)
 	Gen.Mass        = math.max(vol * ACF.FieldGenMassPerVolume, 5)
 	Gen.ACEPoints   = vol * ACF.FieldGenPointsPerVolume
 
@@ -114,8 +123,26 @@ function ENT:Link(Target)
 		return true, "Oil pump linked into the fuel network."
 	end
 
-	if cls ~= "acf_fueltank" then return false, "Link a fuel tank, pipe, or pump." end
-	if Target.FuelType == "Electric" then return false, "Field generators make liquid fuel, not electricity!" end
+	-- A grid node: tap it for the electricity the pump motor needs.
+	if cls == "ace_transfer_station" or cls == "ace_transformer" or cls == "ace_power_line" or cls == "ace_capacitor" then
+		local dist = self:GetPos():Distance(Target:GetPos())
+		if dist > (ACF.GridStationLinkRange or 800) then
+			return false, "Too far (" .. math.Round(dist, 0) .. "u). Move the pump closer to the node."
+		end
+		self.Station = Target
+		self:UpdateOverlayText()
+		return true, "Pump tapped into the grid for power."
+	end
+
+	if cls ~= "acf_fueltank" then return false, "Link a fuel tank, pipe, pump, grid node, or Electric battery." end
+
+	-- An Electric tank powers the pump directly (it makes oil, not electricity, so
+	-- it can't OUTPUT to one - but it can be POWERED by one).
+	if Target.FuelType == "Electric" then
+		self.Battery = Target
+		self:UpdateOverlayText()
+		return true, "Pump powered directly from that battery."
+	end
 
 	for _, T in pairs(self.FuelLink) do if T == Target then return false, "That fuel tank is already linked!" end end
 	table.insert(self.FuelLink, Target)
@@ -124,6 +151,8 @@ end
 
 function ENT:Unlink(Target)
 	if not IsValid(Target) then return false, "Invalid target!" end
+	if Target == self.Station then self.Station = nil self:UpdateOverlayText() return true, "Unlinked from grid power." end
+	if Target == self.Battery then self.Battery = nil self:UpdateOverlayText() return true, "Unlinked from battery." end
 	for K, T in pairs(self.FuelLink) do if T == Target then table.remove(self.FuelLink, K) return true, "Unlink successful!" end end
 	for K, L in pairs(self.PipeLinks) do
 		if L == Target then
@@ -207,16 +236,24 @@ function ENT:UpdateOutputs()
 	WireLib.TriggerOutput(self, "Fuel Rate", math.Round(self.FuelRate, 5))
 	WireLib.TriggerOutput(self, "Heat", math.Round(self.Heat, 1))
 	WireLib.TriggerOutput(self, "Grounded", self.Grounded and 1 or 0)
+	WireLib.TriggerOutput(self, "Powered", (self.PowerFrac or 0) > 0 and 1 or 0)
 end
 
 function ENT:UpdateOverlayText()
-	local state = self.Active and (self.Grounded and "ON" or "ON (airborne - not pumping)") or "OFF"
+	local powerSrc = IsValid(self.Station) and "grid" or (IsValid(self.Battery) and "battery" or "NONE")
+	local state
+	if not self.Active then state = "OFF"
+	elseif not self.Grounded then state = "ON (airborne - not pumping)"
+	elseif (self.PowerFrac or 0) <= 0 then state = "ON (NO POWER - not pumping)"
+	elseif self.PowerFrac < 0.99 then state = "ON (low power - " .. math.Round(self.PowerFrac * 100, 0) .. "%)"
+	else state = "ON" end
 	local txt = "Oil Pump (crude)"
 	txt = txt .. "\nState: " .. state
+	txt = txt .. "\nPower: " .. powerSrc .. "   needs " .. math.Round(self.PowerNeed or 0, 2) .. " kW"
 	txt = txt .. "\nPumping: " .. math.Round((self.FuelRate or 0) * 60, 4) .. " L/min oil"
 	txt = txt .. "\nHeat: " .. math.Round(self.Heat or 0, 0) .. " C"
 	txt = txt .. "\nTanks: " .. #(self.FuelLink or {}) .. "   Pipes: " .. #(self.PipeLinks or {})
-	txt = txt .. "\n(wire 'Active' to toggle)"
+	txt = txt .. "\n(wire 'Active' to toggle; link a battery or grid node for power)"
 	self:SetOverlayText(txt)
 end
 
@@ -242,19 +279,41 @@ function ENT:Think()
 		self:CheckGrounded()
 	end
 
-	self.FuelRate = 0
+	self.FuelRate  = 0
+	self.PowerFrac = 0
+	self.Voltage   = 0
 
-	-- Only pump when switched on AND resting on the ground.
-	if self.Active and self.Grounded then
+	-- Pull the electricity the pump needs. Without it, the pump can't run; with
+	-- partial power it pumps at a reduced rate (full power -> full rate).
+	if self.Active and self.Grounded and (self.PowerNeed or 0) > 0 then
+		local want = self.PowerNeed * dt / 3600
+		local got, volts = 0, 0
+		if IsValid(self.Station) then
+			got, volts = Sustain.GridPull(self.Station, want, dt)
+		elseif IsValid(self.Battery) and self.Battery.DrawEnergy then
+			got   = self.Battery:DrawEnergy(want, dt) or 0
+			volts = (got > 0) and (ACF.BatteryNominalVoltage or 1) or 0
+		end
+		local suppliedKW = got / math.max(dt / 3600, 1e-9)
+		self.PowerFrac   = math.Clamp(suppliedKW / self.PowerNeed, 0, 1)
+		self.Voltage     = volts or 0
+	end
+
+	-- Only pump when switched on, grounded, AND its pump is fed.
+	if self.Active and self.Grounded and self.PowerFrac > 0 then
 		local r = SynthLogic.Field({
-			literPerSec = self.LiterPerSec,
+			literPerSec = self.LiterPerSec * self.PowerFrac,
 			heatWatts   = self.HeatWatts,
 			dt          = dt,
 		})
 
 		if r.fuelMade > 0 then self:DepositFuel(r.fuelMade) end
-		self.FuelRate = self.LiterPerSec
-		self.Heat = HeatLogic.HeatStep(self.Heat, r.heatAddJ, self.Mass, 0.7, ambient, dt)
+		self.FuelRate = self.LiterPerSec * self.PowerFrac
+
+		-- Process heat, plus extra if the pump motor is fed above its rated voltage.
+		local breakdown = PowerLogic.Breakdown(self.Voltage or 0, self.RatedVoltage or 1)
+		local heatJ     = r.heatAddJ + PowerLogic.OverVoltageHeat(breakdown, self.PowerNeed * self.PowerFrac) * dt
+		self.Heat = HeatLogic.HeatStep(self.Heat, heatJ, self.Mass, 0.7, ambient, dt)
 
 		if CurTime() >= self.NextThump then
 			self:EmitSound(THUMP_SOUND, 70, 90)
@@ -263,6 +322,12 @@ function ENT:Think()
 	else
 		self.Heat = HeatLogic.HeatStep(self.Heat, 0, self.Mass, 0.7, ambient, dt)
 	end
+
+	-- Publish the auxiliary (power) links so the Grid Tool overlay can draw them.
+	Sustain.NetworkAux(self, {
+		{ ent = self.Station, label = "power" },
+		{ ent = self.Battery, label = "battery" },
+	})
 
 	self:UpdateOutputs()
 	self:UpdateOverlayText()
@@ -281,21 +346,27 @@ do
 		local fuel, pipes = {}, {}
 		for _, T in pairs(self.FuelLink) do if IsValid(T) then table.insert(fuel, T:EntIndex()) end end
 		for _, L in pairs(self.PipeLinks) do if IsValid(L) then table.insert(pipes, L:EntIndex()) end end
-		if #fuel > 0 or #pipes > 0 then
-			duplicator.StoreEntityModifier(self, "FieldGenLinks", { fuel = fuel, pipes = pipes })
-		end
+		duplicator.StoreEntityModifier(self, "FieldGenLinks", {
+			fuel    = fuel,
+			pipes   = pipes,
+			station = IsValid(self.Station) and self.Station:EntIndex() or nil,
+			battery = IsValid(self.Battery) and self.Battery:EntIndex() or nil,
+		})
 	end
 
 	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.FieldGenLinks then return end
-		for _, idx in ipairs(Ent.EntityMods.FieldGenLinks.fuel or {}) do
+		local info = Ent.EntityMods.FieldGenLinks
+		for _, idx in ipairs(info.fuel or {}) do
 			local T = CreatedEntities[idx]
 			if IsValid(T) and T:GetClass() == "acf_fueltank" then self:Link(T) end
 		end
-		for _, idx in ipairs(Ent.EntityMods.FieldGenLinks.pipes or {}) do
+		for _, idx in ipairs(info.pipes or {}) do
 			local L = CreatedEntities[idx]
 			if IsValid(L) then self:Link(L) end
 		end
+		if info.station then local S = CreatedEntities[info.station] if IsValid(S) then self:Link(S) end end
+		if info.battery then local B = CreatedEntities[info.battery] if IsValid(B) then self:Link(B) end end
 		Ent.EntityMods.FieldGenLinks = nil
 	end
 end

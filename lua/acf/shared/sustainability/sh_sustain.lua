@@ -21,6 +21,7 @@ local MODULES = {
 	"logic_grid",
 	"logic_power",
 	"logic_fault",
+	"logic_gridsolve",
 }
 
 if SERVER then
@@ -41,6 +42,7 @@ Sustain.Pipe       = include(PATH .. "logic_pipe.lua")
 Sustain.Grid       = include(PATH .. "logic_grid.lua")
 Sustain.Power      = include(PATH .. "logic_power.lua")
 Sustain.Fault      = include(PATH .. "logic_fault.lua")
+Sustain.GridSolve  = include(PATH .. "logic_gridsolve.lua")
 
 ACE.Sustain = Sustain
 
@@ -191,128 +193,27 @@ if SERVER then
 	-- station to the best-delivering Source that still has charge.
 	------------------------------------------------------------------
 
-	-- Best path PER distinct source reachable from `entry`. Returns an array of
-	-- { source, eff, capacity, nodes, srcEff } sorted best-first; GridPull then
-	-- shares the load across them (merit order), which is how multiple generators
-	-- feed one grid.
-	--
-	-- Implemented as a best-first (Dijkstra) search: each conductor/relay node is
-	-- SETTLED exactly once, by the highest efficiency-with-which-it-can-be-reached.
-	-- A meshed or looped grid therefore costs O(V^2), not the FACTORIAL blow-up of
-	-- the old all-paths backtracking walk (which re-walked every permutation of a
-	-- ring and froze the server). Because edge "weights" only ever shrink
-	-- efficiency (each hop and each conversion multiply by a factor <= 1), the
-	-- first time a node is settled it already holds its optimal path - the standard
-	-- Dijkstra guarantee - so we still find the genuinely best route to each source.
-	local function gridFindSources(entry, conv, ignoreEntrySource)
-		if not IsValid(entry) then return {} end
-		local maxHops    = ACF.GridMaxHops or 10
-		local convFactor = 1 - conv
-		local bySource   = {}   -- source ent -> best path entry
-
-		-- Record a tappable source. `eff` already folds in the two fixed (source +
-		-- sink) conversions and every relay conversion taken to reach it. We keep
-		-- the best-efficiency path per distinct source.
-		local function consider(source, eff, nodes)
-			-- Throughput is bottlenecked by the weakest node on the path.
-			local cap = math.huge
-			for _, n in ipairs(nodes) do
-				cap = math.min(cap, (n.GridCapacity and n:GridCapacity()) or 0)
-			end
-			local prev = bySource[source]
-			if not prev or eff > prev.eff then
-				-- The source's own (dis)charge efficiency. GridPull grosses the
-				-- request up by it so the LOAD receives its full demand and the
-				-- conversion/round-trip loss is charged to the source instead of
-				-- silently shrinking what the consumer gets ("no fridge effect").
-				local srcEff = (IsValid(source) and source.GridSourceEff) or ACF.BatteryChargeEff or 0.95
-				-- Merit-order tier: real generation/storage is tier 0 and supplies a
-				-- load FIRST; a buffer (capacitor) is a higher tier so it's only tapped
-				-- for the shortfall the real sources can't meet - peak-shaving, like a
-				-- real super-capacitor, instead of a local buffer shielding the grid.
-				local tier = (IsValid(source) and source.GridSourcePriority and source:GridSourcePriority()) or 0
-				bySource[source] = { source = source, eff = eff, capacity = cap, nodes = nodes, srcEff = srcEff, tier = tier }
-			end
-		end
-
-		-- Per-node frame: `v` = efficiency-to-reach (product of every hop loss and
-		-- relay conversion taken so far; the two fixed source+sink conversions are
-		-- applied only when a source is tapped, as convFactor^2).
-		local frames = {}
-		frames[entry] = { v = 1, depth = 0, nodes = { entry }, settled = false }
-
-		-- The entry node may itself be the source (a Collector tapping a source
-		-- station directly, or a Consumer wired straight to one). The search taps
-		-- sources as NEIGHBOURS, never expands through them, so handle the zero-hop
-		-- case explicitly. A capacitor recharging itself passes ignoreEntrySource so
-		-- it draws from the grid AROUND it, not from its own store.
-		if not ignoreEntrySource and entry.IsSource and entry:IsSource()
-			and entry.GridHasEnergy and entry:GridHasEnergy() then
-			consider(entry, convFactor * convFactor, { entry })
-		end
-
-		while true do
-			-- Settle the unsettled frame reachable with the highest efficiency.
-			-- (Linear scan; grids are small and bounded by maxHops, so a heap isn't
-			-- worth the complexity.)
-			local node, rec
-			for n, r in pairs(frames) do
-				if not r.settled and (not rec or r.v > rec.v) then node, rec = n, r end
-			end
-			if not node then break end
-			rec.settled = true
-
-			for _, N in ipairs(node.GridStations or {}) do
-				if IsValid(N) then
-					local isCond = N.IsConductor and N:IsConductor()
-					-- A physical wire's own resistance (length / cross-section / temp /
-					-- carried voltage, computed in its Think -> ConductorEff) accounts
-					-- for the whole run, so we use that directly. Abstract station/
-					-- transformer links instead lose to the node-to-node distance.
-					local hopEff
-					if isCond then
-						hopEff = N.ConductorEff or 1
-					else
-						hopEff = 1 - Sustain.Grid.LineLoss(node:GetPos():Distance(N:GetPos()), N.Voltage or 1, true)
-					end
-					local reachV = rec.v * hopEff
-
-					if N.IsSource and N:IsSource() and N.GridHasEnergy and N:GridHasEnergy() then
-						-- Tappable source: a leaf, never expanded through. Considered
-						-- from every node that reaches it, so the best route wins.
-						local nodes2 = { unpack(rec.nodes) }
-						nodes2[#nodes2 + 1] = N
-						consider(N, convFactor * convFactor * reachV, nodes2)
-					elseif rec.depth < maxHops and (isCond or (N.IsRelay and N:IsRelay())) then
-						-- Pass-through. A conductor carries power with NO conversion and
-						-- costs one hop. A relay (transformer / relay-mode station)
-						-- re-boosts (one DC<->AC conversion -> * convFactor) AND RESETS
-						-- the hop budget, so it acts as a repeater that extends the run
-						-- the way a real substation does - maxHops then only bounds one
-						-- relay-to-relay segment, not the whole line. (The real distance
-						-- limit is the accumulating line loss / voltage sag, not hops.)
-						local nextV     = isCond and reachV or (reachV * convFactor)
-						local nextDepth = isCond and (rec.depth + 1) or 0
-						local f = frames[N]
-						if not f or (not f.settled and nextV > f.v) then
-							local nodes2 = { unpack(rec.nodes) }
-							nodes2[#nodes2 + 1] = N
-							frames[N] = { v = nextV, depth = nextDepth, nodes = nodes2, settled = false }
-						end
-					end
+	-- Build the OPTS table the pure solver (logic_gridsolve) needs to operate on
+	-- live entities: it injects the GMod-specific geometry/validity, the pure
+	-- module owns the Dijkstra / merit-order / path-voltage maths. `hopEff` is the
+	-- only place real positions enter the solve - a physical wire's own resistance
+	-- (length / cross-section / temp / carried voltage, computed in its Think ->
+	-- ConductorEff) accounts for the whole run, so we use that directly; abstract
+	-- station/transformer links instead lose to the node-to-node distance.
+	local function solveOpts(ignoreEntrySource)
+		return {
+			conv              = Sustain.Grid.ConvLoss or 0.04,
+			maxHops           = ACF.GridMaxHops or 10,
+			battChargeEff     = ACF.BatteryChargeEff or 0.95,
+			valid             = IsValid,
+			ignoreEntrySource = ignoreEntrySource,
+			hopEff = function(a, b)
+				if b.IsConductor and b:IsConductor() then
+					return b.ConductorEff or 1
 				end
-			end
-		end
-
-		local list = {}
-		for _, s in pairs(bySource) do list[#list + 1] = s end
-		-- Lower tier first (real sources before buffers), then best efficiency. GridPull
-		-- consumes this order, so a load drains primaries before ever touching a buffer.
-		table.sort(list, function(a, b)
-			if a.tier ~= b.tier then return a.tier < b.tier end
-			return a.eff > b.eff
-		end)
-		return list
+				return 1 - Sustain.Grid.LineLoss(a:GetPos():Distance(b:GetPos()), b.Voltage or 1, true)
+			end,
+		}
 	end
 
 	-- Pull up to wantKWh (this tick) through the grid into the demander. `entry`
@@ -320,71 +221,39 @@ if SERVER then
 	-- reachable source in merit order (most-efficient path first), so several
 	-- generators/batteries on one grid all contribute - and a shared wire/relay
 	-- can't be over-committed because per-node capacity used this tick is tracked.
-	-- Returns (deliveredKWh, deliveredVoltage). Voltage sags below the entry node's
-	-- rated voltage when the grid can't meet the demanded power, which lets a
-	-- Consumer/Collector enforce a minimum-voltage requirement (and stops a tiny
-	-- source from faking a high-voltage supply - see logic_power).
+	-- Returns (deliveredKWh, deliveredVoltage). The voltage is PATH-BASED - the
+	-- source/transformer voltage actually carried to the load end (the pure solver
+	-- computes it) - then sagged below that when the grid can't meet the demanded
+	-- power, which lets a Consumer/Collector enforce a minimum-voltage requirement.
 	function Sustain.GridPull(entry, wantKWh, dt, ignoreEntrySource)
 		if not IsValid(entry) or wantKWh <= 0 then return 0, 0 end
-		local conv    = Sustain.Grid.ConvLoss or 0.04
-		local sources = gridFindSources(entry, conv, ignoreEntrySource)
-		if #sources == 0 then return 0, 0 end
 
-		local hr        = dt / 3600
-		local remaining = wantKWh           -- kWh still to DELIVER to the load
-		local total     = 0
-
-		-- Capacity committed on a node THIS server tick, shared across every GridPull
-		-- call in the tick (stamped with CurTime so it self-resets next tick). This is
-		-- what makes several demanders - e.g. multiple Power Collectors on one wire -
-		-- SHARE that wire's finite capacity instead of each separately maxing it out
-		-- and silently overloading it.
-		local now = CurTime()
-		local function committed(n)
-			return (n._gridUsedT == now) and (n._gridUsed or 0) or 0
+		local hr   = dt / 3600
+		local opts = solveOpts(ignoreEntrySource)
+		opts.now = CurTime()
+		opts.hr  = hr
+		-- DrawEnergy needs dt; the pure module only passes (source, need).
+		opts.draw = function(src, need)
+			return IsValid(src) and src:DrawEnergy(need, dt) or 0
 		end
-		local function commit(n, kw)
-			if n._gridUsedT ~= now then n._gridUsedT = now; n._gridUsed = 0 end
-			n._gridUsed = n._gridUsed + kw
-		end
-
-		for _, s in ipairs(sources) do
-			if remaining <= 1e-12 then break end
-			if IsValid(s.source) then
-				-- Spare capacity on this path = the weakest node minus what other
-				-- sources / demanders already pushed through it this tick.
-				local pathCap = math.huge
-				for _, n in ipairs(s.nodes) do
-					pathCap = math.min(pathCap, ((n.GridCapacity and n:GridCapacity()) or 0) - committed(n))
-				end
-				if pathCap > 0 then
-					local takeKWh = math.min(remaining, pathCap * hr)
-					-- Gross up by BOTH path efficiency AND the source's discharge eff
-					-- (DrawEnergy applies the latter internally), so `takeKWh` lands.
-					local need      = takeKWh / math.max(s.eff * (s.srcEff or 1), 0.01)
-					local drawn     = s.source:DrawEnergy(need, dt) or 0
-					local delivered = drawn * s.eff
-					if delivered > 0 then
-						local pkw = delivered / math.max(hr, 1e-9)
-						local nodes = s.nodes
-						for i = 1, #nodes do
-							local n = nodes[i]
-							commit(n, pkw)
-							n.ThroughputAccum = (n.ThroughputAccum or 0) + pkw
-							if i < #nodes then nodes[i + 1].FlowToAccum = nodes[i] end
-						end
-						total     = total + delivered
-						remaining = remaining - delivered
-					end
-				end
-			end
+		-- Per-node side effects the GMod layer still owns: rolling throughput, the
+		-- flow-direction hint for the overlay, and the carried voltage stamped on
+		-- each conductor (for its capacity / display). `prevN` is the source-side
+		-- node feeding `n`, so it is the one sending power TO `n`.
+		opts.onFlow = function(n, prevN, pkw, carryV)
+			n.ThroughputAccum = (n.ThroughputAccum or 0) + pkw
+			if IsValid(prevN) then prevN.FlowToAccum = n end
+			-- A conductor on several paths takes the highest voltage put on it; the
+			-- consumer (power line) reads + clears _carryV in its own Think.
+			if carryV and carryV > (n._carryV or 0) then n._carryV = carryV end
 		end
 
+		local total, entryVolt = Sustain.GridSolve.Pull(entry, wantKWh, opts)
 		if total <= 0 then return 0, 0 end
 
 		local powerKW  = total / math.max(hr, 1e-9)
 		local demandKW = wantKWh / math.max(hr, 1e-9)
-		local volts    = Sustain.Power.Delivered(entry.Voltage or 1, powerKW, demandKW).voltage
+		local volts    = Sustain.Power.Delivered(entryVolt > 0 and entryVolt or (entry.Voltage or 1), powerKW, demandKW).voltage
 		return total, volts
 	end
 
@@ -392,7 +261,20 @@ if SERVER then
 	-- Collectors use it to decide a nearby station/wire is a live pickup point.
 	function Sustain.GridHasSource(entry)
 		if not IsValid(entry) then return false end
-		return #gridFindSources(entry, Sustain.Grid.ConvLoss or 0.04) > 0
+		return #Sustain.GridSolve.FindSources(entry, solveOpts(false)) > 0
+	end
+
+	-- Highest PATH voltage that reaches `entry` (the voltage a connected-but-idle
+	-- conductor would carry), so a live wire can show its voltage even when no load
+	-- is currently pulling power through it. 0 when no source is reachable.
+	function Sustain.GridVoltage(entry)
+		if not IsValid(entry) then return 0 end
+		local list = Sustain.GridSolve.FindSources(entry, solveOpts(false))
+		local best = 0
+		for _, s in ipairs(list) do
+			if (s.entryVolt or 0) > best then best = s.entryVolt end
+		end
+		return best
 	end
 
 	------------------------------------------------------------------

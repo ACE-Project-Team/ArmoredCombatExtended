@@ -617,6 +617,76 @@ do
 	function acf_library.wireRange()
 		return ACF.GridCollectorRange or 400
 	end
+
+	--- ACE Fuel Synthesizer internal pressure (0-1; cooks off at 1)
+	-- @server
+	-- @return number Pressure fraction
+	function ents_methods:acfSynthPressure()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_fuel_synth") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return (this.PressureFrac and this:PressureFrac()) or 0
+	end
+
+	--- ACE Fuel Synthesizer reactor temperature (C)
+	-- @server
+	-- @return number Temperature in C
+	function ents_methods:acfReactorTemp()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_fuel_synth") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Heat or 0
+	end
+
+	--- ACE Fuel Synthesizer petrol output (litres/sec)
+	-- @server
+	-- @return number Petrol L/s
+	function ents_methods:acfSynthPetrol()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_fuel_synth") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.PetrolRate or 0
+	end
+
+	--- ACE Fuel Synthesizer diesel output (litres/sec)
+	-- @server
+	-- @return number Diesel L/s
+	function ents_methods:acfSynthDiesel()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_fuel_synth") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.DieselRate or 0
+	end
+
+	--- ACE Fuel Burner: litres/sec it is currently burning
+	-- @server
+	-- @return number Burn rate L/s
+	function ents_methods:acfBurnRate()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_burner") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Burning or 0
+	end
+
+	--- ACE Fuel Burner: 1 when lit
+	-- @server
+	-- @return number 1 if burning, else 0
+	function ents_methods:acfBurning()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_burner") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.Lit and 1 or 0
+	end
+
+	--- ACE Transformer: highest output voltage it can hold (scales with size)
+	-- @server
+	-- @return number Max voltage
+	function ents_methods:acfMaxVoltage()
+		local this = getent(self)
+		if not (IsValid(this) and this:GetClass() == "ace_transformer") then return 0 end
+		if restrictInfo(this) then return 0 end
+		return this.MaxVoltage or 0
+	end
 end
 
 -- Spawning functions

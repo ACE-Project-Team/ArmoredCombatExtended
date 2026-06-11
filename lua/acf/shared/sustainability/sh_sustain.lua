@@ -200,13 +200,14 @@ if SERVER then
 	-- (length / cross-section / temp / carried voltage, computed in its Think ->
 	-- ConductorEff) accounts for the whole run, so we use that directly; abstract
 	-- station/transformer links instead lose to the node-to-node distance.
-	local function solveOpts(ignoreEntrySource)
+	local function solveOpts(ignoreEntrySource, maxTier)
 		return {
 			conv              = Sustain.Grid.ConvLoss or 0.04,
-			maxHops           = ACF.GridMaxHops or 10,
+			maxHops           = ACF.GridMaxHops or 20,
 			battChargeEff     = ACF.BatteryChargeEff or 0.95,
 			valid             = IsValid,
 			ignoreEntrySource = ignoreEntrySource,
+			maxTier           = maxTier,
 			hopEff = function(a, b)
 				if b.IsConductor and b:IsConductor() then
 					return b.ConductorEff or 1
@@ -225,11 +226,11 @@ if SERVER then
 	-- source/transformer voltage actually carried to the load end (the pure solver
 	-- computes it) - then sagged below that when the grid can't meet the demanded
 	-- power, which lets a Consumer/Collector enforce a minimum-voltage requirement.
-	function Sustain.GridPull(entry, wantKWh, dt, ignoreEntrySource)
+	function Sustain.GridPull(entry, wantKWh, dt, ignoreEntrySource, maxTier)
 		if not IsValid(entry) or wantKWh <= 0 then return 0, 0 end
 
 		local hr   = dt / 3600
-		local opts = solveOpts(ignoreEntrySource)
+		local opts = solveOpts(ignoreEntrySource, maxTier)
 		opts.now = CurTime()
 		opts.hr  = hr
 		-- DrawEnergy needs dt; the pure module only passes (source, need).
@@ -431,7 +432,10 @@ if SERVER then
 	-- Publish a device's AUXILIARY links (the device -> tank/battery links that are
 	-- NOT part of the homogeneous grid/pipe graph), so the Conduit overlay can draw
 	-- the WHOLE chain - e.g. a Transfer Station to its battery, or a Refinery to its
-	-- oil/power/output tanks. `links` is an array of { ent = <ent>, label = <string> }.
+	-- oil/power/output tanks. `links` is an array of
+	-- { ent = <ent>, label = <string>, into = <bool> }, where `into` marks links
+	-- that FEED the device (other -> device), so the overlay's flow pulse animates
+	-- in the real direction (default: device -> other, e.g. storing into a tank).
 	function Sustain.NetworkAux(ent, links)
 		local n = 0
 		for _, l in ipairs(links or {}) do
@@ -439,6 +443,7 @@ if SERVER then
 				n = n + 1
 				ent:SetNWEntity("AX" .. n, l.ent)
 				ent:SetNWString("AX" .. n .. "L", l.label or "")
+				ent:SetNWBool("AX" .. n .. "I", l.into or false)
 			end
 		end
 		ent:SetNWInt("AXN", n)

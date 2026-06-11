@@ -90,9 +90,14 @@ function ENT:Link(Target)
 	if Target == self then return false, "Can't link to itself!" end
 	for _, L in ipairs(self.PipeLinks) do if L == Target then return false, "Already linked!" end end
 	if #self.PipeLinks >= (ACF.PipeMaxLinks or MAX_LINKS) then return false, "Maximum links reached!" end
-	local dist = self:GetPos():Distance(Target:GetPos())
-	if dist > (ACF.PipeMaxLength or 2200) then
-		return false, "Too far (" .. math.Round(dist, 0) .. "u)."
+	-- Surface gap (nearest point to nearest point), matching ace_fuel_pipe's own
+	-- link rule, so a long scalable pipe links when its END reaches the pump.
+	local pa = self:NearestPoint(Target:WorldSpaceCenter())
+	local pb = Target:NearestPoint(pa)
+	pa = self:NearestPoint(pb)
+	local gap = pa:Distance(pb)
+	if gap > (ACF.PipeLinkGap or 80) then
+		return false, "Too far (" .. math.Round(gap, 0) .. "u gap). Move the pipe ends closer."
 	end
 	table.insert(self.PipeLinks, Target)
 	self:NetworkLinks()

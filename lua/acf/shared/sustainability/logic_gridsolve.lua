@@ -25,6 +25,10 @@
 --   valid(n)      node-still-valid predicate (default: non-nil)
 --   battChargeEff fallback source efficiency (default 0.95)
 --   ignoreEntrySource  don't tap the entry node itself (capacitor self-recharge)
+--   maxTier       only tap sources with GridSourcePriority <= this (default all).
+--                 A buffer recharging itself passes 0 so it only sips from REAL
+--                 sources - otherwise two idle capacitors would endlessly shuttle
+--                 charge into each other's conversion losses until both are empty
 --
 -- VOLTAGE is path-based: a conductor has NO intrinsic voltage; it carries the
 -- voltage established by the source/relay that energises it, re-referenced at each
@@ -91,10 +95,13 @@ function GridSolve.FindSources(entry, opts)
 	local hopEff     = opts.hopEff or function() return 1 end
 	local valid      = opts.valid or function(n) return n ~= nil end
 	local battEff    = opts.battChargeEff or 0.95
+	local maxTier    = opts.maxTier or HUGE
 
 	local bySource = {}
 
 	local function consider(source, eff, nodes)
+		local tier = (source.GridSourcePriority and source:GridSourcePriority()) or 0
+		if tier > maxTier then return end
 		local caps, carryV, bottleneck, entryVolt = pathInfo(source, nodes)
 		local prev = bySource[source]
 		if not prev or eff > prev.eff then
@@ -106,7 +113,7 @@ function GridSolve.FindSources(entry, opts)
 				carryV    = carryV,
 				entryVolt = entryVolt,
 				srcEff    = (source.GridSourceEff) or battEff,
-				tier      = (source.GridSourcePriority and source:GridSourcePriority()) or 0,
+				tier      = tier,
 				nodes     = nodes,
 			}
 		end

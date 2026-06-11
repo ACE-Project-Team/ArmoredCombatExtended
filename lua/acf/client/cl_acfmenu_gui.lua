@@ -1889,7 +1889,7 @@ function ACETransferStationGUICreate(Table)
 			.. "\nPhase: " .. (cfg.phases == 3 and "3-phase (+73% capacity & cooler on THIS station - not 3 separate lines)" or "1-phase")
 			.. "\nVoltage: " .. math.Round(cfg.voltage, 0) .. "  (higher = less line loss, but hotter)"
 			.. "\nConversion loss: " .. math.Round(((ACE.Sustain and ACE.Sustain.Grid.ConvLoss) or 0.04) * 100, 0) .. "% per DC<->AC step"
-			.. "\nLink range: " .. math.Round(ACF.GridStationLinkRange or 5000, 0) .. "u (chain nodes to go further)"
+			.. "\nLink range: " .. math.Round(ACF.GridStationLinkRange or 800, 0) .. "u (chain nodes to go further)"
 	end)
 
 	if not acfmenupanel.CustomDisplay then return end

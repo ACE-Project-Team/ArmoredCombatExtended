@@ -122,6 +122,7 @@ function ENT:SetLit(lit)
 	if lit == (self.Lit or false) then return end
 	self.Lit = lit
 	self:SetNWBool("AceBurning", lit)
+	self:SetNWBool("AceLive", lit)   -- animates the tank link in the Grid Tool overlay
 
 	if lit then
 		if BURNER_FX:GetBool() then
@@ -192,7 +193,7 @@ function ENT:Think()
 	if self.Lit then self:BurnNearbyPlayers(dt) end
 
 	-- Publish the tank link for the ACE Grid Tool overlay.
-	Sustain.NetworkAux(self, IsValid(self.Tank) and { { ent = self.Tank, label = "fuel" } } or {})
+	Sustain.NetworkAux(self, IsValid(self.Tank) and { { ent = self.Tank, label = "fuel", into = true } } or {})
 
 	Wire_TriggerOutput(self, "Burning", math.Round(self.Burning, 3))
 	Wire_TriggerOutput(self, "Lit", self.Lit and 1 or 0)

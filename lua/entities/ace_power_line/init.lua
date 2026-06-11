@@ -133,7 +133,7 @@ function ENT:Link(Target)
 		return false, "This line already has the maximum number of links!"
 	end
 	local dist = self:GetPos():Distance(Target:GetPos())
-	if dist > (ACF.PowerLineLinkRange or 4000) then
+	if dist > (ACF.PowerLineLinkRange or 1000) then
 		return false, "Too far (" .. math.Round(dist, 0) .. "u). Chain another line segment between them."
 	end
 
@@ -246,7 +246,7 @@ function ENT:Think()
 	if changed then self:NetworkLinks() end
 
 	-- Snap links dragged past the link range (like ACF drivetrain links).
-	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.PowerLineLinkRange or 1200, "power line link")
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.PowerLineLinkRange or 1000, "power line link")
 
 	-- Path-based carried voltage. The grid solve stamps `_carryV` on this conductor
 	-- when power flows through it (the source/transformer voltage on its segment);

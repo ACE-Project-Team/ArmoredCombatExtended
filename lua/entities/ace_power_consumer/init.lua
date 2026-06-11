@@ -109,7 +109,7 @@ function ENT:Link(Target)
 	local cls = Target:GetClass()
 	if cls == "ace_transfer_station" or cls == "ace_transformer" or cls == "ace_power_line" or cls == "ace_capacitor" then
 		local dist = self:GetPos():Distance(Target:GetPos())
-		if dist > (ACF.GridStationLinkRange or 1500) then
+		if dist > (ACF.GridStationLinkRange or 800) then
 			return false, "Too far (" .. math.Round(dist, 0) .. "u). Move the consumer closer to the node."
 		end
 		self.Station = Target
@@ -202,7 +202,7 @@ function ENT:Think()
 	-- Snap a grid tap dragged out of range (like ACF drivetrain links). The local
 	-- battery link is left alone - it's a direct on-build connection, not a run.
 	if IsValid(self.Station) then
-		local maxD2 = ((ACF.GridStationLinkRange or 1500) * (ACF.LinkStretchMul or 1.5)) ^ 2
+		local maxD2 = ((ACF.GridStationLinkRange or 800) * (ACF.LinkStretchMul or 1.5)) ^ 2
 		if self:GetPos():DistToSqr(self.Station:GetPos()) > maxD2 then
 			local owner = self.CPPIGetOwner and self:CPPIGetOwner()
 			self.Station = nil
@@ -249,6 +249,21 @@ function ENT:Think()
 	elseif self.Tripped and hf >= (ACF.ConsumerReviveHealth or 0.40) and self.Heat <= ambient + 15 then
 		self.Tripped = false
 	end
+
+	-- Publish readouts + links so the ACE Grid Tool shows the load and the power
+	-- flowing into it (a consumer is a leaf, not a graph node, so without this the
+	-- overlay couldn't see it at all).
+	local overVolt = (self.Voltage or 0) > (self.RatedVoltage or math.huge)
+	Sustain.NetworkViz(self, {
+		v = self.Voltage, kw = self.Supplied, cap = self.Draw, heat = self.Heat,
+		live = self.Powered,
+		state = self.Tripped and 2 or (overVolt and 1 or 0),
+		role = "load",
+	})
+	local aux = {}
+	if IsValid(self.Station) then aux[#aux + 1] = { ent = self.Station, label = "grid", into = true } end
+	if IsValid(self.Battery) then aux[#aux + 1] = { ent = self.Battery, label = "battery", into = true } end
+	Sustain.NetworkAux(self, aux)
 
 	WireLib.TriggerOutput(self, "Powered", self.Powered and 1 or 0)
 	WireLib.TriggerOutput(self, "Supplied", math.Round(self.Supplied, 2))

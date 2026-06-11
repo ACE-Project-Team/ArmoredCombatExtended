@@ -5,6 +5,8 @@ include("shared.lua")
 
 DEFINE_BASECLASS("base_wire_entity")
 
+local Sustain = ACE.Sustain
+
 local BREAKER_MODEL = "models/xqm/hydcontrolbox.mdl"
 
 function ENT:Initialize()
@@ -140,6 +142,15 @@ function ENT:Think()
 			self:SetTripped(false)
 		end
 	end
+
+	-- Publish state + the protected-station link so the ACE Grid Tool shows the
+	-- protection in the overlay (open breakers read as "broken"/red).
+	Sustain.NetworkViz(self, {
+		kw = current, cap = self.Rating,
+		live = not self.Tripped and IsValid(self.Station),
+		state = self.Tripped and 2 or 0, role = "breaker",
+	})
+	Sustain.NetworkAux(self, { { ent = self.Station, label = "protects" } })
 
 	WireLib.TriggerOutput(self, "Tripped", self.Tripped and 1 or 0)
 	WireLib.TriggerOutput(self, "Current", math.Round(current, 2))

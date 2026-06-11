@@ -158,7 +158,7 @@ function ENT:Link(Target)
 		return false, "This transformer already has the maximum number of links!"
 	end
 	local dist = self:GetPos():Distance(Target:GetPos())
-	if dist > (ACF.TransformerLinkRange or 5000) then
+	if dist > (ACF.TransformerLinkRange or 800) then
 		return false, "Too far (" .. math.Round(dist, 0) .. "u). Place a relay between them."
 	end
 
@@ -271,7 +271,7 @@ function ENT:Think()
 	if changed then self:NetworkLinks() end
 
 	-- Snap links dragged past the link range (like ACF drivetrain links).
-	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.TransformerLinkRange or 1500, "grid link")
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.TransformerLinkRange or 800, "grid link")
 
 	-- Throughput accumulated by GridPull this tick.
 	local tp = self.ThroughputAccum

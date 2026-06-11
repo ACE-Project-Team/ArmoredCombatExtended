@@ -130,7 +130,7 @@ function ENT:Link(Target)
 			return false, "This station already has the maximum number of links!"
 		end
 		local dist = self:GetPos():Distance(Target:GetPos())
-		if dist > (ACF.GridStationLinkRange or 5000) then
+		if dist > (ACF.GridStationLinkRange or 800) then
 			return false, "Too far (" .. math.Round(dist, 0) .. "u). Place a relay between them."
 		end
 		-- Link both ways so the graph is undirected (works for any grid node).
@@ -278,7 +278,7 @@ function ENT:Think()
 
 	-- Snap links dragged past the link range (like ACF drivetrain links) so a
 	-- moved station doesn't keep a working connection across the whole map.
-	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 1500, "grid link")
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 800, "grid link")
 
 	-- A sink charges its battery by pulling through the grid - but only as much as
 	-- the battery can actually STORE this tick. If the destination battery is
@@ -358,7 +358,8 @@ function ENT:Think()
 
 	-- Publish the battery link so the Conduit overlay can show what feeds/stores at
 	-- this station (the battery is a fuel-side entity, not part of the grid graph).
-	Sustain.NetworkAux(self, { { ent = self.Battery, label = "battery" } })
+	-- A source station pulls FROM the battery; a sink/idle one stores INTO it.
+	Sustain.NetworkAux(self, { { ent = self.Battery, label = "battery", into = self:IsSource() } })
 
 	Wire_TriggerOutput(self, "Mode", self.Mode)
 	Wire_TriggerOutput(self, "Throughput", math.Round(tp, 2))

@@ -165,10 +165,11 @@ function ENT:Think()
 	-- Publish the tank links so the Conduit overlay can draw the whole crude->fuel
 	-- chain (these aren't part of the pipe graph, so the tool can't see them otherwise).
 	Sustain.NetworkAux(self, {
-		{ ent = self.OilTank, label = "oil"   },
-		{ ent = self.Battery, label = "power" },
+		{ ent = self.OilTank, label = "oil",   into = true },
+		{ ent = self.Battery, label = "power", into = true },
 		{ ent = self.OutTank, label = "out"   },
 	})
+	self:SetNWBool("AceLive", (self.Refining or 0) > 0)   -- animates the link pulses in the Grid Tool
 
 	self:UpdateOverlayText()
 	self:NextThink(CurTime() + 0.25)

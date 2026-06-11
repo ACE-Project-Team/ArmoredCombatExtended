@@ -114,9 +114,14 @@ function ENT:Link(Target)
 	-- A pipe or pump: join the fuel network so oil flows to tanks downstream.
 	if cls == "ace_fuel_pipe" or cls == "ace_fuel_pump" then
 		for _, L in ipairs(self.PipeLinks) do if L == Target then return false, "Already linked to that pipe!" end end
-		local dist = self:GetPos():Distance(Target:GetPos())
-		if dist > (ACF.PipeMaxLength or 2200) then
-			return false, "Too far (" .. math.Round(dist, 0) .. "u). Chain a pipe/pump between them."
+		-- Surface gap (nearest point to nearest point), matching ace_fuel_pipe's own
+		-- link rule, so a long scalable pipe links when its END reaches the pump.
+		local pa = self:NearestPoint(Target:WorldSpaceCenter())
+		local pb = Target:NearestPoint(pa)
+		pa = self:NearestPoint(pb)
+		local gap = pa:Distance(pb)
+		if gap > (ACF.PipeLinkGap or 80) then
+			return false, "Too far (" .. math.Round(gap, 0) .. "u gap). Bring a pipe end to the pump or chain another segment."
 		end
 		table.insert(self.PipeLinks, Target)
 		if Target.AddPipeLink then Target:AddPipeLink(self) end
@@ -325,9 +330,10 @@ function ENT:Think()
 
 	-- Publish the auxiliary (power) links so the Grid Tool overlay can draw them.
 	Sustain.NetworkAux(self, {
-		{ ent = self.Station, label = "power" },
-		{ ent = self.Battery, label = "battery" },
+		{ ent = self.Station, label = "power",   into = true },
+		{ ent = self.Battery, label = "battery", into = true },
 	})
+	self:SetNWBool("AceLive", (self.FuelRate or 0) > 0)   -- animates the link pulses in the Grid Tool
 
 	self:UpdateOutputs()
 	self:UpdateOverlayText()

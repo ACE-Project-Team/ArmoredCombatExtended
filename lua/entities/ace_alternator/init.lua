@@ -255,9 +255,11 @@ function ENT:Think()
 	-- overlay can draw them - these aren't part of the grid/pipe graph. Done every
 	-- tick (even when off) so the wiring is always visible in the tool.
 	local aux = {}
-	for _, L in ipairs(self.PropLink) do if IsValid(L.Ent) then aux[#aux + 1] = { ent = L.Ent, label = "shaft" } end end
+	for _, L in ipairs(self.PropLink) do if IsValid(L.Ent) then aux[#aux + 1] = { ent = L.Ent, label = "shaft", into = true } end end
 	for _, T in ipairs(self.FuelLink) do if IsValid(T)     then aux[#aux + 1] = { ent = T,     label = "charge" } end end
 	Sustain.NetworkAux(self, aux)
+	self:SetNWBool("AceLive", (self.OutputPower or 0) > 0)   -- animates the charge links in the tool
+	self:SetNWFloat("AceKW", math.Round(self.OutputPower or 0, 2))
 
 	if not self.Active then
 		self.RPM = 0

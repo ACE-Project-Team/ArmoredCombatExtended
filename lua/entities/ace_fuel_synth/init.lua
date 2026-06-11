@@ -339,10 +339,11 @@ function ENT:Think()
 
 	-- Publish links so the ACE Grid Tool can draw the power + output tanks.
 	local aux = {}
-	if IsValid(self.Station) then aux[#aux + 1] = { ent = self.Station, label = "power" } end
-	for _, B in pairs(self.BattLink) do if IsValid(B) then aux[#aux + 1] = { ent = B, label = "battery" } end end
+	if IsValid(self.Station) then aux[#aux + 1] = { ent = self.Station, label = "power", into = true } end
+	for _, B in pairs(self.BattLink) do if IsValid(B) then aux[#aux + 1] = { ent = B, label = "battery", into = true } end end
 	for _, T in pairs(self.FuelLink) do if IsValid(T) then aux[#aux + 1] = { ent = T, label = (T.FuelType or "out") } end end
 	Sustain.NetworkAux(self, aux)
+	self:SetNWBool("AceLive", running)   -- animates the link pulses in the Grid Tool
 
 	self:UpdateOutputs()
 	self:UpdateOverlayText()

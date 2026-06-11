@@ -180,7 +180,7 @@ function ENT:Link(Target)
 	for _, S in ipairs(self.GridStations) do if S == Target then return false, "Already linked to that node!" end end
 	if #self.GridStations >= MAX_LINKS then return false, "Maximum links reached!" end
 	local dist = self:GetPos():Distance(Target:GetPos())
-	if dist > (ACF.GridStationLinkRange or 5000) then
+	if dist > (ACF.GridStationLinkRange or 800) then
 		return false, "Too far (" .. math.Round(dist, 0) .. "u)."
 	end
 	table.insert(self.GridStations, Target)
@@ -263,7 +263,7 @@ function ENT:Think()
 	if changed then self:NetworkLinks() end
 
 	-- Snap links dragged past the link range (like ACF drivetrain links).
-	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 1500, "grid link")
+	Sustain.PruneStretchedLinks(self, self.GridStations, ACF.GridStationLinkRange or 800, "grid link")
 
 	-- Carried line voltage = highest among neighbours.
 	local v = 0
@@ -280,7 +280,10 @@ function ENT:Think()
 		local rechRate = self.MaxRate * (ACF.CapacitorRechargeMul or 0.2)
 		local want     = math.min(room, rechRate * dt / 3600)
 		if want > 0 then
-			local got = Sustain.GridPull(self, want, dt, true)   -- true = don't draw from self
+			-- Don't draw from self, and only sip from REAL (tier-0) sources: letting a
+			-- buffer recharge from other buffers makes two idle capacitors shuttle
+			-- charge back and forth, bleeding both to zero through conversion losses.
+			local got = Sustain.GridPull(self, want, dt, true, 0)
 			if got > 0 then self:Step(got, dt) end
 		end
 	end

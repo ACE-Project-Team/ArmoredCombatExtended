@@ -46,13 +46,15 @@ local GRID = {
 	ace_power_line       = true,
 	ace_power_collector  = true,
 	ace_capacitor        = true,
+	ace_power_consumer   = true,
+	ace_power_breaker    = true,
 }
 -- Fuel-network entities (PL* topology).
 local FUEL = {
 	ace_fuel_pipe = true, ace_fuel_pump = true, ace_fuel_socket = true,
 	ace_fuel_plug = true, ace_refinery = true, ace_field_generator = true,
 	ace_fuel_synth = true, acf_fueltank = true, ace_alternator = true,
-	ace_burner = true,
+	ace_burner = true, ace_solarpanel = true,
 }
 
 local function canTouch(ply, ent)
@@ -329,12 +331,10 @@ if CLIENT then
 		if not a.visible then return end
 
 		-- Flow on a device<->battery link too (e.g. station <-> battery), so charging
-		-- / discharging is as visible as flow on the grid links. A source/buffer pulls
-		-- FROM the battery (battery -> device); a sink stores INTO it (device ->
-		-- battery). Only animate while the device is actually live.
+		-- / discharging is as visible as flow on the grid links. Each link publishes
+		-- its real direction (AX#I true = the link FEEDS the device, e.g. a pickup
+		-- wire or a supply battery). Only animate while the device is actually live.
 		local live = ent:GetNWBool("AceLive", false)
-		local role = ent:GetNWString("AceRole", "")
-		local rev  = (role == "source" or role == "buffer")   -- battery -> device
 
 		for i = 1, n do
 			local other = ent:GetNWEntity("AX" .. i)
@@ -353,10 +353,11 @@ if CLIENT then
 
 					-- Animated pulse along the aux link in the flow direction.
 					if live then
+						local into = ent:GetNWBool("AX" .. i .. "I", false)
 						local t = (CurTime() * 0.8) % 1
 						for k = 0, 2 do
 							local f  = (t + k / 3) % 1
-							local ff = rev and (1 - f) or f
+							local ff = into and (1 - f) or f
 							local px, py = a.x + dx * ff, a.y + dy * ff
 							surface.SetDrawColor(40, 30, 10, 200)
 							surface.DrawRect(px - 4, py - 4, 8, 8)
@@ -452,8 +453,14 @@ if CLIENT then
 					local lines
 					if cls == "ace_power_collector" then
 						local dist = ent:GetNWFloat("AceDist", -1)
-						lines = { "Collector", live and ("PICKING UP " .. fmtKW(kw)) or "no pickup",
-							(dist >= 0) and ("wire " .. math.Round(dist, 0) .. "u") or "" }
+						local v    = ent:GetNWFloat("AceV", 0)
+						lines = { "Collector",
+							live and ("PICKING UP " .. fmtKW(kw) .. " @ " .. math.Round(v, 0) .. " V") or "no pickup",
+							(dist >= 0) and ("wire " .. math.Round(dist, 0) .. "u (pickup falls off with distance)") or "" }
+					elseif cls == "ace_power_breaker" then
+						lines = { ent:GetNWString("WireName", "Power Breaker"),
+							(state == 2) and "OPEN (tripped)" or (live and "closed" or "no station"),
+							fmtKW(kw) .. " / trips at " .. fmtKW(cap) }
 					else
 						-- Status line names WHY a node looks the way it does: its role
 						-- (source / buffer / relay / sink / wire / off) plus fault state.
@@ -496,6 +503,15 @@ if CLIENT then
 					elseif cls == "acf_fueltank" and ent:GetNWBool("AceSupplying", false) then
 						lines[#lines + 1] = "SUPPLYING (wireless)"
 						col = Color(120, 230, 140)
+					elseif cls == "ace_solarpanel" or cls == "ace_alternator" then
+						-- Generators: show what they're producing into their batteries.
+						local out = ent:GetNWFloat("AceKW", 0)
+						if ent:GetNWBool("AceLive", false) then
+							lines[#lines + 1] = "generating " .. fmtKW(out)
+							col = Color(120, 230, 140)
+						else
+							lines[#lines + 1] = "idle"
+						end
 					end
 					drawLabel(scr, lines, col)
 				end

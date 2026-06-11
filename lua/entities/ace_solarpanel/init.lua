@@ -206,6 +206,16 @@ function ENT:Think()
 	self.LastThink = CurTime()
 	local ambient = ACE.AmbientTemp or 20
 
+	-- Publish the battery links (and whether we're producing) so the ACE Grid Tool
+	-- overlay can draw the panel -> battery charging chain.
+	local aux = {}
+	for _, T in ipairs(self.FuelLink or {}) do
+		if IsValid(T) then aux[#aux + 1] = { ent = T, label = "charge" } end
+	end
+	Sustain.NetworkAux(self, aux)
+	self:SetNWBool("AceLive", (self.OutputPower or 0) > 0)
+	self:SetNWFloat("AceKW", math.Round(self.OutputPower or 0, 2))
+
 	if not self.Active then
 		self.OutputPower = 0
 		self.Heat = HeatLogic.HeatStep(self.Heat, 0, self.Mass, 0.6, ambient, dt)

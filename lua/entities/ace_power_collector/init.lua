@@ -40,6 +40,7 @@ function ENT:Initialize()
 		"Connected (1 when picking up power) [NORMAL]",
 		"Throughput (kW) [NORMAL]",
 		"Voltage (V the tapped line is carrying) [NORMAL]",
+		"Pickup (0-1 strength, falls off with distance to the wire) [NORMAL]",
 		"Entity [ENTITY]",
 	})
 	Wire_TriggerOutput(self, "Entity", self)
@@ -132,7 +133,8 @@ function ENT:UpdateOverlayText()
 	elseif not self.Active then
 		status = "Collector off"
 	elseif self.Connected then
-		status = "PICKING UP  " .. math.Round(self.Throughput or 0, 1) .. " kW @ " .. math.Round(self.Voltage or 0, 0) .. " V  (wire " .. math.Round(self.SourceDist or 0, 0) .. "u)"
+		status = "PICKING UP  " .. math.Round(self.Throughput or 0, 1) .. " kW @ " .. math.Round(self.Voltage or 0, 0) .. " V"
+			.. "  (wire " .. math.Round(self.SourceDist or 0, 0) .. "u, " .. math.Round((self.Pickup or 0) * 100, 0) .. "% pickup)"
 	elseif self.FoundSource then
 		status = "Live line in range but no power flowing (battery full, or source/rate limited)"
 	else
@@ -143,6 +145,18 @@ function ENT:UpdateOverlayText()
 	self:SetOverlayText(txt)
 end
 
+-- Pickup strength by distance: an air-gap pickup couples weaker the further the
+-- collector hangs from the wire. Full strength within FalloffStart, then a linear
+-- fade to 0 at the edge of GridCollectorRange - so a tram drifting off its
+-- catenary draws progressively less instead of snapping between all and nothing.
+local function pickupStrength(dist)
+	local range = ACF.GridCollectorRange or 400
+	local start = math.min(ACF.GridCollectorFalloffStart or 150, range)
+	if dist <= start then return 1 end
+	if dist >= range or range <= start then return 0 end
+	return 1 - (dist - start) / (range - start)
+end
+
 function ENT:Think()
 	local dt = self.LastThink and (CurTime() - self.LastThink) or 0.25
 	self.LastThink = CurTime()
@@ -151,49 +165,67 @@ function ENT:Think()
 	self.FoundSource = false   -- a live line is in range (even if we can't charge into it)
 	self.SourceDist  = -1      -- distance to the node we're drawing from (E2/SF), -1 = none
 	self.Voltage     = 0       -- voltage of the line we're tapping
+	self.Pickup      = 0       -- 0..1 coupling strength (distance falloff)
 
 	if self.Active and IsValid(self.Battery) then
 		-- Re-scan for a station only every half second; otherwise reuse the
 		-- cached one as long as it's still valid, energized and in range.
-		local range = ACF.GridCollectorRange or 400
-		local src   = self.Source
-		local okCached = IsValid(src)
+		-- GridHasSource walks the graph, so evaluate it once per think.
+		local range  = ACF.GridCollectorRange or 400
+		local src    = self.Source
+		local srcOk  = IsValid(src)
 			and nodeDistance(src, self:WorldSpaceCenter()) <= range
 			and Sustain.GridHasSource(src)
 
-		if not okCached and CurTime() >= self.NextScan then
-			self.Source = self:FindSource()
+		if not srcOk and CurTime() >= self.NextScan then
+			self.Source   = self:FindSource()
 			self.NextScan = CurTime() + 0.5
-			src = self.Source
+			src   = self.Source
+			srcOk = IsValid(src)   -- FindSource only returns energized in-range nodes
 		end
 
-		if IsValid(src) and Sustain.GridHasSource(src) then
+		if srcOk then
 			self.FoundSource = true
-			self.SourceDist = nodeDistance(src, self:WorldSpaceCenter())
-			self.Voltage    = src.Voltage or 0   -- the line's carried voltage (set upstream)
-			local maxKW = ACF.GridCollectorMaxKW or 60
-			local want  = maxKW * dt / 3600
-			-- Pull through the grid (works whether `src` is the source station
-			-- itself or one reached via relays). GridPull already bakes in the
-			-- DC<->AC conversions and line loss, so what comes back is what lands.
-			local got, volts = Sustain.GridPull(src, want, dt)
-			if volts and volts > 0 then self.Voltage = volts end
-			if got > 0 then
-				local accepted = self.Battery:ChargeBattery(got, dt)
-				self.Throughput = accepted / math.max(dt / 3600, 1e-9)
-				self.Connected  = self.Throughput > 0
+			self.SourceDist  = nodeDistance(src, self:WorldSpaceCenter())
+			self.Voltage     = src.Voltage or 0   -- the line's carried voltage (set upstream)
+			self.Pickup      = pickupStrength(self.SourceDist)
+
+			-- Size the pull to what the battery can actually STORE this tick (so a
+			-- full/inactive battery doesn't drain the grid for energy that vanishes),
+			-- scaled by the distance coupling.
+			local maxKW = (ACF.GridCollectorMaxKW or 60) * self.Pickup
+			local head  = self.Battery.ChargeHeadroom and self.Battery:ChargeHeadroom(dt) or math.huge
+			local want  = math.min(maxKW * dt / 3600, head)
+			if want > 0 then
+				-- Pull through the grid (works whether `src` is the source station
+				-- itself or one reached via relays). GridPull already bakes in the
+				-- DC<->AC conversions and line loss, so what comes back is what lands.
+				local got, volts = Sustain.GridPull(src, want, dt)
+				if volts and volts > 0 then self.Voltage = volts end
+				if got > 0 then
+					local accepted = self.Battery:ChargeBattery(got, dt)
+					self.Throughput = accepted / math.max(dt / 3600, 1e-9)
+					self.Connected  = self.Throughput > 0
+				end
 			end
 		end
 	end
 
 	Sustain.NetworkViz(self, {
-		kw = self.Throughput, dist = self.SourceDist,
-		live = self.Connected, state = 0,
+		v = self.Voltage, kw = self.Throughput, dist = self.SourceDist,
+		live = self.Connected, state = 0, role = "load",
 	})
+	-- Publish the battery and the wire being tapped so the Grid Tool draws the
+	-- whole pickup chain (wire -> collector -> battery).
+	local aux = {}
+	if IsValid(self.Source) and self.FoundSource then aux[#aux + 1] = { ent = self.Source, label = "pickup", into = true } end
+	if IsValid(self.Battery) then aux[#aux + 1] = { ent = self.Battery, label = "battery" } end
+	Sustain.NetworkAux(self, aux)
 
 	WireLib.TriggerOutput(self, "Connected", self.Connected and 1 or 0)
 	WireLib.TriggerOutput(self, "Throughput", math.Round(self.Throughput, 2))
 	WireLib.TriggerOutput(self, "Voltage", math.Round(self.Voltage or 0, 1))
+	WireLib.TriggerOutput(self, "Pickup", math.Round(self.Pickup or 0, 2))
 	self:UpdateOverlayText()
 	self:NextThink(CurTime() + 0.25)
 	return true

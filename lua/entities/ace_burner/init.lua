@@ -1,3 +1,9 @@
+-- FUEL BURNER (flare): liquid fuel IN -> NOTHING out. Pure disposal for product
+-- you don't want (e.g. the diesel a petrol-tuned synthesizer co-produces). It
+-- does not make power, heat output, or anything else - it just burns the linked
+-- tank down at a fixed rate and hurts players standing in the flame.
+-- The opposite of ace_fuel_synth, which MAKES fuel from electricity.
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 

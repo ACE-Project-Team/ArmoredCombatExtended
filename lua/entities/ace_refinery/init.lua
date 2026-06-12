@@ -1,3 +1,8 @@
+-- REFINERY: crude oil + electricity IN -> petrol OR diesel OUT (one product,
+-- picked by the output tank's type). The middle of the oil chain: oil pump
+-- (ace_field_generator) -> refinery -> engine fuel. For fuel WITHOUT crude,
+-- that's ace_fuel_synth's job instead.
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 
@@ -188,8 +193,10 @@ do
 	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
 		if not Ent.EntityMods or not Ent.EntityMods.RefineryLinks then return end
 		local info = Ent.EntityMods.RefineryLinks
-		for _, idx in ipairs({ info.oil, info.batt, info.out }) do
-			local T = idx and CreatedEntities[idx]
+		-- Keyed lookup, NOT ipairs over {oil, batt, out}: any missing link there
+		-- left a nil hole that cut the array short and dropped the links after it.
+		for _, key in ipairs({ "oil", "batt", "out" }) do
+			local T = info[key] and CreatedEntities[info[key]]
 			if IsValid(T) and T:GetClass() == "acf_fueltank" then self:Link(T) end
 		end
 		self:UpdateOverlayText()

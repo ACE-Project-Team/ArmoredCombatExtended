@@ -4,6 +4,36 @@
 	Loads the pure-logic modules and exposes them under ACE.Sustain so the
 	entity files can grab them without caring about include paths. The logic
 	files themselves stay GMod-free so they can be unit-tested with plain lua
+
+	WHO DOES WHAT — the sustainability cast, so nobody has to reverse-engineer
+	roles from the Think functions:
+
+	  MAKE POWER     ace_solarpanel   sun -> battery
+	                 ace_alternator   engine shaft -> battery
+	  STORE POWER    acf_fueltank (Electric)  the battery everything charges/draws
+	                 ace_capacitor    grid-side buffer (recharges from REAL sources only)
+	  MOVE POWER     ace_transfer_station  grid hub: sources from / sinks to its battery
+	                 ace_power_line   conductor segment (ampacity-limited)
+	                 ace_transformer  voltage step between grid sections
+	                 ace_power_breaker     overcurrent cutout protecting a station
+	                 ace_power_collector   tram pickup: overhead wire -> onboard battery
+	  USE POWER      ace_power_consumer    appliance / dump load: burns kW, makes nothing
+	  OIL CHAIN      ace_field_generator   "oil pump": ELECTRICITY IN, crude oil out of
+	                                       the ground (despite the name it generates no power)
+	                 ace_fuel_pipe / ace_fuel_pump   liquid transport (pumps extend range)
+	                 ace_refinery     crude + electricity -> petrol OR diesel
+	  FUEL, NO OIL   ace_fuel_synth   electricity -> petrol AND diesel at once; an
+	                                  unvented product backs up and cooks off the reactor
+	  BURN FUEL      ace_burner       flare: destroys unwanted liquid fuel (e.g. the synth
+	                                  product you don't need); outputs NOTHING, just fire
+	  REFUEL         ace_fuel_socket / ace_fuel_plug  dock-and-transfer connectors
+	  EXPLOSIVES     ace_explosive    scalable wire-detonated charge (size-capped)
+	                 ace_explosive_prebuilt   satchel / aerial bomb / barrel props
+
+	The commonly-confused pairs: the FIELD GENERATOR consumes electricity (it is
+	a pump, not a generator), and the BURNER is fuel *disposal*, not a fuel user
+	or a power source. The SYNTH is the only thing that turns electricity into
+	fuel; the REFINERY needs crude as well.
 ]]--
 
 ACE = ACE or {}
@@ -112,7 +142,10 @@ if SERVER then
 
 	-- Parse an "L:W:H" size string into a clamped Vector (crate size limits).
 	-- Accepts a Vector unchanged. Returns nil if the string is malformed.
-	function Sustain.ParseScale(str)
+	-- maxSize (optional) tightens the upper clamp for entities whose definition
+	-- caps them below the global crate limit (e.g. explosive charges), and is
+	-- re-applied here so an edited dupe can't smuggle in an oversized one.
+	function Sustain.ParseScale(str, maxSize)
 		if isvector(str) then return str end
 		if not isstring(str) or not string.match(str, SCALE_PATTERN) then return end
 
@@ -121,6 +154,7 @@ if SERVER then
 
 		local mn = ACF.SustainMinimumSize or ACF.CrateMinimumSize or 5
 		local mx = ACF.CrateMaximumSize or 250
+		if maxSize then mx = math.min(mx, maxSize) end
 		v.x = math.Clamp(math.Round(v.x, 1), mn, mx)
 		v.y = math.Clamp(math.Round(v.y, 1), mn, mx)
 		v.z = math.Clamp(math.Round(v.z, 1), mn, mx)

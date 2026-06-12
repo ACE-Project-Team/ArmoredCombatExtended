@@ -55,7 +55,9 @@ function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
 	local def = ACF.Weapons.Explosives[Id]
 	if not def then return false end
 
-	local scaleVec = Sustain.ParseScale(Data1)
+	-- Charges clamp to the definition's own MaxSize (well under the global crate
+	-- limit) so a max-size build is a demolition charge, not a map-clearing nuke.
+	local scaleVec = Sustain.ParseScale(Data1, def.MaxSize)
 	if not scaleVec then return false end
 
 	local Charge = ents.Create("ace_explosive")

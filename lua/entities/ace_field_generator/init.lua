@@ -1,3 +1,8 @@
+-- OIL PUMP (class name "field generator" is historical: it works an oil FIELD,
+-- it does not generate power): electricity IN -> crude oil OUT of the ground,
+-- only while grounded. The START of the oil chain - its crude goes to an Oil
+-- tank or down pipes, then through ace_refinery to become engine fuel.
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 

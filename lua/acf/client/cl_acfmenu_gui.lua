@@ -1709,7 +1709,9 @@ do
 		end
 
 		local minS = ACF.SustainMinimumSize or ACF.CrateMinimumSize or 5
-		local maxS = ACF.CrateMaximumSize or 250
+		-- A definition may cap its size below the global crate limit (explosive
+		-- charges do); the server re-clamps in ParseScale, this just matches the UI.
+		local maxS = math.min(Table.MaxSize or math.huge, ACF.CrateMaximumSize or 250)
 
 		local function slider(label, field)
 			local S = vgui.Create("DNumSlider")

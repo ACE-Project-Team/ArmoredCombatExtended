@@ -1,3 +1,8 @@
+-- FUEL SYNTHESIZER: electricity IN -> petrol AND diesel OUT (always both, split
+-- set by reactor temperature). The crude-free fuel path. Any product without an
+-- outlet tank backs up as pressure and eventually cooks off the reactor.
+-- NOT to be confused with ace_burner (destroys fuel) or ace_refinery (needs crude).
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 
@@ -102,6 +107,7 @@ function MakeACE_FuelSynth(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 	Synth.Shape      = Data2
 	Synth.Model3     = modelKey
 	Synth.Dimensions = dims
+	Synth.Volume     = vol                             -- cu in (cook-off blast sizing)
 	Synth.MaxRate    = vol * ACF.SynthPowerDensity     -- kW electrical draw
 	Synth.Efficiency = ACF.SynthEfficiency or 0.55
 	Synth.EnergyPerLiter = ACF.SynthEnergyPerLiter or 9.7
@@ -237,18 +243,35 @@ function ENT:TriggerInput(iname, value)
 	end
 end
 
--- Cook off: vent the held product as an ACF explosion (same path the fuel tanks
--- use for cookoff). Guarded by the ACF_FuelExplode hook + an Exploding flag.
+-- Cook off: the over-pressurised reactor bursts. ACF_ScaledExplosion can NOT be
+-- used here - it only understands ammo crates (reads ent.BulletData) and the
+-- acf_fueltank class, so handing it a synth nil-errors and the plant just froze
+-- instead of exploding. Detonate directly, the way ace_explosive does: the
+-- reactor blows like a same-size FULL fuel tank (the tanks' litres -> HE rule on
+-- its internal volume), capped at ScaledHEMax like every chain explosion.
 function ENT:CookOff()
 	if self.Exploding then return end
 	if hook.Run("ACF_FuelExplode", self) == false then return end
 	self.Exploding = true
 	self:EmitSound("ambient/fire/gascan_ignite1.wav", 100, 100)
-	if ACF_ScaledExplosion then
-		ACF_ScaledExplosion(self, true)
-	else
-		self:Remove()
-	end
+
+	local vol    = self.Volume or ((self.MaxRate or 0) / math.max(ACF.SynthPowerDensity or 0.02, 1e-9))
+	local liters = vol * 0.016387   -- cu in -> litres of reactor volume, treated as product vapour
+	local dens   = (ACF.FuelDensity and ACF.FuelDensity.Petrol) or 0.745
+	local HE     = (liters / dens) * 0.01 * (ACF.BoomMult or 1)   -- fuel tanks' FuelExplosionScale
+	HE = math.Clamp(HE, 0.5, ACF.ScaledHEMax or 75)
+
+	local origin = self:WorldSpaceCenter()
+	local owner  = self:CPPIGetOwner()
+	ACF_HE(origin, Vector(0, 0, 1), HE, HE * 0.5, IsValid(owner) and owner or self, self, self)
+
+	local Flash = EffectData()
+	Flash:SetOrigin(origin)
+	Flash:SetNormal(Vector(0, 0, -1))
+	Flash:SetRadius(math.Round(math.max(ACE_CalculateHERadius(HE) / 39.37, 1), 2))
+	util.Effect("ACF_Scaled_Explosion", Flash)
+
+	self:Remove()
 end
 
 function ENT:Think()
@@ -321,8 +344,11 @@ function ENT:Think()
 		local target = running and setpoint or ambient
 		self.Heat = self.Heat + (target - self.Heat) * math.Clamp(dt / 8, 0, 1)
 
-		-- Overpressure cook-off.
-		if self:PressureFrac() >= 1 then self:CookOff() end
+		-- Overpressure cook-off (CookOff removes the entity unless a hook vetoed it).
+		if self:PressureFrac() >= 1 then
+			self:CookOff()
+			if self.Exploding then return end
+		end
 	else
 		self.Heat = self.Heat + (ambient - self.Heat) * math.Clamp(dt / 8, 0, 1)
 	end

@@ -57,7 +57,7 @@ function Synth.ProductSplit(tempC, tMin, tMax)
 	return petrol, 1 - petrol
 end
 
---- Self-powered field generator step.
+--- Oil pump ("field") extraction step.
 -- @param params table fields:
 --   literPerSec (base extraction rate),
 --   heatWatts (constant heat output while running),

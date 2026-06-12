@@ -108,16 +108,16 @@ ACF.RefineryEnergyPerLiter    = 0.4            -- kWh of electricity per litre o
 ACF.RefineryHeatFrac          = 1.0            -- fraction of electrical draw (W) turned into process heat while running
 ACF.RefineryThermalMass       = 60             -- kg thermal mass for the heat model (small enough that it actually warms up)
 
--- Field generator ("thumper"): slow fuel synthesis, lots of heat. It now needs
+-- Oil pump ("thumper" derrick): slow crude extraction, lots of heat. It needs
 -- ELECTRICITY to run its pump - link an Electric battery or a transfer station,
 -- and it only pumps if its power need is met (full power -> full rate).
-ACF.FieldGenRate              = 0.0000015       -- litres/sec per cu in
-ACF.FieldGenHeatDensity       = 6               -- watts of heat per cu in while running (runs HOT)
-ACF.FieldGenMassPerVolume     = 0.004           -- kg per cu in
-ACF.FieldGenPointsPerVolume   = 0.04            -- points per cu in
-ACF.FieldGenThumperModel      = "models/props_combine/combinethumper002.mdl" -- optional real model
-ACF.FieldGenPowerPerVolume    = 0.015           -- kW of electrical draw per cu in (its pump must be fed to run)
-ACF.FieldGenRatedVoltage      = 60              -- operating voltage; above it the pump motor overheats
+ACF.OilPumpRate              = 0.0000015       -- litres/sec per cu in
+ACF.OilPumpHeatDensity       = 6               -- watts of heat per cu in while running (runs HOT)
+ACF.OilPumpMassPerVolume     = 0.004           -- kg per cu in
+ACF.OilPumpPointsPerVolume   = 0.04            -- points per cu in
+ACF.OilPumpThumperModel      = "models/props_combine/combinethumper002.mdl" -- optional real model
+ACF.OilPumpPowerPerVolume    = 0.015           -- kW of electrical draw per cu in (its pump must be fed to run)
+ACF.OilPumpRatedVoltage      = 60              -- operating voltage; above it the pump motor overheats
 
 -- Battery (extends the Electric fuel tank). See logic_battery for behaviour.
 ACF.BatteryChargeEff          = 0.95            -- one-way charge/discharge efficiency
@@ -557,7 +557,7 @@ if SERVER then
     CreateConVar("sbox_max_ace_alternator", 10)
     CreateConVar("sbox_max_ace_solarpanel", 10)
     CreateConVar("sbox_max_ace_fuel_synth", 10)
-    CreateConVar("sbox_max_ace_field_generator", 10)
+    CreateConVar("sbox_max_ace_oil_pump", 10)
     CreateConVar("sbox_max_ace_fuel_plug", 20)
     CreateConVar("sbox_max_ace_fuel_socket", 20)
     CreateConVar("sbox_max_ace_explosive", 20)

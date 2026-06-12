@@ -1,6 +1,6 @@
 -- REFINERY: crude oil + electricity IN -> petrol OR diesel OUT (one product,
 -- picked by the output tank's type). The middle of the oil chain: oil pump
--- (ace_field_generator) -> refinery -> engine fuel. For fuel WITHOUT crude,
+-- (ace_oil_pump) -> refinery -> engine fuel. For fuel WITHOUT crude,
 -- that's ace_fuel_synth's job instead.
 
 AddCSLuaFile("shared.lua")

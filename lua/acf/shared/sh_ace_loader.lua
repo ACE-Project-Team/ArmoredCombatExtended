@@ -29,7 +29,7 @@ local Extras            = {}
 local AlternatorTable   = {}
 local SolarPanelTable   = {}
 local FuelSynthTable    = {}
-local FieldGenTable     = {}
+local OilPumpTable     = {}
 local FuelPlugTable     = {}
 local FuelSocketTable   = {}
 local FuelPipeTable     = {}
@@ -116,9 +116,9 @@ local fuelsynth_base = {
 	type   = "FuelSynths"
 }
 
-local fieldgen_base = {
-	ent    = "ace_field_generator",
-	type   = "FieldGenerators"
+local oilpump_base = {
+	ent    = "ace_oil_pump",
+	type   = "OilPumps"
 }
 
 local fuelplug_base = {
@@ -215,8 +215,8 @@ if CLIENT then
 	fuelsynth_base.guicreate = function( _, Table ) ACEFuelSynthGUICreate( Table ) end or nil
 	fuelsynth_base.guiupdate = function( _, Table ) ACEFuelSynthGUIUpdate( Table ) end or nil
 
-	fieldgen_base.guicreate = function( _, Table ) ACEFieldGenGUICreate( Table ) end or nil
-	fieldgen_base.guiupdate = function( _, Table ) ACEFieldGenGUIUpdate( Table ) end or nil
+	oilpump_base.guicreate = function( _, Table ) ACEOilPumpGUICreate( Table ) end or nil
+	oilpump_base.guiupdate = function( _, Table ) ACEOilPumpGUIUpdate( Table ) end or nil
 
 	-- Plug and socket share one combined connector GUI (with a dropdown).
 	fuelplug_base.guicreate = function( _, Table ) ACEFuelConnectorGUICreate( Table ) end or nil
@@ -397,11 +397,11 @@ function ACE_DefineFuelSynth( id, data )
 	FuelSynthTable[ id ] = data
 end
 
--- Field generator definition
-function ACE_DefineFieldGenerator( id, data )
+-- Oil pump (crude extractor) definition
+function ACE_DefineOilPump( id, data )
 	data.id = id
-	table.Inherit( data, fieldgen_base )
-	FieldGenTable[ id ] = data
+	table.Inherit( data, oilpump_base )
+	OilPumpTable[ id ] = data
 end
 
 -- Fuel plug definition (supply-side nozzle)
@@ -649,7 +649,7 @@ ACF.Weapons.Extras          = Extras
 ACF.Weapons.Alternators     = AlternatorTable
 ACF.Weapons.SolarPanels     = SolarPanelTable
 ACF.Weapons.FuelSynths      = FuelSynthTable
-ACF.Weapons.FieldGenerators = FieldGenTable
+ACF.Weapons.OilPumps = OilPumpTable
 ACF.Weapons.FuelPlugs       = FuelPlugTable
 ACF.Weapons.FuelSockets     = FuelSocketTable
 ACF.Weapons.FuelPipes       = FuelPipeTable

@@ -52,7 +52,7 @@ local GRID = {
 -- Fuel-network entities (PL* topology).
 local FUEL = {
 	ace_fuel_pipe = true, ace_fuel_pump = true, ace_fuel_socket = true,
-	ace_fuel_plug = true, ace_refinery = true, ace_field_generator = true,
+	ace_fuel_plug = true, ace_refinery = true, ace_oil_pump = true,
 	ace_fuel_synth = true, acf_fueltank = true, ace_alternator = true,
 	ace_burner = true, ace_solarpanel = true,
 }

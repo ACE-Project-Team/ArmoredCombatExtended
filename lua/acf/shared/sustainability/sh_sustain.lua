@@ -18,8 +18,8 @@
 	                 ace_power_breaker     overcurrent cutout protecting a station
 	                 ace_power_collector   tram pickup: overhead wire -> onboard battery
 	  USE POWER      ace_power_consumer    appliance / dump load: burns kW, makes nothing
-	  OIL CHAIN      ace_field_generator   "oil pump": ELECTRICITY IN, crude oil out of
-	                                       the ground (despite the name it generates no power)
+	  OIL CHAIN      ace_oil_pump     thumper derrick: ELECTRICITY IN, crude oil out
+	                                  of the ground (only while grounded)
 	                 ace_fuel_pipe / ace_fuel_pump   liquid transport (pumps extend range)
 	                 ace_refinery     crude + electricity -> petrol OR diesel
 	  FUEL, NO OIL   ace_fuel_synth   electricity -> petrol AND diesel at once; an
@@ -30,10 +30,10 @@
 	  EXPLOSIVES     ace_explosive    scalable wire-detonated charge (size-capped)
 	                 ace_explosive_prebuilt   satchel / aerial bomb / barrel props
 
-	The commonly-confused pairs: the FIELD GENERATOR consumes electricity (it is
-	a pump, not a generator), and the BURNER is fuel *disposal*, not a fuel user
-	or a power source. The SYNTH is the only thing that turns electricity into
-	fuel; the REFINERY needs crude as well.
+	The commonly-confused pairs: the OIL PUMP consumes electricity (it extracts
+	crude, it generates nothing), and the BURNER is fuel *disposal*, not a fuel
+	user or a power source. The SYNTH is the only thing that turns electricity
+	into fuel; the REFINERY needs crude as well.
 ]]--
 
 ACE = ACE or {}

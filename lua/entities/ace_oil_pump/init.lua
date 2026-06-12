@@ -1,7 +1,7 @@
--- OIL PUMP (class name "field generator" is historical: it works an oil FIELD,
--- it does not generate power): electricity IN -> crude oil OUT of the ground,
--- only while grounded. The START of the oil chain - its crude goes to an Oil
--- tank or down pipes, then through ace_refinery to become engine fuel.
+-- OIL PUMP (thumper derrick): electricity IN -> crude oil OUT of the ground,
+-- only while grounded. It generates no power - the pump motor must be FED. The
+-- START of the oil chain: its crude goes to an Oil tank or down pipes, then
+-- through ace_refinery to become engine fuel.
 
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
@@ -28,7 +28,7 @@ function ENT:Initialize()
 	self.PowerNeed   = 0     -- kW its pump needs to run at full rate (set in Make)
 	self.PowerFrac   = 0     -- 0..1 fraction of that need currently met
 	self.Voltage     = 0
-	self.RatedVoltage = ACF.FieldGenRatedVoltage or 60
+	self.RatedVoltage = ACF.OilPumpRatedVoltage or 60
 	self.Heat        = ACE.AmbientTemp or 20
 	self.NextThump   = 0
 	self.NextGroundCheck = 0
@@ -50,16 +50,16 @@ function ENT:Initialize()
 	Wire_TriggerOutput(self, "Entity", self)
 end
 
-function MakeACE_FieldGenerator(Owner, Pos, Angle, Id, Data1, Data2, Data3)
-	if IsValid(Owner) and not Owner:CheckLimit("_ace_field_generator") then return false end
+function MakeACE_OilPump(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+	if IsValid(Owner) and not Owner:CheckLimit("_ace_oil_pump") then return false end
 
-	local def = ACF.Weapons.FieldGenerators[Id]
+	local def = ACF.Weapons.OilPumps[Id]
 	if not def then return false end
 
 	local scaleVec = Sustain.ParseScale(Data1)
 	if not scaleVec then return false end
 
-	local Gen = ents.Create("ace_field_generator")
+	local Gen = ents.Create("ace_oil_pump")
 	if not IsValid(Gen) then return false end
 
 	Gen:SetAngles(Angle)
@@ -79,7 +79,7 @@ function MakeACE_FieldGenerator(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 		-- physics object, so it spawned unusable (no working IO or tool interaction).
 		-- Stats still come from the chosen box volume above, so the size config the
 		-- player picked is preserved even though the model isn't physically scaled.
-		Gen:SetModel(ACF.FieldGenThumperModel or "models/props_combine/combinethumper002.mdl")
+		Gen:SetModel(ACF.OilPumpThumperModel or "models/props_combine/combinethumper002.mdl")
 		Gen:PhysicsInit(SOLID_VPHYSICS)
 		Gen:SetMoveType(MOVETYPE_VPHYSICS)
 		Gen:SetSolid(SOLID_VPHYSICS)
@@ -96,21 +96,21 @@ function MakeACE_FieldGenerator(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 	Gen.Shape       = Data2
 	Gen.UseThumper  = useThumper
 	Gen.Dimensions  = Vector(L, W, H)
-	Gen.LiterPerSec = vol * ACF.FieldGenRate
-	Gen.HeatWatts   = vol * ACF.FieldGenHeatDensity
-	Gen.PowerNeed   = math.max(vol * (ACF.FieldGenPowerPerVolume or 0.015), 0.1)
-	Gen.Mass        = math.max(vol * ACF.FieldGenMassPerVolume, 5)
-	Gen.ACEPoints   = vol * ACF.FieldGenPointsPerVolume
+	Gen.LiterPerSec = vol * ACF.OilPumpRate
+	Gen.HeatWatts   = vol * ACF.OilPumpHeatDensity
+	Gen.PowerNeed   = math.max(vol * (ACF.OilPumpPowerPerVolume or 0.015), 0.1)
+	Gen.Mass        = math.max(vol * ACF.OilPumpMassPerVolume, 5)
+	Gen.ACEPoints   = vol * ACF.OilPumpPointsPerVolume
 
-	Sustain.FinishSpawn(Gen, Owner, "_ace_field_generator", def.name or "Field Generator")
+	Sustain.FinishSpawn(Gen, Owner, "_ace_oil_pump", def.name or "Oil Pump")
 
 	return Gen
 end
 
-list.Set("ACFCvars", "ace_field_generator", {"id", "data1", "data2", "data3"})
-duplicator.RegisterEntityClass("ace_field_generator", MakeACE_FieldGenerator, "Pos", "Angle", "Id", "SizeId", "Shape", "UseThumper")
+list.Set("ACFCvars", "ace_oil_pump", {"id", "data1", "data2", "data3"})
+duplicator.RegisterEntityClass("ace_oil_pump", MakeACE_OilPump, "Pos", "Angle", "Id", "SizeId", "Shape", "UseThumper")
 
-ENT.SpawnFunction = ACE.Sustain.ScalableSpawn(MakeACE_FieldGenerator, "FieldGenerators")
+ENT.SpawnFunction = ACE.Sustain.ScalableSpawn(MakeACE_OilPump, "OilPumps")
 
 function ENT:Link(Target)
 	if not IsValid(Target) then return false, "Invalid target!" end
@@ -357,7 +357,7 @@ do
 		local fuel, pipes = {}, {}
 		for _, T in pairs(self.FuelLink) do if IsValid(T) then table.insert(fuel, T:EntIndex()) end end
 		for _, L in pairs(self.PipeLinks) do if IsValid(L) then table.insert(pipes, L:EntIndex()) end end
-		duplicator.StoreEntityModifier(self, "FieldGenLinks", {
+		duplicator.StoreEntityModifier(self, "OilPumpLinks", {
 			fuel    = fuel,
 			pipes   = pipes,
 			station = IsValid(self.Station) and self.Station:EntIndex() or nil,
@@ -366,8 +366,8 @@ do
 	end
 
 	function ENT:PostEntityPaste(_Player, Ent, CreatedEntities)
-		if not Ent.EntityMods or not Ent.EntityMods.FieldGenLinks then return end
-		local info = Ent.EntityMods.FieldGenLinks
+		if not Ent.EntityMods or not Ent.EntityMods.OilPumpLinks then return end
+		local info = Ent.EntityMods.OilPumpLinks
 		for _, idx in ipairs(info.fuel or {}) do
 			local T = CreatedEntities[idx]
 			if IsValid(T) and T:GetClass() == "acf_fueltank" then self:Link(T) end
@@ -378,6 +378,6 @@ do
 		end
 		if info.station then local S = CreatedEntities[info.station] if IsValid(S) then self:Link(S) end end
 		if info.battery then local B = CreatedEntities[info.battery] if IsValid(B) then self:Link(B) end end
-		Ent.EntityMods.FieldGenLinks = nil
+		Ent.EntityMods.OilPumpLinks = nil
 	end
 end

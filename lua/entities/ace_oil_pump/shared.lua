@@ -1,7 +1,7 @@
 ENT.Type            = "anim"
 ENT.Base            = "ace_scalability"
-ENT.PrintName       = "ACE Field Generator"
-ENT.WireDebugName   = "ACE Field Generator"
+ENT.PrintName       = "ACE Oil Pump"
+ENT.WireDebugName   = "ACE Oil Pump"
 ENT.Author          = "ACE Team"
 ENT.Spawnable       = true
 ENT.AdminSpawnable  = true

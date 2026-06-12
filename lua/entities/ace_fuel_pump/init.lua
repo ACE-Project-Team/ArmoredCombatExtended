@@ -62,7 +62,7 @@ local function CanLink(ent)
 	if not IsValid(ent) then return false end
 	local c = ent:GetClass()
 	return c == "acf_fueltank" or c == "ace_fuel_pipe" or c == "ace_fuel_pump"
-		or c == "ace_field_generator"
+		or c == "ace_oil_pump"
 end
 
 function ENT:NetworkLinks()

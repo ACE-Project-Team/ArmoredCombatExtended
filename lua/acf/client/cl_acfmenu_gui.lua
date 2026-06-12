@@ -438,9 +438,9 @@ function PANEL:Init( )
 			if Data.category == "Electricity" then addLeaf(elecNode, Data) end
 		end
 
-		-- Fuel: synthesizer, field generator, the long-distance pipe, and the
+		-- Fuel: synthesizer, oil pump, the long-distance pipe, and the
 		-- plug/socket connector (one entry; a dropdown inside picks which one).
-		for _, key in ipairs({ "FuelSynths", "FieldGenerators", "Burners" }) do
+		for _, key in ipairs({ "FuelSynths", "OilPumps", "Burners" }) do
 			for _, Data in pairs(FinalContainer[key] or {}) do
 				addLeaf(fuelNode, Data)
 			end
@@ -1619,7 +1619,7 @@ end
 --[[=================================================================
 	Scalable power-entity GUI (shared)
 
-	Alternator / solar / fuel synth / field generator all share the same
+	Alternator / solar / fuel synth / oil pump all share the same
 	shape + L/W/H size config; only the allowed shapes and the stats readout
 	differ. BuildScalableConfig draws the shared widgets, filters the shape
 	list through the definition's AllowedShapes/BlacklistShapes, keeps the
@@ -1825,15 +1825,15 @@ function ACEBurnerGUICreate(Table)
 end
 function ACEBurnerGUIUpdate() end
 
---[[=========================  Field Generator  ====================]]--
-function ACEFieldGenGUICreate(Table)
+--[[=========================  Oil Pump  =========================]]--
+function ACEOilPumpGUICreate(Table)
 	BuildScalableConfig(Table, function(_cfg, vol)
-		local fuelLPM = vol * ACF.FieldGenRate * 60
+		local fuelLPM = vol * ACF.OilPumpRate * 60
 		return "Fuel Rate: " .. math.Round(fuelLPM, 3) .. " L/min"
-			.. "\nHeat: " .. math.Round(vol * ACF.FieldGenHeatDensity, 0) .. " W (runs hot)"
+			.. "\nHeat: " .. math.Round(vol * ACF.OilPumpHeatDensity, 0) .. " W (runs hot)"
 			.. "\nSelf-powered (no electricity needed)"
-			.. "\nMass: " .. math.Round(vol * ACF.FieldGenMassPerVolume, 1) .. " kg"
-			.. "\nPoints: " .. math.Round(vol * ACF.FieldGenPointsPerVolume, 0)
+			.. "\nMass: " .. math.Round(vol * ACF.OilPumpMassPerVolume, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(vol * ACF.OilPumpPointsPerVolume, 0)
 	end)
 
 	if not acfmenupanel.CustomDisplay then return end
@@ -1854,7 +1854,7 @@ function ACEFieldGenGUICreate(Table)
 	acfmenupanel.CustomDisplay:AddItem(ThumperCheck)
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
-function ACEFieldGenGUIUpdate() end
+function ACEOilPumpGUIUpdate() end
 
 --[[=========================  Explosive Charge  ===================]]--
 -- Scalable charge: pick a shape and size; the filler is read from the resulting

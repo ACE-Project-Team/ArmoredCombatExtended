@@ -1615,11 +1615,11 @@ do
 		ace_alternator       = true,
 		ace_solarpanel       = true,
 		ace_fuel_synth       = true,
-		ace_field_generator  = true,
+		ace_oil_pump         = true,
 	}
 	local fuelMakers = {
 		ace_fuel_synth      = true,
-		ace_field_generator = true,
+		ace_oil_pump        = true,
 	}
 
 	local function isGenerator(ent)
@@ -1642,7 +1642,7 @@ do
 		return this.OutputPower or 0
 	end
 
-	-- Fuel production rate of an ACE fuel synthesizer / field generator, L/s.
+	-- Fuel production rate of an ACE fuel synthesizer / oil pump, L/s.
 	[nodiscard]
 	e2function number entity:acfFuelRate()
 		if not isFuelMaker(this) then return self:throw("Entity is not an ACE fuel generator", 0) end

@@ -108,7 +108,7 @@ do
 		return (Dist / 13503) * ACE.DelayMultipler
 	end
 
-	local function GetHeadPos( ply )
+	function ACE.GetHeadPos( ply )
 		local plyPos	= ply.aceposoverride or ply:GetPos()
 		local headPos	= plyPos + ( not ply:InVehicle() and ( ( ply:Crouching() and Vector(0,0,28) ) or Vector(0,0,64) ) or Vector(0,0,0) )
 		return headPos
@@ -120,7 +120,7 @@ do
 		local ply    = LocalPlayer()
 
 		local entply = ACE_SGetHearingEntity( ply )
-		local plyPos = entply:IsPlayer() and GetHeadPos( ply ) or entply:GetPos()
+		local plyPos = entply:IsPlayer() and ACE.GetHeadPos( ply ) or entply:GetPos()
 
 		--return true if the distance is lower than the maximum distance
 		if ACE_InDist( plyPos, Pos, Distance ) then return true end
@@ -134,7 +134,7 @@ do
 		local ply    = LocalPlayer()
 
 		local entply = ACE_SGetHearingEntity( ply )
-		local plyPos = entply:IsPlayer() and GetHeadPos( ply ) or entply:GetPos()
+		local plyPos = entply:IsPlayer() and ACE.GetHeadPos( ply ) or entply:GetPos()
 
 		local CurDist = (plyPos - Pos):Length()
 		local NextDist = (plyPos - (Pos + Flight * 0.025)):Length()
@@ -146,7 +146,7 @@ do
 	function ACE_SHasLOS( EventPos )
 
 		local ply = LocalPlayer()
-		local headPos = GetHeadPos( ply )
+		local headPos = ACE.GetHeadPos( ply )
 
 		local LOSTr	= {}
 		LOSTr.start    = EventPos + Vector(0,0,10)
@@ -608,6 +608,7 @@ do
 
 	--TODO: Leave 5 sounds per caliber type. 22 7.26mm sounds go brrrr
 	function ACE_SBulletCrack( BulletData, Caliber )
+
 		-- flag this, so we are not playing this sound for this bullet next time
 		BulletData.CrackCreated = true
 
@@ -633,8 +634,6 @@ do
 
 			self.Entity = hearingEntity
 		end
-
-		debugoverlay.Cross(BulletData.SimPos, 10, 5, Color(0,0,255))
 	end
 
 

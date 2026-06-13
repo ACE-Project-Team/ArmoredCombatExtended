@@ -528,6 +528,84 @@ do
 			Bullet.Pos = Bullet.NextPos
 
 		end
+
+		--Vignette: screen darken for players near impact
+		if FlightRes.Hit and FlightRes.HitPos then
+			local vitDist = math.max(Bullet.Caliber * 110, 110)
+			local vitDistSqr = vitDist * vitDist
+			local vitStrength
+
+			if Bullet.Caliber >= 1 then
+				vitStrength = 1 * Bullet.Caliber
+			else
+				vitStrength = 1
+			end
+
+			local vitGunUser = IsValid(Bullet.Gun) and Bullet.Gun:GetOwner()
+			local vitGunUserIsPlayer = IsValid(vitGunUser) and vitGunUser:IsPlayer()
+
+			for _, ply in ipairs(player.GetAll()) do
+				if (not vitGunUserIsPlayer or ply ~= vitGunUser) and not ply:HasGodMode() then
+					local distSqr = ply:GetPos():DistToSqr(FlightRes.HitPos)
+
+					if distSqr <= vitDistSqr then
+						net.Start("ACE_Vignette")
+						net.WriteFloat(vitStrength)
+						net.Send(ply)
+
+						local PunchStrength = math.max(Bullet.Caliber * 1.5, 1.5)
+						ply:ViewPunch(Angle(
+							-PunchStrength * math.Rand(1.5, -1.5),
+							math.Rand(-PunchStrength * 0.7, PunchStrength * 0.7),
+							math.Rand(-PunchStrength * 0.3, PunchStrength * 0.3)
+						))
+					end
+				end
+			end
+		end
+
+		--Suppression: applies a random viewpunch to players near the bullet's flight path
+		if not Bullet.SuppressedPlayers then
+			Bullet.SuppressedPlayers = {}
+		end
+
+		if not Bullet.IsMissile then
+			local SqrtSpeed = Bullet.Flight:LengthSqr()
+
+			if SqrtSpeed >= 2500 then
+				local MaxDist = math.max(200, 200)
+				local MaxDistSqr = MaxDist * MaxDist
+
+				local GunUser = IsValid(Bullet.Gun) and Bullet.Gun:GetOwner()
+				local GunUserIsPlayer = IsValid(GunUser) and GunUser:IsPlayer()
+
+				for _, ply in ipairs(player.GetAll()) do
+					local SkipOwner = GunUserIsPlayer and ply == GunUser
+
+					if not SkipOwner and not ply:HasGodMode() and not Bullet.SuppressedPlayers[ply] then
+						local DistSqr = ply:GetPos():DistToSqr(Bullet.Pos)
+
+						if DistSqr <= MaxDistSqr then
+							local PunchStrength
+
+							if Bullet.Caliber >= 1 then
+								PunchStrength = 1.5 * Bullet.Caliber
+							else
+								PunchStrength = 1.5
+							end
+
+							ply:ViewPunch(Angle(
+								-PunchStrength * math.Rand(1.5, -1.5),
+								math.Rand(-PunchStrength * 0.7, PunchStrength * 0.7),
+								math.Rand(-PunchStrength * 0.3, PunchStrength * 0.3)
+							))
+
+							Bullet.SuppressedPlayers[ply] = true
+						end
+					end
+				end
+			end
+		end
 	end
 
 end

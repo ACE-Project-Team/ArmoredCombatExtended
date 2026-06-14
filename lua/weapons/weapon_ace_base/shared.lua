@@ -234,7 +234,7 @@ function SWEP:GetShootDir()
 
 	else
 
-		local Prof = 5 - owner:GetCurrentWeaponProficiency() --Inaccuracy multiplier based on NPC proficiency
+		local Prof = 6 - owner:GetCurrentWeaponProficiency() --Inaccuracy multiplier based on NPC proficiency
 
 		local spreadX, spreadY = self:GetSharedRandomSpread()
 		local degrees = math.Clamp((self.Heat / self.HeatMax) ^ 2 * self.MaxSpread + self.BaseSpread, self.BaseSpread, self.BaseSpread + self.MaxSpread)
@@ -256,7 +256,7 @@ function SWEP:GetShootDir()
 		local sideAxis = shootDir:Cross(Vector(0, 0, 1)):GetNormalized()
 		local upAxis = shootDir:Cross(sideAxis):GetNormalized()
 		shootDir = shootDir:RotateAroundAxis(upAxis, spreadX)
-		shootDir = shootDir:RotateAroundAxis(sideAxis, spreadY + 1)
+		shootDir = shootDir:RotateAroundAxis(sideAxis, spreadY + 0.5)
 	end
 
 	return shootDir

@@ -330,7 +330,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 			Smoke:SetVelocity( Bullet.SimFlight * 0.05 )
 			Smoke:SetColor( 200 , 200 , 200 )
 			Smoke:SetDieTime( 0.8 ) -- 0.5
-			Smoke:SetStartAlpha( 15 )
+			Smoke:SetStartAlpha( 2 )
 			Smoke:SetEndAlpha( 0 )
 			Smoke:SetStartSize( Bullet.Caliber * 3 )
 			Smoke:SetEndSize( Bullet.Caliber * 3 )

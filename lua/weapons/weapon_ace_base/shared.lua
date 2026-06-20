@@ -72,8 +72,8 @@ SWEP.CarrySpeedMul			= 1 --WalkSpeedMult when carrying the weapon
 SWEP.NormalPlayerWalkSpeed	= 200 --Default walk and sprint speed in case all else fails
 SWEP.NormalPlayerRunSpeed	= 400
 
-SWEP.NPCMinBurst = 100000 --Min bullets to fire per burst
-SWEP.NPCMaxBurst = 100000 --Max bullets to fire per burst
+SWEP.NPCMinBurst = 1 --Min bullets to fire per burst
+SWEP.NPCMaxBurst = 10 --Max bullets to fire per burst
 
 
 function SWEP:GetNPCBurstSettings()
@@ -234,7 +234,7 @@ function SWEP:GetShootDir()
 
 	else
 
-		local Prof = 5 - owner:GetCurrentWeaponProficiency() --Inaccuracy multiplier based on NPC proficiency
+		local Prof = 6 - owner:GetCurrentWeaponProficiency() --Inaccuracy multiplier based on NPC proficiency
 
 		local spreadX, spreadY = self:GetSharedRandomSpread()
 		local degrees = math.Clamp((self.Heat / self.HeatMax) ^ 2 * self.MaxSpread + self.BaseSpread, self.BaseSpread, self.BaseSpread + self.MaxSpread)
@@ -256,7 +256,7 @@ function SWEP:GetShootDir()
 		local sideAxis = shootDir:Cross(Vector(0, 0, 1)):GetNormalized()
 		local upAxis = shootDir:Cross(sideAxis):GetNormalized()
 		shootDir = shootDir:RotateAroundAxis(upAxis, spreadX)
-		shootDir = shootDir:RotateAroundAxis(sideAxis, spreadY)
+		shootDir = shootDir:RotateAroundAxis(sideAxis, spreadY + 0.5)
 	end
 
 	return shootDir
@@ -344,7 +344,7 @@ function SWEP:PrimaryAttack()
 
 
 		if owner:IsPlayer() then
-			owner:ViewPunch(Angle(-self.ViewPunchAmount, 0, 0))
+			owner:ViewPunch(Angle(-self.ViewPunchAmount, self.ViewPunchAmountSide, self.ViewPunchAmountRoll))
 		end
 
 		self.Heat = math.min(self.Heat + self.HeatPerShot, self.HeatMax)

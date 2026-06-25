@@ -780,6 +780,11 @@ ACE.ClassToType = ACE.ClassToType or {
 	acf_gearbox = "Engines",
 	acf_fueltank = "Ignore",
 	acf_ammo = "Ammo",
+	ace_explosive = "Ammo",
+	ace_explosive_prebuilt = "Ammo",
+	ace_bomb_satchel = "Ammo",
+	ace_bomb_aerial = "Ammo",
+	ace_bomb_barrel = "Ammo",
 
 	acf_gun = "Firepower",
 	acf_rack = "Firepower",

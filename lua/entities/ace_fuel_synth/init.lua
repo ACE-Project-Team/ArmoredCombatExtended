@@ -246,8 +246,8 @@ end
 -- Cook off: the over-pressurised reactor bursts. ACF_ScaledExplosion can NOT be
 -- used here - it only understands ammo crates (reads ent.BulletData) and the
 -- acf_fueltank class, so handing it a synth nil-errors and the plant just froze
--- instead of exploding. Detonate directly, the way ace_explosive does: the
--- reactor blows like a same-size FULL fuel tank (the tanks' litres -> HE rule on
+-- instead of exploding. Detonate directly instead: the reactor blows like a
+-- same-size FULL fuel tank (the tanks' litres -> HE rule on
 -- its internal volume), capped at ScaledHEMax like every chain explosion.
 function ENT:CookOff()
 	if self.Exploding then return end

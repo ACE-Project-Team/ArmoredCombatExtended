@@ -182,18 +182,6 @@ function PANEL:Init( )
 	AmmoBuildList( Ammo, "High Explosive Rounds", list.Get("HERoundTypes") )	-- HE/HEAT Content
 	AmmoBuildList( Ammo, "Special Purpose Rounds", list.Get("SPECSRoundTypes") ) -- Special Content
 
-	-- Explosives live under Ammo. One entry ("Explosives") that opens the scalable
-	-- charge config directly - shape/size are chosen inside the menu, no extra leaf.
-	for _, Data in pairs(FinalContainer["Explosives"] or {}) do
-		local ExploNode = Ammo:AddNode("Explosives", "icon16/bomb.png")
-		ExploNode.mytable = Data
-		function ExploNode:DoClick()
-			RunConsoleCommand("acfmenu_type", self.mytable.type)
-			acfmenupanel:UpdateDisplay(self.mytable)
-		end
-		break
-	end
-
 	do
 		--[[==================================================
 							Mobility folder
@@ -1855,27 +1843,6 @@ function ACEOilPumpGUICreate(Table)
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 function ACEOilPumpGUIUpdate() end
-
---[[=========================  Explosive Charge  ===================]]--
--- Scalable charge: pick a shape and size; the filler is read from the resulting
--- physical volume (same HE maths as shells). Pre-built model charges live in the
--- Q spawnmenu instead.
-function ACEExplosiveGUICreate(Table)
-	BuildScalableConfig(Table, function(_cfg, vol)
-		local CM3 = 16.387
-		local f   = Table.fillerFraction or 0.65
-		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)
-		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
-		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
-		local radius     = fillerMass ^ 0.33 * 8
-		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
-			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
-			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"
-			.. "\nMass: " .. math.Round(physMass, 1) .. " kg"
-			.. "\nPoints: " .. math.Round(fillerMass * (ACF.ExplosivePointsPerKg or 28), 0)
-	end)
-end
-function ACEExplosiveGUIUpdate() end
 
 --[[=========================  Transfer Station  ==================]]--
 -- Scalable station: size sets capacity (build-fixed), plus a line Voltage slider

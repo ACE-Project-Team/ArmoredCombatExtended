@@ -279,15 +279,6 @@ ACF.BreakerDefaultRating      = 120             -- default trip threshold (kW) u
 ACF.BreakerTripDelay          = 0.5             -- seconds over rating before it trips
 ACF.BreakerAutoReset          = 5               -- seconds after tripping before it auto-recloses (0 = manual only)
 
--- Explosive charge (detonates on a wire input). Uses the same HE filler/frag
--- maths as HE rounds (ACF.HEDensity etc.) so its blast performance is identical.
-ACF.ExplosiveFillerFraction   = 0.65            -- share of the charge volume that is filler
-ACF.ExplosiveHEMul            = 0.12            -- scales filler mass down so charges aren't absurd for their size
-ACF.ExplosivePointsPerKg      = 28              -- score per kg of filler (deliberately steep)
-ACF.ExplosiveCasingMul        = 0.08            -- the charge's PHYSICAL weight is filler + casing*this (a charge is mostly filler + thin casing, not a solid steel billet - keeps it light enough to carry)
-ACF.ExplosiveCookoffMul       = 4               -- per-hit cook-off chance = (damage/maxHP)*this ... a couple of solid hits set it off
-ACF.ExplosiveCookoffLowHP     = 0.25            -- ...plus this * (1 - health fraction), so a badly damaged charge is on a hair trigger
-
 ---------------------------------- Ammo Crate config ----------------------------------
 
 ACF.CrateMaximumSize    = 250
@@ -560,7 +551,6 @@ if SERVER then
     CreateConVar("sbox_max_ace_oil_pump", 10)
     CreateConVar("sbox_max_ace_fuel_plug", 20)
     CreateConVar("sbox_max_ace_fuel_socket", 20)
-    CreateConVar("sbox_max_ace_explosive", 20)
     CreateConVar("sbox_max_ace_fuel_pipe", 30)
     CreateConVar("sbox_max_ace_transfer_station", 20)
     CreateConVar("sbox_max_ace_transformer", 20)

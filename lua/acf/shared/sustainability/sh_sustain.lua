@@ -27,8 +27,6 @@
 	  BURN FUEL      ace_burner       flare: destroys unwanted liquid fuel (e.g. the synth
 	                                  product you don't need); outputs NOTHING, just fire
 	  REFUEL         ace_fuel_socket / ace_fuel_plug  dock-and-transfer connectors
-	  EXPLOSIVES     ace_explosive    scalable wire-detonated charge (size-capped)
-	                 ace_explosive_prebuilt   satchel / aerial bomb / barrel props
 
 	The commonly-confused pairs: the OIL PUMP consumes electricity (it extracts
 	crude, it generates nothing), and the BURNER is fuel *disposal*, not a fuel

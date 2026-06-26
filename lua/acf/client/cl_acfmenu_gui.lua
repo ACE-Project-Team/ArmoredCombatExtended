@@ -1558,7 +1558,7 @@ do
 		local out, seen = {}, {}
 		for _, v in pairs(ACE.ModelData) do
 			if v.volumefunction and v.Shape and not seen[v.Shape]
-				and ACE.Sustain.Scale.ShapeAllowed(v.Shape, Table) then
+				and ACE.Scalable.ShapeAllowed(v.Shape, Table) then
 				seen[v.Shape] = true
 				out[#out + 1] = v.Shape
 			end
@@ -1605,7 +1605,7 @@ do
 		Cat:SetContents(List)
 
 		local shapes = allowedShapes(Table)
-		if not ACE.Sustain.Scale.ShapeAllowed(cfg.Shape, Table) then
+		if not ACE.Scalable.ShapeAllowed(cfg.Shape, Table) then
 			cfg.Shape = shapes[1] or "Box"
 		end
 
@@ -1619,7 +1619,7 @@ do
 			List:AddItem(Combo)
 		end
 
-		local minS = ACF.SustainMinimumSize or ACF.CrateMinimumSize or 5
+		local minS = ACF.ScalableMinimumSize or ACF.CrateMinimumSize or 5
 		-- A definition may cap its size below the global crate limit (explosive
 		-- charges do); the server re-clamps in ParseScale, this just matches the UI.
 		local maxS = math.min(Table.MaxSize or math.huge, ACF.CrateMaximumSize or 250)
@@ -1659,7 +1659,7 @@ end
 function ACEExplosiveGUICreate(Table)
 	BuildScalableConfig(Table, function(_cfg, vol)
 		local CM3 = 16.387
-		local f   = Table.fillerFraction or 0.65
+		local f   = Table.FillerFraction or 0.65
 		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)
 		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
 		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)

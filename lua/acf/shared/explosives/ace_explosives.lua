@@ -10,7 +10,7 @@ ACE_DefineExplosive("ACE Explosive Charge", {
 	name = "Explosive Charge",
 	ent  = "ace_explosive",
 	category = "Explosives",
-	fillerFraction = 0.65,
+	FillerFraction = 0.65,
 	-- Half the global crate limit: at 250 a full-size charge was a multi-tonne
 	-- nuke. 125 max still packs hundreds of kg of filler - plenty for demolition.
 	MaxSize = 125,

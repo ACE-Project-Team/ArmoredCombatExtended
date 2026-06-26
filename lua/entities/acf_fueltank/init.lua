@@ -152,10 +152,10 @@ end
 do
 
 	-- Parses + clamps an "L:W:H" string into a Vector. Shared with ammo crates and
-	-- scalable explosives (see ACE.Sustain.ParseScale); fuel tanks pass the crate
+	-- scalable explosives (see ACE.Scalable.ParseScale); fuel tanks pass the crate
 	-- size limits as their bounds.
 	local function ConvertStringScale( ScaleId )
-		return ACE.Sustain.ParseScale( ScaleId, { min = ACF.CrateMinimumSize, max = ACF.CrateMaximumSize } )
+		return ACE.Scalable.ParseScale( ScaleId, { min = ACF.CrateMinimumSize, max = ACF.CrateMaximumSize } )
 	end
 
 	function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)

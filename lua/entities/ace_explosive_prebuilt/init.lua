@@ -46,7 +46,7 @@ function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	local phys    = Charge:GetPhysicsObject()
 	local volCuIn = (IsValid(phys) and phys:GetVolume()) or 1000   -- model's true volume
-	local fillerMass, fragMass, physMass = ACE_ExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
+	local fillerMass, fragMass, physMass = ACE_GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
 
 	Charge.FillerMass  = fillerMass
 	Charge.FragMass    = fragMass

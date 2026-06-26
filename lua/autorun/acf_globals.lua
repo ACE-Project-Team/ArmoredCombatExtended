@@ -57,7 +57,7 @@ ACF.TankVolumeMul       = 1                        -- multiplier for fuel tank c
 
 ACF.CrateMaximumSize    = 250
 ACF.CrateMinimumSize    = 5
-ACF.SustainMinimumSize  = 1               -- scalable ACE ents (e.g. explosive charges) may scale down to 1x1x1
+ACF.ScalableMinimumSize = 1               -- scalable ACE ents (e.g. explosive charges) may scale down to 1x1x1
 
 ACF.RefillDistance      = 400                    -- Distance in which ammo crate starts refilling.
 ACF.RefillSpeed         = 250                    -- (ACF.RefillSpeed / RoundMass) / Distance
@@ -505,8 +505,8 @@ include("acf/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
 include("acf/shared/sh_ace_functions.lua")
 include("acf/shared/sh_ace_loader.lua")
-AddCSLuaFile("acf/shared/sustainability/sh_sustain.lua")
-include("acf/shared/sustainability/sh_sustain.lua")
+AddCSLuaFile("acf/shared/sh_ace_scalable.lua")
+include("acf/shared/sh_ace_scalable.lua")
 include("acf/shared/sh_ace_concommands.lua")
 include("acf/shared/sh_acfm_roundinject.lua")
 include("acf/shared/compatibility/cppiCompatibility.lua")

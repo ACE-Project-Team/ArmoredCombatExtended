@@ -1,32 +1,41 @@
 --[[
-	ACE Sustainability — scalable-spawn helpers (GMod side)
+	ACE scalable-spawn helpers.
 
-	NOTE: this is the trimmed scaffold that ships with the Scalable Explosives
-	feature. It exposes ONLY the shared scale/shape/spawn glue under ACE.Sustain
-	that scalable ACE entities (the explosive charge) need. The full
-	sustainability system (power grid, fuel chain, faults) replaces this file
-	with the complete loader that includes every logic_* module.
-
-	The logic file stays GMod-free so it can be unit-tested with plain lua.
+	Shared glue for scalable ACE entities (currently the explosive charge):
+	the shape allow/block check, an "L:W:H" size-string parser, the ModelData
+	shape apply, and the common spawn boilerplate. Defined as ACE.Scalable
+	globals like the rest of ACE's shared tables - no module/return indirection.
 ]]--
 
 ACE = ACE or {}
+ACE.Scalable = ACE.Scalable or {}
 
-local PATH = "acf/shared/sustainability/"
+local Scalable = ACE.Scalable
 
-if SERVER then
-	AddCSLuaFile(PATH .. "logic_scale.lua")
+--- Whether a shape is permitted by a definition's shape rules.
+-- The definition may carry `AllowedShapes` (whitelist - only these) and/or
+-- `BlacklistShapes` (blacklist - anything but these). If neither is present
+-- every shape is allowed (back-compat). Whitelist wins over blacklist.
+function Scalable.ShapeAllowed(shape, def)
+	if not shape then return false end
+	def = def or {}
+
+	local white = def.AllowedShapes
+	if white then
+		return white[shape] == true
+	end
+
+	local black = def.BlacklistShapes
+	if black and black[shape] then
+		return false
+	end
+
+	return true
 end
 
-local Sustain = {}
-
-Sustain.Scale = include(PATH .. "logic_scale.lua")
-
-ACE.Sustain = Sustain
-
 ------------------------------------------------------------------
--- Server-side engine glue shared by the scalable entities.
--- Kept here (not in the pure module) because it touches Entity/ACF.
+-- Server-side spawn glue. Kept behind SERVER because it touches
+-- Entity/ACF; ShapeAllowed above stays shared so the menu can use it.
 ------------------------------------------------------------------
 if SERVER then
 
@@ -38,7 +47,7 @@ if SERVER then
 	-- own limits, so explosives, ammo crates and fuel tanks can disagree on size
 	-- without sharing a global. Re-applied here so an edited dupe can't smuggle in
 	-- an out-of-range one. Falls back to the crate limits when bounds are omitted.
-	function Sustain.ParseScale(str, bounds)
+	function Scalable.ParseScale(str, bounds)
 		if isvector(str) then return str end
 		if not isstring(str) or not string.match(str, SCALE_PATTERN) then return end
 
@@ -58,8 +67,8 @@ if SERVER then
 	-- re-validating the shape against the definition's allow/block list so a
 	-- hand-edited dupe can't smuggle in a disallowed shape.
 	-- Returns { dims = Vector, volume = number, area = number } or nil.
-	function Sustain.ApplyShape(ent, scaleVec, shape, def)
-		if not Sustain.Scale.ShapeAllowed(shape, def or {}) then return end
+	function Scalable.ApplyShape(ent, scaleVec, shape, def)
+		if not Scalable.ShapeAllowed(shape, def or {}) then return end
 
 		local md = ACE.ModelData[shape]
 		if not md then return end
@@ -97,7 +106,7 @@ if SERVER then
 
 	-- Common spawn boilerplate: limit check + ownership + cleanup + overlay.
 	-- countKey is the "_class" string used for CheckLimit/AddCount.
-	function Sustain.FinishSpawn(ent, owner, countKey, wireName)
+	function Scalable.FinishSpawn(ent, owner, countKey, wireName)
 		local phys = ent:GetPhysicsObject()
 		if IsValid(phys) then
 			phys:EnableMotion(true)
@@ -112,5 +121,3 @@ if SERVER then
 		owner:AddCleanup("acfmenu", ent)
 	end
 end
-
-return Sustain

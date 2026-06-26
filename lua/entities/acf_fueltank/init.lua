@@ -151,51 +151,11 @@ end
 
 do
 
-	-- Checks if the provided string vector matches the desired format.
-	-- Define a pattern to match the format
-	local pattern = "^%d+%.?%d*:%d+%.?%d*:%d+%.?%d*$"
-	local function IsValidStringScale( Id )
-		if not isstring( Id ) then return false end
-		if not string.match(Id, pattern) then return false end
-		return true
-	end
-
-	-- Converts an already verified string vector into a valid vector scale.
-	local function ParseToVector( ScaleId )
-		if not isstring(ScaleId) then return end
-
-		local Result = string.Explode( ":", ScaleId )
-
-		local X = tonumber(Result[1])
-		local Y = tonumber(Result[2])
-		local Z = tonumber(Result[3])
-
-		return Vector(X, Y, Z)
-	end
-
-	-- Clamps the already converted scale so its within the size limits, defined on globals.
-	local function ClampScale( Scale )
-		if not isvector( Scale ) then return end
-
-		local MinSize = ACF.CrateMinimumSize
-		local MaxSize = ACF.CrateMaximumSize
-
-		Scale.x = math.Clamp( math.Round(Scale.x, 1), MinSize, MaxSize)
-		Scale.y = math.Clamp( math.Round(Scale.y, 1), MinSize, MaxSize)
-		Scale.z = math.Clamp( math.Round(Scale.z, 1), MinSize, MaxSize)
-
-		return Scale
-	end
-
-	-- Tries to convert a scale id, having a string format, to a vector scale. If its already a vector, skip the process.
+	-- Parses + clamps an "L:W:H" string into a Vector. Shared with ammo crates and
+	-- scalable explosives (see ACE.Sustain.ParseScale); fuel tanks pass the crate
+	-- size limits as their bounds.
 	local function ConvertStringScale( ScaleId )
-		if isvector( ScaleId ) then return ScaleId end
-		if not IsValidStringScale( ScaleId ) then return end
-
-		local Scale = ParseToVector( ScaleId )
-		Scale = ClampScale( Scale )
-
-		return Scale
+		return ACE.Sustain.ParseScale( ScaleId, { min = ACF.CrateMinimumSize, max = ACF.CrateMaximumSize } )
 	end
 
 	function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)

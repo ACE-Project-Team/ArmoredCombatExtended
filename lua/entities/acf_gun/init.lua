@@ -886,7 +886,13 @@ do
 
 		local bool = true
 
-		if ( bool and self.IsUnderWeight and self.Ready and self.Legal ) then
+		-- An empty gun reports Ready = 0 (correct for wire), but it must still be
+		-- able to attempt a reload when fired, otherwise it stays locked empty once
+		-- its crate runs dry. Letting it through here lands in the else branch below,
+		-- which calls LoadAmmo to pull a round from any active crate.
+		local isEmpty = self.BulletData.Type == "Empty"
+
+		if ( bool and self.IsUnderWeight and (self.Ready or isEmpty) and self.Legal ) then
 
 			local Blacklist = {}
 			if not ACF.AmmoBlacklist[self.BulletData.Type] then

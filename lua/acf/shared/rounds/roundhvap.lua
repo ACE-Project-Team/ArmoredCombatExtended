@@ -51,7 +51,7 @@ function Round.convert( _, PlayerData )
 	Data.ShovePower = 0.4
 	Data.PenArea = (Data.PenModifier * Data.SubFrArea) ^ ACF.PenAreaMod
 
-	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass) * 0.8
+	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass) * 0.5
 	Data.CaliberMod = Data.Caliber * math.min(PlayerData.Data5, Data.MaxCalMult)
 	Data.LimitVel = 900 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.2 --Kinetic energy transfert to the target for movement purposes

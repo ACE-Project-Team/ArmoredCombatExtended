@@ -22,13 +22,11 @@ ACF_defineGun("7.92mmATR", { --id
 	weight = 8,
 	year = 1917,
 	rofmod = 1.6,
-	magsize = 5,
-	magreload = 6,
 	round = {
 		maxlength = 14,
 		propweight = 2.2
 	},
-	acepoints = 25,
+	acepoints = 40,
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
@@ -42,13 +40,11 @@ ACF_defineGun("14.5mmATR", { --id
 	weight = 15,
 	year = 1917,
 	rofmod = 1.4,
-	magsize = 5,
-	magreload = 8,
 	round = {
 		maxlength = 21,
 		propweight = 3.8
 	},
-	acepoints = 50,
+	acepoints = 60,
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
@@ -62,8 +58,6 @@ ACF_defineGun("20mmATR", { --id
 	weight = 23,
 	year = 1917,
 	rofmod = 0.8,
-	magsize = 5,
-	magreload = 10,
 	round = {
 		maxlength = 24,
 		propweight = 5.5

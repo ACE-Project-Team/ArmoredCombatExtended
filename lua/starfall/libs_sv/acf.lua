@@ -150,7 +150,7 @@ local acf_library = instance.Libraries.acf
 local ents_methods = instance.Types.Entity.Methods
 local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
 local sanitize = instance.Sanitize
-local getent = instance.Types.Entity.GetEntity
+local getent = instance.Types.Entity.Unwrap or instance.Types.Entity.GetEntity
 
 local function restrictInfo(ent)
 	if GetConVar("acf_restrictinfo"):GetInt() ~= 0 then

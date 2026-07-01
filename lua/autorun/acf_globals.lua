@@ -57,6 +57,7 @@ ACF.TankVolumeMul       = 1                        -- multiplier for fuel tank c
 
 ACF.CrateMaximumSize    = 250
 ACF.CrateMinimumSize    = 5
+ACF.ScalableMinimumSize = 1               -- scalable ACE ents (e.g. explosive charges) may scale down to 1x1x1
 
 ACF.RefillDistance      = 400                    -- Distance in which ammo crate starts refilling.
 ACF.RefillSpeed         = 250                    -- (ACF.RefillSpeed / RoundMass) / Distance
@@ -69,6 +70,16 @@ ACF.APAmmoDetonateFactor = 2                --Multiplier for the explosion power
 
 ACF.HEPower           = 8000                    -- HE Filler power per KG in KJ
 ACF.HEDensity         = 1.65                    -- HE Filler density (That's TNT density)
+
+-- Scalable explosive charge (detonates on a wire input). Uses the same HE
+-- filler/frag maths as HE rounds (ACF.HEDensity etc.) so its blast performance
+-- is identical for an equivalent payload.
+ACF.ExplosiveFillerFraction   = 0.65            -- share of the charge volume that is filler
+ACF.ExplosiveHEMul            = 0.12            -- scales filler mass down so charges aren't absurd for their size
+ACF.ExplosivePointsPerKg      = 28              -- score per kg of filler (deliberately steep)
+ACF.ExplosiveCasingMul        = 0.08            -- the charge's PHYSICAL weight is filler + casing*this (a charge is mostly filler + thin casing, not a solid steel billet - keeps it light enough to carry)
+ACF.ExplosiveCookoffMul       = 4               -- per-hit cook-off chance = (damage/maxHP)*this ... a couple of solid hits set it off
+ACF.ExplosiveCookoffLowHP     = 0.25            -- ...plus this * (1 - health fraction), so a badly damaged charge is on a hair trigger
 ACF.HEFrag            = 2500                    -- Mean fragment number for equal weight TNT and casing
 ACF.HEFragDragFactor  = 0.2                        --Lower = less drag. Higher = more. Adjust this to affect the penetration and lethality of fragments. If frags pen infantry die.
 ACF.HEFragRadiusMul   = 2                        --Hard cap on frag radius. Multiplies HE Radius.
@@ -318,6 +329,7 @@ if SERVER then
     CreateConVar("sbox_max_acf_misc", 100)                    -- misc ents limit
     CreateConVar("sbox_max_acf_rack", 24)                    -- Racks limit
     CreateConVar("sbox_max_ace_crewseat", 100)
+    CreateConVar("sbox_max_ace_explosive", 20)             -- scalable + prebuilt explosive charge limit
     CreateConVar("acf_mines_max", 50)                        -- The mine limit
     CreateConVar("acf_meshvalue", 1)
 
@@ -493,6 +505,8 @@ include("acf/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
 include("acf/shared/sh_ace_functions.lua")
 include("acf/shared/sh_ace_loader.lua")
+AddCSLuaFile("acf/shared/sh_ace_scalable.lua")
+include("acf/shared/sh_ace_scalable.lua")
 include("acf/shared/sh_ace_concommands.lua")
 include("acf/shared/sh_acfm_roundinject.lua")
 include("acf/shared/compatibility/cppiCompatibility.lua")

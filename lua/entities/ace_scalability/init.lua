@@ -138,7 +138,10 @@ do
 		else
 
 			--TODO: Do a dedicated scalable table to avoid unnecessary loops
-			local Id = "ACE_ScaleRequest_" .. math.random(1,100)
+			-- Key the resync timer per requesting player. A random 1-100 id could
+			-- collide between two players (or a re-request), silently overwriting
+			-- one player's in-progress resync. UserID is unique per session.
+			local Id = "ACE_ScaleRequest_" .. (IsValid(ply) and ply:UserID() or math.random(1, 1000000))
 			local scalable_ents = ACE.ScalableEnts
 
 			timer.Create(Id, 0, math.max(#scalable_ents, 1), function()

@@ -26,6 +26,8 @@ local MobilityTable     = {}
 local Crewseats         = {}
 local Extras            = {}
 
+local ExplosiveTable    = {}
+
 local GSoundData        = {}
 local ModelData         = {}
 local MineData          = {}
@@ -86,6 +88,11 @@ local extras_base = {
 	type   = "Extras"
 }
 
+local explosive_base = {
+	ent    = "ace_explosive",
+	type   = "Explosives"
+}
+
 -- add gui stuff to base classes if this is client
 -- more required stuff for the menu. Janky as fuck
 if CLIENT then
@@ -120,6 +127,9 @@ if CLIENT then
 
 	extras_base.guicreate    = function( _, Table ) ACEExtrasGUICreate( Table ) end or nil
 	extras_base.guiupdate    = function() return end
+
+	explosive_base.guicreate = function( _, Table ) ACEExplosiveGUICreate( Table ) end or nil
+	explosive_base.guiupdate = function( _, Table ) ACEExplosiveGUIUpdate( Table ) end or nil
 end
 
 -- some factory functions for defining ents
@@ -246,6 +256,13 @@ function ACF_DefineRadar( id, data )
 	data.id = id
 	table.Inherit( data, radar_base )
 	Radars[ id ] = data
+end
+
+-- Explosive charge definition
+function ACE_DefineExplosive( id, data )
+	data.id = id
+	table.Inherit( data, explosive_base )
+	ExplosiveTable[ id ] = data
 end
 
 -- Radar Class definition
@@ -384,7 +401,8 @@ do
 		"sounds",
 		"tools",
 		"crewseats",
-		"extras"
+		"extras",
+		"explosives"
 	}
 
 	for _, folder in ipairs(folders) do
@@ -417,6 +435,7 @@ ACF.Weapons.Radars          = Radars
 ACF.Weapons.Tools           = Tools
 ACF.Weapons.Crewseats       = Crewseats
 ACF.Weapons.Extras          = Extras
+ACF.Weapons.Explosives      = ExplosiveTable
 ACE.MuzzleFlashes           = MuzzleFlashTable
 
 --Small reminder of Mobility table. Still being used in stuff like starfall/e2. This can change

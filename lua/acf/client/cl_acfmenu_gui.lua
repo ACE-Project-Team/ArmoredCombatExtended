@@ -182,6 +182,18 @@ function PANEL:Init( )
 	AmmoBuildList( Ammo, "High Explosive Rounds", list.Get("HERoundTypes") )	-- HE/HEAT Content
 	AmmoBuildList( Ammo, "Special Purpose Rounds", list.Get("SPECSRoundTypes") ) -- Special Content
 
+	-- Explosives live under Ammo. One entry ("Explosives") that opens the scalable
+	-- charge config directly - shape/size are chosen inside the menu, no extra leaf.
+	for _, Data in pairs(FinalContainer["Explosives"] or {}) do
+		local ExploNode = Ammo:AddNode("Explosives", "icon16/bomb.png")
+		ExploNode.mytable = Data
+		function ExploNode:DoClick()
+			RunConsoleCommand("acfmenu_type", self.mytable.type)
+			acfmenupanel:UpdateDisplay(self.mytable)
+		end
+		break
+	end
+
 	do
 		--[[==================================================
 							Mobility folder
@@ -1514,6 +1526,152 @@ function ACEExtrasGUICreate(Table)
 
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
+
+--[[=================================================================
+	Scalable ACE-entity GUI (shared)
+
+	Scalable ACE entities (the explosive charge) share the same shape + L/W/H
+	size config; only the allowed shapes and the stats readout differ.
+	BuildScalableConfig draws the shared widgets, filters the shape list through
+	the definition's AllowedShapes/BlacklistShapes, keeps the chosen size in
+	acfmenupanel.ScalableCfg[class], writes acfmenu_data1 ("L:W:H") +
+	acfmenu_data2 (shape), and calls statsFn to render the panel.
+]]--==================================================================
+do
+	local function getCfg(Table)
+		acfmenupanel.ScalableCfg = acfmenupanel.ScalableCfg or {}
+		local key = Table.ent or Table.id or "scalable"
+		local cfg = acfmenupanel.ScalableCfg[key]
+		if not cfg then
+			local d = Table.MenuDefault or {}
+			cfg = {
+				L = d.L or 30, W = d.W or 30, H = d.H or 30,
+				Shape = d.Shape or "Box", Expanded = true,
+			}
+			acfmenupanel.ScalableCfg[key] = cfg
+		end
+		return cfg
+	end
+
+	-- Shapes this definition permits, in ACE.ModelData order.
+	local function allowedShapes(Table)
+		local out, seen = {}, {}
+		for _, v in pairs(ACE.ModelData) do
+			if v.volumefunction and v.Shape and not seen[v.Shape]
+				and ACE.Scalable.ShapeAllowed(v.Shape, Table) then
+				seen[v.Shape] = true
+				out[#out + 1] = v.Shape
+			end
+		end
+		table.sort(out)
+		return out
+	end
+
+	function BuildScalableConfig(Table, statsFn)
+		if not acfmenupanel.CustomDisplay then return end
+		local MainPanel = acfmenupanel.CustomDisplay
+		local cfg = getCfg(Table)
+
+		acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+		acfmenupanel:CPanelText("Desc", Table.desc)
+
+		local statsKey = (Table.ent or "scalable") .. "Stats"
+
+		local function refresh()
+			local md = ACE.ModelData[cfg.Shape]
+			if not md then return end
+			local vol = md.volumefunction(cfg.L, cfg.W, cfg.H)
+			acfmenupanel:CPanelText(statsKey, "\n" .. statsFn(cfg, vol))
+		end
+
+		local function pushId()
+			local Id = math.Round(cfg.L, 1) .. ":" .. math.Round(cfg.W, 1) .. ":" .. math.Round(cfg.H, 1)
+			RunConsoleCommand("acfmenu_data1", Id)
+			RunConsoleCommand("acfmenu_data2", cfg.Shape)
+			refresh()
+		end
+
+		local Cat = vgui.Create("DCollapsibleCategory")
+		MainPanel:AddItem(Cat)
+		Cat:SetLabel("Size & Shape")
+		Cat:SetExpanded(cfg.Expanded)
+		function Cat:OnToggle(b) cfg.Expanded = b end
+
+		local List = vgui.Create("DPanelList")
+		List:SetSpacing(8)
+		List:EnableHorizontal(false)
+		List:EnableVerticalScrollbar(true)
+		List:SetPaintBackground(false)
+		Cat:SetContents(List)
+
+		local shapes = allowedShapes(Table)
+		if not ACE.Scalable.ShapeAllowed(cfg.Shape, Table) then
+			cfg.Shape = shapes[1] or "Box"
+		end
+
+		-- Only show the shape selector when there's a real choice.
+		if #shapes > 1 then
+			local Combo = vgui.Create("DComboBox")
+			Combo:SetSize(100, 30)
+			for _, s in ipairs(shapes) do Combo:AddChoice(s) end
+			Combo:SetText(cfg.Shape)
+			Combo.OnSelect = function(_, _, data) cfg.Shape = data pushId() end
+			List:AddItem(Combo)
+		end
+
+		local minS = ACF.ScalableMinimumSize or ACF.CrateMinimumSize or 5
+		-- A definition may cap its size below the global crate limit (explosive
+		-- charges do); the server re-clamps in ParseScale, this just matches the UI.
+		local maxS = math.min(Table.MaxSize or math.huge, ACF.CrateMaximumSize or 250)
+
+		local function slider(label, field)
+			local S = vgui.Create("DNumSlider")
+			S:SetText(label)
+			S:SetDark(true)
+			S:SetMin(minS)
+			S:SetMax(maxS)
+			S:SetDecimals(1)
+			S:SetValue(cfg[field])
+			function S:OnValueChanged(v) cfg[field] = v pushId() end
+			List:AddItem(S)
+		end
+
+		slider("Length", "L")
+		slider("Width", "W")
+		-- Some entities are inherently flat slabs - their thickness doesn't change
+		-- behaviour, so we lock it to a fixed value and hide the slider instead of
+		-- letting the player waste a dimension on it.
+		if Table.LockH then
+			cfg.H = Table.MenuDefault and Table.MenuDefault.H or minS
+		else
+			slider("Height/Thickness", "H")
+		end
+
+		pushId()
+		MainPanel:PerformLayout()
+	end
+end
+
+--[[=========================  Explosive Charge  ===================]]--
+-- Scalable charge: pick a shape and size; the filler is read from the resulting
+-- physical volume (same HE maths as shells). Pre-built model charges live in the
+-- Q spawnmenu instead.
+function ACEExplosiveGUICreate(Table)
+	BuildScalableConfig(Table, function(_cfg, vol)
+		local CM3 = 16.387
+		local f   = Table.FillerFraction or 0.65
+		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)
+		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
+		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
+		local radius     = fillerMass ^ 0.33 * 8
+		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
+			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
+			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"
+			.. "\nMass: " .. math.Round(physMass, 1) .. " kg"
+			.. "\nPoints: " .. math.Round(fillerMass * (ACF.ExplosivePointsPerKg or 28), 0)
+	end)
+end
+function ACEExplosiveGUIUpdate() end
 
 if not ACF then ACF = {} end
 if not ACF.ChatMessageReceiver then

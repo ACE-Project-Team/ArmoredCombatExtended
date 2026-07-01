@@ -254,13 +254,15 @@ function ENT:ScanForContraptions()
 		local HeatMulFromDist = 1 - min(Distance / 94488, 1) -- 39.37 * 2400 = 94488
 		Heat = Heat * HeatMulFromDist
 
-		LOSTraceData.start = SelfPos
-		LOSTraceData.endpos = Pos
-		local LOSTrace = TraceHull(LOSTraceData)
-
 		local AngleFromTarget = GetAngleBetweenVectors(PosDiff:GetNormalized(), SelfForward)
 
-		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not LOSTrace.Hit then
+		LOSTraceData.start = SelfPos
+		LOSTraceData.endpos = Pos
+
+		-- Gate the LOS trace behind the cheap cone/heat check (as ace_trackingradar/ace_searchradar
+		-- do): the `and` short-circuits, so only in-cone, hot-enough contraptions get a TraceHull
+		-- instead of tracing every contraption on the server each think.
+		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not TraceHull(LOSTraceData).Hit then
 
 			local RegionMul = Heat / 100 * self.HeatRegionMul
 			local ResolveMul = Heat / 100 * self.HeatResolveMul
@@ -317,13 +319,14 @@ function ENT:ScanForContraptions()
 
 		local Heat = 38 --A bit hotter than a person but it helps the optics
 
-		LOSTraceData.start = SelfPos
-		LOSTraceData.endpos = Pos
-		local LOSTrace = TraceHull(LOSTraceData)
-
 		local AngleFromTarget = GetAngleBetweenVectors(PosDiff:GetNormalized(), SelfForward)
 
-		if AngleFromTarget < self.Cone and not LOSTrace.Hit then
+		LOSTraceData.start = SelfPos
+		LOSTraceData.endpos = Pos
+
+		-- Gate the LOS trace behind the cone check (see the contraption loop above): the `and`
+		-- short-circuits, so only players within the view cone get a TraceHull.
+		if AngleFromTarget < self.Cone and not TraceHull(LOSTraceData).Hit then
 
 			local RegionMul = Heat / 100 * self.HeatRegionMul
 			local ResolveMul = Heat / 100 * self.HeatResolveMul

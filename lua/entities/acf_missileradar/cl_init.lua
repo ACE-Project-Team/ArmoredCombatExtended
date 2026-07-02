@@ -37,7 +37,7 @@ local function GetSequenceSweepRate(self)
 	return 360 * rate / duration
 end
 
-local function CorrectRadarSweepSample(self)
+local function CorrectRadarSweepSample(self, sweepRate)
 	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
 	local angle = self.ACE_RadarVisualAngle
 
@@ -48,13 +48,12 @@ local function CorrectRadarSweepSample(self)
 	if angle == nil then
 		angle = sampleAngle
 	else
-		local diff = math.AngleDifference(sampleAngle, angle)
-
-		if math.abs(diff) > 45 then
-			angle = sampleAngle
-		else
-			angle = angle + math.Clamp(diff, -5, 5)
-		end
+		-- Age-compensate the latency-delayed server sample forward to now at the shared sweep rate,
+		-- then nudge only gently toward it. The per-entity CurTime-delta extrapolation already tracks
+		-- the server angle at matched rate; correcting against the RAW (stale) sample only dragged the
+		-- dish backward -- worse as more radars stale these NWVars -- which caused the erratic spin.
+		local predicted = (sampleAngle + (sweepRate or 0) * math.max(0, CurTime() - sampleTime)) % 360
+		angle = angle + math.AngleDifference(predicted, angle) * 0.1
 	end
 
 	self.ACE_RadarVisualAngle = angle % 360
@@ -78,7 +77,8 @@ local function AdvanceRadarVisualAngle(self)
 		return self.ACE_RadarVisualAngle
 	end
 
-	CorrectRadarSweepSample(self)
+	local sweepRate = GetRadarSweepRate(self)
+	CorrectRadarSweepSample(self, sweepRate)
 
 	local now = CurTime()
 	local last = self.ACE_RadarVisualUpdateTime
@@ -86,7 +86,7 @@ local function AdvanceRadarVisualAngle(self)
 
 	if last ~= nil then
 		local delta = math.Clamp(now - last, 0, 0.25)
-		angle = angle + delta * GetRadarSweepRate(self)
+		angle = angle + delta * sweepRate
 	end
 
 	angle = angle % 360

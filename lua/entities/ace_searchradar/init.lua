@@ -303,7 +303,14 @@ function ENT:Think()
 
 		self.CurrentScanAngle = self.CurrentScanAngle + self.Cone * DeltaTime
 		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = math.min(self.CurrentScanAngle - 360, 360) end
-		PublishSweepState(self, curTime)
+		-- The client extrapolates the sweep locally at the published rate and age-compensates each
+		-- sample, so it only needs an occasional phase seed. Publishing the always-changing sweep
+		-- NWFloats every Think was 3 dirty NWFloats x N radars x Think Hz of pure networking churn --
+		-- the "worse with more radars" cost. Throttle to ~2 Hz; activation/cone-change still seed instantly.
+		if not self.NextSweepPublish or curTime >= self.NextSweepPublish then
+			PublishSweepState(self, curTime)
+			self.NextSweepPublish = curTime + 0.5
+		end
 
 		--local radID = ACE.radarIDs[self]
 

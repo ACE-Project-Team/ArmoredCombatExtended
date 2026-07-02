@@ -302,7 +302,9 @@ function ENT:Think()
 	if self.Active and self.Legal then
 
 		self.CurrentScanAngle = self.CurrentScanAngle + self.Cone * DeltaTime
-		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = math.min(self.CurrentScanAngle - 360, 360) end
+		-- Modulo, not math.min(x-360, 360): a single step that overshoots by >=360 deg (large DeltaTime
+		-- on a hibernating/laggy server) would otherwise clamp to 360 and stick the sweep there forever.
+		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = self.CurrentScanAngle % 360 end
 		-- The client extrapolates the sweep locally at the published rate and age-compensates each
 		-- sample, so it only needs an occasional phase seed. Publishing the always-changing sweep
 		-- NWFloats every Think was 3 dirty NWFloats x N radars x Think Hz of pure networking churn --

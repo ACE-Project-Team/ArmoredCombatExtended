@@ -6,6 +6,7 @@ ENT.RenderGroup		= RENDERGROUP_OPAQUE
 local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 local ENTITY = FindMetaTable("Entity")
 local RADAR_BONE_ANGLE = Angle(0, 0, 0)
+local CLIENT_IDLE_THINK_INTERVAL = 0.25
 
 local function SetRadarSequence(self, name)
 	local sequence = self:LookupSequence(name)
@@ -36,38 +37,61 @@ local function GetSequenceSweepRate(self)
 	return 360 * rate / duration
 end
 
-local function GetRadarSweepAngle(self)
+local function CorrectRadarSweepSample(self)
 	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
 	local angle = self.ACE_RadarVisualAngle
 
-	if sampleTime >= 0 then
-		local sampleAngle = self:GetNWFloat("ACE_RadarSweepAngle", angle or 0)
-		local rate = self:GetNWFloat("ACE_RadarSweepRate", 0)
+	if sampleTime < 0 or self.ACE_RadarSweepSampleTime == sampleTime then return end
 
-		if angle == nil then
+	local sampleAngle = self:GetNWFloat("ACE_RadarSweepAngle", angle or 0)
+
+	if angle == nil then
+		angle = sampleAngle
+	else
+		local diff = math.AngleDifference(sampleAngle, angle)
+
+		if math.abs(diff) > 45 then
 			angle = sampleAngle
-		elseif self.ACE_RadarSweepSampleTime ~= sampleTime then
-			local diff = math.AngleDifference(sampleAngle, angle)
-
-			if math.abs(diff) > 45 then
-				angle = sampleAngle
-			else
-				angle = angle + math.Clamp(diff, -5, 5)
-			end
+		else
+			angle = angle + math.Clamp(diff, -5, 5)
 		end
-
-		angle = angle + FrameTime() * rate
-		angle = angle % 360
-		self.ACE_RadarVisualAngle = angle
-		self.ACE_RadarSweepSampleTime = sampleTime
-
-		return angle
 	end
 
-	angle = angle or ((self:GetCycle() or 0) * 360)
-	angle = angle + FrameTime() * GetSequenceSweepRate(self)
+	self.ACE_RadarVisualAngle = angle % 360
+	self.ACE_RadarSweepSampleTime = sampleTime
+end
+
+local function GetRadarSweepRate(self)
+	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
+
+	if sampleTime >= 0 then
+		local rate = self:GetNWFloat("ACE_RadarSweepRate", 0)
+		if rate ~= 0 then return rate end
+	end
+
+	return GetSequenceSweepRate(self)
+end
+
+local function AdvanceRadarVisualAngle(self)
+	if not self:GetNWBool("ACE_RadarActive", false) then
+		self.ACE_RadarVisualUpdateTime = nil
+		return self.ACE_RadarVisualAngle
+	end
+
+	CorrectRadarSweepSample(self)
+
+	local now = CurTime()
+	local last = self.ACE_RadarVisualUpdateTime
+	local angle = self.ACE_RadarVisualAngle or ((self:GetCycle() or 0) * 360)
+
+	if last ~= nil then
+		local delta = math.Clamp(now - last, 0, 0.25)
+		angle = angle + delta * GetRadarSweepRate(self)
+	end
+
 	angle = angle % 360
 	self.ACE_RadarVisualAngle = angle
+	self.ACE_RadarVisualUpdateTime = now
 
 	return angle
 end
@@ -81,6 +105,7 @@ local function AnimateRadarBone(self)
 		self.ACE_RadarActiveSequence = nil
 		self.ACE_RadarVisualAngle = nil
 		self.ACE_RadarSweepSampleTime = nil
+		self.ACE_RadarVisualUpdateTime = nil
 	end
 
 	local bone = self.ACE_RadarSpinBone
@@ -101,6 +126,7 @@ local function AnimateRadarBone(self)
 			self:SetupBones()
 			self.ACE_RadarVisualAngle = nil
 			self.ACE_RadarSweepSampleTime = nil
+			self.ACE_RadarVisualUpdateTime = nil
 			self.ACE_RadarBoneActive = false
 		end
 
@@ -108,7 +134,7 @@ local function AnimateRadarBone(self)
 	end
 
 	RADAR_BONE_ANGLE[1] = 0
-	RADAR_BONE_ANGLE[2] = GetRadarSweepAngle(self)
+	RADAR_BONE_ANGLE[2] = AdvanceRadarVisualAngle(self)
 	RADAR_BONE_ANGLE[3] = 0
 
 	self:ManipulateBoneAngles(bone, RADAR_BONE_ANGLE)
@@ -123,15 +149,19 @@ local function AdvanceActiveRadar(self)
 			self.ACE_RadarClientActive = false
 		end
 
-		return
+		self.ACE_RadarVisualUpdateTime = nil
+		ENTITY.SetNextClientThink(self, CurTime() + CLIENT_IDLE_THINK_INTERVAL)
+
+		return true
 	end
 
 	if not self.ACE_RadarClientActive then
-		GetRadarSweepAngle(self)
 		SetRadarSequence(self, "idle")
 		self.ACE_RadarClientActive = true
+		self.ACE_RadarVisualUpdateTime = nil
 	end
 
+	AdvanceRadarVisualAngle(self)
 	self:SetPlaybackRate(self:GetNWFloat("ACE_RadarAnimationRate", 1))
 	ENTITY.SetNextClientThink(self, CurTime())
 
@@ -141,6 +171,7 @@ end
 function ENT:Initialize()
 
 	self.BaseClass.Initialize( self )
+	ENTITY.SetNextClientThink(self, CurTime())
 
 end
 

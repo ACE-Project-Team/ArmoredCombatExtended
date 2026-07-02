@@ -10,19 +10,6 @@ local abs = math.abs
 local tableInsert = table.insert
 local mathHuge = math.huge
 
-local function GetActiveInputState( ent )
-	local input = ent.Inputs and ent.Inputs.Active
-	local legal = ent.Legal ~= false
-
-	if input and input.Src == nil then
-		input.Value = 1
-	end
-
-	if not input or input.Src == nil then return legal end
-
-	return (input.Value or 0) ~= 0 and legal
-end
-
 local function PublishSweepState( ent, curTime )
 	ent:SetNWFloat("ACE_RadarSweepAngle", ent.CurrentScanAngle or 0)
 	ent:SetNWFloat("ACE_RadarSweepRate", (ent.Active and ent.Legal) and (ent.Cone or 0) or 0)
@@ -69,7 +56,7 @@ function ENT:Initialize()
 		IsJammed        = 0,
 		JamDirection    = vector_origin
 	}
-	self:SetActive(GetActiveInputState(self))
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 end
 
@@ -119,7 +106,7 @@ function MakeACE_SearchRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(GetActiveInputState(Radar), true)
+	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -154,14 +141,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		local input = self.Inputs and self.Inputs.Active
-		local active = value ~= 0 and self.Legal
-
-		if input and input.Src == nil then
-			active = self.Legal
-		end
-
-		self:SetActive(active)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 
 		local curTime = CurTime()
 		self.LastThink = ACF.CurTime
@@ -309,7 +289,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = GetActiveInputState(self)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

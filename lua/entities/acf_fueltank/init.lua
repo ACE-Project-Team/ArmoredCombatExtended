@@ -8,16 +8,6 @@ include("shared.lua")
 
 local TankTable = ACF.Weapons.FuelTanksSize
 
-local function IsActiveInputWired( ent )
-	local input = ent.Inputs and ent.Inputs.Active
-
-	if input and input.Src == nil then
-		input.Value = 1
-	end
-
-	return input and input.Src ~= nil
-end
-
 do
 
 	local FueltankWireDescs = {
@@ -58,7 +48,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
-		IsActiveInputWired(self)
+		ACF.GetDefaultActiveInputState(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -424,11 +414,7 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		self.Active = value ~= 0
-
-		if not IsActiveInputWired(self) then
-			self.Active = true
-		end
+		self.Active = ACF.GetDefaultActiveInputState(self, value)
 
 		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
@@ -443,7 +429,7 @@ end
 
 function ENT:Think()
 
-	if not IsActiveInputWired(self) then
+	if not ACF.IsDefaultActiveInputWired(self) then
 		self.Active = true
 	end
 

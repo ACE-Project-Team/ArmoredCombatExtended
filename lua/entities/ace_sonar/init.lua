@@ -7,19 +7,6 @@ local TraceHull = util.TraceHull
 local min, Clamp = math.min, math.Clamp
 local tableInsert = table.insert
 
-local function GetActiveInputState( ent )
-	local input = ent.Inputs and ent.Inputs.Active
-	local legal = ent.Legal ~= false
-
-	if input and input.Src == nil then
-		input.Value = 1
-	end
-
-	if not input or input.Src == nil then return legal end
-
-	return (input.Value or 0) ~= 0 and legal
-end
-
 ACF.SonarTimeCompression = 0.15 --Multiplier for speed of sound. 0.33 means sound takes ~3x the time to travel to the target. Generally sonar travels at ~1500 m/s
 
 --ACF.SonarLayerDepth = (20 + math.Rand(0,1)) --Layer depth in meters where sonar scatters. Subject to being reworked later.
@@ -123,7 +110,7 @@ function ENT:Initialize()
 	self.SonarLastTracked = {}
 
 
-	self:SetActive(GetActiveInputState(self))
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
@@ -214,14 +201,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		local input = self.Inputs and self.Inputs.Active
-		local active = value ~= 0 and self.Legal
-
-		if input and input.Src == nil then
-			active = self.Legal
-		end
-
-		self:SetActive(active)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "ActiveSonar" then
 		if value > 0 then
 			self.ActiveTransmitting = true
@@ -1020,7 +1000,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, nil, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = GetActiveInputState(self)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

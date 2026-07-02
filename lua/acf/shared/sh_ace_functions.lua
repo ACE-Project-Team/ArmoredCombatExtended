@@ -668,6 +668,39 @@ function ACE_table_contains(table, element)
 	return false
 end
 
+local function GetDefaultActiveInput(ent, inputName)
+	if not IsValid(ent) then return end
+
+	local inputs = ent.Inputs
+	local input = inputs and inputs[inputName or "Active"]
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	return input
+end
+
+function ACF.IsDefaultActiveInputWired(ent, inputName)
+	local input = GetDefaultActiveInput(ent, inputName)
+
+	return input and input.Src ~= nil
+end
+
+function ACF.GetDefaultActiveInputState(ent, value, inputName)
+	if not IsValid(ent) then return false end
+
+	local legal = ent.Legal ~= false
+	local input = GetDefaultActiveInput(ent, inputName)
+
+	if not input or input.Src == nil then return legal end
+
+	local wireValue = value
+	if wireValue == nil then wireValue = input.Value or 0 end
+
+	return wireValue ~= 0 and legal
+end
+
 -- Radar/IRST-specific functions
 if SERVER then
 	local Indexes = {}

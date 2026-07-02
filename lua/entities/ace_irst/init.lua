@@ -10,19 +10,6 @@ local Rand = math.Rand
 local TraceHull = util.TraceHull
 local RadarTable = ACF.Weapons.Radars
 
-local function GetActiveInputState( ent )
-	local input = ent.Inputs and ent.Inputs.Active
-	local legal = ent.Legal ~= false
-
-	if input and input.Src == nil then
-		input.Value = 1
-	end
-
-	if not input or input.Src == nil then return legal end
-
-	return (input.Value or 0) ~= 0 and legal
-end
-
 function ENT:Initialize()
 
 	self.ThinkDelay			= 0.1
@@ -80,7 +67,7 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 4
 
 	self.IRResolution = {}
-	self:SetActive(GetActiveInputState(self))
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
@@ -152,14 +139,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		local input = self.Inputs and self.Inputs.Active
-		local active = value ~= 0 and self.Legal
-
-		if input and input.Src == nil then
-			active = self.Legal
-		end
-
-		self:SetActive(active)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -439,7 +419,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = GetActiveInputState(self)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

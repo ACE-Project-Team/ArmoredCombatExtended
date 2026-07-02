@@ -11,19 +11,6 @@ DEFINE_BASECLASS( "base_wire_entity" )
 
 local tableInsert = table.insert
 
-local function GetActiveInputState( ent )
-	local input = ent.Inputs and ent.Inputs.Active
-	local legal = ent.Legal ~= false
-
-	if input and input.Src == nil then
-		input.Value = 1
-	end
-
-	if not input or input.Src == nil then return legal end
-
-	return (input.Value or 0) ~= 0 and legal
-end
-
 local RadarWireDescs = {
 
 	--Outputs
@@ -84,7 +71,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(GetActiveInputState(self))
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 end
 
@@ -106,14 +93,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		local input = self.Inputs and self.Inputs.Active
-		local active = value ~= 0 and self.Legal
-
-		if input and input.Src == nil then
-			active = self.Legal
-		end
-
-		self:SetActive(active)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -187,7 +167,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(GetActiveInputState(Radar), true)
+	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
 
 	Owner:AddCount( "_acf_missileradar", Radar )
 	Owner:AddCleanup( "acfmenu", Radar )
@@ -253,7 +233,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = GetActiveInputState(self)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

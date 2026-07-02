@@ -424,11 +424,13 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		if value ~= 0 then
+		self.Active = value ~= 0
+
+		if not IsActiveInputWired(self) then
 			self.Active = true
-		else
-			self.Active = false
 		end
+
+		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
 		if value ~= 0 then
 			self.SupplyFuel = true

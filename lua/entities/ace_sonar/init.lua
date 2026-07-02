@@ -214,7 +214,14 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		local input = self.Inputs and self.Inputs.Active
+		local active = value ~= 0 and self.Legal
+
+		if input and input.Src == nil then
+			active = self.Legal
+		end
+
+		self:SetActive(active)
 	elseif inp == "ActiveSonar" then
 		if value > 0 then
 			self.ActiveTransmitting = true
@@ -256,6 +263,14 @@ end
 
 function ENT:SetActive(active)
 
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
+
 	self.Active = active
 
 	--if active  then
@@ -289,6 +304,8 @@ function ENT:SetActive(active)
 		self.OutputData.Washout = 0
 
 	end
+
+	self:UpdateOverlayText()
 
 end
 

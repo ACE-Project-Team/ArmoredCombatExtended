@@ -752,7 +752,13 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		if value > 0 then
+		local active = value > 0
+
+		if not IsActiveInputWired(self) then
+			active = true
+		end
+
+		if active then
 			self.Active = true
 
 			if self.Legal then
@@ -784,6 +790,11 @@ function ENT:Think()
 
 	if not IsActiveInputWired(self) then
 		self.Active = true
+
+		if self.Legal and not self.Load then
+			self.Load = true
+			self:FirstLoad()
+		end
 	end
 
 	if ACF.CurTime > self.NextLegalCheck then

@@ -152,7 +152,14 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		local input = self.Inputs and self.Inputs.Active
+		local active = value ~= 0 and self.Legal
+
+		if input and input.Src == nil then
+			active = self.Legal
+		end
+
+		self:SetActive(active)
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -165,6 +172,14 @@ function ENT:TriggerInput( inp, value )
 end
 
 function ENT:SetActive(active)
+
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
 
@@ -183,6 +198,8 @@ function ENT:SetActive(active)
 
 		self.Heat = ACE.AmbientTemp
 	end
+
+	self:UpdateOverlayText()
 
 end
 

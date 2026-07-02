@@ -20,6 +20,14 @@ local function MarkGunPointStateDirty(Gun)
 	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
 end
 
+local function AttemptFirstLoad(Gun, Crate)
+	if not IsValid(Gun) or not IsValid(Crate) then return end
+	if Gun.BulletData.Type ~= "Empty" then return end
+	if not Crate.Load or not Gun.FirstLoad or not Gun.Legal then return end
+
+	Gun:LoadAmmo(false, false)
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -454,8 +462,10 @@ function ENT:Link( Target )
 		table.insert( self.AmmoLink, Target )
 		table.insert( Target.Master, self )
 
-		if self.BulletData.Type == "Empty" and Target.Load then
-			self:UnloadAmmo()
+		if self.BulletData.Type == "Empty" and self.FirstLoad then
+			timer.Simple(0, function()
+				AttemptFirstLoad(self, Target)
+			end)
 		end
 
 		local ReloadBuff = 1

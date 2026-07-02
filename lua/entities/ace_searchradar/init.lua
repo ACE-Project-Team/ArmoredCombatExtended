@@ -10,6 +10,25 @@ local abs = math.abs
 local tableInsert = table.insert
 local mathHuge = math.huge
 
+local function GetActiveInputState( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+	local legal = ent.Legal ~= false
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	if not input or input.Src == nil then return legal end
+
+	return (input.Value or 0) ~= 0 and legal
+end
+
+local function PublishSweepState( ent, curTime )
+	ent:SetNWFloat("ACE_RadarSweepAngle", ent.CurrentScanAngle or 0)
+	ent:SetNWFloat("ACE_RadarSweepRate", (ent.Active and ent.Legal) and (ent.Cone or 0) or 0)
+	ent:SetNWFloat("ACE_RadarSweepTime", curTime or CurTime())
+end
+
 local PDClutterSwitchDistance = 100 -- Switch to PD mode if ground clutter is closer than this distance (meters)
 local PDMinVelocity = 20 -- Minimum radial velocity (m/s) for targets to be picked up in PD mode
 
@@ -22,6 +41,7 @@ function ENT:Initialize()
 	self.StatusUpdateDelay	= 0.5
 	self.LastStatusUpdate	= ACF.CurTime
 	self.Active				= false
+	self.AnimationRate		= self.AnimationRate or 1
 
 	self.Heat				= 21
 	self.IsJammed			= 0
@@ -49,6 +69,7 @@ function ENT:Initialize()
 		IsJammed        = 0,
 		JamDirection    = vector_origin
 	}
+	self:SetActive(GetActiveInputState(self))
 
 end
 
@@ -98,6 +119,7 @@ function MakeACE_SearchRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
+	Radar:SetActive(GetActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -132,7 +154,14 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		local input = self.Inputs and self.Inputs.Active
+		local active = value ~= 0 and self.Legal
+
+		if input and input.Src == nil then
+			active = self.Legal
+		end
+
+		self:SetActive(active)
 
 		local curTime = CurTime()
 		self.LastThink = ACF.CurTime
@@ -150,15 +179,34 @@ function ENT:TriggerInput( inp, value )
 			self.Cone = self.ICone
 		end
 
+		PublishSweepState(self, CurTime())
 		self:UpdateOverlayText()
 	end
 end
 
-function ENT:SetActive(active)
+function ENT:SetActive(active, forceVisual)
+
+	active = active and true or false
+
+	if self.Active == active and not forceVisual then
+		self:SetNWBool("ACE_RadarActive", active)
+		self:SetNWFloat("ACE_RadarAnimationRate", self.AnimationRate or 1)
+		self.Status = active and "On" or "Off"
+		PublishSweepState(self)
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
+	self.Status = active and "On" or "Off"
+	self:SetNWBool("ACE_RadarActive", active)
+	self:SetNWFloat("ACE_RadarAnimationRate", self.AnimationRate or 1)
+	PublishSweepState(self)
 
 	if active  then
+		self.LastThink = ACF.CurTime
+
 		local sequence = self:LookupSequence("active") or 0
 		self:ResetSequence(sequence)
 		self:SetPlaybackRate( self.AnimationRate )
@@ -184,6 +232,8 @@ function ENT:SetActive(active)
 
 		self.Heat = 21
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -259,9 +309,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = GetActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end
@@ -270,6 +321,7 @@ function ENT:Think()
 
 		self.CurrentScanAngle = self.CurrentScanAngle + self.Cone * DeltaTime
 		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = math.min(self.CurrentScanAngle - 360, 360) end
+		PublishSweepState(self, curTime)
 
 		--local radID = ACE.radarIDs[self]
 

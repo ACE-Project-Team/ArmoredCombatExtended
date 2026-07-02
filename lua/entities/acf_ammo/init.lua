@@ -40,6 +40,16 @@ local function IsMissileAmmo( ent )
 	return (classData and classData.type == "missile") or false
 end
 
+local function IsActiveInputWired( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	return input and input.Src ~= nil
+end
+
 local function SpawnMiniHEFlash(ent, pos, radius)
 	if not IsValid(ent) then return end
 	local HEFlash = EffectData()
@@ -120,7 +130,7 @@ function ENT:Initialize()
 	self.DamageDelay         = 0
 
 	self.CanUpdate           = true
-	self.Load                = false
+	self.Load                = true
 	self.EmptyMass           = 1
 	self.AmmoMassMax         = 0
 	self.NextMassUpdate      = 0
@@ -132,7 +142,7 @@ function ENT:Initialize()
 	self.Legal               = true
 	self.LegalIssues         = ""
 
-	self.Active              = false
+	self.Active              = true
 	self.Master              = {}
 	self.Sequence            = 0
 
@@ -147,6 +157,7 @@ function ENT:Initialize()
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
 	self.Outputs             = Wire_CreateOutputs( self, Outputs )
+	IsActiveInputWired(self)
 
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 
@@ -770,6 +781,10 @@ end
 function ENT:Think()
 
 	if not self.BulletData then return false end
+
+	if not IsActiveInputWired(self) then
+		self.Active = true
+	end
 
 	if ACF.CurTime > self.NextLegalCheck then
 

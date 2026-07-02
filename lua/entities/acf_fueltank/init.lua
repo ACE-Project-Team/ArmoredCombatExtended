@@ -8,6 +8,16 @@ include("shared.lua")
 
 local TankTable = ACF.Weapons.FuelTanksSize
 
+local function IsActiveInputWired( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	return input and input.Src ~= nil
+end
+
 do
 
 	local FueltankWireDescs = {
@@ -36,7 +46,7 @@ do
 		self.EmptyMass        = 0	--mass of tank only
 		self.NextMassUpdate   = 0
 		self.Id               = nil	--model id
-		self.Active           = false
+		self.Active           = true
 		self.SupplyFuel       = false
 		self.Leaking          = 0
 		self.NextLegalCheck   = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
@@ -48,6 +58,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
+		IsActiveInputWired(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -429,6 +440,10 @@ function ENT:TriggerInput( iname, value )
 end
 
 function ENT:Think()
+
+	if not IsActiveInputWired(self) then
+		self.Active = true
+	end
 
 	if ACF.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass

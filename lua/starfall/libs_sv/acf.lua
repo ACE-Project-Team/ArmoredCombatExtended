@@ -88,11 +88,29 @@ end
 local radarTypes = {
 	acf_missileradar = true,
 	ace_irst = true,
+	ace_searchradar = true,
+	ace_sonar = true,
+	ace_trackingradar = true,
+}
+
+local activeInputTypes = {
+	acf_missileradar = true,
+	ace_irst = true,
+	ace_rwr_dir = true,
+	ace_rwr_sphere = true,
+	ace_searchradar = true,
+	ace_sonar = true,
 	ace_trackingradar = true,
 }
 
 local function isRadar(ent)
 	return radarTypes[ent:GetClass()] or false
+end
+
+local function hasActiveInput(ent)
+	if isEngine(ent) or isAmmo(ent) or isFuel(ent) then return true end
+
+	return activeInputTypes[ent:GetClass()] or false
 end
 
 -- link resources within each ent type. should point to an ent: true if adding link.Ent, false to add link itself
@@ -256,13 +274,13 @@ do
 		return this.Capacity or 1
 	end
 
-	--- Returns true if the acf engine, fuel tank, or ammo crate is active
+	--- Returns true if the acf engine, fuel tank, ammo crate, radar, or sensor is active
 	-- @server
 	-- @return boolean Is the entity active?
 	function ents_methods:acfGetActive()
 		local this = getent(self)
 
-		if not (isEngine(this) or isAmmo(this) or isFuel(this)) then return false end
+		if not hasActiveInput(this) then return false end
 		if restrictInfo(this) then return false end
 		if not isAmmo(this) then
 			if this.Active then return true end
@@ -273,7 +291,7 @@ do
 		return false
 	end
 
-	--- Turns an ACF engine, ammo crate, or fuel tank on or off
+	--- Turns an ACF engine, ammo crate, fuel tank, radar, or sensor on or off
 	-- @server
 	-- @param boolean state The state to set the entity to
 	function ents_methods:acfSetActive(on)
@@ -281,7 +299,7 @@ do
 
 		checkpermission(instance, this, "entities.acf")
 
-		if not (isEngine(this) or isAmmo(this) or isFuel(this)) then return end
+		if not hasActiveInput(this) then return end
 
 		this:TriggerInput("Active", on and 1 or 0)
 	end
@@ -1975,7 +1993,7 @@ end
 
 -- Radar functions
 do
-	--- Returns a table containing the outputs you'd get from an ACF tracking radar, missile radar, or IRST
+	--- Returns a table containing the available outputs from an ACF radar or sensor
 	-- @server
 	-- @return table The radar data - check radar wire outputs for key names
 	function ents_methods:acfRadarData()
@@ -1984,29 +2002,9 @@ do
 			SF.Throw("Entity is not a radar", 2)
 		end
 
-		local data = {}
-		local radarType = this:GetClass()
+		if restrictInfo(this) then return {} end
 
-		if restrictInfo(this) then return data end
-
-		data.Detected = this.OutputData.Detected
-		data.Position = this.OutputData.Position
-
-		if radarType == "acf_missileradar" then
-			data.ClosestDistance = this.OutputData.ClosestDistance
-			data.Entities = this.OutputData.Entities
-			data.Velocity = this.OutputData.Velocity
-		elseif radarType == "ace_trackingradar" or "ace_irst" then
-			data.Owner = this.OutputData.Owner
-			data.ClosestToBeam = this.OutputData.ClosestToBeam
-			if radarType == "ace_trackingradar" then
-				data.Velocity = this.OutputData.Velocity
-				data.IsJammed = this.OutputData.IsJammed
-			elseif radarType == "ace_irst" then
-				data.Angle = this.OutputData.Angle
-				data.EffHeat = this.OutputData.EffHeat
-			end
-		end
+		local data = table.Copy(this.OutputData or {})
 
 		return sanitize(data)
 	end

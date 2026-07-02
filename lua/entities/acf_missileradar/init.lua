@@ -11,6 +11,19 @@ DEFINE_BASECLASS( "base_wire_entity" )
 
 local tableInsert = table.insert
 
+local function GetActiveInputState( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+	local legal = ent.Legal ~= false
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	if not input or input.Src == nil then return legal end
+
+	return (input.Value or 0) ~= 0 and legal
+end
+
 local RadarWireDescs = {
 
 	--Outputs
@@ -71,7 +84,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(false)
+	self:SetActive(GetActiveInputState(self))
 
 end
 
@@ -93,16 +106,37 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(value ~= 0 and self.Legal)
+		local input = self.Inputs and self.Inputs.Active
+		local active = value ~= 0 and self.Legal
+
+		if input and input.Src == nil then
+			active = self.Legal
+		end
+
+		self:SetActive(active)
 	end
 end
 
 
 
 
-function ENT:SetActive(active)
+function ENT:SetActive(active, forceVisual)
+
+	active = active and true or false
+
+	if self.Active == active and not forceVisual then
+		self:SetNWBool("ACE_RadarActive", active)
+		self:SetNWFloat("ACE_RadarAnimationRate", 1)
+		self.Status = active and "On" or "Off"
+		self:GetOverlayText()
+
+		return
+	end
 
 	self.Active = active
+	self.Status = active and "On" or "Off"
+	self:SetNWBool("ACE_RadarActive", active)
+	self:SetNWFloat("ACE_RadarAnimationRate", 1)
 
 	if active then
 		local sequence = self:LookupSequence("active") or 0
@@ -113,6 +147,8 @@ function ENT:SetActive(active)
 		self:ResetSequence(sequence)
 		self.AutomaticFrameAdvance = false
 	end
+
+	self:GetOverlayText()
 
 end
 
@@ -151,6 +187,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
+	Radar:SetActive(GetActiveInputState(Radar), true)
 
 	Owner:AddCount( "_acf_missileradar", Radar )
 	Owner:AddCleanup( "acfmenu", Radar )
@@ -202,7 +239,7 @@ end
 
 function ENT:Think()
 
-	if self.Inputs.Active.Value ~= 0 and self.Active and self.Legal then
+	if self.Active and self.Legal then
 		self:ScanForMissiles()
 	else
 		self:ClearOutputs()
@@ -216,9 +253,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = GetActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

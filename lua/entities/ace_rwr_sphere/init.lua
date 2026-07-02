@@ -3,6 +3,19 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local function GetActiveInputState( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+	local legal = ent.Legal ~= false
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	if not input or input.Src == nil then return legal end
+
+	return (input.Value or 0) ~= 0 and legal
+end
+
 function ENT:SpawnFunction( _, trace )
 
 	if not trace.Hit then return end
@@ -34,7 +47,7 @@ function ENT:Initialize()
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected"} )
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected", "Radar ID [ARRAY]", "Radar Power [ARRAY]"} )
 
-	self:SetActive(false)
+	self:SetActive(GetActiveInputState(self))
 
 	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
@@ -78,6 +91,12 @@ function ENT:Think()
 
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+
+		local shouldBeActive = GetActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
+		end
 
 	end
 

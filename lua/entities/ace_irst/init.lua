@@ -10,6 +10,19 @@ local Rand = math.Rand
 local TraceHull = util.TraceHull
 local RadarTable = ACF.Weapons.Radars
 
+local function GetActiveInputState( ent )
+	local input = ent.Inputs and ent.Inputs.Active
+	local legal = ent.Legal ~= false
+
+	if input and input.Src == nil then
+		input.Value = 1
+	end
+
+	if not input or input.Src == nil then return legal end
+
+	return (input.Value or 0) ~= 0 and legal
+end
+
 function ENT:Initialize()
 
 	self.ThinkDelay			= 0.1
@@ -35,8 +48,6 @@ function ENT:Initialize()
 		EffHeat			= {},
 		ID				= {}
 	}
-
-	self:SetActive(false)
 
 	self.Heat               = ACE.AmbientTemp
 	self.HeatAboveAmbient   = 10 -- Targets below this temperature above ambient will be ignored
@@ -69,6 +80,7 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 4
 
 	self.IRResolution = {}
+	self:SetActive(GetActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
@@ -410,9 +422,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = GetActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

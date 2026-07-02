@@ -37,29 +37,6 @@ local function GetSequenceSweepRate(self)
 	return 360 * rate / duration
 end
 
-local function CorrectRadarSweepSample(self, sweepRate)
-	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
-	local angle = self.ACE_RadarVisualAngle
-
-	if sampleTime < 0 or self.ACE_RadarSweepSampleTime == sampleTime then return end
-
-	local sampleAngle = self:GetNWFloat("ACE_RadarSweepAngle", angle or 0)
-
-	if angle == nil then
-		angle = sampleAngle
-	else
-		-- Age-compensate the latency-delayed server sample forward to now at the shared sweep rate,
-		-- then nudge only gently toward it. The per-entity CurTime-delta extrapolation already tracks
-		-- the server angle at matched rate; correcting against the RAW (stale) sample only dragged the
-		-- dish backward -- worse as more radars stale these NWVars -- which caused the erratic spin.
-		local predicted = (sampleAngle + (sweepRate or 0) * math.max(0, CurTime() - sampleTime)) % 360
-		angle = angle + math.AngleDifference(predicted, angle) * 0.1
-	end
-
-	self.ACE_RadarVisualAngle = angle % 360
-	self.ACE_RadarSweepSampleTime = sampleTime
-end
-
 local function GetRadarSweepRate(self)
 	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
 
@@ -71,27 +48,19 @@ local function GetRadarSweepRate(self)
 	return GetSequenceSweepRate(self)
 end
 
+-- Stateless dish angle = CurTime() * rate: a pure function of time, so the dish spins perfectly smoothly
+-- and can never stall, lurch, or drift regardless of NWVar timing. The previous accumulate-per-frame +
+-- correct-toward-server-sample scheme managed to do all three across successive fixes (erratic spin,
+-- then stop-after-one-tick). Rate is the server sweep rate (search) or the model animation rate
+-- (missile/tracking). Rotational PHASE is cosmetic for a spinning dish, so we deliberately do not chase
+-- the server's exact scan bearing -- that sync is precisely what kept breaking.
 local function AdvanceRadarVisualAngle(self)
 	if not self:GetNWBool("ACE_RadarActive", false) then
-		self.ACE_RadarVisualUpdateTime = nil
-		return self.ACE_RadarVisualAngle
+		return self.ACE_RadarVisualAngle or 0
 	end
 
-	local sweepRate = GetRadarSweepRate(self)
-	CorrectRadarSweepSample(self, sweepRate)
-
-	local now = CurTime()
-	local last = self.ACE_RadarVisualUpdateTime
-	local angle = self.ACE_RadarVisualAngle or ((self:GetCycle() or 0) * 360)
-
-	if last ~= nil then
-		local delta = math.Clamp(now - last, 0, 0.25)
-		angle = angle + delta * sweepRate
-	end
-
-	angle = angle % 360
+	local angle = (CurTime() * GetRadarSweepRate(self)) % 360
 	self.ACE_RadarVisualAngle = angle
-	self.ACE_RadarVisualUpdateTime = now
 
 	return angle
 end

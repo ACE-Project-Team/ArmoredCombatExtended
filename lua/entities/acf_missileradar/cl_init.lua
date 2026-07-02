@@ -38,19 +38,33 @@ end
 
 local function GetRadarSweepAngle(self)
 	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
+	local angle = self.ACE_RadarVisualAngle
 
 	if sampleTime >= 0 then
-		local angle = self:GetNWFloat("ACE_RadarSweepAngle", self.ACE_RadarVisualAngle or 0)
+		local sampleAngle = self:GetNWFloat("ACE_RadarSweepAngle", angle or 0)
 		local rate = self:GetNWFloat("ACE_RadarSweepRate", 0)
 
-		angle = angle + math.max(CurTime() - sampleTime, 0) * rate
+		if angle == nil then
+			angle = sampleAngle
+		elseif self.ACE_RadarSweepSampleTime ~= sampleTime then
+			local diff = math.AngleDifference(sampleAngle, angle)
+
+			if math.abs(diff) > 45 then
+				angle = sampleAngle
+			else
+				angle = angle + math.Clamp(diff, -5, 5)
+			end
+		end
+
+		angle = angle + FrameTime() * rate
 		angle = angle % 360
 		self.ACE_RadarVisualAngle = angle
+		self.ACE_RadarSweepSampleTime = sampleTime
 
 		return angle
 	end
 
-	local angle = self.ACE_RadarVisualAngle or ((self:GetCycle() or 0) * 360)
+	angle = angle or ((self:GetCycle() or 0) * 360)
 	angle = angle + FrameTime() * GetSequenceSweepRate(self)
 	angle = angle % 360
 	self.ACE_RadarVisualAngle = angle
@@ -66,6 +80,7 @@ local function AnimateRadarBone(self)
 		self.ACE_RadarSpinModel = model
 		self.ACE_RadarActiveSequence = nil
 		self.ACE_RadarVisualAngle = nil
+		self.ACE_RadarSweepSampleTime = nil
 	end
 
 	local bone = self.ACE_RadarSpinBone
@@ -85,6 +100,7 @@ local function AnimateRadarBone(self)
 			self:ManipulateBoneAngles(bone, RADAR_BONE_ANGLE)
 			self:SetupBones()
 			self.ACE_RadarVisualAngle = nil
+			self.ACE_RadarSweepSampleTime = nil
 			self.ACE_RadarBoneActive = false
 		end
 

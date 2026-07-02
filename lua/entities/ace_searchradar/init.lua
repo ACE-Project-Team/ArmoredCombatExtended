@@ -143,9 +143,11 @@ function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
 		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 
-		local curTime = CurTime()
-		self.LastThink = ACF.CurTime
-		self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		if ACF.IsDefaultActiveInputWired(self) then
+			local curTime = CurTime()
+			self.LastThink = ACF.CurTime
+			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		end
 	elseif inp == "Cone" then
 		if value > 0 then
 

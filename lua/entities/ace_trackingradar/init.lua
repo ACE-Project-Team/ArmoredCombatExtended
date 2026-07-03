@@ -168,8 +168,6 @@ function ENT:SetActive(active, forceVisual)
 	active = active and true or false
 
 	if self.Active == active and not forceVisual then
-		self:SetNWBool("ACE_RadarActive", active)
-		self:SetNWFloat("ACE_RadarAnimationRate", 1)
 		self.Status = active and "On" or "Off"
 		self:UpdateOverlayText()
 
@@ -179,8 +177,6 @@ function ENT:SetActive(active, forceVisual)
 	self.Active = active
 	self.Status = active and "On" or "Off"
 	self.AcquiredTargets		= {}
-	self:SetNWBool("ACE_RadarActive", active)
-	self:SetNWFloat("ACE_RadarAnimationRate", 1)
 
 	if active  then
 		local sequence = self:LookupSequence("active") or 0

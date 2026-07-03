@@ -10,12 +10,6 @@ local abs = math.abs
 local tableInsert = table.insert
 local mathHuge = math.huge
 
-local function PublishSweepState( ent, curTime )
-	ent:SetNWFloat("ACE_RadarSweepAngle", ent.CurrentScanAngle or 0)
-	ent:SetNWFloat("ACE_RadarSweepRate", (ent.Active and ent.Legal) and (ent.Cone or 0) or 0)
-	ent:SetNWFloat("ACE_RadarSweepTime", curTime or CurTime())
-end
-
 local PDClutterSwitchDistance = 100 -- Switch to PD mode if ground clutter is closer than this distance (meters)
 local PDMinVelocity = 20 -- Minimum radial velocity (m/s) for targets to be picked up in PD mode
 
@@ -161,7 +155,6 @@ function ENT:TriggerInput( inp, value )
 			self.Cone = self.ICone
 		end
 
-		PublishSweepState(self, CurTime())
 		self:UpdateOverlayText()
 	end
 end
@@ -171,10 +164,7 @@ function ENT:SetActive(active, forceVisual)
 	active = active and true or false
 
 	if self.Active == active and not forceVisual then
-		self:SetNWBool("ACE_RadarActive", active)
-		self:SetNWFloat("ACE_RadarAnimationRate", self.AnimationRate or 1)
 		self.Status = active and "On" or "Off"
-		PublishSweepState(self)
 		self:UpdateOverlayText()
 
 		return
@@ -182,9 +172,6 @@ function ENT:SetActive(active, forceVisual)
 
 	self.Active = active
 	self.Status = active and "On" or "Off"
-	self:SetNWBool("ACE_RadarActive", active)
-	self:SetNWFloat("ACE_RadarAnimationRate", self.AnimationRate or 1)
-	PublishSweepState(self)
 
 	if active  then
 		self.LastThink = ACF.CurTime
@@ -305,14 +292,6 @@ function ENT:Think()
 		-- Modulo, not math.min(x-360, 360): a single step that overshoots by >=360 deg (large DeltaTime
 		-- on a hibernating/laggy server) would otherwise clamp to 360 and stick the sweep there forever.
 		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = self.CurrentScanAngle % 360 end
-		-- The client extrapolates the sweep locally at the published rate and age-compensates each
-		-- sample, so it only needs an occasional phase seed. Publishing the always-changing sweep
-		-- NWFloats every Think was 3 dirty NWFloats x N radars x Think Hz of pure networking churn --
-		-- the "worse with more radars" cost. Throttle to ~2 Hz; activation/cone-change still seed instantly.
-		if not self.NextSweepPublish or curTime >= self.NextSweepPublish then
-			PublishSweepState(self, curTime)
-			self.NextSweepPublish = curTime + 0.5
-		end
 
 		--local radID = ACE.radarIDs[self]
 

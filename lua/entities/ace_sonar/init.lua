@@ -110,11 +110,12 @@ function ENT:Initialize()
 	self.SonarLastTracked = {}
 
 
-	self:SetActive(false)
-
 	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
 	self.LegalIssues        = ""
+
+	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 	self.TargetDetected		= false
 
@@ -201,7 +202,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "ActiveSonar" then
 		if value > 0 then
 			self.ActiveTransmitting = true
@@ -243,6 +244,14 @@ end
 
 function ENT:SetActive(active)
 
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
+
 	self.Active = active
 
 	--if active  then
@@ -276,6 +285,8 @@ function ENT:SetActive(active)
 		self.OutputData.Washout = 0
 
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -990,9 +1001,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, nil, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

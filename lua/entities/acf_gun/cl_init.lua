@@ -40,12 +40,19 @@ function ENT:Think()
 	self.BaseClass.Think( self )
 
 	local SinceFire = CurTime() - self.LastFire
-	self:SetCycle( SinceFire * self.Rate / self.RateScale )
+	self:SetCycle( math.min( SinceFire * self.Rate / self.RateScale, 1 ) )
 	if CurTime() > self.LastFire + self.CloseTime and self.CloseAnim then
-		self:ResetSequence( self.CloseAnim )
-		self:SetCycle( ( SinceFire - self.CloseTime ) * self.Rate / self.RateScale )
-		self.Rate = 1 / ( self.Reload - self.CloseTime ) -- Base anim time is 1s, rate is in 1/10 of a second
-		self:SetPlaybackRate( self.Rate )
+		-- Reset only on an actual sequence change: re-resetting every Think restarts the
+		-- close animation each tick, which strobes the gun (seen on auto first-load guns).
+		if self:GetSequence() ~= self.CloseAnim then
+			self:ResetSequence( self.CloseAnim )
+		end
+		local cycle = ( SinceFire - self.CloseTime ) * self.Rate / self.RateScale
+		self:SetCycle( math.min( cycle, 1 ) )
+		self.Rate = 1 / math.max( self.Reload - self.CloseTime, 0.05 ) -- Base anim time is 1s, rate is in 1/10 of a second
+		-- Once the close animation has finished, freeze playback so nothing can advance or
+		-- loop it between Thinks; the clamped SetCycle above pins the finished pose.
+		self:SetPlaybackRate( cycle >= 1 and 0 or self.Rate )
 	end
 
 end

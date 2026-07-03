@@ -120,7 +120,7 @@ function ENT:Initialize()
 	self.DamageDelay         = 0
 
 	self.CanUpdate           = true
-	self.Load                = false
+	self.Load                = true
 	self.EmptyMass           = 1
 	self.AmmoMassMax         = 0
 	self.NextMassUpdate      = 0
@@ -132,7 +132,7 @@ function ENT:Initialize()
 	self.Legal               = true
 	self.LegalIssues         = ""
 
-	self.Active              = false
+	self.Active              = true
 	self.Master              = {}
 	self.Sequence            = 0
 
@@ -147,6 +147,7 @@ function ENT:Initialize()
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
 	self.Outputs             = Wire_CreateOutputs( self, Outputs )
+	ACF.GetDefaultActiveInputState(self)
 
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 
@@ -741,7 +742,9 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		if value > 0 then
+		local active = ACF.GetDefaultActiveInputState(self, value)
+
+		if active then
 			self.Active = true
 
 			if self.Legal then
@@ -761,7 +764,9 @@ function ENT:FirstLoad()
 	for Key in pairs(self.Master) do
 		local Gun = self.Master[Key]
 		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
-			Gun:LoadAmmo(false, false)
+			-- Reload=true: scale-0 muzzleflash effect (soundless) so the client initializes its
+			-- animation state; a fully silent load leaves the load animation strobing (see acf_gun).
+			Gun:LoadAmmo(false, true)
 		end
 	end
 
@@ -770,6 +775,15 @@ end
 function ENT:Think()
 
 	if not self.BulletData then return false end
+
+	if not ACF.IsDefaultActiveInputWired(self) then
+		self.Active = true
+
+		if self.Legal and not self.Load then
+			self.Load = true
+			self:FirstLoad()
+		end
+	end
 
 	if ACF.CurTime > self.NextLegalCheck then
 

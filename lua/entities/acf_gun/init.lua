@@ -20,6 +20,18 @@ local function MarkGunPointStateDirty(Gun)
 	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
 end
 
+local function AttemptFirstLoad(Gun, Crate)
+	if not IsValid(Gun) or not IsValid(Crate) then return end
+	if Gun.BulletData.Type ~= "Empty" then return end
+	if not Crate.Load or not Gun.FirstLoad or not Gun.Legal then return end
+
+	-- Reload=true sends the scale-0 muzzleflash effect (no sound/flash), which runs the client
+	-- Animate(LoadOnly) that initializes the gun's animation state. Without it the client stays in
+	-- cl_init's default state (Reload == CloseTime -> infinite playback rate + per-Think
+	-- ResetSequence), which strobes the load animation.
+	Gun:LoadAmmo(false, true)
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -454,8 +466,10 @@ function ENT:Link( Target )
 		table.insert( self.AmmoLink, Target )
 		table.insert( Target.Master, self )
 
-		if self.BulletData.Type == "Empty" and Target.Load then
-			self:UnloadAmmo()
+		if self.BulletData.Type == "Empty" and self.FirstLoad then
+			timer.Simple(0, function()
+				AttemptFirstLoad(self, Target)
+			end)
 		end
 
 		local ReloadBuff = 1
@@ -1060,13 +1074,15 @@ function ENT:LoadAmmo( AddTime, Reload )
 		if AddTime then
 			reloadTime = reloadTime + AddTime
 		end
-		if Reload then
-			self:ReloadEffect()
-		end
-
 		if self.FirstLoad then
 			self.FirstLoad = false
 			reloadTime = 0.1
+		end
+
+		if Reload then
+			-- Send the effective ready time: a FirstLoad gun is ready in 0.1s, and the client's
+			-- Animate(LoadOnly) holds the reload pose for ~75% of the received magnitude.
+			self:ReloadEffect(reloadTime)
 		end
 
 		self.NextFire = curTime + reloadTime
@@ -1130,12 +1146,12 @@ function ENT:MuzzleEffect()
 	end
 end
 
-function ENT:ReloadEffect()
+function ENT:ReloadEffect( EffectTime )
 
 	local Effect = EffectData()
 		Effect:SetEntity( self )
 		Effect:SetScale( 0 )
-		Effect:SetMagnitude( self.ReloadTime )
+		Effect:SetMagnitude( EffectTime or self.ReloadTime )
 		Effect:SetSurfaceProp( ACF.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
 	util.Effect( "ACF_MuzzleFlash", Effect, true, true )
 

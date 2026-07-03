@@ -24,7 +24,6 @@ function ENT:Initialize()
 	self.Weight = 105
 
 	self.Active = false
-	curTime = 0
 
 	self:SetModel( "models/radar/radar_sml.mdl" )
 	self:PhysicsInit(SOLID_VPHYSICS)
@@ -34,11 +33,13 @@ function ENT:Initialize()
 	self.Inputs = WireLib.CreateInputs( self, { "Active" } )
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected", "Radar ID [ARRAY]", "Angle [ARRAY]", "Radar Power [ARRAY]"} )
 
-	self:SetActive(false)
-
 	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
+
+	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
+
 
 	self.Cone = 50
 
@@ -47,11 +48,19 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	end
 end
 
 function ENT:SetActive(active)
+
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
 
@@ -70,6 +79,8 @@ function ENT:SetActive(active)
 		WireLib.TriggerOutput( self, "Radar Power", {} )
 	end
 
+	self:UpdateOverlayText()
+
 end
 
 function ENT:Think()
@@ -81,6 +92,12 @@ function ENT:Think()
 
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
+		end
 
 	end
 

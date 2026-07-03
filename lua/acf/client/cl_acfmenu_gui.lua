@@ -1168,6 +1168,10 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 
 	acfmenupanel["CData"][Name].OnValueChanged = function( _, val )
 
+	--Programmatic SetMin/SetMax/SetValue (below) fire DNumSlider:ValueChanged, which calls
+	--this handler; skip re-entry during those so UpdateAttribs can't recurse into a stack overflow.
+	if acfmenupanel["CData"][Name].ACEProgrammatic then return end
+
 	if acfmenupanel.AmmoData[Name] ~= val then
 
 		acfmenupanel.AmmoData[Name] = val
@@ -1180,9 +1184,11 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 
 	end
 
+	acfmenupanel["CData"][Name].ACEProgrammatic = true
 	acfmenupanel["CData"][Name]:SetMin( Min )
 	acfmenupanel["CData"][Name]:SetMax( Max )
 	acfmenupanel["CData"][Name]:SetValue( Value )
+	acfmenupanel["CData"][Name].ACEProgrammatic = false
 
 	if not acfmenupanel["CData"][Name .. "_text"] and Desc then
 

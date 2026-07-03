@@ -36,8 +36,6 @@ function ENT:Initialize()
 		ID				= {}
 	}
 
-	self:SetActive(false)
-
 	self.Heat               = ACE.AmbientTemp
 	self.HeatAboveAmbient   = 10 -- Targets below this temperature above ambient will be ignored
 
@@ -69,6 +67,7 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 4
 
 	self.IRResolution = {}
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
@@ -140,7 +139,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -153,6 +152,14 @@ function ENT:TriggerInput( inp, value )
 end
 
 function ENT:SetActive(active)
+
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
 
@@ -171,6 +178,8 @@ function ENT:SetActive(active)
 
 		self.Heat = ACE.AmbientTemp
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -413,9 +422,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

@@ -71,7 +71,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(false)
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 end
 
@@ -93,16 +93,26 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(value ~= 0 and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	end
 end
 
 
 
 
-function ENT:SetActive(active)
+function ENT:SetActive(active, forceVisual)
+
+	active = active and true or false
+
+	if self.Active == active and not forceVisual then
+		self.Status = active and "On" or "Off"
+		self:GetOverlayText()
+
+		return
+	end
 
 	self.Active = active
+	self.Status = active and "On" or "Off"
 
 	if active then
 		local sequence = self:LookupSequence("active") or 0
@@ -113,6 +123,8 @@ function ENT:SetActive(active)
 		self:ResetSequence(sequence)
 		self.AutomaticFrameAdvance = false
 	end
+
+	self:GetOverlayText()
 
 end
 
@@ -151,6 +163,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
+	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
 
 	Owner:AddCount( "_acf_missileradar", Radar )
 	Owner:AddCleanup( "acfmenu", Radar )
@@ -202,7 +215,7 @@ end
 
 function ENT:Think()
 
-	if self.Inputs.Active.Value ~= 0 and self.Active and self.Legal then
+	if self.Active and self.Legal then
 		self:ScanForMissiles()
 	else
 		self:ClearOutputs()
@@ -216,9 +229,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

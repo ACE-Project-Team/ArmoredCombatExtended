@@ -36,7 +36,7 @@ do
 		self.EmptyMass        = 0	--mass of tank only
 		self.NextMassUpdate   = 0
 		self.Id               = nil	--model id
-		self.Active           = false
+		self.Active           = true
 		self.SupplyFuel       = false
 		self.Leaking          = 0
 		self.NextLegalCheck   = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
@@ -48,6 +48,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
+		ACF.GetDefaultActiveInputState(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -413,11 +414,9 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		if value ~= 0 then
-			self.Active = true
-		else
-			self.Active = false
-		end
+		self.Active = ACF.GetDefaultActiveInputState(self, value)
+
+		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
 		if value ~= 0 then
 			self.SupplyFuel = true
@@ -429,6 +428,10 @@ function ENT:TriggerInput( iname, value )
 end
 
 function ENT:Think()
+
+	if not ACF.IsDefaultActiveInputWired(self) then
+		self.Active = true
+	end
 
 	if ACF.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass

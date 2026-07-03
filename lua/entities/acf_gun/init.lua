@@ -1074,13 +1074,15 @@ function ENT:LoadAmmo( AddTime, Reload )
 		if AddTime then
 			reloadTime = reloadTime + AddTime
 		end
-		if Reload then
-			self:ReloadEffect()
-		end
-
 		if self.FirstLoad then
 			self.FirstLoad = false
 			reloadTime = 0.1
+		end
+
+		if Reload then
+			-- Send the effective ready time: a FirstLoad gun is ready in 0.1s, and the client's
+			-- Animate(LoadOnly) holds the reload pose for ~75% of the received magnitude.
+			self:ReloadEffect(reloadTime)
 		end
 
 		self.NextFire = curTime + reloadTime
@@ -1144,12 +1146,12 @@ function ENT:MuzzleEffect()
 	end
 end
 
-function ENT:ReloadEffect()
+function ENT:ReloadEffect( EffectTime )
 
 	local Effect = EffectData()
 		Effect:SetEntity( self )
 		Effect:SetScale( 0 )
-		Effect:SetMagnitude( self.ReloadTime )
+		Effect:SetMagnitude( EffectTime or self.ReloadTime )
 		Effect:SetSurfaceProp( ACF.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
 	util.Effect( "ACF_MuzzleFlash", Effect, true, true )
 

@@ -5,7 +5,6 @@ ENT.RenderGroup		= RENDERGROUP_OPAQUE
 
 local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 local ENTITY = FindMetaTable("Entity")
-local RADAR_BONE_ANGLE = Angle(0, 0, 0)
 local CLIENT_IDLE_THINK_INTERVAL = 0.25
 
 local function SetRadarSequence(self, name)
@@ -15,122 +14,42 @@ local function SetRadarSequence(self, name)
 	self:ResetSequence(sequence)
 end
 
-local function GetActiveSequence(self)
-	local sequence = self.ACE_RadarActiveSequence
+local function ResetRadarSpinBone(self)
+	-- Clear any leftover radar_rot manipulation from the old manual-spin scheme so the bone is not frozen
+	-- at a stale angle now that the model's own animation drives the spin. No-op for models without the bone.
+	local bone = self:LookupBone("radar_rot")
 
-	if sequence == nil then
-		sequence = self:LookupSequence("active")
-		if sequence < 0 then sequence = 0 end
-
-		self.ACE_RadarActiveSequence = sequence
+	if bone then
+		self:ManipulateBoneAngles(bone, angle_zero)
 	end
-
-	return sequence
 end
 
-local function GetSequenceSweepRate(self)
-	local duration = self:SequenceDuration(GetActiveSequence(self)) or 0
-	local rate = self:GetNWFloat("ACE_RadarAnimationRate", 1)
-
-	if duration <= 0 then return 360 * rate end
-
-	return 360 * rate / duration
-end
-
-local function GetRadarSweepRate(self)
-	local sampleTime = self:GetNWFloat("ACE_RadarSweepTime", -1)
-
-	if sampleTime >= 0 then
-		local rate = self:GetNWFloat("ACE_RadarSweepRate", 0)
-		if rate ~= 0 then return rate end
-	end
-
-	return GetSequenceSweepRate(self)
-end
-
--- Stateless dish angle = CurTime() * rate: a pure function of time, so the dish spins perfectly smoothly
--- and can never stall, lurch, or drift regardless of NWVar timing. The previous accumulate-per-frame +
--- correct-toward-server-sample scheme managed to do all three across successive fixes (erratic spin,
--- then stop-after-one-tick). Rate is the server sweep rate (search) or the model animation rate
--- (missile/tracking). Rotational PHASE is cosmetic for a spinning dish, so we deliberately do not chase
--- the server's exact scan bearing -- that sync is precisely what kept breaking.
-local function AdvanceRadarVisualAngle(self)
-	if not self:GetNWBool("ACE_RadarActive", false) then
-		return self.ACE_RadarVisualAngle or 0
-	end
-
-	local angle = (CurTime() * GetRadarSweepRate(self)) % 360
-	self.ACE_RadarVisualAngle = angle
-
-	return angle
-end
-
-local function AnimateRadarBone(self)
-	local model = self:GetModel()
-
-	if self.ACE_RadarSpinModel ~= model then
-		self.ACE_RadarSpinBone = nil
-		self.ACE_RadarSpinModel = model
-		self.ACE_RadarActiveSequence = nil
-		self.ACE_RadarVisualAngle = nil
-		self.ACE_RadarSweepSampleTime = nil
-		self.ACE_RadarVisualUpdateTime = nil
-	end
-
-	local bone = self.ACE_RadarSpinBone
-
-	if bone == nil then
-		bone = self:LookupBone("radar_rot") or false
-		self.ACE_RadarSpinBone = bone
-	end
-
-	if not bone then return end
-
-	if not self:GetNWBool("ACE_RadarActive", false) then
-		if self.ACE_RadarBoneActive then
-			RADAR_BONE_ANGLE[1] = 0
-			RADAR_BONE_ANGLE[2] = 0
-			RADAR_BONE_ANGLE[3] = 0
-			self:ManipulateBoneAngles(bone, RADAR_BONE_ANGLE)
-			self:SetupBones()
-			self.ACE_RadarVisualAngle = nil
-			self.ACE_RadarSweepSampleTime = nil
-			self.ACE_RadarVisualUpdateTime = nil
-			self.ACE_RadarBoneActive = false
-		end
-
-		return
-	end
-
-	RADAR_BONE_ANGLE[1] = 0
-	RADAR_BONE_ANGLE[2] = AdvanceRadarVisualAngle(self)
-	RADAR_BONE_ANGLE[3] = 0
-
-	self:ManipulateBoneAngles(bone, RADAR_BONE_ANGLE)
-	self:SetupBones()
-	self.ACE_RadarBoneActive = true
-end
-
+-- Spherical radar models (radar_sp_*) carry their own "active"/"idle" sequences and a radar_rot bone.
+-- Let the model's own animation spin the sphere: on activation play the "active" sequence and enable
+-- AutomaticFrameAdvance so the engine advances the animation every frame (base_anim's field, matching the
+-- sibling ace_rwr_sphere). The old manual radar_rot bone spin is gone -- it fought the model's animation
+-- and stalled. Dish/directional models (radar_sml/mid/big) have no bones or sequences and never spun.
 local function AdvanceActiveRadar(self)
 	if not self:GetNWBool("ACE_RadarActive", false) then
 		if self.ACE_RadarClientActive then
 			SetRadarSequence(self, "idle")
+			self.AutomaticFrameAdvance = false
+			ResetRadarSpinBone(self)
 			self.ACE_RadarClientActive = false
 		end
 
-		self.ACE_RadarVisualUpdateTime = nil
 		ENTITY.SetNextClientThink(self, CurTime() + CLIENT_IDLE_THINK_INTERVAL)
 
 		return true
 	end
 
 	if not self.ACE_RadarClientActive then
-		SetRadarSequence(self, "idle")
+		SetRadarSequence(self, "active")
+		self.AutomaticFrameAdvance = true
+		ResetRadarSpinBone(self)
 		self.ACE_RadarClientActive = true
-		self.ACE_RadarVisualUpdateTime = nil
 	end
 
-	AdvanceRadarVisualAngle(self)
 	self:SetPlaybackRate(self:GetNWFloat("ACE_RadarAnimationRate", 1))
 	ENTITY.SetNextClientThink(self, CurTime())
 
@@ -153,7 +72,6 @@ function ENT:Draw()
 	local lply = LocalPlayer()
 	local hideBubble = not ACF_GunInfoWhileSeated:GetBool() and IsValid(lply) and lply:InVehicle()
 
-	AnimateRadarBone(self)
 	self.BaseClass.DoNormalDraw(self, false, hideBubble)
 	Wire_Render(self)
 

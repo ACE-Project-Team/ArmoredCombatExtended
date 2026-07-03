@@ -764,7 +764,9 @@ function ENT:FirstLoad()
 	for Key in pairs(self.Master) do
 		local Gun = self.Master[Key]
 		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
-			Gun:LoadAmmo(false, false)
+			-- Reload=true: scale-0 muzzleflash effect (soundless) so the client initializes its
+			-- animation state; a fully silent load leaves the load animation strobing (see acf_gun).
+			Gun:LoadAmmo(false, true)
 		end
 	end
 

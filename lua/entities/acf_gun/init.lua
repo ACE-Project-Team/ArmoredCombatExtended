@@ -25,7 +25,11 @@ local function AttemptFirstLoad(Gun, Crate)
 	if Gun.BulletData.Type ~= "Empty" then return end
 	if not Crate.Load or not Gun.FirstLoad or not Gun.Legal then return end
 
-	Gun:LoadAmmo(false, false)
+	-- Reload=true sends the scale-0 muzzleflash effect (no sound/flash), which runs the client
+	-- Animate(LoadOnly) that initializes the gun's animation state. Without it the client stays in
+	-- cl_init's default state (Reload == CloseTime -> infinite playback rate + per-Think
+	-- ResetSequence), which strobes the load animation.
+	Gun:LoadAmmo(false, true)
 end
 
 function ENT:Initialize()

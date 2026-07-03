@@ -34,11 +34,13 @@ function ENT:Initialize()
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected"} )
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected", "Radar ID [ARRAY]", "Radar Power [ARRAY]"} )
 
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
-
 	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
+
+	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
+
 end
 
 --ATGMs tracked

@@ -962,6 +962,11 @@ function ENT:Link( Target )
 
 	self:SetOverlayText(txt)
 
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged( self )
+		ACE_PointsInputChanged( Target )
+	end
+
 	return true, "Link successful!"
 
 end
@@ -979,6 +984,11 @@ function ENT:Unlink( Target )
 	if Success then
 
 		self:GetOverlayText()
+
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( Target )
+		end
 
 		return true, "Unlink successful!"
 	else

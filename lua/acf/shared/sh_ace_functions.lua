@@ -7,6 +7,12 @@ AddCSLuaFile()
 AddCSLuaFile("acf/shared/sh_ace_points_model.lua")
 include("acf/shared/sh_ace_points_model.lua")
 
+-- Manufacturing cost model (real-dollar build cost -- SEPARATE from contraption points). Same
+-- pure-math + entity-adapter shape as the points model above; loaded right after it so every
+-- realm that pulls in sh_ace_functions (incl. the acfarmorprop client tool) has both models.
+AddCSLuaFile("acf/shared/sh_ace_manufacturing.lua")
+include("acf/shared/sh_ace_manufacturing.lua")
+
 local floor, Clamp = math.floor, math.Clamp
 
 -- returns last parent in chain, which has physics

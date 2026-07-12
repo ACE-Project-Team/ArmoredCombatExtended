@@ -271,6 +271,16 @@ local function ACE_FormatPoints(points)
 	return text .. "pts"
 end
 
+-- Real-dollar manufacturing cost formatter (SEPARATE from points). Thousands-separated below
+-- $1M (e.g. $691,200); >= $1M collapses to one decimal million (e.g. $1.2M).
+local function ACE_FormatMoney(dollars)
+	dollars = tonumber(dollars) or 0
+	if dollars >= 1e6 then
+		return string.format("$%.1fM", dollars / 1e6)
+	end
+	return "$" .. string.Comma(math.Round(dollars))
+end
+
 local CostLabelByCategory = {
 	Engines = "Mobility Cost",
 	Firepower = "Firepower",
@@ -361,8 +371,26 @@ local function ACE_GetPopupPoints(ent, ply)
 		end
 	end
 
+	-- Manufacturing cost (real dollars) -- a SEPARATE axis from combat points. Priceable
+	-- components (incl. ammo crates, which are point-free) get their own $ line; the whole
+	-- contraption gets one aggregate $ line. Computed on read; no caching. Server realm here.
+	if ACE_Manu_EntCost then
+		local mfgCost = ACE_Manu_EntCost(ent)
+		if mfgCost and mfgCost > 0 then
+			lines[#lines + 1] = "Mfg. Cost: " .. ACE_FormatMoney(mfgCost)
+		end
+	end
+	if con and ACE_GetContraptionEntities and ACE_Manu_ContraptionCost then
+		local conMfg = ACE_Manu_ContraptionCost(ACE_GetContraptionEntities(con, ent))
+		if conMfg and conMfg.Total > 0 then
+			lines[#lines + 1] = "Contraption Mfg: " .. ACE_FormatMoney(conMfg.Total)
+		end
+	end
+
 	local total = armorPoints + componentPoints
-	if total <= 0 then
+	-- Show the readout if the entity carries points OR any manufacturing line (crates cost
+	-- dollars while being point-free, so #lines can be non-empty at zero points).
+	if total <= 0 and #lines == 0 then
 		return 0, "Entity Cost", "", 0
 	end
 
@@ -785,9 +813,11 @@ if CLIENT then
 		local pointLine = ""
 		if acepointcost > 0 then
 			pointLine = string.format("%s: %s\n", pointLabel, ACE_FormatPoints(acepointcost))
-			if pointBreakdown ~= "" then
-				pointLine = pointLine .. pointBreakdown .. "\n"
-			end
+		end
+		-- Breakdown carries the manufacturing $ lines, which exist even for point-free ents
+		-- (ammo crates), so show it whenever present -- not only when there is a point cost.
+		if pointBreakdown ~= "" then
+			pointLine = pointLine .. pointBreakdown .. "\n"
 		end
 
 		local text = string.format(overlayTextFormat,

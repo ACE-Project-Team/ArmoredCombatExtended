@@ -177,6 +177,17 @@ function ENT:UpdateOverlayText()
 	txt = txt .. "\nBlast Radius: " .. math.Round(self.BlastRadius or 0, 1) .. " m"
 	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACF.HEPower or 8000), 0) .. " KJ"
 	txt = txt .. "\nMass: " .. math.Round(self.Mass or 0, 1) .. " kg"
+
+	-- Mounted ordnance is priced like one rack tube of its own blast round; show the same
+	-- lethality figure that prices it, built straight from the charge's filler.
+	if ACE_GetRoundLethalityLine then
+		local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = self.FillerMass or 0, guidance = "Dumb" }
+		local lethality = ACE_GetRoundLethalityLine(round)
+		if lethality then
+			txt = txt .. "\nLethality: " .. lethality
+		end
+	end
+
 	txt = txt .. "\nWire 'Detonate', or shoot it to cook off"
 	self:SetOverlayText(txt)
 end

@@ -1,8 +1,8 @@
 "VertexLitGeneric"
 {
-   $basetexture "macc/SQS53_Screws"
+   $basetexture "macc/SQS53_Main"
    $surfaceprop "metal"
-	"$bumpmap" "macc/SQS53_Screws_normal"
+	"$bumpmap" "macc/SQS53_Main_normal"
  
   
 }

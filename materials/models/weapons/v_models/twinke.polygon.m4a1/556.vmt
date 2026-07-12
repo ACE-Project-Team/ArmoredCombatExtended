@@ -1,7 +1,7 @@
 "VertexlitGeneric"
 {
-	"$basetexture" "models/weapons/v_models/twinke.polygon.m4a1/556"
-	"$bumpmap" "models/weapons/v_models/twinke.polygon.m4a1/556_normal"
+	"$basetexture" "models/weapons/v_models/twinke.m16/30mag"
+	"$bumpmap" "models/weapons/v_models/twinke.m16/30mag_normal"
 	"$envmap" "env_cubemap"
 	"$normalmapalphaenvmapmask" 1
 }

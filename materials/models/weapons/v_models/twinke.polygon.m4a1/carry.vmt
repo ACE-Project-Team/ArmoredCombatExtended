@@ -1,7 +1,7 @@
 "VertexlitGeneric"
 {
-	"$basetexture" "models/weapons/v_models/twinke.polygon.m4a1/carry"
-	"$bumpmap" "models/weapons/v_models/twinke.polygon.m4a1/carry_normal"
+	"$basetexture" "models/weapons/v_models/twinke.m16/carry"
+	"$bumpmap" "models/weapons/v_models/twinke.m16/carry_normal"
 	"$envmap" "env_cubemap"
 	"$normalmapalphaenvmapmask" 1
 }

@@ -1,7 +1,7 @@
 VertexLitGeneric
 {
 	$basetexture "models/golem/torpedolaunchers/torpedolauncher_grunges_mat_rgb"
-	$bumpmap "models/golem/TorpedoLaunchers/TorpedoLauncher_mat_n"
+	$bumpmap "models/golem/TorpedoLaunchers/TorpedoLauncher_grunges_mat_n"
 
 	$phong 1
 	$phongexponenttexture "models/golem/torpedolaunchers/torpedolauncher_grunges_mat_e"

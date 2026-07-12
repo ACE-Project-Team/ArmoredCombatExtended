@@ -1,8 +1,8 @@
 "VertexLitGeneric"
 {
-   $basetexture "macc/TM_intake"
+   $basetexture "macc/9M317ME_Black"
    $surfaceprop "metal"
-	"$bumpmap" "macc/TM_intake_Normal"
+	"$bumpmap" "macc/9M317ME_Black_Normal"
  
   
 }

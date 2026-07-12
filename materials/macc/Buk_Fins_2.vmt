@@ -3,7 +3,7 @@
  "$basetexture" "macc/Buk_Fins_2"
  
   
- "$BumpMap" "macc/Buk_Fins_2_Normal"
+ "$BumpMap" "macc/Buk_Fins_1_Normal"
   
   $ssbump 1
   

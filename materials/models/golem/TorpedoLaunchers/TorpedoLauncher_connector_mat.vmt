@@ -4,7 +4,7 @@ VertexLitGeneric
 	$bumpmap "models/golem/TorpedoLaunchers/TorpedoLauncher_connector_mat_n"
 
 	$phong 1
-	$phongexponenttexture "models/golem/TorpedoLaunchers/TorpedoLauncher_connector_mat_e"
+	$phongexponenttexture "models/golem/TorpedoLaunchers/TorpedoLauncher_connector_grunges_mat_e"
 	$phongfresnelranges "[1 0.1 0]"
 	$phongalbedotint 1
 	$phongalbedoboost 10

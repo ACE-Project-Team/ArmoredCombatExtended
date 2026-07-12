@@ -1,5 +1,12 @@
 AddCSLuaFile()
 
+-- Contraption-points pricing model (pure math + entity adapters). Loaded here so every
+-- realm that pulls in sh_ace_functions (acf_globals shared load, sv_pointshandling,
+-- sv_contraptionlegality, the acfarmorprop client tool) has the model before any caller
+-- runs. Self-AddCSLuaFile pattern mirrors line 1 above so the client downloads it too.
+AddCSLuaFile("acf/shared/sh_ace_points_model.lua")
+include("acf/shared/sh_ace_points_model.lua")
+
 local floor, Clamp = math.floor, math.Clamp
 
 -- returns last parent in chain, which has physics
@@ -810,14 +817,19 @@ ACE.ArmorClasses = ACE.ArmorClasses or {
 
 ACE.ClassToType = ACE.ClassToType or {
 	acf_engine = "Engines",
-	acf_gearbox = "Engines",
+	-- Gearboxes carry no peak power, so they are priced by the legacy ACEPoints lookup and
+	-- bucketed with Electronics -- matching the points model, whose Engines category is
+	-- engine peak-power only and whose Electronics category is the catch-all ACEPoints sum.
+	acf_gearbox = "Electronics",
 	acf_fueltank = "Ignore",
-	acf_ammo = "Ammo",
-	ace_explosive = "Ammo",
-	ace_explosive_prebuilt = "Ammo",
-	ace_bomb_satchel = "Ammo",
-	ace_bomb_aerial = "Ammo",
-	ace_bomb_barrel = "Ammo",
+	acf_ammo = "Ignore",   -- Ammo is free: crates contribute zero points.
+	-- Scalable explosives / bombs (upstream #271): carried ordnance, free like all ammo --
+	-- mass and detonation risk already price hauling them.
+	ace_explosive = "Ignore",
+	ace_explosive_prebuilt = "Ignore",
+	ace_bomb_satchel = "Ignore",
+	ace_bomb_aerial = "Ignore",
+	ace_bomb_barrel = "Ignore",
 
 	acf_gun = "Firepower",
 	acf_rack = "Firepower",
@@ -843,7 +855,6 @@ ACE.ClassToType = ACE.ClassToType or {
 ACE.PointSubsystems = ACE.PointSubsystems or {
 	"Engines",
 	"Firepower",
-	"Ammo",
 	"Crew",
 	"Electronics"
 }
@@ -906,23 +917,17 @@ function ACE_GetArmorEquivalentMm(ent)
 	return rawMm
 end
 
+-- Survivability cost for one prop (scaled). New model (ACE_Points_ArmorProp):
+-- kArmor * 100 * (effMm/50)^1.4 * (hp/75) * Scale, where effMm folds material KE/CHEM
+-- effectiveness (0.7/0.3) and hp is MAX health. ACE_Points_PropArmor enforces the class-skip
+-- rules (acf_/ace_/gmod_/pod) and the "no armour or no HP -> skip" cases (returns nil).
 function ACE_GetSurvivabilityIndex(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
-	local armorMm = ACE_GetArmorEquivalentMm(ent)
-	if armorMm <= 0 then return 0 end
+	local effMm, maxHealth = ACE_Points_PropArmor(ent)
+	if not effMm or not maxHealth then return 0 end
 
-	local acf = ent.ACF or {}
-	local hp = tonumber(acf.MaxHealth or acf.Health) or 0
-	if hp <= 0 then return 0 end
-
-	local cfg = ACE_GetArmorPointConfig()
-	local armorBase = math.max(cfg.DamageReferenceMm, 1)
-	local hpBase = math.max(cfg.SurvivabilityHPReference, 1)
-
-	return cfg.SurvivabilityScale
-		* ((armorMm / armorBase) ^ cfg.SurvivabilityArmorExponent)
-		* ((hp / hpBase) ^ cfg.SurvivabilityHPExponent)
+	return math.max(ACE_Points_ArmorProp(effMm, maxHealth), 0)
 end
 
 function ACE_GetArmorPoints(ent)
@@ -938,30 +943,17 @@ function ACE_GetArmorPoints(ent)
 		return ACE.ArmorPointCache[cacheKey]
 	end
 
-	local acf = ent.ACF or {}
-	if not istable(acf) then return 0 end
-
-	local armorMm = tonumber(acf.MaxArmour or acf.Armour) or 0
-	if armorMm <= 0 then return 0 end
-
-	local cfg = ACE_GetArmorPointConfig()
-	local points = math.max(ACE_GetSurvivabilityIndex(ent) * cfg.ArmorCostMultiplier, 0)
+	local points = ACE_GetSurvivabilityIndex(ent)
 	ACE.ArmorPointCache[cacheKey] = points
 
 	return points
 end
 
--- Resolve crewseat point cost by role.
+-- Resolve crewseat point cost by role (scaled). Loader seats cost more than generic seats;
+-- the flat values (100 / 300) and the global Scale live in the points model.
 function ACE_GetCrewSeatPointCost(ent)
-	if ACE_IsEnt(ent) and ent:GetClass() == "ace_crewseat_loader" then
-		return tonumber(ACE.LoaderSeatPointCost)
-			or tonumber((ACE.PointCostConfig or {}).LoaderSeatFlat)
-			or 300
-	end
-
-	return tonumber(ACE.CrewSeatPointCost)
-		or tonumber((ACE.PointCostConfig or {}).CrewSeatFlat)
-		or 100
+	local isLoader = ACE_IsEnt(ent) and ent:GetClass() == "ace_crewseat_loader"
+	return ACE_Points_CrewCost(isLoader)
 end
 
 function ACE_ClearArmorPointCache(ent)
@@ -1016,12 +1008,6 @@ function ACE_FormatDetailLabel(ent)
 	return string.format("%s [#%d]", name, ent:EntIndex())
 end
 
--- Resolve the ammo type multiplier for cost/points.
-function ACE_GetAmmoTypeFactor(ammoType)
-	local factors = ACE.AmmoTypeFactors
-	return factors and factors[ammoType] or 1
-end
-
 -- Extract configurable class name from "Name:arg=val" serialized strings.
 function ACE_GetConfigurableName(value, fallback)
 	if type(value) ~= "string" or value == "" then return fallback end
@@ -1030,61 +1016,6 @@ function ACE_GetConfigurableName(value, fallback)
 	if not name or name == "" then return fallback end
 
 	return name
-end
-
--- Resolve missile guidance multiplier from guidance configuration.
-function ACE_GetMissileGuidanceFactor(guidanceValue)
-	local factors = ACE.MissileGuidanceFactors or {}
-	local fallback = tonumber(factors.Dumb) or 1
-
-	local function normalizeName(name)
-		if type(name) ~= "string" or name == "" then return nil end
-		return (name:gsub("%s+", "_"):gsub("%-", "_"))
-	end
-
-	local function resolveFactorFromName(name)
-		name = normalizeName(name)
-		if not name then return nil end
-
-		local direct = tonumber(factors[name])
-		if direct then return direct end
-
-		local lower = string.lower(name)
-		for key, value in pairs(factors) do
-			if string.lower(tostring(key)) == lower then
-				return tonumber(value)
-			end
-		end
-
-		return nil
-	end
-
-	-- Direct string forms, including configurable "Name:arg=val".
-	if type(guidanceValue) == "string" then
-		local name = ACE_GetConfigurableName(guidanceValue, "Dumb")
-		local factor = resolveFactorFromName(name) or resolveFactorFromName(guidanceValue) or fallback
-		return math.max(factor, 0)
-	end
-
-	-- Configurable/table forms used at runtime by missile entities.
-	if istable(guidanceValue) then
-		local candidates = {
-			guidanceValue.Name,
-			guidanceValue.name,
-			guidanceValue.ClassName,
-			guidanceValue.class,
-			guidanceValue.GuidanceName,
-			guidanceValue.Guidance,
-			guidanceValue.Type
-		}
-
-		for _, candidate in ipairs(candidates) do
-			local factor = resolveFactorFromName(candidate)
-			if factor then return math.max(factor, 0) end
-		end
-	end
-
-	return math.max(fallback, 0)
 end
 
 -- Resolve the gun class string for ammo bullet data.
@@ -1191,193 +1122,15 @@ function ACE_IsAmmoMissileType(bdata)
 	return classData and classData.type == "missile" or false
 end
 
--- Resolve guidance scaling used by missile point/threat math. The factor from
--- ACE.MissileGuidanceFactors maps directly onto the missile's pen multiplier:
--- entries below 1 represent unreliable guidance that often misses and scale
--- threat-per-round down, entries above 1 represent premium seekers that
--- consistently land hits and scale threat up.
---
--- A previous version wrapped the return in math.max(factor, 1), which left
--- the above-1 entries alone but neutered every below-1 entry to 1. That made
--- the missile ammo crate path and the ATGM perf-points path disagree with
--- the non-ATGM rack path, which multiplies by the raw factor. Applying the
--- factor directly keeps all three paths consistent: every missile with a
--- MissileGuidanceFactors entry has that guidance factor into its cost.
--- Non-missile ammo is unaffected.
---
--- GLATGM family rounds are explicitly excluded: they are launched from
--- grenade launchers (gun-class ammo), not racks, and should be priced like
--- any other gun ammo with their AmmoTypeFactor doing the work -- no
--- missile-class guidance premium.
-local function ACE_GetAmmoGuidancePenFactor(bdata)
-	if not bdata or not ACE_IsAmmoMissileType(bdata) then return 1 end
-	if ACE_IsGLATGMAmmoType(bdata.Type) then return 1 end
-	return ACE_GetMissileGuidanceFactor(bdata.Data7)
-end
-
--- Calculate per-missile points. Delegates to ACE_GetAmmoRoundPoints, which
--- already applies MissileCostConfig.PerformanceMul for missile ammo; this
--- function just adds the MinBase floor so low-threat missiles still register.
+-- Per-missile points, now sourced from the unified points model (guidance folds into
+-- roundCost). Retained ONLY as a compatibility shim: acf_rack/init.lua and acf_ammo/init.lua
+-- (entity files this PR does not modify) call it via CalculateMissileCost to set an
+-- entity-local ACEPoints. The contraption points system no longer consumes that value --
+-- ammo is free, and rack/gun firepower is priced from candidate rounds by the model.
 function ACE_CalcMissileRoundPoints(bdata)
-	if not istable(bdata) then return 0 end
-
-	local cfg = ACE.MissileCostConfig or {}
-	local minBase = tonumber(cfg.MinBase) or 1
-
-	return math.max(ACE_GetAmmoRoundPoints(bdata), minBase)
-end
-
--- Determine whether an ammo type should use HE utility scaling.
-function ACE_IsHEAmmoType(ammoType)
-	return ammoType == "HE" or ammoType == "HEFS" or ammoType == "CHE"
-end
-
--- Calculate penetration threat scaling using normalized penetration.
-function ACE_GetPenThreatFactor(maxPen, cfg)
-	cfg = cfg or ACE.AmmoCostConfig or {}
-
-	local refPen = tonumber(cfg.RefPen) or 0
-	if refPen <= 0 then return 0 end
-
-	local penRatio = math.max((tonumber(maxPen) or 0) / refPen, 0)
-	if penRatio <= 0 then return 0 end
-
-	-- Keep penetration scaling linear; RoF is the primary nonlinear term.
-	return penRatio
-end
-
--- Calculate RoF threat scaling as a saturating factor.
-function ACE_GetRofThreatFactor(rps, cfg)
-	cfg = cfg or ACE.AmmoCostConfig or {}
-
-	local rpsValue = tonumber(rps) or 0
-	if rpsValue <= 0 then return 0 end
-
-	local kneeRpm = tonumber(cfg.RofKneeRpm) or 0
-	if kneeRpm <= 0 then return 0 end
-
-	local minRpm = tonumber(cfg.MinRofRpm) or 0
-	local rpm = math.max(rpsValue * 60, minRpm)
-	return rpm / (rpm + kneeRpm)
-end
-
--- Compute ready rack capacity for a caliber.
-function ACE_GetReadyRackCap(calMm)
-	local cfg = ACE.AmmoCostConfig or {}
-	local readyBase = cfg.ReadyRackBase or 0
-	if readyBase <= 0 then return 0 end
-
-	local pivot    = cfg.ReadyRackPivot or 0
-	local lowBoost = cfg.ReadyRackLowBoost or 0
-
-	local baseCap = readyBase / math.max(calMm, 1)
-
-	if pivot > 0 and lowBoost > 0 and calMm < pivot then
-		local ratio = (pivot - calMm) / pivot
-		baseCap = baseCap * (1 + lowBoost * ratio)
-	end
-
-	return math.floor(baseCap + 0.5)
-end
-
--- Calculate per-round points (no RPS factors) for ammo allocation weighting.
-function ACE_GetAmmoRoundPoints(bdata)
-	if not bdata then return 0 end
-
-	local maxPen = ACE_GetAmmoMaxPen(bdata) * ACE_GetAmmoGuidancePenFactor(bdata)
-	local blastMass = ACE_GetAmmoBlastMass(bdata)
-	if maxPen <= 0 and blastMass <= 0 then return 0 end
-
-	local calMm = ACE_GetAmmoCaliberMm(bdata)
-	if calMm <= 0 then return 0 end
-
-	local typeFactor = ACE_GetAmmoTypeFactor(bdata.Type)
-	if typeFactor <= 0 then return 0 end
-
-	local cfg = ACE.AmmoCostConfig or {}
-	local refCal = cfg.RefCaliber or 0
-	local baseRound = cfg.BaseRoundPts or 0
-	if refCal <= 0 or baseRound <= 0 then return 0 end
-
-	local penFactor = ACE_GetPenThreatFactor(maxPen, cfg)
-	local blastExp = cfg.BlastExp or 1
-	local blastWeight = cfg.BlastWeight or 0
-	local refBlast = cfg.RefBlastMass or 0
-
-	local blastFactor = 0
-	if blastMass > 0 and refBlast > 0 then
-		blastFactor = (blastMass / refBlast) ^ blastExp
-	end
-
-	local utilFactor = 0
-	if ACE_IsHEAmmoType(bdata.Type) and blastMass > 0 then
-		local utilWeight = cfg.HeUtilWeight or 0
-		local utilExp = cfg.HeUtilExp or 1
-		utilFactor = (blastMass / math.max(calMm, 1)) ^ utilExp * utilWeight
-	end
-
-	local threatFactor = penFactor + blastFactor * blastWeight + utilFactor
-	if threatFactor <= 0 then return 0 end
-
-	local threatExp = cfg.ThreatExp or 1
-	if threatExp > 0 and threatExp ~= 1 then
-		threatFactor = threatFactor ^ threatExp
-	end
-
-	local calFactor = calMm / refCal
-	local roundPts = baseRound * threatFactor * calFactor * typeFactor
-
-	-- Missiles get their own multiplier on top so MissileCostConfig is the one
-	-- knob that tunes missile pricing for both the ammo crate path
-	-- (ACE_CalcAmmoCratePoints) and the per-missile path
-	-- (ACE_CalcMissileRoundPoints). GLATGM family rounds opt out: they are
-	-- gun-class grenade-launcher ammo, not rack-fired missiles, and pay through
-	-- their AmmoTypeFactor (0.75) like any other gun round.
-	if ACE_IsAmmoMissileType(bdata) and not ACE_IsGLATGMAmmoType(bdata.Type) then
-		local mcfg = ACE.MissileCostConfig or {}
-		roundPts = roundPts * (tonumber(mcfg.PerformanceMul) or 1)
-	end
-
-	return roundPts
-end
-
--- Calculate threat weight for ready-rack allocation.
-function ACE_GetAmmoThreatWeight(bdata)
-	if not bdata then return 0 end
-
-	local maxPen = ACE_GetAmmoMaxPen(bdata) * ACE_GetAmmoGuidancePenFactor(bdata)
-	local blastMass = ACE_GetAmmoBlastMass(bdata)
-	if maxPen <= 0 and blastMass <= 0 then return 0 end
-
-	local cfg = ACE.AmmoCostConfig or {}
-	local refBlast = cfg.RefBlastMass or 0
-
-	local penFactor = ACE_GetPenThreatFactor(maxPen, cfg)
-	local blastExp = cfg.BlastExp or 1
-	local blastWeight = cfg.BlastWeight or 0
-
-	local blastFactor = 0
-	if blastMass > 0 and refBlast > 0 then
-		blastFactor = (blastMass / refBlast) ^ blastExp
-	end
-
-	local utilFactor = 0
-	if ACE_IsHEAmmoType(bdata.Type) and blastMass > 0 then
-		local calMm = ACE_GetAmmoCaliberMm(bdata)
-		if calMm > 0 then
-			local utilWeight = cfg.HeUtilWeight or 0
-			local utilExp = cfg.HeUtilExp or 1
-			utilFactor = (blastMass / math.max(calMm, 1)) ^ utilExp * utilWeight
-		end
-	end
-
-	local threatFactor = penFactor + blastFactor * blastWeight + utilFactor
-	local threatExp = cfg.ThreatExp or 1
-	if threatExp > 0 and threatExp ~= 1 then
-		threatFactor = threatFactor ^ threatExp
-	end
-
-	return threatFactor
+	local round = ACE_Points_RoundFromBullet(bdata)
+	if not round then return 0 end
+	return ACE_Points_RoundScore(round)
 end
 
 -- Compute a gun's configured sustained RPS from its current setup.
@@ -1451,56 +1204,139 @@ function ACE_GetEntRps(ent)
 	return 0
 end
 
--- Guns/racks keep ACEPoints at zero; firepower points are derived for readouts.
+-- Readout-only mirror of the model's RACK_WINDOW: the rack's sustained rate is capped at
+-- tubes/window. Used solely to reproduce the rate factor in the firepower detail line.
+local RACK_READOUT_WINDOW = 30.0
+
+-- Best-scoring candidate round for a gun, mirroring ACE_Points_GunBestScore's candidate order
+-- (linked crates -> contraption crates by Id -> the gun's own round). Returns the round table
+-- (or nil). Readout-only; kept next to the firepower pricing so the two stay in step.
+local function ACE_ResolveGunBestRound(gun, conEnts)
+	if not ACE_IsEnt(gun) then return nil end
+
+	local best, bestScore, scored = nil, -1, false
+	local function consider(bdata)
+		local round = ACE_Points_RoundFromBullet(bdata)
+		if not round then return end
+		local score = ACE_Points_RoundScore(round)
+		if score > bestScore then best, bestScore = round, score end
+		scored = true
+	end
+
+	local link = gun.AmmoLink
+	if istable(link) then
+		for _, crate in pairs(link) do
+			if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData) end
+		end
+	end
+
+	if not scored and istable(conEnts) then
+		for _, ent in ipairs(conEnts) do
+			if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" and istable(ent.BulletData)
+				and ent.BulletData.Id == gun.Id then
+				consider(ent.BulletData)
+			end
+		end
+	end
+
+	if not scored and istable(gun.BulletData) then consider(gun.BulletData) end
+
+	return best
+end
+
+-- Best-scoring candidate round for a rack, mirroring ACE_Points_RackBestScore (linked crates
+-- -> the rack's own non-Empty round). Readout-only. Returns the round table or nil.
+local function ACE_ResolveRackBestRound(rack)
+	if not ACE_IsEnt(rack) then return nil end
+
+	local best, bestScore, scored = nil, -1, false
+	local function consider(bdata)
+		local round = ACE_Points_RoundFromBullet(bdata)
+		if not round then return end
+		local score = ACE_Points_RoundScore(round)
+		if score > bestScore then best, bestScore = round, score end
+		scored = true
+	end
+
+	local link = rack.AmmoLink
+	if istable(link) then
+		for _, crate in pairs(link) do
+			if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData) end
+		end
+	end
+
+	if not scored and istable(rack.BulletData) then
+		local rtype = rack.BulletData.Type
+		if rtype and rtype ~= "" and rtype ~= "Empty" then consider(rack.BulletData) end
+	end
+
+	return best
+end
+
+-- Firepower cost (scaled) for a gun/rack. Guns: ACE_Points_GunCost(sustainedRps,
+-- bestRoundScore) -- loader count comes from the gun's own LoaderCount inside the adapter.
+-- Racks: tube-capped ACE_Points_RackCost(reloadTime, maxMissile, bestRoundScore). Callers
+-- holding the contraption (sv_pointshandling) compute conEnts once and pass it, avoiding a
+-- per-gun re-resolve.
+function ACE_GetGunFirepowerPointsFor(ent, conEnts)
+	if not ACE_IsEnt(ent) then return 0 end
+
+	local class = ent:GetClass()
+	if class == "acf_rack" then
+		return ACE_Points_RackCost(ent.ReloadTime, ent.MaxMissile, ACE_Points_RackBestScore(ent))
+	end
+	if class ~= "acf_gun" then return 0 end
+
+	return ACE_Points_GunCost(
+		ACE_Points_GunSustainedRps(ent),
+		ACE_Points_GunBestScore(ent, conEnts)
+	)
+end
+
+-- Self-sufficient firepower cost for a single gun/rack -- external probes pcall this with just
+-- the entity, so it resolves the contraption (candidate crates) itself. Racks price from
+-- their own AmmoLink/round and need no contraption, so they stay cheap.
 function ACE_GetGunFirepowerPoints(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
 	local class = ent:GetClass()
 	if class == "acf_rack" then
-		local maxMissile = tonumber(ent.MaxMissile) or 1
-		return 100 + math.max(maxMissile - 1, 0) * 50
+		return ACE_GetGunFirepowerPointsFor(ent, nil)
 	end
+	if class ~= "acf_gun" then return 0 end
 
-	if class ~= "acf_gun" then
-		return 0
-	end
-
-	local basePoints = tonumber(ACF_GetGunValue and ACF_GetGunValue(ent.Id, "acepoints")) or 0.404
-	basePoints = basePoints * (tonumber(ACE.GunPointCostMultiplier) or 0.85)
-	if basePoints <= 0 then return 0 end
-
-	local currentRps = ACE_GetEntRps(ent)
-	local baseRps = ACE_GetGunConfiguredRps(ent, 0)
-	if currentRps <= 0 or baseRps <= 0 then return basePoints end
-
-	local cfg = ACE.AmmoCostConfig or {}
-	local currentThreat = ACE_GetRofThreatFactor(currentRps, cfg)
-	local baseThreat = ACE_GetRofThreatFactor(baseRps, cfg)
-	if currentThreat <= 0 or baseThreat <= 0 then return basePoints end
-
-	return basePoints * math.min(currentThreat / baseThreat, 1)
+	local con = ACE_GetContraptionFromEntity(ent)
+	local conEnts = con and ACE_GetContraptionEntities(con, ent) or {}
+	return ACE_GetGunFirepowerPointsFor(ent, conEnts)
 end
 
--- Collect per-gun RPS totals and rack entities for a contraption.
-function ACE_BuildGunRpsAndRacks(ents)
-	local gunRpsById, racks = {}, {}
+-- Firepower decomposition for the readout: rate/s, gate, roundCost, roundType. rate is the
+-- gun's sustained cadence or the rack's tube-capped reload rate; gate and roundCost are from
+-- the priced candidate round, so rate * gate * roundCost * kGun * Scale reproduces the cost
+-- (before its flat floor). Trailing values are nil when the weapon has no priceable round.
+function ACE_GetGunFirepowerDetail(ent, conEnts)
+	if not ACE_IsEnt(ent) then return end
 
-	for _, ent in ipairs(ents) do
-		if ACE_IsEnt(ent) then
-			local cls = ent:GetClass()
-			if cls == "acf_gun" then
-				local id = ent.Id
-				local rps = ACE_GetEntRps(ent)
-				if id and rps > 0 then
-					gunRpsById[id] = (gunRpsById[id] or 0) + rps
-				end
-			elseif cls == "acf_rack" then
-				racks[#racks + 1] = ent
-			end
-		end
+	local class = ent:GetClass()
+	local round, rate
+
+	if class == "acf_gun" then
+		round = ACE_ResolveGunBestRound(ent, conEnts)
+		rate  = ACE_Points_GunSustainedRps(ent)
+	elseif class == "acf_rack" then
+		round = ACE_ResolveRackBestRound(ent)
+		local rt = tonumber(ent.ReloadTime) or 0
+		if rt == 0 then rt = 10.0 end
+		local mm = tonumber(ent.MaxMissile) or 0
+		if mm == 0 then mm = 1 end
+		rate = math.min(1.0 / math.max(rt, 0.5), mm / RACK_READOUT_WINDOW)
+	else
+		return
 	end
 
-	return gunRpsById, racks
+	if not round then return rate end
+
+	return rate, ACE_Points_Gate(round.maxPen), ACE_Points_RoundCost(round), round.Type
 end
 
 -- Extract HE filler mass from bullet data.
@@ -1555,50 +1391,59 @@ function ACE_GetAmmoMaxPen(bdata)
 	return (filler * hePower) / blastDiv
 end
 
--- Collect entities belonging to a contraption.
+-- Link anchor of a weapon with no CFW contraption of its own: the FIRST valid linked crate
+-- that has one. Exactly one contraption adopts (and bills) such a weapon, deterministically.
+function ACE_GetWeaponAnchorContraption(weapon)
+	if not ACE_IsEnt(weapon) then return end
+	for _, crate in ipairs(weapon.AmmoLink or {}) do
+		if ACE_IsEnt(crate) then
+			local con = ACE_GetContraptionFromEntity(crate)
+			if con then return con end
+		end
+	end
+end
+
+-- Collect entities belonging to a contraption. BILLING RULE: every entity prices in exactly
+-- ONE contraption -- its own. The one exception: a gun/rack with no contraption of its own
+-- (parent-only builds) is adopted by its link anchor's contraption (above). This keeps
+-- link-only weapons priced -- the reason this function used to walk the whole AmmoLink/Master
+-- graph outward -- without that walk's double-billing: a weapon reachable from two fragments
+-- (its own turret + the hull holding its crates) was priced in BOTH, ~doubling Firepower and
+-- Engine totals on multi-fragment vehicles (found by the 32-dupe live parity gate, 2026-07-12).
 function ACE_GetContraptionEntities(con, fallbackEnt)
 	local ents = {}
 	local visited = {}
-	local queue = {}
 
-	local function enqueue(ent)
+	local function add(ent)
 		if not ACE_IsEnt(ent) then return end
 		if visited[ent] then return end
 
 		visited[ent] = true
 		ents[#ents + 1] = ent
-		queue[#queue + 1] = ent
 	end
 
 	if con and con.ents then
 		for ent in pairs(con.ents) do
-			enqueue(ent)
+			add(ent)
+		end
+
+		local members = #ents
+		for i = 1, members do
+			local cur = ents[i]
+			if cur:GetClass() == "acf_ammo" and istable(cur.Master) then
+				for _, weapon in pairs(cur.Master) do
+					if ACE_IsEnt(weapon) and not visited[weapon]
+						and not ACE_GetContraptionFromEntity(weapon)
+						and ACE_GetWeaponAnchorContraption(weapon) == con then
+						add(weapon)
+					end
+				end
+			end
 		end
 	end
 
 	if #ents == 0 and ACE_IsEnt(fallbackEnt) then
-		enqueue(fallbackEnt)
-	end
-
-	-- Include ACF-linked entities that may not be physically welded into the contraption.
-	local idx = 1
-	while idx <= #queue do
-		local cur = queue[idx]
-		idx = idx + 1
-
-		local ammoLink = cur.AmmoLink
-		if istable(ammoLink) then
-			for _, linked in pairs(ammoLink) do
-				enqueue(linked)
-			end
-		end
-
-		local master = cur.Master
-		if istable(master) then
-			for _, linked in pairs(master) do
-				enqueue(linked)
-			end
-		end
+		add(fallbackEnt)
 	end
 
 	table.sort(ents, function(a, b)
@@ -1607,242 +1452,6 @@ function ACE_GetContraptionEntities(con, fallbackEnt)
 
 	return ents
 end
-
--- Allocate ready-rack rounds across ammo crates.
-function ACE_BuildAmmoReadyAlloc(ents, rackReserve)
-	local cfg = ACE.AmmoCostConfig or {}
-	if (cfg.ReadyRackBase or 0) <= 0 then return nil end
-
-	local groups = {}
-	-- Group ammo crates by caliber and weight each entry by its per-round cost.
-	-- A crate's "rounds" include any rack pre-load assigned to it by
-	-- ACE_BuildRackReserveAlloc, so the per-crate clamp (math.min later in this
-	-- function) won't strip the rack reserve back out -- and so the weighting
-	-- doesn't under-credit crates whose racks are primed full.
-
-	for _, ent in ipairs(ents) do
-		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" then
-			local bdata = ent.BulletData
-			if bdata then
-				local reserve = (rackReserve and rackReserve[ent]) or 0
-				local rounds = (ent.Capacity or 0) + reserve
-				if rounds > 0 then
-					local ammoId = bdata.Id
-					if ammoId then
-						local calMm = ACE_GetAmmoCaliberMm(bdata)
-						if calMm > 0 then
-							local group = groups[calMm]
-							if not group then
-								group = { calMm = calMm, total = 0, entries = {} }
-								groups[calMm] = group
-							end
-
-						local threat = ACE_GetAmmoThreatWeight(bdata)
-						local weight = threat * rounds
-							group.total = group.total + math.max(weight, 0)
-							group.entries[#group.entries + 1] = {
-								ent = ent,
-								rounds = rounds,
-								weight = weight
-							}
-						end
-					end
-				end
-			end
-		end
-	end
-
-	local alloc = {}
-
-	for _, group in pairs(groups) do
-		local total = group.total or 0
-		if total > 0 then
-			local readyCap = ACE_GetReadyRackCap(group.calMm)
-			if readyCap > 0 then
-				local entries = {}
-				local remaining = readyCap
-				-- Use fractional remainders to distribute the leftover rounds.
-
-				for _, entry in ipairs(group.entries) do
-					local weight = entry.weight or 0
-					local raw = 0
-					if weight > 0 then
-						raw = readyCap * weight / total
-					end
-					local base = math.floor(raw)
-					local capped = math.min(base, entry.rounds)
-					remaining = remaining - capped
-					entries[#entries + 1] = {
-						ent = entry.ent,
-						rounds = entry.rounds,
-						ready = capped,
-						frac = raw - base
-					}
-				end
-
-				table.sort(entries, function(a, b)
-					if a.frac == b.frac then
-						if a.rounds == b.rounds then
-							local aIdx = IsValid(a.ent) and a.ent:EntIndex() or 0
-							local bIdx = IsValid(b.ent) and b.ent:EntIndex() or 0
-							return aIdx < bIdx
-						end
-						return a.rounds < b.rounds
-					end
-					return a.frac > b.frac
-				end)
-
-				for _, entry in ipairs(entries) do
-					if remaining <= 0 then break end
-					if entry.ready < entry.rounds then
-						entry.ready = entry.ready + 1
-						remaining = remaining - 1
-					end
-				end
-
-				for _, entry in ipairs(entries) do
-					alloc[entry.ent] = entry.ready
-				end
-			end
-		end
-	end
-
-	return next(alloc) and alloc or nil
-end
-
--- Collect every ammo crate in 'ents' that currently holds rounds. Rack
--- reserve only flows from crates with positive Capacity (an empty crate
--- couldn't have loaded the rack in the first place) and a valid BulletData Id.
-local function ACE_CollectLoadedAmmoCrates(ents)
-	local crates = {}
-	for _, ent in ipairs(ents) do
-		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" then
-			local bdata = ent.BulletData
-			if bdata and bdata.Id and (tonumber(ent.Capacity) or 0) > 0 then
-				crates[#crates + 1] = ent
-			end
-		end
-	end
-	return crates
-end
-
--- For one rack, decide how its MaxMissile pre-load gets split across the
--- crates it can feed from. Returns {crate -> share}, or nil if the rack has
--- no slots, no Id, or no compatible crates.
---
--- Splits by ammo threat weight (high-pen / big-blast rounds get the larger
--- share). If every candidate has zero threat the split is even. Uses
--- largest-remainder rounding so shares stay integer; EntIndex tiebreaks so
--- identical setups allocate identically across re-scans.
-local function ACE_AllocateRackPreload(rack, crates)
-	local maxMissile = tonumber(rack.MaxMissile) or 0
-	if maxMissile <= 0 or not rack.Id then return nil end
-
-	-- Gather candidate crates and their threat weights.
-	local candidates, totalWeight = {}, 0
-	for _, crate in ipairs(crates) do
-		local bdata = crate.BulletData
-		if ACF_CanLinkRack(rack.Id, bdata.Id, bdata, rack) then
-			local weight = math.max(ACE_GetAmmoThreatWeight(bdata), 0)
-			candidates[#candidates + 1] = { crate = crate, weight = weight }
-			totalWeight = totalWeight + weight
-		end
-	end
-	if #candidates == 0 then return nil end
-
-	-- Even split when no candidate carries any threat (e.g. all Refill).
-	if totalWeight <= 0 then
-		for _, entry in ipairs(candidates) do entry.weight = 1 end
-		totalWeight = #candidates
-	end
-
-	-- Each crate takes its whole share first; track the fractional remainder.
-	local remaining = maxMissile
-	for _, entry in ipairs(candidates) do
-		local raw        = maxMissile * entry.weight / totalWeight
-		entry.wholeShare = math.floor(raw)
-		entry.remainder  = raw - entry.wholeShare
-		remaining        = remaining - entry.wholeShare
-	end
-
-	-- Hand the leftover slots to whichever crates were closest to rounding up.
-	table.sort(candidates, function(a, b)
-		if a.remainder == b.remainder then
-			return a.crate:EntIndex() < b.crate:EntIndex()
-		end
-		return a.remainder > b.remainder
-	end)
-
-	for _, entry in ipairs(candidates) do
-		if remaining <= 0 then break end
-		entry.wholeShare = entry.wholeShare + 1
-		remaining = remaining - 1
-	end
-
-	local shares = {}
-	for _, entry in ipairs(candidates) do
-		if entry.wholeShare > 0 then
-			shares[entry.crate] = entry.wholeShare
-		end
-	end
-	return next(shares) and shares or nil
-end
-
--- Spread each rack's MaxMissile pre-load across the ammo crates that could
--- feed it, so the rounds sitting in rack tubes count toward the feeding
--- crate's points. Without this, a 2-round crate would price for 2 even when
--- its 8-tube rack is fully primed and ready to dump them.
---
--- "Could feed it" means ACF_CanLinkRack returns true -- the same compatibility
--- rule ACE_CalcAmmoCratePoints uses to credit a rack's RPS to a crate. Keep
--- the two checks in lockstep: if you change which crates a rack contributes
--- RPS to, change which crates it contributes reserve to as well.
---
--- 'racks' is optional; pass the list from ACE_BuildGunRpsAndRacks to skip the
--- re-scan. Returns {crate -> reserve_rounds}, or nil if nothing was allocated.
-function ACE_BuildRackReserveAlloc(ents, racks)
-	if not ACF_CanLinkRack then return nil end
-
-	if not racks then
-		racks = {}
-		for _, ent in ipairs(ents) do
-			if ACE_IsEnt(ent) and ent:GetClass() == "acf_rack" then
-				racks[#racks + 1] = ent
-			end
-		end
-	end
-	if #racks == 0 then return nil end
-
-	local crates = ACE_CollectLoadedAmmoCrates(ents)
-	if #crates == 0 then return nil end
-
-	local alloc = {}
-	for _, rack in ipairs(racks) do
-		local shares = ACE_AllocateRackPreload(rack, crates)
-		if shares then
-			for crate, count in pairs(shares) do
-				alloc[crate] = (alloc[crate] or 0) + count
-			end
-		end
-	end
-
-	return next(alloc) and alloc or nil
-end
-
--- Public per-rack version of ACE_AllocateRackPreload, for callers (e.g. the
--- armor tool popup) that have a single rack and want to see which crates
--- fill its tubes. Returns {crate -> reserve_rounds} or nil.
-function ACE_GetRackPreloadAlloc(rack, con, fallbackEnt)
-	if not ACE_IsEnt(rack) or rack:GetClass() ~= "acf_rack" then return nil end
-	if not ACF_CanLinkRack then return nil end
-
-	local ents = ACE_GetContraptionEntities(con, fallbackEnt or rack)
-	local crates = ACE_CollectLoadedAmmoCrates(ents)
-	if #crates == 0 then return nil end
-
-	return ACE_AllocateRackPreload(rack, crates)
-end
-
 
 -- ============================================================
 -- ACE parsing/get helpers
@@ -1870,36 +1479,14 @@ function ACE_GetOwnerName(owner)
 	return ACE_IsEnt(owner) and owner:Nick() or "Unknown"
 end
 
--- Cached wrapper for per-crate ammo points.
-function ACE_GetAmmoCratePointsForContraption(crate, con, fallbackEnt)
-	if not ACE_IsEnt(crate) then return 0 end
-
-	if con and con.ACEAmmoCache then
-		local cache = con.ACEAmmoCache
-		return ACE_CalcAmmoCratePoints(crate, cache.GunRpsById or {}, cache.Racks or {}, cache.ReadyAlloc, cache.RackReserve)
-	end
-
-	local ents = ACE_GetContraptionEntities(con, fallbackEnt or crate)
-
-	local gunRpsById, racks = ACE_BuildGunRpsAndRacks(ents)
-
-	local rackReserve = ACE_BuildRackReserveAlloc(ents, racks)
-	local readyAlloc = ACE_BuildAmmoReadyAlloc(ents, rackReserve)
-	local pts, detail = ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc, rackReserve)
-
-	if con then
-		con.ACEAmmoCache = {
-			GunRpsById = gunRpsById,
-			Racks = racks,
-			ReadyAlloc = readyAlloc,
-			RackReserve = rackReserve
-		}
-	end
-
-	return pts, detail
-end
-
--- Get points for a single entity.
+-- Non-armor points for a single entity (scaled), by category:
+--   * armor props / fuel tanks / ammo (free) / guns / racks / gearboxes -> 0 here
+--     (armor, firepower price elsewhere; ammo is free; gearboxes fall to the Electronics
+--     lookup below with the other ACEPoints components).
+--   * engines -> kEng power formula (peak hp = peakkw / 0.7457, fuel factor).
+--   * crew seats -> flat crew/loader cost.
+--   * everything else (electronics, gearboxes, misc) -> legacy per-entity ACEPoints lookup,
+--     re-anchored by the global Scale so it matches the model's Electronics category.
 function ACE_GetEntPoints(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
@@ -1912,7 +1499,17 @@ function ACE_GetEntPoints(ent)
 		return 0
 	end
 
-	return ent.ACEPoints or 0
+	if class == "acf_engine" then
+		return ACE_Points_EngineCost((tonumber(ent.peakkw) or 0) / 0.7457, ent.FuelType)
+	end
+
+	if class == "ace_crewseat_gunner" or class == "ace_crewseat_loader"
+		or class == "ace_crewseat_driver" then
+		return ACE_GetCrewSeatPointCost(ent)
+	end
+
+	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
+	return (tonumber(ent.ACEPoints) or 0) * scale
 end
 
 

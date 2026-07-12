@@ -147,12 +147,13 @@ ACF.MaxWeight   = 200000 -- The max weight in kg.
 ACE.PointCostConfig = ACE.PointCostConfig or {
     CrewSeatFlat     = 100, -- Flat point cost for driver and gunner seats.
     LoaderSeatFlat   = 300, -- Flat point cost per loader seat.
-    MinDetailPoints  = 300 -- Minimum points to list an entry in armor tool breakdown.
+    MinDetailPoints  = 150 -- Minimum points to list an entry in armor tool breakdown (scaled units).
 }
 
-ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69 -- Multiplier for engine point cost.
-ACE.GunPointCostMultiplier    = tonumber(ACE.GunPointCostMultiplier) or tonumber(ACE.CannonPointMul) or 0.85 -- Multiplier for gun/cannon point cost.
-ACE.AmmoPointsPerTon          = tonumber(ACE.AmmoPointsPerTon) or 100 -- Non-missile ammo crate points per ton.
+ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69 -- Multiplier for engine point cost (sets the vestigial engine ACEPoints field; points now price engines via the kEng model).
+-- Non-missile ammo crate points per ton. Ammo is FREE for contraption points; retained only
+-- because acf_ammo/init.lua sets a (now unused) per-crate ACEPoints field from it.
+ACE.AmmoPointsPerTon          = tonumber(ACE.AmmoPointsPerTon) or 100
 ACE.CrewSeatPointCost         = tonumber(ACE.CrewSeatPointCost)
     or tonumber(ACE.CrewSeatCostFlat)
     or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.CrewSeatFlat)
@@ -173,7 +174,6 @@ ACE.ArmorPointConfig = ACE.ArmorPointConfig or {
 
 -- Backward-compatible aliases (deprecated names).
 ACE.EnginePointMul = ACE.EnginePointCostMultiplier
-ACE.CannonPointMul = ACE.GunPointCostMultiplier
 ACE.CrewSeatCostFlat = ACE.CrewSeatPointCost
 
 -- Ammo cost scoring config for the ACE legality system.
@@ -203,40 +203,12 @@ ACE.AmmoTypeFactors = {
     Refill = 0
 }
 
-ACE.AmmoCostConfig = {
-    BaseRoundPts = 320, -- Base per-round scaling before penetration, caliber, ammo type, and RoF threat are applied.
-    RefPen = 700, -- Reference penetration (mm) for pen scaling.
-    RefCaliber = 100, -- Reference caliber (mm) for caliber scaling.
-    RofKneeRpm = 22, -- RoF knee for saturation: RoF/(RoF+k), using RPM.
-    MinRofRpm = 4, -- Minimum RPM factored into ROF threat scaling. Set to 0 to use actual sustained RPM.
-    RefBlastMass = 6, -- Reference HE filler mass (kg) for blast scaling.
-    BlastExp = 1.1, -- Blast curve exponent.
-    BlastWeight = 0.25, -- Blend weight for blast vs penetration threat.
-    HeUtilWeight = 1.3, -- HE utility weight from filler mass per caliber.
-    HeUtilExp = 0.5, -- HE utility exponent for filler per caliber.
-    ReadyRackBase = 3000, -- Ready rack baseline: base / caliber(mm).
-    ReadyRackPivot = 60, -- Caliber (mm) where low-caliber boost stops.
-    ReadyRackLowBoost = 1.5 -- Low-caliber boost (20mm hits 300 at base 3000).
-}
+-- NOTE: the redesign prices firepower/armor/engines/crew from ACE.PointsModel
+-- (sh_ace_points_model.lua). The old ACE.AmmoCostConfig / ACE.MissileCostConfig ammo-pricing
+-- tables were removed (ammo is free). The type tables below are retained for reference and any
+-- external consumers, but the in-repo points code no longer reads them.
 
--- Per-missile pricing. Applies to every missile type -- the cost model is
--- unified on performance points (pen + blast + caliber + ammo type, with
--- guidance folded in via the pen factor). PerformanceMul is applied inside
--- ACE_GetAmmoRoundPoints for missile-type ammo, so it reaches BOTH the
--- ammo crate path (ACE_CalcAmmoCratePoints) and the per-missile path
--- (ACE_CalcMissileRoundPoints) -- this is the single knob for "how much
--- should missiles cost relative to gun ammo of equivalent threat".
--- Tune via PerformanceMul / MinBase here, or adjust the bullet data on
--- the missile itself; do NOT re-add the legacy per-missile `pointcost`
--- fields that used to live in each missile definition under
--- lua/acf/shared/missiles/ -- those were hand-tuned static values that
--- disagreed with the performance model and have been removed.
-ACE.MissileCostConfig = {
-    PerformanceMul = 3.0, -- Multiplier on missile ACE_GetAmmoRoundPoints output.
-    MinBase = 1 -- Floor so low-threat missiles still register a cost.
-}
-
--- Guidance multipliers applied on top of missile base cost.
+-- Guidance multipliers (legacy reference; the points model carries its own GUIDANCE table).
 ACE.MissileGuidanceFactors = {
     Dumb = 0.5,
     Straight_Running = 0.6,

@@ -1342,7 +1342,34 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 
 	if not round then return rate end
 
-	return rate, ACE_Points_Gate(round.maxPen), ACE_Points_RoundCost(round), round.Type
+	return rate, ACE_Points_Gate(round.maxPen), ACE_Points_RoundCost(round), round.Type, round
+end
+
+-- One-line, player-facing explanation of a round's lethality figure:
+--   "APFSDS 790mm pen x 3.16 dmg (1 + 2.16 hole + 0.00 blast)"
+-- plus " x 1.5 guidance" for guided missiles, and "blast-pen" when an HE/HESH round's
+-- lethality pen comes from its filler rather than its stated penetration. This is THE string
+-- that teaches players what makes a round expensive; keep it in step with the model.
+function ACE_GetRoundLethalityLine(round)
+	if not istable(round) then return nil end
+
+	local base, hole, blast = ACE_Points_PostPenParts(round)
+	local dmg = base + hole + blast
+	if dmg <= 0 then return nil end   -- utility rounds (smoke/refill) have no lethality story
+
+	local rawPen = tonumber(round.maxPen) or 0
+	local pen = ACE_Points_LethalityPen(round)
+	local penLabel = (pen > rawPen + 0.5) and "mm blast-pen" or "mm pen"
+
+	local line = string.format("%s %d%s x %.2f dmg (%d + %.2f hole + %.2f blast)",
+		round.Type or "Round", math.Round(pen), penLabel, dmg, base, hole, blast)
+
+	local guid = ACE_Points_GuidanceMul(round)
+	if guid ~= 1.0 then
+		line = line .. string.format(" x %.1f guidance", guid)
+	end
+
+	return line
 end
 
 -- Extract HE filler mass from bullet data.

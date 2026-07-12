@@ -48,8 +48,8 @@ local function ACE_TrimDetailItems(detailItems, minDetailPts)
 	return trimmed
 end
 
--- Firepower detail label: "<name>: <rate>/s x <gate> x <roundCost>" so a player sees WHY a
--- weapon costs what it does -- sustained cadence x the share of the meta its pen defeats x the
+-- Firepower detail label: "<name>: <rate>/s x <gate>% x <roundCost>" so a player sees WHY a
+-- weapon costs what it does -- sustained cadence x the share of armor its pen defeats x the
 -- raw per-round lethality. Racks use the tube-capped reload rate. Falls back to the bare name
 -- (or name + rate) when the weapon has no priceable candidate round (e.g. a utility launcher).
 local function ACE_FirepowerLabel(ent, conEnts)
@@ -59,7 +59,7 @@ local function ACE_FirepowerLabel(ent, conEnts)
 	if not gate or not roundCost then
 		return string.format("%s: %.2f/s", name, rate)
 	end
-	return string.format("%s: %.2f/s x %.2f x %.0f", name, rate, gate, roundCost)
+	return string.format("%s: %.2f/s x %d%% x %.0f", name, rate, math.Round(gate * 100), roundCost)
 end
 
 -- Calculate one point subsystem (Engines / Firepower / Crew / Electronics) for a contraption.

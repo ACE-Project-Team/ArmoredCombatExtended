@@ -99,13 +99,16 @@ local GUIDANCE = {
 	Infrared = 1.5, Top_Attack_IR = 1.8, GPS = 0.8, GPS_TerrainAvoidant = 0.9,
 }
 
--- Lethality once the round is INSIDE the armor: fragmentation area + blast, normalized to
--- a 100mm AP round. Utility (smoke/refill) rounds return 0. HEAT uses its jet cross-section.
-function ACE_Points_PostPenMult(round)
+-- Lethality once the round is INSIDE the armor, as its three added parts (the player story:
+-- "1 base + hole size + blast"): any penetrating round hurts (1), plus the hole it tears
+-- (frontal area x the type's damage multiplier, normalized so a 100mm AP shell = 1.0; HEAT
+-- uses its jet cross-section, not the shell body), plus the explosive payload it delivers
+-- (sqrt of filler kg vs a 6kg reference). Utility (smoke/refill) rounds return 0,0,0.
+function ACE_Points_PostPenParts(round)
 	local t = round.Type
 	if not t or t == "" then t = "AP" end
 	local fam = TYPE_MAP[t] or "AP"
-	if UTILITY[fam] then return 0.0 end
+	if UTILITY[fam] then return 0.0, 0.0, 0.0 end
 
 	local mult = DAMAGE_MULT[fam] or 1.0
 	local slug = tonumber(round.SlugCaliber) or 0
@@ -117,9 +120,15 @@ function ACE_Points_PostPenMult(round)
 	end
 
 	local blast = tonumber(round.blastMass) or 0.0
-	return 1.0
-		+ (area * mult) / (FRAREA_REF * DAMAGE_MULT.AP)   -- FrArea normalized vs 100mm AP
-		+ sqrt(max(blast, 0.0) / BLAST_REF)
+	return 1.0,
+		(area * mult) / (FRAREA_REF * DAMAGE_MULT.AP),    -- FrArea normalized vs 100mm AP
+		sqrt(max(blast, 0.0) / BLAST_REF)
+end
+
+-- The three parts summed: the per-round "inside-armor damage" multiplier.
+function ACE_Points_PostPenMult(round)
+	local base, hole, blast = ACE_Points_PostPenParts(round)
+	return base + hole + blast
 end
 
 -- Penetration used for lethality: raw maxPen, but HE/HESH floor it at a blast-equivalent so
@@ -134,15 +143,21 @@ function ACE_Points_LethalityPen(round)
 	return pen
 end
 
+-- Guidance multiplier for a round (1.0 for everything but guided missile ammo). Public so
+-- displays can show the "x 1.5 guidance" factor instead of hiding it inside roundCost.
+function ACE_Points_GuidanceMul(round)
+	local g = round.guidance
+	if g and g ~= "" then
+		return GUIDANCE[g] or 1.0
+	end
+	return 1.0
+end
+
 -- Per-round lethality: lethalityPen * postPenMult * guidance. Guidance (a GUIDANCE key) is only
 -- present on missile ammo; anything else (nil / "") is 1.0, matching the Python model.
 function ACE_Points_RoundCost(round)
-	local guid = 1.0
-	local g = round.guidance
-	if g and g ~= "" then
-		guid = GUIDANCE[g] or 1.0
-	end
-	return ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round) * guid
+	return ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
+		* ACE_Points_GuidanceMul(round)
 end
 
 -- Share of the meta this pen defeats. LINEAR gate, floored so any lethal round still counts.

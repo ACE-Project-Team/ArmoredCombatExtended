@@ -115,9 +115,6 @@ do
 			"Armor",
 			"Engines",
 			"Firepower",
-			"Ammo",
-			"AmmoReady",
-			"AmmoReadyRounds",
 			"Crew",
 			"Electronics"
 		}) do
@@ -148,6 +145,22 @@ do
 		if nonArmorDirty then
 			con.ACEAmmoCache = nil
 		end
+	end
+
+	-- Mark a contraption's non-armor point totals dirty when a pricing input on
+	-- one of its entities changes (gun<->ammo/rack link/unlink or crate update).
+	-- Armor totals are untouched by these events. A weapon with no contraption of
+	-- its own is billed by its link anchor's contraption (ACE_GetContraptionEntities
+	-- adoption rule), so that contraption is what goes dirty. Nil-safe: no
+	-- contraption either way is a silent no-op.
+	function ACE_PointsInputChanged(ent)
+		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+		if not con and ACE_GetWeaponAnchorContraption then
+			con = ACE_GetWeaponAnchorContraption(ent)
+		end
+		if not con then return end
+
+		ACE_MarkContraptionPointsDirty(con, ent, false, true)
 	end
 
 	-- Initialize point tracking when a contraption is created.

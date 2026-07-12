@@ -398,6 +398,11 @@ function ENT:Link( Target )
 		self.HasGunner = true
 		Target.LinkedGun = self
 
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( Target )
+		end
+
 		return true, "Link successful!"
 
 	-- the loader
@@ -428,6 +433,11 @@ function ENT:Link( Target )
 
 		self.LoaderCount = self.LoaderCount + 1
 		Target.LinkedGun = self
+
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( Target )
+		end
 
 		return true, "Link successful!"
 
@@ -485,6 +495,11 @@ function ENT:Link( Target )
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( Target )
+		end
+
 		return true, "Link successful!"
 
 	else
@@ -518,6 +533,11 @@ function ENT:Unlink( Target )
 	end
 
 	if Success then
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( Target )
+		end
+
 		return true, "Unlink successful!"
 	else
 		return false, "That entity is not linked to this gun!"

@@ -469,6 +469,15 @@ function ENT:Update( ArgsTable )
 	self.LastMass = 1 -- force update of mass
 	self:UpdateMass()
 
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged( self )
+		-- Linked guns may sit in a different contraption; their firepower prices
+		-- this crate's round, so their side must go stale-proof too.
+		for _, Gun in pairs( self.Master or {} ) do
+			if IsValid( Gun ) then ACE_PointsInputChanged( Gun ) end
+		end
+	end
+
 	return true, msg
 
 end

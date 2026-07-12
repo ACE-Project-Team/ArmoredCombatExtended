@@ -51,23 +51,29 @@ local min  = math.min
 -- --- FIXED structural constants (NOT calibration knobs) ---
 local FRAREA_REF = pi * 5.0 ^ 2   -- 100mm reference round cross-section (radius 5cm), cm^2
 local BLAST_REF  = 6.0            -- kg filler reference
-local HE_EQUIV   = 30.0           -- HE blast pen-equivalent: 30 * filler_kg^(2/3) mm
+-- HE lethality pen-equivalent: 30 * filler_kg^(2/3) mm -- the splash coverage channel
+-- (blast radius^2 scales with kg^(2/3)).
+local HE_EQUIV   = 30.0
+-- Armor actually defeated by blast: filler_kg x HEPower / HEBlastPenetration (the damage
+-- code's own blast-penetration channel). Used by the gate so heavy ordnance that genuinely
+-- penetrates through blast is not floored as if it only splashed.
+local HE_BLAST_PEN_PER_KG = 8000.0 / 3500.0
 local GATE_FLOOR = 0.2            -- any lethal round still hurts light targets
 -- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). Kept linear for legibility;
 -- a saturating (Hill-style) fit prices the corpus the same, so no exponent term is needed.
 local GUN_FLAT    = 20.0          -- no weapon is free (utility launchers price here)
 local RACK_FLAT   = 100.0
-local RACK_WINDOW = 30.0          -- 30s engagement window: a rack's sustained rate is capped at
-                                  -- tubes/window -- it is NOT an infinite-reload DPS machine.
-                                  -- Tubes are launcher hardware (mountpoint count), not a
-                                  -- carried-round choice; keeps missiles/planes sanely priced.
+-- 30s engagement window: a rack's sustained rate is capped at tubes/window -- it is NOT an
+-- infinite-reload DPS machine. Tubes are launcher hardware (mountpoint count), not a
+-- carried-round choice; keeps missiles/planes sanely priced.
+local RACK_WINDOW = 30.0
 local CREW_SEAT   = 100.0
 local LOADER_SEAT = 300.0
 local EXP_MM = 1.4                -- armor thickness exponent (intensive term -- untouched)
-local EXP_HP = 1.0                -- armor HP exponent. LINEAR/extensive on purpose: N props
-                                  -- of the same total HP price identically to 1 prop, so
-                                  -- splitting armor into fragments is points-neutral. A sub-linear
-                                  -- exponent would reward that split as a pricing exploit.
+-- Armor HP exponent. LINEAR/extensive on purpose: N props of the same total HP price
+-- identically to 1 prop, so splitting armor into fragments is points-neutral. A sub-linear
+-- exponent would reward that split as a pricing exploit.
+local EXP_HP = 1.0
 
 -- --- type tables ---
 local DAMAGE_MULT = {   -- post-pen damage multipliers (acf_globals.lua:253-261 ACF.*DamageMult)
@@ -166,9 +172,24 @@ function ACE_Points_Gate(pen)
 	return max(pen / (pen + Model.P50), GATE_FLOOR)
 end
 
--- Round score = gate * roundCost. NOTE: the gate uses the RAW maxPen (not lethalityPen).
+-- Penetration the GATE judges a round by: raw maxPen, except HE/HESH also defeat armor
+-- through the damage code's blast-penetration channel (filler x HE_BLAST_PEN_PER_KG), so
+-- heavy ordnance is gated by what its blast genuinely penetrates. Gun-caliber HE stays on
+-- the gate floor (its blast pen is below the floor's crossover), so this only distinguishes
+-- large bombs/charges whose blast really does defeat armor.
+function ACE_Points_GatePen(round)
+	local pen = tonumber(round.maxPen) or 0.0
+	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
+	if fam == "HE" or fam == "HESH" then
+		local blast = tonumber(round.blastMass) or 0.0
+		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
+	end
+	return pen
+end
+
+-- Round score = gate(gate-pen) * roundCost.
 function ACE_Points_RoundScore(round)
-	return ACE_Points_Gate(round.maxPen) * ACE_Points_RoundCost(round)
+	return ACE_Points_Gate(ACE_Points_GatePen(round)) * ACE_Points_RoundCost(round)
 end
 
 -- Static sustained cadence. Magazine-aware (burst then mag reload) and loader-aware for
@@ -205,6 +226,21 @@ function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
 	if mm == 0 then mm = 1 end
 	local rackRate = min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
 	return max(Model.kGun * rackRate * (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+end
+
+-- Mounted-charge firepower cost (scaled). A self-contained explosive charge is MOUNTED
+-- ordnance -- bolted on and independently droppable right now -- so it prices as ONE rack tube
+-- of itself over the engagement window: kGun * (1/RACK_WINDOW) * roundScore * Scale, with NO
+-- rack flat/hardware floor (the charge is the ordnance, not a launcher). Its round is HE and
+-- blast-only: no penetrator, so no hole term; the HE blast-pen floor supplies the lethality
+-- pen; the gate floors at 0.2 off the round's zero stated pen; and the dumb-ordnance guidance
+-- factor applies exactly as it does to rack-dropped dumb bombs. Returns 0 for filler <= 0.
+-- (Stored ammo stays free -- only ordnance actually mounted and droppable is billed here.)
+function ACE_Points_ChargeCost(fillerKg)
+	fillerKg = tonumber(fillerKg) or 0
+	if fillerKg <= 0 then return 0 end
+	local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = fillerKg, guidance = "Dumb" }
+	return Model.kGun * (1.0 / RACK_WINDOW) * ACE_Points_RoundScore(round) * Model.Scale
 end
 
 -- NOTE: there is deliberately NO crate cost. Ammo is free (see the header) -- crates price
@@ -414,6 +450,14 @@ function ACE_Points_GunSustainedRps(gun)
 	if not ACE_IsEnt(gun) then return 0 end
 	local base = ACE_GetGunConfiguredRps(gun, 0)
 	return ACE_Points_SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
+end
+
+-- Mounted charge (scalable explosives / bombs family) -> scaled points. Prices the charge's
+-- REAL filler mass -- self.FillerMass, kg of HE, set once at spawn from the scaled charge
+-- volume -- as mounted ordnance via ACE_Points_ChargeCost. 0 for a filler-less/invalid entity.
+function ACE_Points_ChargeEntCost(ent)
+	if not ACE_IsEnt(ent) then return 0 end
+	return ACE_Points_ChargeCost(tonumber(ent.FillerMass) or 0)
 end
 
 -- Prop -> (effectiveMm, maxHealth) for the armor term, or nil to skip. Skips ACF/ACE

@@ -1670,11 +1670,12 @@ function ACEExplosiveGUICreate(Table)
 		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
 		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
 		local radius     = fillerMass ^ 0.33 * 8
+		local points = ACE_Points_ChargeCost and math.Round(ACE_Points_ChargeCost(fillerMass), 1) or 0
 		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
 			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
 			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"
 			.. "\nMass: " .. math.Round(physMass, 1) .. " kg"
-			.. "\nPoints: " .. math.Round(fillerMass * (ACF.ExplosivePointsPerKg or 28), 0)
+			.. "\nPoints: " .. points .. " (mounted ordnance)"
 	end)
 end
 function ACEExplosiveGUIUpdate() end

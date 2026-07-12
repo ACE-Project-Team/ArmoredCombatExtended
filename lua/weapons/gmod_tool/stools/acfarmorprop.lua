@@ -245,6 +245,13 @@ local PointClassToType = {
 	acf_ammo = "Ignore",           -- ammo is free: no point cost
 	acf_gun = "Firepower",
 	acf_rack = "Firepower",
+	-- Mounted explosive ordnance prices as firepower (see ACE.ClassToType); mirror it here so
+	-- the per-entity popup line resolves a category and shows the charge's cost.
+	ace_explosive = "Firepower",
+	ace_explosive_prebuilt = "Firepower",
+	ace_bomb_satchel = "Firepower",
+	ace_bomb_aerial = "Firepower",
+	ace_bomb_barrel = "Firepower",
 	ace_crewseat_gunner = "Crew",
 	ace_crewseat_loader = "Crew",
 	ace_crewseat_driver = "Crew",

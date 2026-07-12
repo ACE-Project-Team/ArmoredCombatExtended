@@ -72,9 +72,6 @@ local TYPE_FAMILY = {
 	SM = "SM", FLR = "SM", FL = "SM", Refill = "Refill",
 }
 
--- Kept in step with the points model's class table; the cost functions do not use it.
-local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, SA = true, SL = true }
-
 -- Manufacturing $ for ONE round. Missiles (guidance present) = body $/kg + seeker cost;
 -- shells = round mass (Proj+Prop) x its family $/kg rate. Refill rounds are free here.
 -- round = { Type, ProjMass, PropMass, guidance }.
@@ -178,6 +175,11 @@ function ACE_Manu_EntCost(ent)
 		return ACE_Manu_RackCost(ent.MaxMissile), "Armament"
 	elseif cls == "acf_ammo" then
 		return manuCrateCost(ent), "Ammo"
+	elseif cls == "ace_explosive" or cls == "ace_explosive_prebuilt"
+		or cls == "ace_bomb_satchel" or cls == "ace_bomb_aerial"
+		or cls == "ace_bomb_barrel" then
+		-- Cast-explosive charge: filler mass x the HE ammo $/kg rate (it is bulk explosive fill).
+		return (tonumber(ent.FillerMass) or 0) * (M.round_per_kg.HE or 100.0), "Ammo"
 	elseif cls:find("crewseat", 1, true) then
 		return ACE_Manu_CrewCost(), "Crew"
 	end

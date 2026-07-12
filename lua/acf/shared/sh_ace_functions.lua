@@ -829,13 +829,14 @@ ACE.ClassToType = ACE.ClassToType or {
 	acf_gearbox = "Electronics",
 	acf_fueltank = "Ignore",
 	acf_ammo = "Ignore",   -- Ammo is free: crates contribute zero points.
-	-- Scalable explosives / bombs (upstream #271): carried ordnance, free like all ammo --
-	-- mass and detonation risk already price hauling them.
-	ace_explosive = "Ignore",
-	ace_explosive_prebuilt = "Ignore",
-	ace_bomb_satchel = "Ignore",
-	ace_bomb_aerial = "Ignore",
-	ace_bomb_barrel = "Ignore",
+	-- Scalable explosives / bombs: MOUNTED ordnance costs points, stored ammo stays free. A
+	-- charge bolted to an airframe is independently droppable, so it prices as one rack tube of
+	-- itself (ACE_Points_ChargeEntCost, off its filler mass) rather than being free.
+	ace_explosive = "Firepower",
+	ace_explosive_prebuilt = "Firepower",
+	ace_bomb_satchel = "Firepower",
+	ace_bomb_aerial = "Firepower",
+	ace_bomb_barrel = "Firepower",
 
 	acf_gun = "Firepower",
 	acf_rack = "Firepower",
@@ -1342,7 +1343,7 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 
 	if not round then return rate end
 
-	return rate, ACE_Points_Gate(round.maxPen), ACE_Points_RoundCost(round), round.Type, round
+	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_RoundCost(round), round.Type, round
 end
 
 -- One-line, player-facing explanation of a round's lethality figure:
@@ -1539,6 +1540,15 @@ function ACE_GetEntPoints(ent)
 	if class == "ace_crewseat_gunner" or class == "ace_crewseat_loader"
 		or class == "ace_crewseat_driver" then
 		return ACE_GetCrewSeatPointCost(ent)
+	end
+
+	-- Mounted explosive ordnance (scalable explosives / bombs): priced as mounted ordnance off
+	-- its filler mass, not the legacy ACEPoints lookup. Both the server firepower loop and the
+	-- armor-tool popup reach charges through here.
+	if class == "ace_explosive" or class == "ace_explosive_prebuilt"
+		or class == "ace_bomb_satchel" or class == "ace_bomb_aerial"
+		or class == "ace_bomb_barrel" then
+		return ACE_Points_ChargeEntCost(ent)
 	end
 
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1

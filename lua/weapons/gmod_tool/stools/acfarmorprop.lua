@@ -346,18 +346,38 @@ local function ACE_GetPopupPoints(ent, ply)
 
 		if componentPoints > 0 then
 			local line = CostLabelByCategory.Firepower .. ": " .. ACE_FormatPoints(componentPoints)
-			-- Honest decomposition: cadence x meta-defeat gate x raw round lethality.
+			-- Honest decomposition, labeled so it reads as a sentence:
+			-- rate of fire x share of armor this pen defeats x per-round lethality.
 			if ACE_GetGunFirepowerDetail then
-				local rate, gate, roundCost = ACE_GetGunFirepowerDetail(ent, conEnts)
+				local rate, gate, roundCost, _, round = ACE_GetGunFirepowerDetail(ent, conEnts)
 				if rate and gate and roundCost then
-					line = line .. string.format(" (%.2f/s x %.2f x %.0f)", rate, gate, roundCost)
+					line = line .. string.format(" (%.2f/s x %d%% vs armor x %s lethality)",
+						rate, math.Round(gate * 100), string.Comma(math.Round(roundCost)))
 				end
+				lines[#lines + 1] = line
+				-- Where the lethality figure comes from: pen x inside-armor damage,
+				-- with the damage split into its three added parts.
+				local roundLine = round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round)
+				if roundLine then
+					lines[#lines + 1] = "Round: " .. roundLine
+				end
+			else
+				lines[#lines + 1] = line
 			end
-			lines[#lines + 1] = line
 		end
 	elseif cls == "acf_ammo" then
-		-- Ammo is free: crates carry no point cost, so the popup shows none.
+		-- Ammo is free: crates carry no point cost -- but the ROUND in this crate is what
+		-- prices any gun built to fire it, so teach that story right here on the crate.
 		componentPoints = 0
+		if ACE_Points_RoundFromBullet and ACE_GetRoundLethalityLine and istable(ent.BulletData) then
+			local round = ACE_Points_RoundFromBullet(ent.BulletData)
+			local roundLine = round and ACE_GetRoundLethalityLine(round)
+			if roundLine then
+				lines[#lines + 1] = "Ammo: free (rounds price the guns built to fire them)"
+				lines[#lines + 1] = "Round: " .. roundLine
+					.. string.format(" = %s lethality", string.Comma(math.Round(ACE_Points_RoundCost(round))))
+			end
+		end
 	else
 		local category = ACE_GetPointsCategory(ent)
 		if category == "Crew" and ACE_GetCrewSeatPointCost then

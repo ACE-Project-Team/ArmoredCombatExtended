@@ -923,7 +923,7 @@ function ACE_GetArmorEquivalentMm(ent)
 	return rawMm
 end
 
--- Survivability cost for one prop (scaled). New model (ACE_Points_ArmorProp):
+-- Survivability cost for one prop (scaled), via ACE_Points_ArmorProp:
 -- kArmor * 100 * (effMm/50)^1.4 * (hp/75) * Scale, where effMm folds material KE/CHEM
 -- effectiveness (0.7/0.3) and hp is MAX health. ACE_Points_PropArmor enforces the class-skip
 -- rules (acf_/ace_/gmod_/pod) and the "no armour or no HP -> skip" cases (returns nil).
@@ -1128,11 +1128,11 @@ function ACE_IsAmmoMissileType(bdata)
 	return classData and classData.type == "missile" or false
 end
 
--- Per-missile points, now sourced from the unified points model (guidance folds into
+-- Per-missile points, sourced from the unified points model (guidance folds into
 -- roundCost). Retained ONLY as a compatibility shim: acf_rack/init.lua and acf_ammo/init.lua
--- (entity files this PR does not modify) call it via CalculateMissileCost to set an
--- entity-local ACEPoints. The contraption points system no longer consumes that value --
--- ammo is free, and rack/gun firepower is priced from candidate rounds by the model.
+-- call it via CalculateMissileCost to set an entity-local ACEPoints. The contraption points
+-- system no longer consumes that value -- ammo is free, and rack/gun firepower is priced from
+-- candidate rounds by the model.
 function ACE_CalcMissileRoundPoints(bdata)
 	local round = ACE_Points_RoundFromBullet(bdata)
 	if not round then return 0 end
@@ -1439,10 +1439,10 @@ end
 -- Collect entities belonging to a contraption. BILLING RULE: every entity prices in exactly
 -- ONE contraption -- its own. The one exception: a gun/rack with no contraption of its own
 -- (parent-only builds) is adopted by its link anchor's contraption (above). This keeps
--- link-only weapons priced -- the reason this function used to walk the whole AmmoLink/Master
--- graph outward -- without that walk's double-billing: a weapon reachable from two fragments
--- (its own turret + the hull holding its crates) was priced in BOTH, ~doubling Firepower and
--- Engine totals on multi-fragment vehicles (found by the 32-dupe live parity gate, 2026-07-12).
+-- link-only weapons priced without double-billing: a weapon reachable from two fragments
+-- (its own turret + the hull holding its crates) must bill to exactly one contraption, not both.
+-- Do NOT walk the AmmoLink/Master graph outward to gather members -- that reaches such a weapon
+-- from both fragments and prices it in each, inflating Firepower and Engine totals.
 function ACE_GetContraptionEntities(con, fallbackEnt)
 	local ents = {}
 	local visited = {}

@@ -203,9 +203,9 @@ ACE.AmmoTypeFactors = {
     Refill = 0
 }
 
--- NOTE: the redesign prices firepower/armor/engines/crew from ACE.PointsModel
--- (sh_ace_points_model.lua). The old ACE.AmmoCostConfig / ACE.MissileCostConfig ammo-pricing
--- tables were removed (ammo is free). The type tables below are retained for reference and any
+-- NOTE: firepower/armor/engines/crew are priced from ACE.PointsModel
+-- (sh_ace_points_model.lua). There are no ACE.AmmoCostConfig / ACE.MissileCostConfig
+-- ammo-pricing tables -- ammo is free. The type tables below are retained for reference and any
 -- external consumers, but the in-repo points code no longer reads them.
 
 -- Guidance multipliers (legacy reference; the points model carries its own GUIDANCE table).

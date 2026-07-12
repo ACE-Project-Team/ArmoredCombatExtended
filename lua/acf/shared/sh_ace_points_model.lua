@@ -1,18 +1,18 @@
 --[[-----------------------------------------------------------------------------
-	ACE Contraption Points -- pricing model (redesign, 2026-07-12)
+	ACE Contraption Points -- pricing model
 
-	Canonical reference: GMod-LLM-Wiki/tools/ace_points_model.py -- this file mirrors
-	it function-for-function; every number here is canonical from there.
+	The calibrated constants below are fit against a ranked corpus of reference builds.
+	Retune them together against that corpus, never one number in isolation.
 
-	AMMO IS FREE (user, 2026-07-12): round COUNT is a player choice, never a points
-	input -- mass/MaxWeight and cook-off risk already price hauling ammo. Crates
-	contribute ZERO points. Rounds still price guns/racks via the candidate-round
-	adapters below: you pay for what you are BUILT to fire, not for how much you carry.
+	AMMO IS FREE: round COUNT is a player choice, never a points input -- mass/MaxWeight
+	and cook-off risk already price hauling ammo. Crates contribute ZERO points. Rounds
+	still price guns/racks via the candidate-round adapters below: you pay for what you
+	are BUILT to fire, not for how much you carry.
 
 	SECTION 1 -- PURE MODEL. Plain Lua 5.1 (only math/string/table + base coercion).
 	No GMod/ACE global is CALLED at load time or inside these functions; they take
-	plain values/tables. This section is run offline under a vanilla Lua interpreter
-	against ground-truth dumps for parity testing, so it must load and run there.
+	plain values/tables. This section must load and run under a vanilla Lua interpreter
+	(no GMod) so the constants can be calibrated and tested outside the game.
 
 	SECTION 2 -- ADAPTERS. GLua: entity in -> plain tables/numbers out, then it calls
 	the pure functions. Every GMod/ACE call lives INSIDE an adapter body (never at
@@ -26,14 +26,13 @@ ACE = ACE or {}
 -- ================================================================
 
 -- Calibrated knobs + global re-anchor -- the ONLY tunables, all in one table.
--- Tuning workflow: re-fit the free constants against the user's ranked corpus
--- (data/advdupe2/00 ACF/ACE/PointExpectedValues) with
---     python tools/ace_points_model.py <groundtruth_dir> --calibrate
+-- Tuning workflow: re-fit the free constants against a ranked corpus of reference builds.
 -- kGun/kArmor/kEng/P50 are the free constants; Scale is a pure re-anchor that moves
 -- the hyper-modern-MBT reference build (~19906.6 raw, ammo-free) to 10000 pts and is
 -- applied uniformly to every category, so all calibrated rankings/ratios are preserved and
--- only the absolute numbers move (recompute it via the reference build in the .py __main__).
--- Retune fields IN PLACE so the pure upvalue below keeps pointing at the live table.
+-- only the absolute numbers move. Retune the constants together against the corpus, never one
+-- in isolation, and edit fields IN PLACE so the pure upvalue below keeps pointing at the
+-- live table.
 ACE.PointsModel = ACE.PointsModel or {
 	kGun   = 5.408,            -- firepower scale
 	kArmor = 0.3057,           -- armor survivability scale
@@ -54,8 +53,8 @@ local FRAREA_REF = pi * 5.0 ^ 2   -- 100mm reference round cross-section (radius
 local BLAST_REF  = 6.0            -- kg filler reference
 local HE_EQUIV   = 30.0           -- HE blast pen-equivalent: 30 * filler_kg^(2/3) mm
 local GATE_FLOOR = 0.2            -- any lethal round still hurts light targets
--- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). User pick 2026-07-12
--- for max legibility (a Hill-2 fit landed identically), so no exponent term is needed.
+-- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). Kept linear for legibility;
+-- a saturating (Hill-style) fit prices the corpus the same, so no exponent term is needed.
 local GUN_FLAT    = 20.0          -- no weapon is free (utility launchers price here)
 local RACK_FLAT   = 100.0
 local RACK_WINDOW = 30.0          -- 30s engagement window: a rack's sustained rate is capped at
@@ -66,11 +65,11 @@ local CREW_SEAT   = 100.0
 local LOADER_SEAT = 300.0
 local EXP_MM = 1.4                -- armor thickness exponent (intensive term -- untouched)
 local EXP_HP = 1.0                -- armor HP exponent. LINEAR/extensive on purpose: N props
-                                  -- of the same total HP price identically to 1 prop, which
-                                  -- kills a fragmentation exploit the inherited 0.45 exponent
-                                  -- allowed (a naive 4-way split was 2.16x before, 1.00x after).
+                                  -- of the same total HP price identically to 1 prop, so
+                                  -- splitting armor into fragments is points-neutral. A sub-linear
+                                  -- exponent would reward that split as a pricing exploit.
 
--- --- type tables (verbatim semantics from ace_points_model.py:35-59) ---
+-- --- type tables ---
 local DAMAGE_MULT = {   -- post-pen damage multipliers (acf_globals.lua:253-261 ACF.*DamageMult)
 	AP = 2.0, APHE = 1.75, APDS = 3.0, APFSDS = 3.0, HVAP = 2.0,
 	HEAT = 6.0, HE = 2.0, HESH = 1.2, HP = 8.0, FL = 1.4,
@@ -154,7 +153,7 @@ function ACE_Points_GuidanceMul(round)
 end
 
 -- Per-round lethality: lethalityPen * postPenMult * guidance. Guidance (a GUIDANCE key) is only
--- present on missile ammo; anything else (nil / "") is 1.0, matching the Python model.
+-- present on missile ammo; anything else (nil / "") is 1.0.
 function ACE_Points_RoundCost(round)
 	return ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
 		* ACE_Points_GuidanceMul(round)
@@ -167,8 +166,7 @@ function ACE_Points_Gate(pen)
 	return max(pen / (pen + Model.P50), GATE_FLOOR)
 end
 
--- Round score = gate * roundCost. NOTE: the gate uses the RAW maxPen (not lethalityPen),
--- exactly as ace_points_model.py price_components does.
+-- Round score = gate * roundCost. NOTE: the gate uses the RAW maxPen (not lethalityPen).
 function ACE_Points_RoundScore(round)
 	return ACE_Points_Gate(round.maxPen) * ACE_Points_RoundCost(round)
 end
@@ -265,16 +263,11 @@ local function resolveGuidanceName(guidanceValue)
 end
 
 -- Armor material id -> { KE effectiveness, CHEM effectiveness }.
--- These mirror the CANONICAL ace_points_model.py MATERIALS table, which the parity/live gate
--- compares against. INTENDED DESIGN (confirmed 2026-07-12): these are calibrated PRICING
--- weights validated against the ranked-dupe corpus, NOT a live mirror of the armor resolver.
--- They are a curated read of lua/acf/shared/armor/*.lua, not the raw fields:
---   * RHA/CHA/Cer/DU/Ti define no HEATeffectiveness, so chem == ke (their ke = raw effectiveness).
---   * Alum: chem = ke / HEATMul (0.8325 / 5); the file carries HEATMul=5, not HEATeffectiveness.
---   * ERA: hand-tuned (2.5, 8.0); the live era.lua raw fields (3 / 10) are pre-angle-factor
---     combat values, deliberately not used for pricing.
--- Do not "fix" these to track the armor files -- retune them via the corpus fit instead.
--- Unknown material -> (1, 1), matching MATERIALS.get(mat, (1.0, 1.0)).
+-- INTENDED DESIGN: these are calibrated PRICING weights validated against the ranked corpus of
+-- reference builds, NOT a live mirror of the armor resolver. They are a curated read of
+-- lua/acf/shared/armor/*.lua that deliberately diverges from the raw combat fields where pricing
+-- calls for it. Do not "fix" these to track the armor files -- retune them via the corpus fit
+-- instead. Unknown material -> (1, 1).
 local MATERIAL_EFF = {
 	RHA   = { 1.0,    1.0 },
 	CHA   = { 0.98,   0.98 },
@@ -326,7 +319,7 @@ function ACE_Points_RoundFromBullet(bdata)
 	return round
 end
 
--- Highest round score the gun is built to fire. Candidate order matches ace_points_model.py:
+-- Highest round score the gun is built to fire. Candidate order:
 --   1. rounds of valid crates in gun.AmmoLink that have BulletData (link membership only);
 --   2. else acf_ammo crates in the gun's contraption whose BulletData.Id == gun.Id;
 --   3. else the gun's own BulletData.
@@ -413,10 +406,10 @@ end
 -- Static sustained RPS for a gun: base = ACE_GetGunConfiguredRps(gun, 0) (wire ROFLimit forced
 -- out), then magazine/loader-adjusted by the pure model. loaders = the gun's OWN linked loader
 -- seats (gun.LoaderCount, maintained by the gun's Link/Unlink paths) -- the same source the
--- live reload mechanic uses. Deliberately NOT contraption crew: that smeared the main gun's
--- loader buff onto smoke mortars and missed loaders linked across contraption fragments.
--- Gun class for the auto check is gun.Class (weapon class id like "AC"/"MG";
--- acf_gun/init.lua sets self.Class = Lookup.gunclass at init.lua:181).
+-- live reload mechanic uses. Uses the gun's own loaders, not contraption-wide crew, so the
+-- loader buff applies only to this gun (never bleeding onto other weapons) and still counts
+-- loaders linked across contraption fragments. Gun class for the auto check is gun.Class
+-- (weapon class id like "AC"/"MG"; acf_gun/init.lua sets self.Class = Lookup.gunclass at init.lua:181).
 function ACE_Points_GunSustainedRps(gun)
 	if not ACE_IsEnt(gun) then return 0 end
 	local base = ACE_GetGunConfiguredRps(gun, 0)

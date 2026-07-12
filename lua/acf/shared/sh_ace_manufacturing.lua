@@ -1,8 +1,8 @@
 --[[-----------------------------------------------------------------------------
-	ACE Manufacturing Cost -- real-dollar build cost model (2026-07-12)
+	ACE Manufacturing Cost -- real-dollar build cost model
 
-	Canonical reference: GMod-LLM-Wiki/tools/ace_manufacturing_model.py -- this file
-	mirrors its MANU dict + cost functions number-for-number.
+	The cost constants below are anchored to real-world component prices (see the allocation
+	targets). Retune them together, never one number in isolation.
 
 	SEPARATE from contraption points (combat power): manufacturing answers "what would
 	this cost to BUILD", points answer "how hard does it fight". AMMO IS FREE for points
@@ -15,8 +15,8 @@
 
 	SECTION 1 -- PURE MODEL. Plain Lua 5.1 (only math/string/table + base coercion).
 	No GMod/ACE global is CALLED at load time or inside these functions; they take
-	plain values/tables. This section is run offline under a vanilla Lua interpreter
-	against the Python model for parity testing, so it must load and run there.
+	plain values/tables. This section must load and run under a vanilla Lua interpreter
+	(no GMod) so the cost model can be tested outside the game.
 
 	SECTION 2 -- ADAPTERS. GLua: entity in -> plain tables/numbers out, then it calls
 	the pure functions. Every GMod/ACE call lives INSIDE an adapter body (never at file
@@ -29,7 +29,7 @@ ACE = ACE or {}
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
 -- ================================================================
 
--- THE manufacturing constant table -- all tunables live here, mirroring the Python MANU dict.
+-- THE manufacturing constant table -- all tunables live here.
 -- Retune fields IN PLACE so the pure upvalue below keeps pointing at the live table.
 ACE.ManuCost = ACE.ManuCost or {
 	-- armor: $ per TON of prop mass, by armor material (composite/exotic >> steel)
@@ -62,8 +62,7 @@ ACE.ManuCost = ACE.ManuCost or {
 
 local M = ACE.ManuCost
 
--- round type id -> manufacturing family (same map as ace_points_model.py TYPE_MAP / the
--- manufacturing model's TYPE_FAMILY).
+-- round type id -> manufacturing family (same families as the points model's type map).
 local TYPE_FAMILY = {
 	AP = "AP", APHE = "APHE", APDS = "APDS", APFSDS = "APFSDS", HVAP = "HVAP",
 	HP = "HP", CAP = "AP",
@@ -73,7 +72,7 @@ local TYPE_FAMILY = {
 	SM = "SM", FLR = "SM", FL = "SM", Refill = "Refill",
 }
 
--- Present for parity with the Python module; the cost functions do not use it.
+-- Kept in step with the points model's class table; the cost functions do not use it.
 local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, SA = true, SL = true }
 
 -- Manufacturing $ for ONE round. Missiles (guidance present) = body $/kg + seeker cost;
@@ -163,7 +162,7 @@ local function manuCrateCost(ent)
 end
 
 -- Manufacturing $ for ONE entity, plus its category (one of Armor/Powerpack/Armament/Ammo/
--- Electronics/Crew), mirroring the ace_manufacturing_model.py manufacture() class routing.
+-- Electronics/Crew), routed by entity class.
 -- Returns 0, nil for unpriceable ents. Server-realm inputs (physics mass, BulletData) -- called
 -- from the armor tool's server-side popup path.
 function ACE_Manu_EntCost(ent)

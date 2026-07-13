@@ -1103,7 +1103,7 @@ function ACE_GetRackConfiguredReloadTime(rack, bdata)
 
 	reload = tonumber(reload) or 1
 	return reload > 0 and reload or 1
-end
+	end
 
 -- Resolve the complete linked gun configuration with the highest final rate x round score.
 local function ACE_ResolveGunPricingCandidate(gun)
@@ -1129,10 +1129,10 @@ local function ACE_ResolveGunPricingCandidate(gun)
 
 	for _, crate in pairs(gun.AmmoLink or {}) do
 		if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
-	end
+end
 
 	return best
-end
+	end
 
 -- Resolve the complete rack configuration with the highest final rate x round score.
 local function ACE_ResolveRackPricingCandidate(rack)

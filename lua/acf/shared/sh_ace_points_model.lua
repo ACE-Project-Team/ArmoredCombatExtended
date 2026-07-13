@@ -235,6 +235,12 @@ function ACE_Points_RackCostFromRate(rate, bestScore)
 		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
 end
 
+-- Public so readouts can tell a player when the priced-rate floor changed their bill, instead
+-- of leaving the window a silently duplicated magic number.
+function ACE_Points_RateFloor()
+	return 1.0 / RACK_WINDOW
+end
+
 -- Tube count caps sustained rack rate over the engagement window.
 function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
 	return ACE_Points_RackCostFromRate(ACE_Points_RackRate(reloadTime, maxMissile), bestScore)

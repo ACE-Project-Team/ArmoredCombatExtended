@@ -892,6 +892,8 @@ function ENT:GetOverlayText()
 			if readout.MinimumApplied then
 				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout)
+			if floorLine then txt = txt .. "\n" .. floorLine end
 		end
 	end
 

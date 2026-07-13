@@ -331,6 +331,8 @@ function ENT:UpdateOverlayText()
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout)
+			if floorLine then text = text .. "\n" .. floorLine end
 		end
 	end
 

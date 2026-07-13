@@ -18,7 +18,8 @@ ACE.PointsModel = ACE.PointsModel or {
 	kArmor = 0.259845,         -- armor survivability scale
 	kEng   = 1.501,            -- engine power scale
 	P50    = 548.5,            -- gate half-point: pen where a round defeats half the meta
-	Scale  = 10000 / 19906.6,  -- retained global display scale from the original reference anchor
+	Scale  = 0.65,             -- global display scale; sets how much of PointsLimit real fielded
+	                           -- vehicles use, deliberately independent of the corpus fit below
 }
 
 local Model = ACE.PointsModel

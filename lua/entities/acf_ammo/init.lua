@@ -616,6 +616,7 @@ do
 
 		self.ConvertData    = ACF.RoundTypes[self.RoundType].convert
 		self.BulletData     = self:ConvertData( PlayerData )
+		if IsMissileAmmo( self ) then self.BulletData.Data7 = self.RoundData7 end
 
 		self:BuildAmmoCapacity()
 

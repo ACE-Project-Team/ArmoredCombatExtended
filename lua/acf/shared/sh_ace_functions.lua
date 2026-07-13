@@ -878,12 +878,27 @@ end
 function ACE_GetArmorPoints(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
+	local previousACF = ent.ACF
+	local previousMaxArmour = previousACF and previousACF.MaxArmour
+	local previousMaxHealth = previousACF and previousACF.MaxHealth
+	local previousMaterial = previousACF and previousACF.Material
+	local previousFallbackMaterial = ent.ACF_Material
+
 	if ACF_Check then
 		ACF_Check(ent)
 	end
 
 	local cacheKey = ent:EntIndex()
 	ACE.ArmorPointCache = ACE.ArmorPointCache or {}
+
+	local currentACF = ent.ACF
+	if previousMaxArmour ~= (currentACF and currentACF.MaxArmour)
+		or previousMaxHealth ~= (currentACF and currentACF.MaxHealth)
+		or previousMaterial ~= (currentACF and currentACF.Material)
+		or previousFallbackMaterial ~= ent.ACF_Material then
+		ACE.ArmorPointCache[cacheKey] = nil
+	end
+
 	if ACE.ArmorPointCache[cacheKey] ~= nil then
 		return ACE.ArmorPointCache[cacheKey]
 	end
@@ -1029,8 +1044,7 @@ end
 function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 	if not ACE_IsEnt(ent) or ent:GetClass() ~= "acf_gun" then return 0 end
 
-	local explicitCandidate = bdata ~= nil
-	bdata = bdata or ent.BulletData or {}
+	bdata = bdata or {}
 
 	local roundVolume = tonumber(bdata.RoundVolume)
 	if not roundVolume or roundVolume <= 0 then
@@ -1038,25 +1052,24 @@ function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 		roundVolume = (tonumber(bdata.FrArea) or 0) * length
 	end
 
-	if not roundVolume or roundVolume <= 0 then
-		if explicitCandidate then return 0 end
+	local adj = tonumber(bdata.LengthAdj) or 1
+	if adj <= 0 then adj = 1 end
 
-		local reload = tonumber(ent.ReloadTime)
-		local baseRps = reload and reload > 0 and 1 / reload or (tonumber(ent.RateOfFire) or 0) / 60
-		local limitRps = (tonumber(rofLimit) or 0) / 60
-		if limitRps > 0 then return math.min(baseRps, limitRps) end
-		return baseRps
+	-- Missing candidate geometry falls back to the gun's definition-derived minimum volume,
+	-- never the cadence of whichever round is currently loaded.
+	local minRoundVolume = (tonumber(ent.MinLengthBonus) or 0) / adj
+	if not roundVolume or roundVolume <= 0 then
+		if minRoundVolume <= 0 then return 0 end
+		roundVolume = 0
 	end
 
-	local adj = tonumber(bdata.LengthAdj) or 1
 	local fireRateModifier = (tonumber(ent.RoFmod) or 1) * (tonumber(ent.PGRoFmod) or 1)
 
-	if not explicitCandidate and not ACE_IsEnt(crate) and bdata.Crate then crate = Entity(bdata.Crate) end
 	if ACE_IsEnt(crate) and crate.RoFMul then
 		fireRateModifier = fireRateModifier * (crate.RoFMul + 1)
 	end
 
-	local defaultReloadTime = ((math.max(roundVolume, (tonumber(ent.MinLengthBonus) or 0) / adj) / 500) ^ 0.60) * fireRateModifier
+	local defaultReloadTime = ((math.max(roundVolume, minRoundVolume) / 500) ^ 0.60) * fireRateModifier
 	local lowestReloadTime = defaultReloadTime
 	local maxRof = tonumber(ent.maxrof) or 0
 	rofLimit = tonumber(rofLimit) or 0
@@ -1092,8 +1105,8 @@ function ACE_GetRackConfiguredReloadTime(rack, bdata)
 	return reload > 0 and reload or 1
 end
 
--- Resolve the complete gun configuration with the highest final rate x round score.
-local function ACE_ResolveGunPricingCandidate(gun, conEnts)
+-- Resolve the complete linked gun configuration with the highest final rate x round score.
+local function ACE_ResolveGunPricingCandidate(gun)
 	if not ACE_IsEnt(gun) then return end
 
 	local best
@@ -1116,19 +1129,6 @@ local function ACE_ResolveGunPricingCandidate(gun, conEnts)
 
 	for _, crate in pairs(gun.AmmoLink or {}) do
 		if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
-	end
-	if best then return best end
-
-	if conEnts == nil then
-		local con = ACE_GetContraptionFromEntity(gun)
-		conEnts = con and ACE_GetContraptionEntities(con, gun) or {}
-	end
-
-	for _, ent in ipairs(conEnts or {}) do
-		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" and istable(ent.BulletData)
-			and ent.BulletData.Id == gun.Id then
-			consider(ent.BulletData, ent)
-		end
 	end
 
 	return best
@@ -1162,14 +1162,14 @@ local function ACE_ResolveRackPricingCandidate(rack)
 	return best
 end
 
-local function ACE_ResolveWeaponPricingInputs(ent, conEnts)
+local function ACE_ResolveWeaponPricingInputs(ent)
 	if not ACE_IsEnt(ent) then return end
 
 	local class = ent:GetClass()
 	if class ~= "acf_gun" and class ~= "acf_rack" then return end
 
 	local candidate = class == "acf_gun"
-		and ACE_ResolveGunPricingCandidate(ent, conEnts)
+		and ACE_ResolveGunPricingCandidate(ent)
 		or ACE_ResolveRackPricingCandidate(ent)
 	local round = candidate and candidate.Round
 	local rate = candidate and candidate.Rate or 0
@@ -1196,9 +1196,8 @@ local function ACE_ResolveWeaponPricingInputs(ent, conEnts)
 	}
 end
 
--- Callers may supply a shared contraption entity list for the unlinked-gun fallback.
-function ACE_GetGunFirepowerPointsFor(ent, conEnts)
-	local readout = ACE_ResolveWeaponPricingInputs(ent, conEnts)
+function ACE_GetGunFirepowerPointsFor(ent, _)
+	local readout = ACE_ResolveWeaponPricingInputs(ent)
 	return readout and readout.Points or 0
 end
 
@@ -1206,8 +1205,8 @@ function ACE_GetGunFirepowerPoints(ent)
 	return ACE_GetGunFirepowerPointsFor(ent, nil)
 end
 
-function ACE_GetGunFirepowerReadout(ent, conEnts)
-	return ACE_ResolveWeaponPricingInputs(ent, conEnts)
+function ACE_GetGunFirepowerReadout(ent, _)
+	return ACE_ResolveWeaponPricingInputs(ent)
 end
 
 function ACE_GetGunFirepowerPricingLine(readout)
@@ -1232,7 +1231,7 @@ function ACE_GetRoundLethalityLine(round)
 
 	local rawPen = tonumber(round.maxPen) or 0
 	local pen = ACE_Points_LethalityPen(round)
-	local penLabel = (pen > rawPen + 0.5) and "mm blast-pen" or "mm pen"
+	local penLabel = (pen > rawPen + 0.5) and "mm HE-equiv" or "mm pen"
 
 	local line = string.format("%s %d%s x %.2f dmg (%d + %.2f hole + %.2f blast)",
 		round.Type or "Round", math.Round(pen), penLabel, dmg, base, hole, blast)
@@ -1240,6 +1239,10 @@ function ACE_GetRoundLethalityLine(round)
 	local guid = ACE_Points_GuidanceMul(round)
 	if guid ~= 1.0 then
 		line = line .. string.format(" x %.1f guidance", guid)
+	end
+	local intrinsicValue = ACE_Points_IntrinsicValueMul(round)
+	if intrinsicValue ~= 1.0 then
+		line = line .. string.format(" x %.2f HE utility", intrinsicValue)
 	end
 
 	return line
@@ -1347,7 +1350,7 @@ end
 
 -- Resolve a contraption wrapper for an entity.
 function ACE_GetContraptionFromEntity(ent)
-	if not ACE_IsEnt(ent) or not ent.GetContraption then return end
+	if not ACE_IsEnt(ent) or not ent.CFW_GetContraption then return end
 	local con = ent:CFW_GetContraption()
 	if not con or not con.ents or table.IsEmpty(con.ents) then return end
 	return con

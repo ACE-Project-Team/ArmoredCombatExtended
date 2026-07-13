@@ -15,10 +15,10 @@ ACE = ACE or {}
 -- Retune these fields together and mutate them in place because Model retains this table.
 ACE.PointsModel = ACE.PointsModel or {
 	kGun   = 5.408,            -- firepower scale
-	kArmor = 0.3057,           -- armor survivability scale
+	kArmor = 0.259845,         -- armor survivability scale
 	kEng   = 1.501,            -- engine power scale
 	P50    = 548.5,            -- gate half-point: pen where a round defeats half the meta
-	Scale  = 10000 / 19906.6,  -- global re-anchor: 10000 pts = hyper-modern MBT reference
+	Scale  = 10000 / 19906.6,  -- retained global display scale from the original reference anchor
 }
 
 local Model = ACE.PointsModel
@@ -39,6 +39,8 @@ local HE_EQUIV   = 30.0
 -- penetrates through blast is not floored as if it only splashed.
 local HE_BLAST_PEN_PER_KG = 8000.0 / 3500.0
 local ROUND_COST_FLOOR = 1.0        -- every configured round has a non-zero weapon-pricing input
+-- HE's splash, module damage, and soft-target utility add value beyond its direct lethality terms.
+local HE_INTRINSIC_VALUE_MULT = 1.50
 local GATE_FLOOR = 0.2            -- any lethal round still hurts light targets
 -- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). Kept linear for legibility;
 -- a saturating (Hill-style) fit prices the corpus the same, so no exponent term is needed.
@@ -73,10 +75,10 @@ local TYPE_MAP = {      -- round type id -> damage family
 -- HEAT jet family: the shaped-charge slug caliber (not the shell body) sets the area.
 local HEAT_FAMILY = { HEAT = true, HEATFS = true, THEAT = true, THEATFS = true, CHEAT = true, GLATGM = true }
 local UTILITY     = { SM = true, Refill = true }   -- smoke, chaff, flares, and refill carry no damage
--- loader-buff-exempt weapon classes (autoloaders/rapid guns; acf_gun/init.lua:462). SL is
--- included by the model beyond the live init.lua:462 check so salvo launchers price like the
--- other auto classes rather than taking the crewed-loader reload buff.
-local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, SA = true, SL = true }
+-- Gun classes whose definitions set noloader=true, so acf_gun refuses loader links. SL is
+-- included by the model so salvo launchers price like the other auto classes rather than
+-- taking a crewed-loader reload buff they cannot use.
+local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, SA = true, SL = true, AL = true }
 local FUEL_FACTOR  = { Petrol = 1.0, Diesel = 1.2, Multifuel = 1.2, Electric = 0.8 }
 -- Guidance names omitted from this table use a 1.0 multiplier.
 local GUIDANCE = {
@@ -137,11 +139,17 @@ function ACE_Points_GuidanceMul(round)
 	return 1.0
 end
 
+-- Intrinsic value beyond direct lethality terms; shared by billing and explanatory readouts.
+function ACE_Points_IntrinsicValueMul(round)
+	local fam = TYPE_MAP[round and round.Type or "AP"] or "AP"
+	return fam == "HE" and HE_INTRINSIC_VALUE_MULT or 1.0
+end
+
 -- Intrinsic cost of one configured round. Inventory count is not billed, but every weapon
 -- multiplies this value by its own delivery rate and threat factor.
 function ACE_Points_BaseRoundCost(round)
 	local cost = ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
-		* ACE_Points_GuidanceMul(round)
+		* ACE_Points_GuidanceMul(round) * ACE_Points_IntrinsicValueMul(round)
 	return max(cost, ROUND_COST_FLOOR)
 end
 
@@ -152,15 +160,17 @@ function ACE_Points_Gate(pen)
 	return max(pen / (pen + Model.P50), GATE_FLOOR)
 end
 
--- Penetration the GATE judges a round by: raw maxPen, except HE/HESH also defeat armor
--- through the damage code's blast-penetration channel (filler x HE_BLAST_PEN_PER_KG), so
--- heavy ordnance is gated by what its blast genuinely penetrates. Gun-caliber HE stays on
--- the gate floor (its blast pen is below the floor's crossover), so this only distinguishes
--- large bombs/charges whose blast really does defeat armor.
+-- Penetration the GATE judges a round by. HE uses its blast lethality reach because splash,
+-- module damage, and soft-target effects create combat value without literal armor penetration;
+-- HESH retains only the damage code's literal blast-penetration channel.
 function ACE_Points_GatePen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
-	if fam == "HE" or fam == "HESH" then
+	if fam == "HE" then
+		pen = max(pen, ACE_Points_LethalityPen(round))
+		local blast = tonumber(round.blastMass) or 0.0
+		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
+	elseif fam == "HESH" then
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
 	end
@@ -363,8 +373,8 @@ function ACE_Points_PropArmor(ent)
 	local acf = ent.ACF
 	if not istable(acf) then return nil end
 
-	local armourMm = tonumber(acf.MaxArmour or acf.Armour) or 0
-	local hp       = tonumber(acf.MaxHealth or acf.Health) or 0
+	local armourMm = tonumber(acf.MaxArmour) or 0
+	local hp       = tonumber(acf.MaxHealth) or 0
 	if armourMm <= 0 or hp <= 0 then return nil end
 
 	local ke, chem = materialEff(acf.Material or ent.ACF_Material)

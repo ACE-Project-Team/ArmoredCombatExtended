@@ -245,6 +245,7 @@ function ENT:Update( ArgsTable )
 	self:UpdateOverlayText()
 
 	ACF_Activate( self, 1 )
+	if ACE_PointsInputChanged then ACE_PointsInputChanged( self ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end

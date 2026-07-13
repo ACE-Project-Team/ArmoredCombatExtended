@@ -152,6 +152,15 @@ do
 	-- Initialize point tracking when a contraption is created.
 	hook.Add("cfw.contraption.created", "ACE_InitPoints", ACE_InitPts)
 
+	-- Refresh orphan-weapon ownership after a linked crate changes contraptions.
+	local function ACE_NotifyCrateWeapons(ent)
+		if not IsEnt(ent) or ent:GetClass() ~= "acf_ammo" then return end
+
+		for _, weapon in pairs(ent.Master or {}) do
+			if IsEnt(weapon) then ACE_PointsInputChanged(weapon) end
+		end
+	end
+
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
@@ -169,6 +178,7 @@ do
 		ent._ACEPointsConRef = con
 		ent._ACEPointsOwnerConRef = con
 		ACE_MarkContraptionPointsDirty(con, ent, true, true)
+		ACE_NotifyCrateWeapons(ent)
 	end
 
 	-- Handle entity removal and update point totals.
@@ -188,6 +198,7 @@ do
 			ACE_MarkContraptionPointsDirty(previous, ent, false, true)
 		end
 
+		ACE_NotifyCrateWeapons(ent)
 		if valid and not removing then ACE_PointsInputChanged(ent) end
 	end
 
@@ -211,23 +222,23 @@ do
 	-- Override PhysObj:SetMass to mark armor dirty when needed.
 	function PHYS:SetMass(mass)
 		local ent = self:GetEntity()
-		if not IsEnt(ent) then
-			return OldSetMass(self, mass)
-		end
-
 		local currentMass = self:GetMass()
-		if math.abs(mass - currentMass) < 0.01 then
-			return OldSetMass(self, mass)
+		local result = OldSetMass(self, mass)
+
+		if not IsEnt(ent) then
+			return result
 		end
 
-		OldSetMass(self, mass)
+		if math.abs(mass - currentMass) < 0.01 then
+			return result
+		end
 
-		if ACE_ClearArmorPointCache then ACE_ClearArmorPointCache(ent) end
+		if ent:GetClass() ~= "prop_physics" and not ent.IsPrimitive then return result end
 
-		local con = ent.GetContraption and ent:CFW_GetContraption()
-		if not con then return end
+		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+		ACE_MarkArmorDirty(con, ent)
 
-		ACE_MarkContraptionPointsDirty(con, nil, true, true)
+		return result
 	end
 end
 
@@ -251,4 +262,15 @@ function ACE_MarkArmorDirty(con, ent)
 	if not con then return end
 	ACE_MarkContraptionPointsDirty(con, nil, true, false)
 end
+
+-- Reprice clipped armor after Proper Clipping replaces its physics object.
+local function ACE_ProperClippingPhysicsChanged(ent)
+	if not IsEnt(ent) then return end
+
+	local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+	ACE_MarkArmorDirty(con, ent)
+end
+
+hook.Add("ProperClippingPhysicsClipped", "ACE_ProperClippingArmorChanged", ACE_ProperClippingPhysicsChanged)
+hook.Add("ProperClippingPhysicsReset", "ACE_ProperClippingArmorReset", ACE_ProperClippingPhysicsChanged)
 

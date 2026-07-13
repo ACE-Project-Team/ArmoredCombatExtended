@@ -1,3 +1,5 @@
+--TODO: merge this file with cl_acfmenu_gui.lua since having 2 files for the same function is irrevelant. Little transition has been made though
+
 include("acf/client/cl_acfmenu_missileui.lua")
 
 if not ACF then ACF = {} end

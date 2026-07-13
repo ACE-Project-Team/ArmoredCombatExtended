@@ -1,3 +1,12 @@
+--[[------------------------
+	1.- This is the file that displays the main menu, such as guns, ammo, mobility and subfolders.
+
+	2.- Almost everything here has been documented, you should find the responsible function easily.
+
+	3.- If you are going to do changes, please not to be a shitnuckle and write a note alongside the code that you´ve changed/edited. This should avoid issues with future developers.
+
+]]--------------------------
+
 local Classes = ACF.Classes
 local ACFEnts = ACF.Weapons
 
@@ -538,12 +547,15 @@ function ACFHomeGUICreate()
 	if ACF.CurrentVersion and ACF.CurrentVersion > 0 then
 	if ACF.Version >= ACF.CurrentVersion then
 		versionstring = "Up To Date"
+		color = Color(0,225,0,255)
 	else
 		versionstring = "Out Of Date"
+		color = Color(225,0,0,255)
 
 	end
 	else
 	versionstring = "No internet Connection available!"
+	color = Color(225,0,0,255)
 	end
 
 	local versiontext = "GitHub Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
@@ -1128,7 +1140,7 @@ do
 
 	acfmenupanel.CData.ClassSelect.OnSelect = function( _ , index , data )
 
-		data = acfmenupanel.CData.ClassSelect:GetOptionData(index)
+		data = acfmenupanel.CData.ClassSelect:GetOptionData(index) -- Why?
 
 		acfmenupanel.AmmoData["Classname"] = Classes.GunClass[data]["name"]
 		acfmenupanel.AmmoData["ClassData"] = Classes.GunClass[data]["id"]
@@ -1146,7 +1158,7 @@ do
 		end
 
 		MainPanel:UpdateAttribs()
-		MainPanel:UpdateAttribs()
+		MainPanel:UpdateAttribs() --Note : this is intentional
 	end
 
 	acfmenupanel.CustomDisplay:AddItem( acfmenupanel.CData.ClassSelect )
@@ -1172,7 +1184,7 @@ do
 
 		acfmenupanel.AmmoData["Data"] = ACFEnts["Guns"][gun]["round"]
 		MainPanel:UpdateAttribs()
-		MainPanel:UpdateAttribs()
+		MainPanel:UpdateAttribs() --Note : this is intentional
 
 	end
 
@@ -1186,7 +1198,7 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 	if not acfmenupanel["CData"][Name] then
 
 	acfmenupanel["CData"][Name] = vgui.Create( "DNumSlider", acfmenupanel.CustomDisplay )
-	acfmenupanel["CData"][Name].Label:SetSize( 0 )
+	acfmenupanel["CData"][Name].Label:SetSize( 0 )  --Note : this is intentional
 	acfmenupanel["CData"][Name]:SetTall( 50 )	-- make the slider taller to fit the new label
 	acfmenupanel["CData"][Name]:SetMin( 0 )
 	acfmenupanel["CData"][Name]:SetMax( 1000 )
@@ -1256,10 +1268,9 @@ function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 	acfmenupanel["CData"][Name].OnChange = function( _, bval )
 
-		-- Console-backed checkbox values are numeric.
-		bval = bval and 1 or 0
+		bval = bval and 1 or 0 -- converting to number since booleans sucks in this duty
 
-		acfmenupanel.AmmoData[Name] = bval
+		acfmenupanel.AmmoData[Name] = tonumber(bval) --print(isstring(acfmenupanel.AmmoData[Name]))
 
 		self:UpdateAttribs()
 
@@ -1291,6 +1302,14 @@ function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 end
 
+--[[-------------------------------------
+	PANEL:CPanelText(Name, Desc, Font)
+
+	1-Name: Identifier of this text
+	2-Desc: The content of this text
+	3-Font: The font to be used in this text. Leave it empty or nil to use the default one
+	4-
+]]---------------------------------------
 function PANEL:CPanelText(Name, Desc, Font, Panel)
 
 	if not acfmenupanel["CData"][Name .. "_text"] then

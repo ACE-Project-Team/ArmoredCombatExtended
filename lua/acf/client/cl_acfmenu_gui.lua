@@ -1,13 +1,3 @@
-
---[[------------------------
-	1.- This is the file that displays the main menu, such as guns, ammo, mobility and subfolders.
-
-	2.- Almost everything here has been documented, you should find the responsible function easily.
-
-	3.- If you are going to do changes, please not to be a shitnuckle and write a note alongside the code that you´ve changed/edited. This should avoid issues with future developers.
-
-]]--------------------------
-
 local Classes = ACF.Classes
 local ACFEnts = ACF.Weapons
 
@@ -436,6 +426,43 @@ function PANEL:Init( )
 
 end
 
+function PANEL:UpdateRoundCostPreview()
+
+	local DisplayTable = self.ActiveDisplayTable
+	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
+	if not ACF_GetRoundFromCVars or not ACE_Points_RoundFromBullet or not ACE_Points_BaseRoundCost then return end
+
+	local RoundType = ACF.RoundTypes[DisplayTable.Type or ""]
+	if not RoundType or not isfunction(RoundType.convert) then return end
+
+	local RawData = ACF_GetRoundFromCVars()
+	local Success, BulletData = pcall(RoundType.convert, self, RawData)
+	if not Success or not istable(BulletData) then return end
+	BulletData.Id = RawData.Id
+	BulletData.Type = DisplayTable.Type or RawData.Type
+	BulletData.Data7 = RawData.Data7
+
+	local Round = ACE_Points_RoundFromBullet(BulletData)
+	if not Round then return end
+
+	local Cost = string.Comma(math.Round(ACE_Points_BaseRoundCost(Round)))
+	self:CPanelText("ACEBaseRoundCost", "Base Round Cost: " .. Cost .. "\nCrate Inventory Points: 0", "DermaDefaultBold")
+	self.CustomDisplay:PerformLayout()
+
+end
+
+function PANEL:QueueRoundCostPreview()
+
+	local DisplayTable = self.ActiveDisplayTable
+	self.RoundCostPreviewToken = (self.RoundCostPreviewToken or 0) + 1
+	local Token = self.RoundCostPreviewToken
+	timer.Simple(0, function()
+		if not IsValid(self) or self.ActiveDisplayTable ~= DisplayTable or self.RoundCostPreviewToken ~= Token then return end
+		self:UpdateRoundCostPreview()
+	end)
+
+end
+
 function PANEL:UpdateDisplay( Table )
 
 	RunConsoleCommand( "acfmenu_id", Table.id or 0 )
@@ -458,9 +485,22 @@ function PANEL:UpdateDisplay( Table )
 	acfmenupanel["CData"] = {}
 	end
 
+	acfmenupanel.ActiveDisplayTable = Table
 	acfmenupanel.CreateAttribs = Table.guicreate
-	acfmenupanel.UpdateAttribs = Table.guiupdate
+
+	local UpdateAttribs = Table.guiupdate
+	if Table.type == "Ammo" and isfunction(UpdateAttribs) then
+		acfmenupanel.UpdateAttribs = function(Panel, ...)
+			local Result = UpdateAttribs(Panel, ...)
+			Panel:QueueRoundCostPreview()
+			return Result
+		end
+	else
+		acfmenupanel.UpdateAttribs = UpdateAttribs
+	end
+
 	acfmenupanel:CreateAttribs( Table )
+	acfmenupanel:QueueRoundCostPreview()
 
 	acfmenupanel:PerformLayout()
 
@@ -498,18 +538,15 @@ function ACFHomeGUICreate()
 	if ACF.CurrentVersion and ACF.CurrentVersion > 0 then
 	if ACF.Version >= ACF.CurrentVersion then
 		versionstring = "Up To Date"
-		color = Color(0,225,0,255)
 	else
 		versionstring = "Out Of Date"
-		color = Color(225,0,0,255)
 
 	end
 	else
 	versionstring = "No internet Connection available!"
-	color = Color(225,0,0,255)
 	end
 
-	versiontext = "GitHub Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
+	local versiontext = "GitHub Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
 
 	acfmenupanel["CData"]["VersionInit"] = vgui.Create( "DLabel" )
 	acfmenupanel["CData"]["VersionInit"]:SetText(versiontext)
@@ -1091,7 +1128,7 @@ do
 
 	acfmenupanel.CData.ClassSelect.OnSelect = function( _ , index , data )
 
-		data = acfmenupanel.CData.ClassSelect:GetOptionData(index) -- Why?
+		data = acfmenupanel.CData.ClassSelect:GetOptionData(index)
 
 		acfmenupanel.AmmoData["Classname"] = Classes.GunClass[data]["name"]
 		acfmenupanel.AmmoData["ClassData"] = Classes.GunClass[data]["id"]
@@ -1109,7 +1146,7 @@ do
 		end
 
 		MainPanel:UpdateAttribs()
-		MainPanel:UpdateAttribs() --Note : this is intentional
+		MainPanel:UpdateAttribs()
 	end
 
 	acfmenupanel.CustomDisplay:AddItem( acfmenupanel.CData.ClassSelect )
@@ -1135,7 +1172,7 @@ do
 
 		acfmenupanel.AmmoData["Data"] = ACFEnts["Guns"][gun]["round"]
 		MainPanel:UpdateAttribs()
-		MainPanel:UpdateAttribs() --Note : this is intentional
+		MainPanel:UpdateAttribs()
 
 	end
 
@@ -1149,7 +1186,7 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 	if not acfmenupanel["CData"][Name] then
 
 	acfmenupanel["CData"][Name] = vgui.Create( "DNumSlider", acfmenupanel.CustomDisplay )
-	acfmenupanel["CData"][Name].Label:SetSize( 0 )  --Note : this is intentional
+	acfmenupanel["CData"][Name].Label:SetSize( 0 )
 	acfmenupanel["CData"][Name]:SetTall( 50 )	-- make the slider taller to fit the new label
 	acfmenupanel["CData"][Name]:SetMin( 0 )
 	acfmenupanel["CData"][Name]:SetMax( 1000 )
@@ -1211,8 +1248,6 @@ function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 	if not acfmenupanel["CData"][Name] then
 
-	acfmenupanel["CData"][Name] = acfmenupanel["CData"][Name]
-
 	acfmenupanel["CData"][Name] = vgui.Create( "DCheckBoxLabel" )
 	acfmenupanel["CData"][Name]:SetText( Title or "" )
 	acfmenupanel["CData"][Name]:SetDark( true )
@@ -1221,9 +1256,10 @@ function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 	acfmenupanel["CData"][Name].OnChange = function( _, bval )
 
-		bval = bval and 1 or 0 -- converting to number since booleans sucks in this duty
+		-- Console-backed checkbox values are numeric.
+		bval = bval and 1 or 0
 
-		acfmenupanel.AmmoData[Name] = tonumber(bval) --print(isstring(acfmenupanel.AmmoData[Name]))
+		acfmenupanel.AmmoData[Name] = bval
 
 		self:UpdateAttribs()
 
@@ -1255,14 +1291,6 @@ function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 end
 
---[[-------------------------------------
-	PANEL:CPanelText(Name, Desc, Font)
-
-	1-Name: Identifier of this text
-	2-Desc: The content of this text
-	3-Font: The Font to be used in this text. Leave it empty or nil to use the default one
-	4-
-]]---------------------------------------
 function PANEL:CPanelText(Name, Desc, Font, Panel)
 
 	if not acfmenupanel["CData"][Name .. "_text"] then

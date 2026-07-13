@@ -82,7 +82,6 @@ do
 		con.ACECacheVersion = ACE.CacheVersion
 
 		con.ACEArmorCalculated = false
-		con.ACEArmorLastCalc = 0
 
 		con.ACEPointsDirty = true
 		con.ACENonArmorDirty = true
@@ -103,7 +102,6 @@ do
 		con.ACEPointsDirty = true
 		con.ACEArmorDirty = false
 		con.ACEArmorCalculated = false
-		con.ACEArmorLastCalc = 0
 
 		con.ACENonArmorDirty = true
 
@@ -136,7 +134,6 @@ do
 
 		if armorDirty then
 			con.ACEArmorCalculated = false
-			con.ACEArmorLastCalc = 0
 		end
 	end
 
@@ -156,13 +153,6 @@ do
 	-- Initialize point tracking when a family is created.
 	hook.Add("cfw.family.created", "ACE_InitPoints", ACE_InitPts)
 
-	-- Flag contraptions that are being removed to suppress dirty warnings.
-	hook.Add("cfw.contraption.removed", "ACE_ContraptionRemoving", function(con)
-		if not con then return end
-		con.ACERemoving = true
-		if con.OTWarnings then con.OTWarnings.WarnedModified = true end
-	end)
-
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
@@ -172,7 +162,6 @@ do
 		end
 
 		ent._ACEPointsConRef = con
-		ent._ACEPointsConKey = ACE_GetContraptionIndex and ACE_GetContraptionIndex(con) or nil
 
 		ACE_MarkContraptionPointsDirty(con, ent, true, true)
 	end
@@ -183,7 +172,6 @@ do
 		if ent.IsBeingRemoved and ent:IsBeingRemoved() then return end
 		if ent._ACEPointsConRef and ent._ACEPointsConRef ~= con then return end
 
-		ent._ACEPointsConKey = nil
 		ent._ACEPointsConRef = nil
 
 		ACE_MarkContraptionPointsDirty(con, ent, true, true)

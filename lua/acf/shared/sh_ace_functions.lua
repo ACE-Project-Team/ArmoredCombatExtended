@@ -1069,10 +1069,6 @@ function ACE_GetGunConfiguredRps(ent, rofLimit)
 	return 1 / reloadTime
 end
 
--- Readout-only mirror of the model's RACK_WINDOW: the rack's sustained rate is capped at
--- tubes/window. Used solely to reproduce the rate factor in the firepower detail line.
-local RACK_READOUT_WINDOW = 30.0
-
 -- Best-scoring candidate round used by both pricing and readout: linked crates, contraption
 -- crates by Id, then the gun's own round.
 local function ACE_ResolveGunBestRound(gun, conEnts)
@@ -1171,7 +1167,7 @@ function ACE_GetGunFirepowerPoints(ent)
 end
 
 -- Returns rate/s, threat, base round cost, round type, and round data for the priced candidate.
-function ACE_GetGunFirepowerDetail(ent, conEnts)
+local function ACE_GetGunFirepowerDetail(ent, conEnts)
 	if not ACE_IsEnt(ent) then return end
 
 	local class = ent:GetClass()
@@ -1182,11 +1178,7 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 		rate  = ACE_Points_GunSustainedRps(ent)
 	elseif class == "acf_rack" then
 		round = ACE_ResolveRackBestRound(ent)
-		local rt = tonumber(ent.ReloadTime) or 0
-		if rt == 0 then rt = 10.0 end
-		local mm = tonumber(ent.MaxMissile) or 0
-		if mm == 0 then mm = 1 end
-		rate = math.min(1.0 / math.max(rt, 0.5), mm / RACK_READOUT_WINDOW)
+		rate = ACE_Points_RackRate(ent.ReloadTime, ent.MaxMissile)
 	else
 		return
 	end
@@ -1194,6 +1186,54 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 	if not round then return rate end
 
 	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_BaseRoundCost(round), round.Type, round
+end
+
+function ACE_GetGunFirepowerReadout(ent, conEnts)
+	if not ACE_IsEnt(ent) then return end
+
+	if ent:GetClass() == "acf_gun" and conEnts == nil then
+		local con = ACE_GetContraptionFromEntity(ent)
+		conEnts = con and ACE_GetContraptionEntities(con, ent) or {}
+	end
+
+	local rate, threat, baseRoundCost, roundType, round = ACE_GetGunFirepowerDetail(ent, conEnts)
+	local points
+	if ent:GetClass() == "acf_rack" then
+		points = ACE_Points_RackCost(ent.ReloadTime, ent.MaxMissile,
+			(tonumber(baseRoundCost) or 0) * (tonumber(threat) or 0))
+	else
+		points = ACE_Points_GunCost(rate, baseRoundCost, threat)
+	end
+	local model = ACE.PointsModel or {}
+	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
+	local rawPoints = (tonumber(rate) or 0)
+		* (tonumber(threat) or 0)
+		* (tonumber(baseRoundCost) or 0)
+		* firepowerScale
+
+	return {
+		Points = points,
+		Rate = rate,
+		Threat = threat,
+		BaseRoundCost = baseRoundCost,
+		FirepowerScale = firepowerScale,
+		RawPoints = rawPoints,
+		MinimumApplied = points > rawPoints + 0.01,
+		RoundType = roundType,
+		Round = round
+	}
+end
+
+function ACE_GetGunFirepowerPricingLine(readout)
+	if not istable(readout) then return end
+	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
+
+	return string.format("%.3f/s x %.1f%% threat x %s base x %.4f scale = %s pts",
+		readout.Rate,
+		readout.Threat * 100,
+		string.Comma(math.Round(readout.BaseRoundCost)),
+		readout.FirepowerScale,
+		string.Comma(math.Round(readout.RawPoints)))
 end
 
 -- Formats the lethality factors used by the points model.

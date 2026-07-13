@@ -470,11 +470,11 @@ function ENT:Update( ArgsTable )
 	self:UpdateMass()
 
 	if ACE_PointsInputChanged then
-		ACE_PointsInputChanged( self )
+		ACE_PointsInputChanged( self, "ammo-updated" )
 		-- Linked guns may sit in a different contraption; their firepower prices
 		-- this crate's round, so their side must go stale-proof too.
 		for _, Gun in pairs( self.Master or {} ) do
-			if IsValid( Gun ) then ACE_PointsInputChanged( Gun ) end
+			if IsValid( Gun ) then ACE_PointsInputChanged( Gun, "linked-ammo-updated" ) end
 		end
 	end
 

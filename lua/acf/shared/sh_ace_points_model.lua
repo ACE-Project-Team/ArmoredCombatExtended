@@ -38,6 +38,7 @@ local HE_EQUIV   = 30.0
 -- code's own blast-penetration channel). Used by the gate so heavy ordnance that genuinely
 -- penetrates through blast is not floored as if it only splashed.
 local HE_BLAST_PEN_PER_KG = 8000.0 / 3500.0
+local ROUND_COST_FLOOR = 1.0        -- every configured round has a non-zero weapon-pricing input
 local GATE_FLOOR = 0.2            -- any lethal round still hurts light targets
 -- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). Kept linear for legibility;
 -- a saturating (Hill-style) fit prices the corpus the same, so no exponent term is needed.
@@ -127,7 +128,7 @@ function ACE_Points_LethalityPen(round)
 end
 
 -- Guidance multiplier for a round (1.0 for everything but guided missile ammo). Public so
--- displays can show the "x 1.5 guidance" factor instead of hiding it inside roundCost.
+-- displays can show the "x 1.5 guidance" factor instead of hiding it inside baseRoundCost.
 function ACE_Points_GuidanceMul(round)
 	local g = round.guidance
 	if g and g ~= "" then
@@ -136,11 +137,12 @@ function ACE_Points_GuidanceMul(round)
 	return 1.0
 end
 
--- Per-round lethality: lethalityPen * postPenMult * guidance. Guidance (a GUIDANCE key) is only
--- present on missile ammo; anything else (nil / "") is 1.0.
-function ACE_Points_RoundCost(round)
-	return ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
+-- Intrinsic cost of one configured round. Inventory count is not billed, but every weapon
+-- multiplies this value by its own delivery rate and threat factor.
+function ACE_Points_BaseRoundCost(round)
+	local cost = ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
 		* ACE_Points_GuidanceMul(round)
+	return max(cost, ROUND_COST_FLOOR)
 end
 
 -- Share of the meta this pen defeats. LINEAR gate, floored so any lethal round still counts.
@@ -165,9 +167,9 @@ function ACE_Points_GatePen(round)
 	return pen
 end
 
--- Round score = gate(gate-pen) * roundCost.
+-- Round score = threat * baseRoundCost.
 function ACE_Points_RoundScore(round)
-	return ACE_Points_Gate(ACE_Points_GatePen(round)) * ACE_Points_RoundCost(round)
+	return ACE_Points_Gate(ACE_Points_GatePen(round)) * ACE_Points_BaseRoundCost(round)
 end
 
 -- Static sustained cadence. Magazine-aware (burst then mag reload) and loader-aware for
@@ -189,10 +191,13 @@ function ACE_Points_SustainedRps(baseRps, magSize, magReload, gunClass, loaders)
 	return base
 end
 
--- Gun firepower cost (scaled). Priced at the nastiest round it is built to fire, floored so
--- no weapon is free.
-function ACE_Points_GunCost(sustainedRps, bestScore)
-	return max(Model.kGun * (tonumber(sustainedRps) or 0) * (tonumber(bestScore) or 0), GUN_FLAT) * Model.Scale
+-- Gun firepower cost (scaled). This is called once per gun entity; identical guns therefore
+-- add linearly instead of sharing or deduplicating the round cost.
+function ACE_Points_GunCost(sustainedRps, baseRoundCost, threat)
+	return max(Model.kGun
+		* (tonumber(sustainedRps) or 0)
+		* (tonumber(baseRoundCost) or 0)
+		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
 end
 
 -- Rack firepower cost (scaled). rackRate is the reload rate CAPPED at the tube count over the
@@ -302,7 +307,7 @@ function ACE_Points_RoundFromBullet(bdata)
 		blastMass   = ACE_GetAmmoBlastMass(bdata),
 	}
 
-	-- Guidance folds the old per-missile pricing premium into roundCost. Candidates:
+	-- Guidance folds the old per-missile pricing premium into baseRoundCost. Candidates:
 	-- BulletData.guidance/Guidance, else Data7 (the runtime-configured guidance object the
 	-- legacy pricing read). GLATGM (gun-launched grenade ammo) opts out, as it always has.
 	-- Non-missiles carry none, so guidance stays nil (1.0).
@@ -312,53 +317,6 @@ function ACE_Points_RoundFromBullet(bdata)
 	end
 
 	return round
-end
-
--- Highest round score the gun is built to fire. Candidate order:
---   1. rounds of valid crates in gun.AmmoLink that have BulletData (link membership only);
---   2. else acf_ammo crates in the gun's contraption whose BulletData.Id == gun.Id;
---   3. else the gun's own BulletData.
--- conEnts is the gun's contraption entity list (caller-supplied). Returns 0 with no candidates.
-function ACE_Points_GunBestScore(gun, conEnts)
-	if not ACE_IsEnt(gun) then return 0 end
-
-	local best   = 0
-	local scored = false
-
-	local link = gun.AmmoLink
-	if istable(link) then
-		for _, crate in pairs(link) do
-			if ACE_IsEnt(crate) and istable(crate.BulletData) then
-				local round = ACE_Points_RoundFromBullet(crate.BulletData)
-				if round then
-					best   = max(best, ACE_Points_RoundScore(round))
-					scored = true
-				end
-			end
-		end
-	end
-
-	if not scored and istable(conEnts) then
-		for _, ent in ipairs(conEnts) do
-			if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" and istable(ent.BulletData)
-				and ent.BulletData.Id == gun.Id then
-				local round = ACE_Points_RoundFromBullet(ent.BulletData)
-				if round then
-					best   = max(best, ACE_Points_RoundScore(round))
-					scored = true
-				end
-			end
-		end
-	end
-
-	if not scored and istable(gun.BulletData) then
-		local round = ACE_Points_RoundFromBullet(gun.BulletData)
-		if round then
-			best = max(best, ACE_Points_RoundScore(round))
-		end
-	end
-
-	return best
 end
 
 -- Highest round score the rack is BUILT to fire. STATIC DESIGN: prices the linked-crate round,

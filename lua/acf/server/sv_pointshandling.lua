@@ -16,6 +16,7 @@ local function ACE_CalcSubsystem(ents, subsystem)
 				if subsystem == "Crew" then
 					pts = ACE_GetCrewSeatPointCost(ent)
 				elseif subsystem == "Firepower" and (cls == "acf_gun" or cls == "acf_rack") then
+					-- Never collapse by class or round ID: identical weapons bill independently.
 					pts = ACE_GetGunFirepowerPointsFor(ent, ents)
 				else
 					pts = ACE_GetEntPoints(ent)

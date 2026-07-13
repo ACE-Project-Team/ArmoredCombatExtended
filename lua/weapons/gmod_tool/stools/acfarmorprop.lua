@@ -349,10 +349,10 @@ local function ACE_GetPopupPoints(ent, ply)
 		if componentPoints > 0 then
 			local line = CostLabelByCategory.Firepower .. ": " .. ACE_FormatPoints(componentPoints)
 			if ACE_GetGunFirepowerDetail then
-				local rate, gate, roundCost, _, round = ACE_GetGunFirepowerDetail(ent, conEnts)
-				if rate and gate and roundCost then
-					line = line .. string.format(" (%.2f/s x %d%% vs armor x %s lethality)",
-						rate, math.Round(gate * 100), string.Comma(math.Round(roundCost)))
+				local rate, threat, baseRoundCost, _, round = ACE_GetGunFirepowerDetail(ent, conEnts)
+				if rate and threat and baseRoundCost then
+					line = line .. string.format(" (%.2f/s x %d%% threat x %s base round cost)",
+						rate, math.Round(threat * 100), string.Comma(math.Round(baseRoundCost)))
 				end
 				lines[#lines + 1] = line
 				local roundLine = round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round)
@@ -365,14 +365,14 @@ local function ACE_GetPopupPoints(ent, ply)
 		end
 	elseif cls == "acf_ammo" then
 		componentPoints = 0
-		if ACE_Points_RoundFromBullet and ACE_GetRoundLethalityLine and istable(ent.BulletData) then
+		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost and istable(ent.BulletData) then
 			local round = ACE_Points_RoundFromBullet(ent.BulletData)
-			local roundLine = round and ACE_GetRoundLethalityLine(round)
-			if roundLine then
-				lines[#lines + 1] = "Ammo: free (rounds price the guns built to fire them)"
-				lines[#lines + 1] = "Round: " .. roundLine
+			if round then
+				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round)
+				lines[#lines + 1] = "Crate Inventory Cost: 0 (base round cost prices each weapon)"
+				if roundLine then lines[#lines + 1] = "Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
-					.. string.Comma(math.Round(ACE_Points_RoundCost(round)))
+					.. string.Comma(math.Round(ACE_Points_BaseRoundCost(round)))
 			end
 		end
 	else

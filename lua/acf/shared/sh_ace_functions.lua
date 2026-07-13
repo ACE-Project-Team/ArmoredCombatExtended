@@ -1073,9 +1073,8 @@ end
 -- tubes/window. Used solely to reproduce the rate factor in the firepower detail line.
 local RACK_READOUT_WINDOW = 30.0
 
--- Best-scoring candidate round for a gun, mirroring ACE_Points_GunBestScore's candidate order
--- (linked crates -> contraption crates by Id -> the gun's own round). Returns the round table
--- (or nil). Readout-only; kept next to the firepower pricing so the two stay in step.
+-- Best-scoring candidate round used by both pricing and readout: linked crates, contraption
+-- crates by Id, then the gun's own round.
 local function ACE_ResolveGunBestRound(gun, conEnts)
 	if not ACE_IsEnt(gun) then return nil end
 
@@ -1148,10 +1147,12 @@ function ACE_GetGunFirepowerPointsFor(ent, conEnts)
 	end
 	if class ~= "acf_gun" then return 0 end
 
-	return ACE_Points_GunCost(
-		ACE_Points_GunSustainedRps(ent),
-		ACE_Points_GunBestScore(ent, conEnts)
-	)
+	local round = ACE_ResolveGunBestRound(ent, conEnts)
+	if not round then return ACE_Points_GunCost(ACE_Points_GunSustainedRps(ent), 0, 0) end
+
+	return ACE_Points_GunCost(ACE_Points_GunSustainedRps(ent),
+		ACE_Points_BaseRoundCost(round),
+		ACE_Points_Gate(ACE_Points_GatePen(round)))
 end
 
 -- Resolves gun round candidates from the contraption when no list is supplied.
@@ -1169,7 +1170,7 @@ function ACE_GetGunFirepowerPoints(ent)
 	return ACE_GetGunFirepowerPointsFor(ent, conEnts)
 end
 
--- Returns rate/s, gate, round cost, round type, and round data for the priced candidate.
+-- Returns rate/s, threat, base round cost, round type, and round data for the priced candidate.
 function ACE_GetGunFirepowerDetail(ent, conEnts)
 	if not ACE_IsEnt(ent) then return end
 
@@ -1192,7 +1193,7 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 
 	if not round then return rate end
 
-	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_RoundCost(round), round.Type, round
+	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_BaseRoundCost(round), round.Type, round
 end
 
 -- Formats the lethality factors used by the points model.

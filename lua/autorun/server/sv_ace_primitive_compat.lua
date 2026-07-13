@@ -37,6 +37,7 @@ local function QueueArmorRecalculation(ent)
 end
 
 hook.Add("Primitive_PostRebuildPhysics", "ACE_PrimitiveArmorRecalc", QueueArmorRecalculation)
+hook.Add("Primitive_PreRebuildPhysics", "ACE_RememberPrimitiveCollisionGroup", RememberCollisionGroup)
 hook.Add("ProperClippingClipAdded", "ACE_RememberClipCollisionGroup", RememberCollisionGroup)
 hook.Add("ProperClippingPhysicsClipped", "ACE_PhysicsClippedArmorRecalc", QueueArmorRecalculation)
 hook.Add("ProperClippingPhysicsReset", "ACE_PhysicsResetArmorRecalc", QueueArmorRecalculation)

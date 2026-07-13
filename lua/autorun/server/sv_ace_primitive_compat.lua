@@ -3,7 +3,7 @@
 local collisionGroups = setmetatable({}, { __mode = "k" })
 
 local function RememberCollisionGroup(ent)
-	if not IsValid(ent) or collisionGroups[ent] ~= nil then return end
+	if not IsValid(ent) then return end
 
 	collisionGroups[ent] = ent:GetCollisionGroup()
 end

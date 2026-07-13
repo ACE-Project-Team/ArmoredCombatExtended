@@ -1,15 +1,9 @@
 AddCSLuaFile()
 
--- Contraption-points pricing model (pure math + entity adapters). Loaded here so every
--- realm that pulls in sh_ace_functions (acf_globals shared load, sv_pointshandling,
--- sv_contraptionlegality, the acfarmorprop client tool) has the model before any caller
--- runs. Self-AddCSLuaFile pattern mirrors line 1 above so the client downloads it too.
+-- Pricing models must load before their shared callers in both realms.
 AddCSLuaFile("acf/shared/sh_ace_points_model.lua")
 include("acf/shared/sh_ace_points_model.lua")
 
--- Manufacturing cost model (real-dollar build cost -- SEPARATE from contraption points). Same
--- pure-math + entity-adapter shape as the points model above; loaded right after it so every
--- realm that pulls in sh_ace_functions (incl. the acfarmorprop client tool) has both models.
 AddCSLuaFile("acf/shared/sh_ace_manufacturing.lua")
 include("acf/shared/sh_ace_manufacturing.lua")
 
@@ -1029,17 +1023,6 @@ function ACE_IsAmmoMissileType(bdata)
 	local classData = classes and classes[gunClass] or nil
 
 	return classData and classData.type == "missile" or false
-end
-
--- Per-missile points, sourced from the unified points model (guidance folds into
--- roundCost). Retained ONLY as a compatibility shim: acf_rack/init.lua and acf_ammo/init.lua
--- call it via CalculateMissileCost to set an entity-local ACEPoints. The contraption points
--- system no longer consumes that value -- ammo is free, and rack/gun firepower is priced from
--- candidate rounds by the model.
-function ACE_CalcMissileRoundPoints(bdata)
-	local round = ACE_Points_RoundFromBullet(bdata)
-	if not round then return 0 end
-	return ACE_Points_RoundScore(round)
 end
 
 -- Compute a gun's configured sustained RPS from its current setup.

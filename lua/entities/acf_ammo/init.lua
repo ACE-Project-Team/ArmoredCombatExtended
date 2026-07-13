@@ -638,7 +638,6 @@ do
 			AmmoMaxMass = Vol
 
 			WireName = "ACE Universal Supply Crate"
-			self.ACEPoints = 4000
 		else
 
 			self.IsTwoPiece = false
@@ -691,14 +690,6 @@ do
 			debugoverlay.Text(self:GetPos() + Vector(0,0,50), "Bullet Dimensions", 20)
 			debugoverlay.Text(self:GetPos() + Vector(0,0,15), "Mass per Round: " .. (self.BulletData.ProjMass + self.BulletData.PropMass) .. "kgs", 20 )
 			debugoverlay.Text(self:GetPos() + Vector(0,0,10), "Total Ammo Mass: " .. self.AmmoMassMax .. "kgs", 20 )
-
-			if WeaponType ~= "missile" then
-				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.AmmoPointsPerTon)
-			else
-				local MissileCost = CalculateMissileCost(self.BulletData)
-				self.ACEPoints = Capacity * MissileCost
-			end
-
 			WireName = AmmoGunData.name .. " Ammo"
 
 		-- end capacity calculations

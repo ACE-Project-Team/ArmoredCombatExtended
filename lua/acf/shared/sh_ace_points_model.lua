@@ -1,22 +1,9 @@
 --[[-----------------------------------------------------------------------------
 	ACE Contraption Points -- pricing model
 
-	The calibrated constants below are fit against a ranked corpus of reference builds.
-	Retune them together against that corpus, never one number in isolation.
-
-	AMMO IS FREE: round COUNT is a player choice, never a points input -- mass/MaxWeight
-	and cook-off risk already price hauling ammo. Crates contribute ZERO points. Rounds
-	still price guns/racks via the candidate-round adapters below: you pay for what you
-	are BUILT to fire, not for how much you carry.
-
-	SECTION 1 -- PURE MODEL. Plain Lua 5.1 (only math/string/table + base coercion).
-	No GMod/ACE global is CALLED at load time or inside these functions; they take
-	plain values/tables. This section must load and run under a vanilla Lua interpreter
-	(no GMod) so the constants can be calibrated and tested outside the game.
-
-	SECTION 2 -- ADAPTERS. GLua: entity in -> plain tables/numbers out, then it calls
-	the pure functions. Every GMod/ACE call lives INSIDE an adapter body (never at
-	file scope), so the whole file still loads cleanly under vanilla Lua.
+	Ammo count is not a points input; linked round capability prices guns and racks.
+	Retune the calibrated constants together against the reference corpus.
+	The pure model must load under vanilla Lua 5.1; GMod calls belong in the adapters.
 -------------------------------------------------------------------------------]]
 
 ACE = ACE or {}
@@ -25,14 +12,7 @@ ACE = ACE or {}
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
 -- ================================================================
 
--- Calibrated knobs + global re-anchor -- the ONLY tunables, all in one table.
--- Tuning workflow: re-fit the free constants against a ranked corpus of reference builds.
--- kGun/kArmor/kEng/P50 are the free constants; Scale is a pure re-anchor that moves
--- the hyper-modern-MBT reference build (~19906.6 raw, ammo-free) to 10000 pts and is
--- applied uniformly to every category, so all calibrated rankings/ratios are preserved and
--- only the absolute numbers move. Retune the constants together against the corpus, never one
--- in isolation, and edit fields IN PLACE so the pure upvalue below keeps pointing at the
--- live table.
+-- Retune these fields together and mutate them in place because Model retains this table.
 ACE.PointsModel = ACE.PointsModel or {
 	kGun   = 5.408,            -- firepower scale
 	kArmor = 0.3057,           -- armor survivability scale
@@ -97,15 +77,13 @@ local UTILITY     = { SM = true, Refill = true }   -- smoke/refill carry no post
 -- other auto classes rather than taking the crewed-loader reload buff.
 local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, SA = true, SL = true }
 local FUEL_FACTOR  = { Petrol = 1.0, Diesel = 1.2, Multifuel = 1.2, Electric = 0.8 }
--- guidance name -> pen multiplier. Subset of ACE.MissileGuidanceFactors (acf_globals.lua:229);
--- every entry omitted here is 1.0 there, which is this table's default, so the two agree.
+-- Guidance names omitted from this table use a 1.0 multiplier.
 local GUIDANCE = {
 	Dumb = 0.5, Straight_Running = 0.6, Radar = 1.4, Semiactive = 1.4,
 	Infrared = 1.5, Top_Attack_IR = 1.8, GPS = 0.8, GPS_TerrainAvoidant = 0.9,
 }
 
--- Lethality once the round is INSIDE the armor, as its three added parts (the player story:
--- "1 base + hole size + blast"): any penetrating round hurts (1), plus the hole it tears
+-- Lethality once the round is inside armor: base damage plus the hole it tears
 -- (frontal area x the type's damage multiplier, normalized so a 100mm AP shell = 1.0; HEAT
 -- uses its jet cross-section, not the shell body), plus the explosive payload it delivers
 -- (sqrt of filler kg vs a 6kg reference). Utility (smoke/refill) rounds return 0,0,0.
@@ -230,14 +208,7 @@ function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
 	return max(Model.kGun * rackRate * (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
 end
 
--- Mounted-charge firepower cost (scaled). A self-contained explosive charge is MOUNTED
--- ordnance -- bolted on and independently droppable right now -- so it prices as ONE rack tube
--- of itself over the engagement window: kGun * (1/RACK_WINDOW) * roundScore * Scale, with NO
--- rack flat/hardware floor (the charge is the ordnance, not a launcher). Its round is HE and
--- blast-only: no penetrator, so no hole term; the HE blast-pen floor supplies the lethality
--- pen; the gate floors at 0.2 off the round's zero stated pen; and the dumb-ordnance guidance
--- factor applies exactly as it does to rack-dropped dumb bombs. Returns 0 for filler <= 0.
--- (Stored ammo stays free -- only ordnance actually mounted and droppable is billed here.)
+-- Mounted charges use one tube-window without the rack hardware floor. Stored ammo remains free.
 function ACE_Points_ChargeCost(fillerKg)
 	fillerKg = tonumber(fillerKg) or 0
 	if fillerKg <= 0 then return 0 end
@@ -245,10 +216,6 @@ function ACE_Points_ChargeCost(fillerKg)
 	return Model.kGun * (1.0 / RACK_WINDOW) * ACE_Points_RoundScore(round) * Model.Scale
 end
 
--- NOTE: there is deliberately NO crate cost. Ammo is free (see the header) -- crates price
--- nothing; their rounds only feed the gun/rack candidate-round scoring above.
-
--- Effective armor thickness: LOS armour weighted 0.7 KE / 0.3 CHEM effectiveness.
 function ACE_Points_EffectiveMm(armourMm, ke, chem)
 	return (tonumber(armourMm) or 0) * (0.7 * (tonumber(ke) or 1) + 0.3 * (tonumber(chem) or 1))
 end
@@ -275,17 +242,13 @@ end
 --  SECTION 2 -- ADAPTERS  (GLua; entity -> plain values -> pure funcs)
 -- ================================================================
 
--- Normalize a guidance descriptor to a GUIDANCE-table key (spaces/dashes -> underscore),
--- same normalization the legacy guidance-factor resolver used before this model replaced it.
+-- Guidance table keys replace spaces and dashes with underscores.
 local function normalizeGuidanceName(name)
 	if not isstring(name) or name == "" then return nil end
 	return (name:gsub("%s+", "_"):gsub("%-", "_"))
 end
 
--- Pull the guidance NAME out of BulletData.guidance. Missiles store a TABLE; take its name via
--- candidate keys ClassName/class/GuidanceName/Guidance/Type (the legacy resolver's order).
--- Also accept a plain string, and, defensively, a plain list of mode names
--- ({"Dumb","Infrared",...} -- the form the missile round defs actually use): price [1].
+-- Guidance may be a serialized string, keyed table, or ordered mode list.
 local function resolveGuidanceName(guidanceValue)
 	if isstring(guidanceValue) then
 		local name = ACE_GetConfigurableName(guidanceValue, "")
@@ -300,12 +263,8 @@ local function resolveGuidanceName(guidanceValue)
 	return nil
 end
 
--- Armor material id -> { KE effectiveness, CHEM effectiveness }.
--- INTENDED DESIGN: these are calibrated PRICING weights validated against the ranked corpus of
--- reference builds, NOT a live mirror of the armor resolver. They are a curated read of
--- lua/acf/shared/armor/*.lua that deliberately diverges from the raw combat fields where pricing
--- calls for it. Do not "fix" these to track the armor files -- retune them via the corpus fit
--- instead. Unknown material -> (1, 1).
+-- These calibrated pricing weights intentionally differ from some live armor material values.
+-- Retune them against the reference corpus; unknown materials use (1, 1).
 local MATERIAL_EFF = {
 	RHA   = { 1.0,    1.0 },
 	CHA   = { 0.98,   0.98 },
@@ -324,9 +283,7 @@ local function materialEff(mat)
 	return eff[1], eff[2]
 end
 
--- Public accessor so displays (e.g. the armor tool's client-side cost preview) price with the
--- SAME curated weights the server charges. Returns nil for unknown materials so callers can
--- fall back to live material data. Pure: safe in any realm.
+-- Returns nil for unknown materials so display code can fall back to live material data.
 function ACE_Points_MaterialEff(mat)
 	local eff = MATERIAL_EFF[mat]
 	if not eff then return nil end
@@ -441,20 +398,8 @@ function ACE_Points_RackBestScore(rack)
 	return best
 end
 
--- Static sustained RPS for a gun: base = ACE_GetGunConfiguredRps(gun, gun.ROFLimit), which folds
--- in the gun's CURRENT wire rate-of-fire limiter as a pricing input -- the price tracks the rate
--- the gun is actually configured to fire, not its unlimited maximum. A positive limiter caps/
--- overrides maxRof and floors the reload cycle (a low limiter lengthens the effective cycle; 0
--- applies no override), then the result is magazine/loader-adjusted by the pure model. The gun's
--- TriggerInput handler dirties the contraption's points the instant ROFLimit changes, so this
--- figure and the over-points warning can never go stale relative to the wired limiter, and
--- raising the limiter on an at-limit build immediately re-triggers the warning. loaders = the
--- gun's OWN linked loader seats (gun.LoaderCount, maintained by the gun's Link/Unlink paths) --
--- the same source the live reload mechanic uses. Uses the gun's own loaders, not
--- contraption-wide crew, so the loader buff applies only to this gun (never bleeding onto other
--- weapons) and still counts loaders linked across contraption fragments. Gun class for the auto
--- check is gun.Class (weapon class id like "AC"/"MG"; acf_gun/init.lua sets self.Class =
--- Lookup.gunclass at init.lua:181).
+-- ROFLimit is a pricing input and its trigger path must dirty points. LoaderCount is local to
+-- the gun, including loaders linked across contraption fragments.
 function ACE_Points_GunSustainedRps(gun)
 	if not ACE_IsEnt(gun) then return 0 end
 	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0)

@@ -76,7 +76,6 @@ ACF.HEDensity         = 1.65                    -- HE Filler density (That's TNT
 -- is identical for an equivalent payload.
 ACF.ExplosiveFillerFraction   = 0.65            -- share of the charge volume that is filler
 ACF.ExplosiveHEMul            = 0.12            -- scales filler mass down so charges aren't absurd for their size
-ACF.ExplosivePointsPerKg      = 28              -- compatibility value for entity-local ACEPoints; contraption totals use the mounted-ordnance model
 ACF.ExplosiveCasingMul        = 0.08            -- the charge's PHYSICAL weight is filler + casing*this (a charge is mostly filler + thin casing, not a solid steel billet - keeps it light enough to carry)
 ACF.ExplosiveCookoffMul       = 4               -- per-hit cook-off chance = (damage/maxHP)*this ... a couple of solid hits set it off
 ACF.ExplosiveCookoffLowHP     = 0.25            -- ...plus this * (1 - health fraction), so a badly damaged charge is on a hair trigger
@@ -143,13 +142,6 @@ ACF.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 
 ACF.PointsLimit = 10000 -- The maximum legal point value.
 ACF.MaxWeight   = 200000 -- The max weight in kg.
-
--- Compatibility values for entity-local ACEPoints; contraption totals use the points model.
-ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69
-ACE.AmmoPointsPerTon          = tonumber(ACE.AmmoPointsPerTon) or 100
-
--- Backward-compatible alias for the entity-local engine value.
-ACE.EnginePointMul = ACE.EnginePointCostMultiplier
 
 ---------------------------------- Misc & other ----------------------------------
 

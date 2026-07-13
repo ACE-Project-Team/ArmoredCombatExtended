@@ -76,7 +76,7 @@ ACF.HEDensity         = 1.65                    -- HE Filler density (That's TNT
 -- is identical for an equivalent payload.
 ACF.ExplosiveFillerFraction   = 0.65            -- share of the charge volume that is filler
 ACF.ExplosiveHEMul            = 0.12            -- scales filler mass down so charges aren't absurd for their size
-ACF.ExplosivePointsPerKg      = 28              -- legacy per-entity ACEPoints field on charges only; contraption points price charges via the mounted-ordnance model
+ACF.ExplosivePointsPerKg      = 28              -- compatibility value for entity-local ACEPoints; contraption totals use the mounted-ordnance model
 ACF.ExplosiveCasingMul        = 0.08            -- the charge's PHYSICAL weight is filler + casing*this (a charge is mostly filler + thin casing, not a solid steel billet - keeps it light enough to carry)
 ACF.ExplosiveCookoffMul       = 4               -- per-hit cook-off chance = (damage/maxHP)*this ... a couple of solid hits set it off
 ACF.ExplosiveCookoffLowHP     = 0.25            -- ...plus this * (1 - health fraction), so a badly damaged charge is on a hair trigger
@@ -144,89 +144,12 @@ ACF.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 ACF.PointsLimit = 10000 -- The maximum legal point value.
 ACF.MaxWeight   = 200000 -- The max weight in kg.
 
-ACE.PointCostConfig = ACE.PointCostConfig or {
-    CrewSeatFlat     = 100, -- Flat point cost for driver and gunner seats.
-    LoaderSeatFlat   = 300, -- Flat point cost per loader seat.
-    MinDetailPoints  = 150 -- Minimum points to list an entry in armor tool breakdown (scaled units).
-}
-
-ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69 -- Multiplier for engine point cost (sets the vestigial engine ACEPoints field; points now price engines via the kEng model).
--- Non-missile ammo crate points per ton. Ammo is FREE for contraption points; retained only
--- because acf_ammo/init.lua sets a (now unused) per-crate ACEPoints field from it.
+-- Compatibility values for entity-local ACEPoints; contraption totals use the points model.
+ACE.EnginePointCostMultiplier = tonumber(ACE.EnginePointCostMultiplier) or tonumber(ACE.EnginePointMul) or 0.69
 ACE.AmmoPointsPerTon          = tonumber(ACE.AmmoPointsPerTon) or 100
-ACE.CrewSeatPointCost         = tonumber(ACE.CrewSeatPointCost)
-    or tonumber(ACE.CrewSeatCostFlat)
-    or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.CrewSeatFlat)
-    or 100 -- Flat point cost for driver and gunner seats.
-ACE.LoaderSeatPointCost       = tonumber(ACE.LoaderSeatPointCost)
-    or tonumber(ACE.PointCostConfig and ACE.PointCostConfig.LoaderSeatFlat)
-    or 300 -- Flat point cost per loader seat.
-ACE.ArmorPointConfig = ACE.ArmorPointConfig or {
-    KEWeight = 0.7, -- Share of KE effectiveness in normalized armor thickness.
-    ChemWeight = 0.3, -- Share of chemical effectiveness in normalized armor thickness.
-    DamageReferenceMm = 50, -- Armor point reference thickness.
-    SurvivabilityScale = 100, -- Armor points per 50mm/100HP survivability unit.
-    ArmorCostMultiplier = 0.2, -- Final armor cost multiplier.
-    SurvivabilityArmorExponent = 1.4, -- Armor thickness contribution to armor points.
-    SurvivabilityHPExponent = 0.45, -- HP contribution to armor points.
-    SurvivabilityHPReference = 75 -- HP baseline for armor points.
-}
 
--- Backward-compatible aliases (deprecated names).
+-- Backward-compatible alias for the entity-local engine value.
 ACE.EnginePointMul = ACE.EnginePointCostMultiplier
-ACE.CrewSeatCostFlat = ACE.CrewSeatPointCost
-
--- Ammo cost scoring config for the ACE legality system.
-ACE.AmmoTypeFactors = {
-    AP = 1,
-    APHE = 1.1,
-    APDS = 0.9,
-    APFSDS = 0.9,
-    HVAP = 0.8,
-    HEAT = 0.7,
-    HEATFS = 0.8,
-    THEAT = 0.9,
-    THEATFS = 1.0,
-    HESH = 1,
-    HE = 0.66,
-    HEFS = 0.715,
-    HP = 1,
-    CAP = 1,
-    CHEAT = 0.8,
-    CHE = 0.25,
-    CHF = 1,
-    SM = 1,
-    FLR = 1,
-    FL = 1,
-    GLATGM = 0.75,
-    ["GLATGM-HE"] = 0.495,
-    Refill = 0
-}
-
--- NOTE: firepower/armor/engines/crew are priced from ACE.PointsModel
--- (sh_ace_points_model.lua). There are no ACE.AmmoCostConfig / ACE.MissileCostConfig
--- ammo-pricing tables -- ammo is free. The type tables below are retained for reference and any
--- external consumers, but the in-repo points code no longer reads them.
-
--- Guidance multipliers (legacy reference; the points model carries its own GUIDANCE table).
-ACE.MissileGuidanceFactors = {
-    Dumb = 0.5,
-    Straight_Running = 0.6,
-    Antimissile = 1,
-    Radar = 1.4,
-    Semiactive = 1.4,
-    AntiRadiation = 1,
-    Wire = 1,
-    Laser = 1,
-    SACLOS = 1,
-    Beam_Riding = 1,
-    Infrared = 1.5,
-    Top_Attack_IR = 1.8,
-    GPS = 0.8,
-    GPS_TerrainAvoidant = 0.9,
-    Acoustic_Straight = 1,
-    Acoustic_Helical = 1
-}
 
 ---------------------------------- Misc & other ----------------------------------
 

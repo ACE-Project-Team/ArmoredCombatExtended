@@ -86,8 +86,6 @@ do
 
 		con.ACEPointsDirty = true
 		con.ACENonArmorDirty = true
-		con.ACEAmmoCache = nil
-		con.ACEPointsDetails = nil
 
 		return true
 	end
@@ -108,7 +106,6 @@ do
 		con.ACEArmorLastCalc = 0
 
 		con.ACENonArmorDirty = true
-		con.ACEAmmoCache = nil
 
 		con.ACEPointsPerType = {}
 		for _, k in ipairs({
@@ -141,18 +138,9 @@ do
 			con.ACEArmorCalculated = false
 			con.ACEArmorLastCalc = 0
 		end
-
-		if nonArmorDirty then
-			con.ACEAmmoCache = nil
-		end
 	end
 
-	-- Mark a contraption's non-armor point totals dirty when a pricing input on
-	-- one of its entities changes (gun<->ammo/rack link/unlink or crate update).
-	-- Armor totals are untouched by these events. A weapon with no contraption of
-	-- its own is billed by its link anchor's contraption (ACE_GetContraptionEntities
-	-- adoption rule), so that contraption is what goes dirty. Nil-safe: no
-	-- contraption either way is a silent no-op.
+	-- Orphan weapons invalidate the link-anchor contraption that owns their cost.
 	function ACE_PointsInputChanged(ent)
 		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
 		if not con and ACE_GetWeaponAnchorContraption then

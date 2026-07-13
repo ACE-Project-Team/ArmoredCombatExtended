@@ -193,7 +193,9 @@ function ACE_Points_RoundScore(round)
 end
 
 -- Static sustained cadence. Magazine-aware (burst then mag reload) and loader-aware for
--- non-auto classes. Wire ROFLimit is deliberately ignored -- baseRps is the static calc.
+-- non-auto classes. baseRps already folds in the gun's current wire ROFLimit (the adapter
+-- below applies it via ACE_GetGunConfiguredRps before calling here), so a low limit lengthens
+-- the effective cycle through this same math rather than being ignored.
 function ACE_Points_SustainedRps(baseRps, magSize, magReload, gunClass, loaders)
 	local base   = tonumber(baseRps) or 0
 	local mag    = tonumber(magSize) or 0
@@ -439,16 +441,23 @@ function ACE_Points_RackBestScore(rack)
 	return best
 end
 
--- Static sustained RPS for a gun: base = ACE_GetGunConfiguredRps(gun, 0) (wire ROFLimit forced
--- out), then magazine/loader-adjusted by the pure model. loaders = the gun's OWN linked loader
--- seats (gun.LoaderCount, maintained by the gun's Link/Unlink paths) -- the same source the
--- live reload mechanic uses. Uses the gun's own loaders, not contraption-wide crew, so the
--- loader buff applies only to this gun (never bleeding onto other weapons) and still counts
--- loaders linked across contraption fragments. Gun class for the auto check is gun.Class
--- (weapon class id like "AC"/"MG"; acf_gun/init.lua sets self.Class = Lookup.gunclass at init.lua:181).
+-- Static sustained RPS for a gun: base = ACE_GetGunConfiguredRps(gun, gun.ROFLimit), which folds
+-- in the gun's CURRENT wire rate-of-fire limiter as a pricing input -- the price tracks the rate
+-- the gun is actually configured to fire, not its unlimited maximum. A positive limiter caps/
+-- overrides maxRof and floors the reload cycle (a low limiter lengthens the effective cycle; 0
+-- applies no override), then the result is magazine/loader-adjusted by the pure model. The gun's
+-- TriggerInput handler dirties the contraption's points the instant ROFLimit changes, so this
+-- figure and the over-points warning can never go stale relative to the wired limiter, and
+-- raising the limiter on an at-limit build immediately re-triggers the warning. loaders = the
+-- gun's OWN linked loader seats (gun.LoaderCount, maintained by the gun's Link/Unlink paths) --
+-- the same source the live reload mechanic uses. Uses the gun's own loaders, not
+-- contraption-wide crew, so the loader buff applies only to this gun (never bleeding onto other
+-- weapons) and still counts loaders linked across contraption fragments. Gun class for the auto
+-- check is gun.Class (weapon class id like "AC"/"MG"; acf_gun/init.lua sets self.Class =
+-- Lookup.gunclass at init.lua:181).
 function ACE_Points_GunSustainedRps(gun)
 	if not ACE_IsEnt(gun) then return 0 end
-	local base = ACE_GetGunConfiguredRps(gun, 0)
+	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0)
 	return ACE_Points_SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
 end
 

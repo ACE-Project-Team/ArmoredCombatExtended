@@ -11,15 +11,6 @@ local GunTable = ACF.Weapons.Guns
 local CrewLinkDistBase = 200
 local AmmoLinkDistBase = 512
 
-local function MarkGunPointStateDirty(Gun)
-	if not ACE_MarkContraptionPointsDirty then return end
-
-	local Contraption = Gun.GetContraption and Gun:GetContraption() or nil
-	if not Contraption then return end
-
-	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
-end
-
 local function AttemptFirstLoad(Gun, Crate)
 	if not IsValid(Gun) or not IsValid(Crate) then return end
 	if Gun.BulletData.Type ~= "Empty" then return end
@@ -608,8 +599,8 @@ function ENT:TriggerInput(iname, value)
 			self.ROFLimit = 0
 		end
 
-		if oldLimit ~= self.ROFLimit then
-			MarkGunPointStateDirty(self)
+		if oldLimit ~= self.ROFLimit and ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self )
 		end
 	end
 end

@@ -64,20 +64,13 @@ local function ApplySettings( _, ent, data )
 
 	local con = ent:CFW_GetContraption()
 
-	-- Rebuild contraption points when material changes to keep totals consistent.
-	if con then ACE_RemPts(con, ent) end
-
 	if data.Material then
 		ent.ACF = ent.ACF or {}
 		ent.ACF.Material = data.Material
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
 	end
 
-	if ACE_ClearArmorPointCache then
-		ACE_ClearArmorPointCache(ent)
-	end
-
-	if con then ACE_AddPts(con, ent) end
+	ACE_MarkArmorDirty(con, ent)
 
 end
 

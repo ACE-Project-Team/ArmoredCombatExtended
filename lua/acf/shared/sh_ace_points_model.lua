@@ -66,13 +66,13 @@ local TYPE_MAP = {      -- round type id -> damage family
 	HP = "HP", CAP = "AP",
 	HEAT = "HEAT", HEATFS = "HEAT", THEAT = "HEAT", THEATFS = "HEAT", CHEAT = "HEAT",
 	GLATGM = "HEAT", ["GLATGM-HE"] = "HE",
-	HE = "HE", HEFS = "HE", CHE = "HE", CHF = "HE",
+	HE = "HE", HEFS = "HE", CHE = "HE",
 	HESH = "HESH",
-	SM = "SM", FLR = "SM", FL = "SM", Refill = "Refill",
+	SM = "SM", FLR = "SM", CHF = "SM", FL = "FL", Refill = "Refill",
 }
 -- HEAT jet family: the shaped-charge slug caliber (not the shell body) sets the area.
 local HEAT_FAMILY = { HEAT = true, HEATFS = true, THEAT = true, THEATFS = true, CHEAT = true, GLATGM = true }
-local UTILITY     = { SM = true, Refill = true }   -- smoke/refill carry no post-pen lethality
+local UTILITY     = { SM = true, Refill = true }   -- smoke, chaff, flares, and refill carry no damage
 -- loader-buff-exempt weapon classes (autoloaders/rapid guns; acf_gun/init.lua:462). SL is
 -- included by the model beyond the live init.lua:462 check so salvo launchers price like the
 -- other auto classes rather than taking the crewed-loader reload buff.
@@ -172,6 +172,14 @@ function ACE_Points_RoundScore(round)
 	return ACE_Points_Gate(ACE_Points_GatePen(round)) * ACE_Points_BaseRoundCost(round)
 end
 
+-- Candidate ordering is final weapon output, then per-shot score, then stable source order.
+function ACE_Points_IsBetterCandidate(candidate, best)
+	if not best then return true end
+	if candidate.FinalScore ~= best.FinalScore then return candidate.FinalScore > best.FinalScore end
+	if candidate.RoundScore ~= best.RoundScore then return candidate.RoundScore > best.RoundScore end
+	return candidate.SourceIndex < best.SourceIndex
+end
+
 -- Static sustained cadence. Magazine-aware (burst then mag reload) and loader-aware for
 -- non-auto classes. baseRps already folds in the gun's current wire ROFLimit (the adapter
 -- below applies it via ACE_GetGunConfiguredRps before calling here), so a low limit lengthens
@@ -208,10 +216,14 @@ function ACE_Points_RackRate(reloadTime, maxMissile)
 	return min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
 end
 
+function ACE_Points_RackCostFromRate(rate, bestScore)
+	return max(Model.kGun * (tonumber(rate) or 0)
+		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+end
+
 -- Tube count caps sustained rack rate over the engagement window.
 function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
-	return max(Model.kGun * ACE_Points_RackRate(reloadTime, maxMissile)
-		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+	return ACE_Points_RackCostFromRate(ACE_Points_RackRate(reloadTime, maxMissile), bestScore)
 end
 
 -- Mounted charges use one tube-window without the rack hardware floor. Stored ammo remains free.
@@ -320,48 +332,11 @@ function ACE_Points_RoundFromBullet(bdata)
 	return round
 end
 
--- Highest round score the rack is BUILT to fire. STATIC DESIGN: prices the linked-crate round,
--- NEVER the live-loaded tube state, so points don't jump when a missile actually loads. Candidates:
---   1. rounds of valid crates in rack.AmmoLink (racks share the gun AmmoLink field, acf_rack/init.lua:99);
---   2. else the rack's own BulletData when it holds a real (non-Empty) round.
--- Returns 0 with no candidates (RACK_FLAT then floors the cost).
-function ACE_Points_RackBestScore(rack)
-	if not ACE_IsEnt(rack) then return 0 end
-
-	local best   = 0
-	local scored = false
-
-	local link = rack.AmmoLink
-	if istable(link) then
-		for _, crate in pairs(link) do
-			if ACE_IsEnt(crate) and istable(crate.BulletData) then
-				local round = ACE_Points_RoundFromBullet(crate.BulletData)
-				if round then
-					best   = max(best, ACE_Points_RoundScore(round))
-					scored = true
-				end
-			end
-		end
-	end
-
-	if not scored and istable(rack.BulletData) then
-		local rtype = rack.BulletData.Type
-		if rtype and rtype ~= "" and rtype ~= "Empty" then
-			local round = ACE_Points_RoundFromBullet(rack.BulletData)
-			if round then
-				best = max(best, ACE_Points_RoundScore(round))
-			end
-		end
-	end
-
-	return best
-end
-
 -- ROFLimit is a pricing input and its trigger path must dirty points. LoaderCount is local to
 -- the gun, including loaders linked across contraption fragments.
-function ACE_Points_GunSustainedRps(gun)
+function ACE_Points_GunSustainedRps(gun, bdata, crate)
 	if not ACE_IsEnt(gun) then return 0 end
-	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0)
+	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0, bdata, crate)
 	return ACE_Points_SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
 end
 

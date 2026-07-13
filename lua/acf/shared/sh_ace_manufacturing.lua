@@ -15,6 +15,15 @@ ACE = ACE or {}
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
 -- ================================================================
 
+local UNKNOWN_SEEKER_DEFAULT = 100000.0
+local SEEKER_DEFAULTS = {
+	Dumb = 0.0, Straight_Running = 10000.0, Wire = 20000.0, Laser = 60000.0,
+	Beam_Riding = 50000.0, Infrared = 100000.0, Top_Attack_IR = 170000.0,
+	Radar = 500000.0, Semiactive = 250000.0, AntiRadiation = 300000.0,
+	GPS = 25000.0, GPS_TerrainAvoidant = 40000.0, SACLOS = 30000.0,
+	Antimissile = 100000.0, Acoustic_Straight = 100000.0, Acoustic_Helical = 100000.0,
+}
+
 -- Retune fields in place because the pure model retains this table reference.
 ACE.ManuCost = ACE.ManuCost or {
 	-- armor: $ per TON of prop mass, by armor material (composite/exotic >> steel)
@@ -35,10 +44,8 @@ ACE.ManuCost = ACE.ManuCost or {
 	                 HP = 60.0, SM = 40.0, Refill = 0.0 },
 	-- missiles: body $/kg + seeker cost by guidance (seekers dominate real prices)
 	missile_body_per_kg = 300.0,
-	seeker = { Dumb = 0.0, Straight_Running = 10000.0, Wire = 20000.0, Laser = 60000.0,
-	           Beam_Riding = 50000.0, Infrared = 100000.0, Top_Attack_IR = 170000.0,
-	           Radar = 500000.0, Semiactive = 250000.0, AntiRadiation = 300000.0,
-	           GPS = 25000.0, GPS_TerrainAvoidant = 40000.0, Command = 30000.0 },
+	unknown_seeker = UNKNOWN_SEEKER_DEFAULT,   -- unknown guided modes use the autonomous-seeker tier
+	seeker = SEEKER_DEFAULTS,
 	-- dollars per legacy ACEPoints electronics tier
 	electronics_per_tier = 2000.0,           -- search radar 600 -> $1.2M, tracking 280 -> $560k
 	crew_seat = 20000.0,
@@ -47,13 +54,21 @@ ACE.ManuCost = ACE.ManuCost or {
 
 local M = ACE.ManuCost
 
+-- Preserve configured overrides while making newly added guidance classes safe on hot reload.
+M.unknown_seeker = M.unknown_seeker or UNKNOWN_SEEKER_DEFAULT
+M.seeker = M.seeker or {}
+for name, cost in pairs(SEEKER_DEFAULTS) do
+	if M.seeker[name] == nil then M.seeker[name] = cost end
+end
+M.seeker.Command = nil
+
 local TYPE_FAMILY = {
 	AP = "AP", APHE = "APHE", APDS = "APDS", APFSDS = "APFSDS", HVAP = "HVAP",
 	HP = "HP", CAP = "AP",
 	HEAT = "HEAT", HEATFS = "HEAT", THEAT = "HEAT", THEATFS = "HEAT", CHEAT = "HEAT",
 	GLATGM = "HEAT", ["GLATGM-HE"] = "HE",
-	HE = "HE", HEFS = "HE", CHE = "HE", CHF = "HE", HESH = "HESH",
-	SM = "SM", FLR = "SM", FL = "SM", Refill = "Refill",
+	HE = "HE", HEFS = "HE", CHE = "HE", HESH = "HESH",
+	SM = "SM", FLR = "SM", CHF = "SM", FL = "AP", Refill = "Refill",
 }
 
 -- Manufacturing $ for ONE round. Missiles (guidance present) = body $/kg + seeker cost;
@@ -69,7 +84,8 @@ function ACE_Manu_RoundCost(round)
 
 	local guid = round.guidance
 	if guid and guid ~= "" then                       -- missile round: seeker + body
-		local seeker = M.seeker[guid] or 0.0
+		local seeker = M.seeker[guid]
+		if seeker == nil then seeker = M.unknown_seeker end
 		return mass * M.missile_body_per_kg + seeker
 	end
 

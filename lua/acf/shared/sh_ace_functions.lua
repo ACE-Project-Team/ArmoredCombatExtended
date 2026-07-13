@@ -872,62 +872,6 @@ function ACE_GetPtsType(className)
 	return ACE.ClassToType[className] or "Ignore"
 end
 
--- Resolve armor point tuning with conservative defaults.
-function ACE_GetArmorPointConfig()
-	local cfg = ACE.ArmorPointConfig or {}
-
-	return {
-		KEWeight = tonumber(cfg.KEWeight) or 0.8,
-		ChemWeight = tonumber(cfg.ChemWeight) or 0.2,
-		DamageReferenceMm = tonumber(cfg.DamageReferenceMm) or 50,
-		SurvivabilityScale = tonumber(cfg.SurvivabilityScale) or 100,
-		ArmorCostMultiplier = tonumber(cfg.ArmorCostMultiplier) or 1,
-		SurvivabilityArmorExponent = tonumber(cfg.SurvivabilityArmorExponent) or 1.15,
-		SurvivabilityHPExponent = tonumber(cfg.SurvivabilityHPExponent) or 0.45,
-		SurvivabilityHPReference = tonumber(cfg.SurvivabilityHPReference) or 100
-	}
-end
-
--- Calculate material-adjusted armor thickness for one entity.
-function ACE_GetArmorEquivalentMm(ent)
-	if not ACE_IsEnt(ent) then return 0 end
-
-	local acf = ent.ACF or {}
-	if not istable(acf) then return 0 end
-
-	local mat = acf.Material or "RHA"
-	local matData = ACE_GetMaterialData and ACE_GetMaterialData(mat)
-	local armorData = ent.acfPropArmorData and ent:acfPropArmorData()
-	local armorMod = ACF.ArmorMod or 1
-	local armorMm = tonumber(acf.MaxArmour or acf.Armour) or 0
-	if armorMm <= 0 then return 0 end
-
-	local curve = (armorData and armorData.Curve) or 1
-	local effKE = (armorData and armorData.Effectiveness) or (matData and matData.effectiveness) or 1
-	local effCHEM = (armorData and (armorData.HEATeffectiveness or armorData.HEATEffectiveness))
-		or (matData and (matData.HEATeffectiveness or matData.effectiveness))
-		or effKE
-
-	local cfg = ACE_GetArmorPointConfig()
-	local weightedEff = effKE * cfg.KEWeight + effCHEM * cfg.ChemWeight
-
-	local effectiveMm = 0
-	if armorMm > 0 then
-		effectiveMm = (armorMm ^ curve) * weightedEff
-	end
-
-	local rawMm = 0
-	if effectiveMm > 0 and armorMod > 0 then
-		rawMm = effectiveMm / armorMod
-	end
-
-	return rawMm
-end
-
--- Survivability cost for one prop (scaled), via ACE_Points_ArmorProp:
--- kArmor * 100 * (effMm/50)^1.4 * (hp/75) * Scale, where effMm folds material KE/CHEM
--- effectiveness (0.7/0.3) and hp is MAX health. ACE_Points_PropArmor enforces the class-skip
--- rules (acf_/ace_/gmod_/pod) and the "no armour or no HP -> skip" cases (returns nil).
 function ACE_GetSurvivabilityIndex(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
@@ -956,8 +900,6 @@ function ACE_GetArmorPoints(ent)
 	return points
 end
 
--- Resolve crewseat point cost by role (scaled). Loader seats cost more than generic seats;
--- the flat values (100 / 300) and the global Scale live in the points model.
 function ACE_GetCrewSeatPointCost(ent)
 	local isLoader = ACE_IsEnt(ent) and ent:GetClass() == "ace_crewseat_loader"
 	return ACE_Points_CrewCost(isLoader)
@@ -974,46 +916,6 @@ hook.Add("EntityRemoved", "ACE_ClearArmorPointCache", function(ent)
 	ACE_ClearArmorPointCache(ent)
 end)
 
-
--- Safe helpers for point/readout math.
-function ACE_SafeNonNegative(value)
-	value = tonumber(value) or 0
-	if value ~= value or value == math.huge or value == -math.huge then return 0 end
-	return math.max(value, 0)
-end
-
-function ACE_SafeRatio(numerator, denominator)
-	numerator = tonumber(numerator) or 0
-	denominator = tonumber(denominator) or 0
-	if denominator <= 0 then return 0 end
-	local value = numerator / denominator
-	if value ~= value or value == math.huge or value == -math.huge then return 0 end
-	return value
-end
-
-function ACE_SafeRound1(value)
-	return math.Round(ACE_SafeNonNegative(value), 1)
-end
-
-function ACE_FormatDetailLabel(ent)
-	if not ACE_IsEnt(ent) then return "Unknown" end
-
-	local name = ""
-	if ent.GetNWString then
-		name = ent:GetNWString("WireName", "")
-	end
-	if name == "" and ent.GetName then
-		name = ent:GetName() or ""
-	end
-	if name == "" and ent.PrintName and ent.PrintName ~= "" then
-		name = ent.PrintName
-	end
-	if name == "" then
-		name = ent:GetClass() or "unknown"
-	end
-
-	return string.format("%s [#%d]", name, ent:EntIndex())
-end
 
 -- Extract configurable class name from "Name:arg=val" serialized strings.
 function ACE_GetConfigurableName(value, fallback)
@@ -1186,31 +1088,6 @@ function ACE_GetGunConfiguredRps(ent, rofLimit)
 	return 1 / reloadTime
 end
 
--- Compute sustained rounds per second for a gun/rack.
-function ACE_GetEntRps(ent)
-	if ACE_IsEnt(ent) and ent:GetClass() == "acf_gun" then
-		return ACE_GetGunConfiguredRps(ent, ent.ROFLimit)
-	end
-
-	if ACE_IsEnt(ent) and ent:GetClass() == "acf_rack" then
-		local bdata = ent.BulletData or {}
-		local reload = (ACF_GetRackValue and ACF_GetRackValue(bdata, "reloadspeed"))
-			or (ACF_GetGunValue and ACF_GetGunValue(bdata.Id, "reloadspeed"))
-			or ent.ReloadTime
-
-		reload = tonumber(reload) or 0
-		if reload > 0 then return 1 / reload end
-	end
-
-	local reload = tonumber(ent.ReloadTime)
-	if reload and reload > 0 then return 1 / reload end
-
-	local rof = ent.RateOfFire
-	if rof and rof > 0 then return rof / 60 end
-
-	return 0
-end
-
 -- Readout-only mirror of the model's RACK_WINDOW: the rack's sustained rate is capped at
 -- tubes/window. Used solely to reproduce the rate factor in the firepower detail line.
 local RACK_READOUT_WINDOW = 30.0
@@ -1280,11 +1157,7 @@ local function ACE_ResolveRackBestRound(rack)
 	return best
 end
 
--- Firepower cost (scaled) for a gun/rack. Guns: ACE_Points_GunCost(sustainedRps,
--- bestRoundScore) -- loader count comes from the gun's own LoaderCount inside the adapter.
--- Racks: tube-capped ACE_Points_RackCost(reloadTime, maxMissile, bestRoundScore). Callers
--- holding the contraption (sv_pointshandling) compute conEnts once and pass it, avoiding a
--- per-gun re-resolve.
+-- Callers may supply a cached contraption entity list for gun round selection.
 function ACE_GetGunFirepowerPointsFor(ent, conEnts)
 	if not ACE_IsEnt(ent) then return 0 end
 
@@ -1300,9 +1173,7 @@ function ACE_GetGunFirepowerPointsFor(ent, conEnts)
 	)
 end
 
--- Self-sufficient firepower cost for a single gun/rack -- external probes pcall this with just
--- the entity, so it resolves the contraption (candidate crates) itself. Racks price from
--- their own AmmoLink/round and need no contraption, so they stay cheap.
+-- Resolves gun round candidates from the contraption when no list is supplied.
 function ACE_GetGunFirepowerPoints(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
@@ -1317,10 +1188,7 @@ function ACE_GetGunFirepowerPoints(ent)
 	return ACE_GetGunFirepowerPointsFor(ent, conEnts)
 end
 
--- Firepower decomposition for the readout: rate/s, gate, roundCost, roundType. rate is the
--- gun's sustained cadence or the rack's tube-capped reload rate; gate and roundCost are from
--- the priced candidate round, so rate * gate * roundCost * kGun * Scale reproduces the cost
--- (before its flat floor). Trailing values are nil when the weapon has no priceable round.
+-- Returns rate/s, gate, round cost, round type, and round data for the priced candidate.
 function ACE_GetGunFirepowerDetail(ent, conEnts)
 	if not ACE_IsEnt(ent) then return end
 
@@ -1346,17 +1214,13 @@ function ACE_GetGunFirepowerDetail(ent, conEnts)
 	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_RoundCost(round), round.Type, round
 end
 
--- One-line, player-facing explanation of a round's lethality figure:
---   "APFSDS 790mm pen x 3.16 dmg (1 + 2.16 hole + 0.00 blast)"
--- plus " x 1.5 guidance" for guided missiles, and "blast-pen" when an HE/HESH round's
--- lethality pen comes from its filler rather than its stated penetration. This is THE string
--- that teaches players what makes a round expensive; keep it in step with the model.
+-- Formats the lethality factors used by the points model.
 function ACE_GetRoundLethalityLine(round)
 	if not istable(round) then return nil end
 
 	local base, hole, blast = ACE_Points_PostPenParts(round)
 	local dmg = base + hole + blast
-	if dmg <= 0 then return nil end   -- utility rounds (smoke/refill) have no lethality story
+	if dmg <= 0 then return nil end
 
 	local rawPen = tonumber(round.maxPen) or 0
 	local pen = ACE_Points_LethalityPen(round)
@@ -1377,24 +1241,6 @@ end
 function ACE_GetAmmoBlastMass(bdata)
 	if not bdata then return 0 end
 	return tonumber(bdata.BoomFillerMass) or tonumber(bdata.FillerMass) or 0
-end
-
--- Resolve ammo caliber in millimeters.
-function ACE_GetAmmoCaliberMm(bdata)
-	if not bdata then return 0 end
-
-	local best = math.max(
-		bdata.Caliber or 0,
-		bdata.SlugCaliber or 0,
-		bdata.SlugCaliber2 or 0,
-		bdata.JetCaliber or 0
-	)
-
-	if best <= 0 and bdata.Id then
-		best = ACF_GetGunValue(bdata.Id, "caliber") or 0
-	end
-
-	return best * 10
 end
 
 -- Resolve maximum penetration from bullet data.
@@ -1513,14 +1359,8 @@ function ACE_GetOwnerName(owner)
 	return ACE_IsEnt(owner) and owner:Nick() or "Unknown"
 end
 
--- Non-armor points for a single entity (scaled), by category:
---   * armor props / fuel tanks / ammo (free) / guns / racks / gearboxes -> 0 here
---     (armor, firepower price elsewhere; ammo is free; gearboxes fall to the Electronics
---     lookup below with the other ACEPoints components).
---   * engines -> kEng power formula (peak hp = peakkw / 0.7457, fuel factor).
---   * crew seats -> flat crew/loader cost.
---   * everything else (electronics, gearboxes, misc) -> legacy per-entity ACEPoints lookup,
---     re-anchored by the global Scale so it matches the model's Electronics category.
+-- Armor and firepower are priced by their dedicated passes; ammo is free. Remaining
+-- component ACEPoints values are treated as electronics tiers and scaled with the model.
 function ACE_GetEntPoints(ent)
 	if not ACE_IsEnt(ent) then return 0 end
 
@@ -1542,9 +1382,6 @@ function ACE_GetEntPoints(ent)
 		return ACE_GetCrewSeatPointCost(ent)
 	end
 
-	-- Mounted explosive ordnance (scalable explosives / bombs): priced as mounted ordnance off
-	-- its filler mass, not the legacy ACEPoints lookup. Both the server firepower loop and the
-	-- armor-tool popup reach charges through here.
 	if class == "ace_explosive" or class == "ace_explosive_prebuilt"
 		or class == "ace_bomb_satchel" or class == "ace_bomb_aerial"
 		or class == "ace_bomb_barrel" then

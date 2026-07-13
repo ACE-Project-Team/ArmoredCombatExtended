@@ -245,8 +245,6 @@ local PointClassToType = {
 	acf_ammo = "Ignore",           -- ammo is free: no point cost
 	acf_gun = "Firepower",
 	acf_rack = "Firepower",
-	-- Mounted explosive ordnance prices as firepower (see ACE.ClassToType); mirror it here so
-	-- the per-entity popup line resolves a category and shows the charge's cost.
 	ace_explosive = "Firepower",
 	ace_explosive_prebuilt = "Firepower",
 	ace_bomb_satchel = "Firepower",
@@ -278,8 +276,7 @@ local function ACE_FormatPoints(points)
 	return text .. "pts"
 end
 
--- Real-dollar manufacturing cost formatter (SEPARATE from points). Thousands-separated below
--- $1M (e.g. $691,200); >= $1M collapses to one decimal million (e.g. $1.2M).
+-- Use compact millions while preserving exact thousands below $1M.
 local function ACE_FormatMoney(dollars)
 	dollars = tonumber(dollars) or 0
 	if dollars >= 1e6 then
@@ -310,7 +307,7 @@ end
 local ArmorPopupDebug = SERVER and CreateConVar("acf_debug_armor_popup", "0", FCVAR_ARCHIVE, "Debug armor popup per-entity contribution lookup.", 0, 1) or nil
 local ArmorPopupDebugLast = {}
 
-local function ACE_DebugArmorPopup(ply, ent, con, matchedRow)
+local function ACE_DebugArmorPopup(ply, ent, matchedRow)
 	if not SERVER then return end
 	if not ArmorPopupDebug or not ArmorPopupDebug:GetBool() then return end
 	if not IsValid(ply) or not IsValid(ent) then return end
@@ -320,8 +317,7 @@ local function ACE_DebugArmorPopup(ply, ent, con, matchedRow)
 	if (ArmorPopupDebugLast[key] or 0) + 1 > now then return end
 	ArmorPopupDebugLast[key] = now
 
-	local detailsCount = (con and istable(con.ACEArmorDetails) and #con.ACEArmorDetails) or 0
-	local msg = string.format("[ACE popup dbg] ent=%s[#%d] class=%s details=%d matched=%s pts=%s", tostring(ent:GetNWString("WireName", ent:GetClass())), ent:EntIndex(), ent:GetClass(), detailsCount, tostring(matchedRow ~= nil), tostring(matchedRow and matchedRow.Points or 0))
+	local msg = string.format("[ACE popup dbg] ent=%s[#%d] class=%s matched=%s pts=%s", tostring(ent:GetNWString("WireName", ent:GetClass())), ent:EntIndex(), ent:GetClass(), tostring(matchedRow ~= nil), tostring(matchedRow and matchedRow.Points or 0))
 	print(msg)
 	ply:PrintMessage(HUD_PRINTCONSOLE, msg)
 end
@@ -345,7 +341,6 @@ local function ACE_GetPopupPoints(ent, ply)
 			lines[#lines + 1] = CostLabelByCategory.Engines .. ": " .. ACE_FormatPoints(componentPoints)
 		end
 	elseif cls == "acf_gun" or cls == "acf_rack" then
-		-- Resolve the contraption context once so the shown cost and its decomposition agree.
 		local conEnts = (con and ACE_GetContraptionEntities) and ACE_GetContraptionEntities(con, ent) or nil
 
 		componentPoints = (ACE_GetGunFirepowerPointsFor and ACE_GetGunFirepowerPointsFor(ent, conEnts))
@@ -353,8 +348,6 @@ local function ACE_GetPopupPoints(ent, ply)
 
 		if componentPoints > 0 then
 			local line = CostLabelByCategory.Firepower .. ": " .. ACE_FormatPoints(componentPoints)
-			-- Honest decomposition, labeled so it reads as a sentence:
-			-- rate of fire x share of armor this pen defeats x per-round lethality.
 			if ACE_GetGunFirepowerDetail then
 				local rate, gate, roundCost, _, round = ACE_GetGunFirepowerDetail(ent, conEnts)
 				if rate and gate and roundCost then
@@ -362,8 +355,6 @@ local function ACE_GetPopupPoints(ent, ply)
 						rate, math.Round(gate * 100), string.Comma(math.Round(roundCost)))
 				end
 				lines[#lines + 1] = line
-				-- Where the lethality figure comes from: pen x inside-armor damage,
-				-- with the damage split into its three added parts.
 				local roundLine = round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round)
 				if roundLine then
 					lines[#lines + 1] = "Round: " .. roundLine
@@ -373,8 +364,6 @@ local function ACE_GetPopupPoints(ent, ply)
 			end
 		end
 	elseif cls == "acf_ammo" then
-		-- Ammo is free: crates carry no point cost -- but the ROUND in this crate is what
-		-- prices any gun built to fire it, so teach that story right here on the crate.
 		componentPoints = 0
 		if ACE_Points_RoundFromBullet and ACE_GetRoundLethalityLine and istable(ent.BulletData) then
 			local round = ACE_Points_RoundFromBullet(ent.BulletData)
@@ -398,9 +387,7 @@ local function ACE_GetPopupPoints(ent, ply)
 		end
 	end
 
-	-- Manufacturing cost (real dollars) -- a SEPARATE axis from combat points. Priceable
-	-- components (incl. ammo crates, which are point-free) get their own $ line; the whole
-	-- contraption gets one aggregate $ line. Computed on read; no caching. Server realm here.
+	-- Manufacturing values are computed on read and are not part of combat points.
 	if ACE_Manu_EntCost then
 		local mfgCost = ACE_Manu_EntCost(ent)
 		if mfgCost and mfgCost > 0 then
@@ -415,13 +402,12 @@ local function ACE_GetPopupPoints(ent, ply)
 	end
 
 	local total = armorPoints + componentPoints
-	-- Show the readout if the entity carries points OR any manufacturing line (crates cost
-	-- dollars while being point-free, so #lines can be non-empty at zero points).
+	-- Point-free entities may still have manufacturing lines.
 	if total <= 0 and #lines == 0 then
 		return 0, "Entity Cost", "", 0
 	end
 
-	ACE_DebugArmorPopup(ply, ent, con, nil)
+	ACE_DebugArmorPopup(ply, ent, nil)
 	-- 4th return is the non-armor component cost; the HUD adds it to the
 	-- armor preview so the "after change" estimate reflects what the entity
 	-- will actually cost (e.g. ammo + new armor), not just the new armor.
@@ -486,9 +472,7 @@ if CLIENT then
 
 	local getPhrase = language.GetPhrase
 
-	-- Estimate the selected armor settings with the points model armor formula, using the SAME
-	-- curated material weights the server charges (ACE_Points_MaterialEff) so the preview never
-	-- disagrees with the real cost; unknown materials fall back to live material data.
+	-- Use the server pricing weights; unknown materials fall back to live material data.
 	local function ACE_GetArmorPointPreview(armor, health, mat, matData)
 		if not ACE_Points_EffectiveMm or not ACE_Points_ArmorProp then return 0 end
 
@@ -841,8 +825,7 @@ if CLIENT then
 		if acepointcost > 0 then
 			pointLine = string.format("%s: %s\n", pointLabel, ACE_FormatPoints(acepointcost))
 		end
-		-- Breakdown carries the manufacturing $ lines, which exist even for point-free ents
-		-- (ammo crates), so show it whenever present -- not only when there is a point cost.
+		-- Point-free entities may still have manufacturing lines.
 		if pointBreakdown ~= "" then
 			pointLine = pointLine .. pointBreakdown .. "\n"
 		end

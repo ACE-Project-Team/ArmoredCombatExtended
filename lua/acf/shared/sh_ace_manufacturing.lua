@@ -1,26 +1,12 @@
 --[[-----------------------------------------------------------------------------
 	ACE Manufacturing Cost -- real-dollar build cost model
 
-	The cost constants below are anchored to real-world component prices (see the allocation
-	targets). Retune them together, never one number in isolation.
-
-	SEPARATE from contraption points (combat power): manufacturing answers "what would
-	this cost to BUILD", points answer "how hard does it fight". AMMO IS FREE for points
-	but very much not free to manufacture; a missile's seeker dominates its manufacturing
-	cost while its combat value cares only about the kill-probability multiplier.
+	Manufacturing cost is independent of combat points. Retune the cost constants together.
 
 	Real-life allocation targets for a modern western MBT (~$6M flyaway):
 		armor/structure ~30% : powerpack ~18% : armament ~12% : electronics/FCS ~30% : crew ~5%
-	Categories: Armor / Powerpack / Armament / Ammo / Electronics / Crew.
 
-	SECTION 1 -- PURE MODEL. Plain Lua 5.1 (only math/string/table + base coercion).
-	No GMod/ACE global is CALLED at load time or inside these functions; they take
-	plain values/tables. This section must load and run under a vanilla Lua interpreter
-	(no GMod) so the cost model can be tested outside the game.
-
-	SECTION 2 -- ADAPTERS. GLua: entity in -> plain tables/numbers out, then it calls
-	the pure functions. Every GMod/ACE call lives INSIDE an adapter body (never at file
-	scope), so the whole file still loads cleanly under vanilla Lua.
+	The pure model must load under vanilla Lua 5.1; GMod calls belong in the adapters.
 -------------------------------------------------------------------------------]]
 
 ACE = ACE or {}
@@ -29,8 +15,7 @@ ACE = ACE or {}
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
 -- ================================================================
 
--- THE manufacturing constant table -- all tunables live here.
--- Retune fields IN PLACE so the pure upvalue below keeps pointing at the live table.
+-- Retune fields in place because the pure model retains this table reference.
 ACE.ManuCost = ACE.ManuCost or {
 	-- armor: $ per TON of prop mass, by armor material (composite/exotic >> steel)
 	armor_per_ton = { RHA = 14000.0, CHA = 16000.0, Alum = 20000.0, Ti = 90000.0,
@@ -54,7 +39,7 @@ ACE.ManuCost = ACE.ManuCost or {
 	           Beam_Riding = 50000.0, Infrared = 100000.0, Top_Attack_IR = 170000.0,
 	           Radar = 500000.0, Semiactive = 250000.0, AntiRadiation = 300000.0,
 	           GPS = 25000.0, GPS_TerrainAvoidant = 40000.0, Command = 30000.0 },
-	-- electronics: reuse the existing acepoints tier ladder as relative tiers
+	-- dollars per legacy ACEPoints electronics tier
 	electronics_per_tier = 2000.0,           -- search radar 600 -> $1.2M, tracking 280 -> $560k
 	crew_seat = 20000.0,
 	refill_crate = 50000.0,
@@ -62,7 +47,6 @@ ACE.ManuCost = ACE.ManuCost or {
 
 local M = ACE.ManuCost
 
--- round type id -> manufacturing family (same families as the points model's type map).
 local TYPE_FAMILY = {
 	AP = "AP", APHE = "APHE", APDS = "APDS", APFSDS = "APFSDS", HVAP = "HVAP",
 	HP = "HP", CAP = "AP",
@@ -119,17 +103,14 @@ function ACE_Manu_EngineCost(hp, fuelType)
 	return (tonumber(hp) or 0.0) * (M.engine_per_hp[fuelType or "Petrol"] or 350.0)
 end
 
--- Electronics manufacturing $ = acepoints tier x $/tier.
 function ACE_Manu_ElectronicsCost(tierPoints)
 	return (tonumber(tierPoints) or 0.0) * M.electronics_per_tier
 end
 
--- Crew seat manufacturing $ (flat).
 function ACE_Manu_CrewCost()
 	return M.crew_seat
 end
 
--- Refill/supply crate manufacturing $ (flat -- NOT per round).
 function ACE_Manu_RefillCost()
 	return M.refill_crate
 end
@@ -206,8 +187,6 @@ function ACE_Manu_EntCost(ent)
 	return 0, nil
 end
 
--- Manufacturing $ for a whole contraption: sums ACE_Manu_EntCost over an entity list into the
--- six categories + Total. conEnts is a caller-supplied list (e.g. ACE_GetContraptionEntities).
 function ACE_Manu_ContraptionCost(conEnts)
 	local out = { Armor = 0, Powerpack = 0, Armament = 0, Ammo = 0, Electronics = 0, Crew = 0, Total = 0 }
 

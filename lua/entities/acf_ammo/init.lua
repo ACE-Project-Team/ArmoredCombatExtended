@@ -511,8 +511,6 @@ function ENT:UpdateOverlayText()
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
 		end
 
-		-- The points story, right where players look: this round's lethality is what prices
-		-- any gun built to fire it (pen x inside-armor damage); the crate itself is free.
 		if ACE_Points_RoundFromBullet and ACE_GetRoundLethalityLine then
 			local round = ACE_Points_RoundFromBullet( self.BulletData )
 			local roundLine = round and ACE_GetRoundLethalityLine( round )

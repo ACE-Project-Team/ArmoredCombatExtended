@@ -48,7 +48,9 @@ local GUN_FLAT    = 20.0          -- no weapon is free (utility launchers price 
 local RACK_FLAT   = 100.0
 -- 30s engagement window: a rack's sustained rate is capped at tubes/window -- it is NOT an
 -- infinite-reload DPS machine. Tubes are launcher hardware (mountpoint count), not a
--- carried-round choice; keeps missiles/planes sanely priced.
+-- carried-round choice; keeps missiles/planes sanely priced. Also sets the gun/rack priced-rate
+-- floor (1/RACK_WINDOW): no mounted delivery system prices below one round per window, closing
+-- the slow-alpha and tiny-ROFLimit aliases of the same cheese.
 local RACK_WINDOW = 30.0
 local CREW_SEAT   = 100.0
 local LOADER_SEAT = 300.0
@@ -212,8 +214,9 @@ end
 -- Gun firepower cost (scaled). This is called once per gun entity; identical guns therefore
 -- add linearly instead of sharing or deduplicating the round cost.
 function ACE_Points_GunCost(sustainedRps, baseRoundCost, threat)
+	local pricedRps = max(tonumber(sustainedRps) or 0, 1.0 / RACK_WINDOW)
 	return max(Model.kGun
-		* (tonumber(sustainedRps) or 0)
+		* pricedRps
 		* (tonumber(baseRoundCost) or 0)
 		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
 end
@@ -227,7 +230,8 @@ function ACE_Points_RackRate(reloadTime, maxMissile)
 end
 
 function ACE_Points_RackCostFromRate(rate, bestScore)
-	return max(Model.kGun * (tonumber(rate) or 0)
+	local pricedRate = max(tonumber(rate) or 0, 1.0 / RACK_WINDOW)
+	return max(Model.kGun * pricedRate
 		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
 end
 

@@ -85,7 +85,7 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 	ent.ACF.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
-	ACE_MarkArmorDirty(con, ent)
+	ACE_MarkArmorDirty(con, ent, "armor-expression2")
 
 end
 

@@ -117,7 +117,7 @@ function ENT:Initialize()
 	self.CanLegalCheck = true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent) end
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "rack-removed") end
 	end)
 
 end
@@ -979,8 +979,8 @@ function ENT:Link( Target )
 	self:SetOverlayText(txt)
 
 	if ACE_PointsInputChanged then
-		ACE_PointsInputChanged( self )
-		ACE_PointsInputChanged( Target )
+		ACE_PointsInputChanged( self, "rack-ammo-linked" )
+		ACE_PointsInputChanged( Target, "rack-ammo-linked" )
 	end
 
 	return true, "Link successful!"
@@ -1002,8 +1002,8 @@ function ENT:Unlink( Target )
 		self:GetOverlayText()
 
 		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
-			ACE_PointsInputChanged( Target )
+			ACE_PointsInputChanged( self, "rack-unlinked" )
+			ACE_PointsInputChanged( Target, "rack-unlinked" )
 		end
 
 		return true, "Unlink successful!"

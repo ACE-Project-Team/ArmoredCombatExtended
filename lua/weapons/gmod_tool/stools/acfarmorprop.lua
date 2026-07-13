@@ -70,7 +70,7 @@ local function ApplySettings( _, ent, data )
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
 	end
 
-	ACE_MarkArmorDirty(con, ent)
+	ACE_MarkArmorDirty(con, ent, "armor-tool")
 
 end
 

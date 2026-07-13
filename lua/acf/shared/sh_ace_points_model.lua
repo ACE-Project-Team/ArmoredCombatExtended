@@ -37,12 +37,11 @@ local BLAST_REF  = 6.0            -- kg filler reference
 local HE_EQUIV   = 30.0
 -- Armor actually defeated by blast: filler_kg x HEPower / HEBlastPenetration (the damage
 -- code's own blast-penetration channel). Used by the gate so heavy ordnance that genuinely
--- penetrates through blast is not floored as if it only splashed.
+-- penetrates through blast is judged by that real reach rather than only its splash equivalent.
 local HE_BLAST_PEN_PER_KG = 8000.0 / 3500.0
 local ROUND_COST_FLOOR = 1.0        -- every configured round has a non-zero weapon-pricing input
 -- HE's splash, module damage, and soft-target utility add value beyond its direct lethality terms.
 local HE_INTRINSIC_VALUE_MULT = 1.50
-local GATE_FLOOR = 0.2            -- any lethal round still hurts light targets
 -- GATE is LINEAR (GATE_EXP = 1): effectiveness = pen/(pen+P50). Kept linear for legibility;
 -- a saturating (Hill-style) fit prices the corpus the same, so no exponent term is needed.
 local GUN_FLAT    = 20.0          -- no weapon is free (utility launchers price here)
@@ -156,11 +155,11 @@ function ACE_Points_BaseRoundCost(round)
 	return max(cost, ROUND_COST_FLOOR)
 end
 
--- Share of the meta this pen defeats. LINEAR gate, floored so any lethal round still counts.
+-- Share of the meta this pen defeats. The curve is continuous from zero with no minimum share.
 function ACE_Points_Gate(pen)
 	pen = tonumber(pen) or 0
-	if pen <= 0 then return GATE_FLOOR end
-	return max(pen / (pen + Model.P50), GATE_FLOOR)
+	if pen <= 0 then return 0 end
+	return pen / (pen + Model.P50)
 end
 
 -- Penetration the GATE judges a round by. HE uses its blast lethality reach because splash,

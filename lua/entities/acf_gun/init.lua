@@ -67,7 +67,7 @@ function ENT:Initialize()
 	self.CanLegalCheck		= true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent) end
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "gun-removed") end
 	end)
 
 end
@@ -410,8 +410,8 @@ function ENT:Link( Target )
 		Target.LinkedGun = self
 
 		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
-			ACE_PointsInputChanged( Target )
+			ACE_PointsInputChanged( self, "gunner-linked" )
+			ACE_PointsInputChanged( Target, "gunner-linked" )
 		end
 
 		return true, "Link successful!"
@@ -446,8 +446,8 @@ function ENT:Link( Target )
 		Target.LinkedGun = self
 
 		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
-			ACE_PointsInputChanged( Target )
+			ACE_PointsInputChanged( self, "loader-linked" )
+			ACE_PointsInputChanged( Target, "loader-linked" )
 		end
 
 		return true, "Link successful!"
@@ -507,8 +507,8 @@ function ENT:Link( Target )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
 		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
-			ACE_PointsInputChanged( Target )
+			ACE_PointsInputChanged( self, "gun-ammo-linked" )
+			ACE_PointsInputChanged( Target, "gun-ammo-linked" )
 		end
 
 		return true, "Link successful!"
@@ -545,8 +545,8 @@ function ENT:Unlink( Target )
 
 	if Success then
 		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
-			ACE_PointsInputChanged( Target )
+			ACE_PointsInputChanged( self, "gun-unlinked" )
+			ACE_PointsInputChanged( Target, "gun-unlinked" )
 		end
 
 		return true, "Unlink successful!"
@@ -620,7 +620,7 @@ function ENT:TriggerInput(iname, value)
 		end
 
 		if oldLimit ~= self.ROFLimit and ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self )
+			ACE_PointsInputChanged( self, "gun-rof-limit" )
 		end
 	end
 end

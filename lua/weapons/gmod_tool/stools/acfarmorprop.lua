@@ -332,6 +332,8 @@ local function ACE_GetPopupPoints(ent)
 			if readout.MinimumApplied then
 				lines[#lines + 1] = "Weapon Minimum Applied: " .. ACE_FormatPoints(readout.Points)
 			end
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout)
+			if floorLine then lines[#lines + 1] = floorLine end
 			local roundLine = readout.Round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(readout.Round)
 			if roundLine then lines[#lines + 1] = "Round: " .. roundLine end
 		end

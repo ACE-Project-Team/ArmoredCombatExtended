@@ -1182,6 +1182,7 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 	local model = ACE.PointsModel or {}
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
 	local rawPoints = rate * roundScore * firepowerScale
+	local rateFloor = ACE_Points_RateFloor and ACE_Points_RateFloor() or 0
 
 	return {
 		Points = points,
@@ -1191,6 +1192,10 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
 		MinimumApplied = points > rawPoints + 0.01,
+		-- Distinct from MinimumApplied: this is the delivery-rate floor, not the flat weapon
+		-- minimum, and can engage on builds pricing well above the flat floor.
+		RateFloorApplied = rate > 0 and rate < rateFloor,
+		RateFloorSeconds = rateFloor > 0 and (1.0 / rateFloor) or 0,
 		RoundType = round and round.Type,
 		Round = round
 	}
@@ -1219,6 +1224,15 @@ function ACE_GetGunFirepowerPricingLine(readout)
 		string.Comma(math.Round(readout.BaseRoundCost)),
 		readout.FirepowerScale,
 		string.Comma(math.Round(readout.RawPoints)))
+end
+
+-- Tells a player when their weapon priced off the delivery-rate floor instead of its true,
+-- slower rate -- distinct from the flat weapon minimum, and can fire well above it.
+function ACE_GetRateFloorLine(readout)
+	if not istable(readout) or not readout.RateFloorApplied then return end
+
+	return string.format("Slow-Fire Floor Applied: rate priced at 1 round / %.0fs (true rate %.3f/s)",
+		readout.RateFloorSeconds or 0, readout.Rate or 0)
 end
 
 -- Formats the lethality factors used by the points model.

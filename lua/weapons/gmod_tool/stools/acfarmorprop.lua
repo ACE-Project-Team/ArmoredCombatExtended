@@ -371,7 +371,8 @@ local function ACE_GetPopupPoints(ent, ply)
 			if roundLine then
 				lines[#lines + 1] = "Ammo: free (rounds price the guns built to fire them)"
 				lines[#lines + 1] = "Round: " .. roundLine
-					.. string.format(" = %s lethality", string.Comma(math.Round(ACE_Points_RoundCost(round))))
+				lines[#lines + 1] = "Base Round Cost: "
+					.. string.Comma(math.Round(ACE_Points_RoundCost(round)))
 			end
 		end
 	else

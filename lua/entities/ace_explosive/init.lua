@@ -80,7 +80,6 @@ function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
 	Charge.FragMass    = fragMass
 	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37   -- metres
 	Charge.Mass        = physMass
-	Charge.ACEPoints   = fillerMass * (ACF.ExplosivePointsPerKg or 28)
 	Charge.DamageOwner = Owner
 
 	Scalable.FinishSpawn(Charge, Owner, "_ace_explosive", def.name or "Explosive Charge")

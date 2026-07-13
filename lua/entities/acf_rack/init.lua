@@ -165,8 +165,6 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 
 	Rack.MaxMissile = table.Count(gundef.mountpoints) or 1
 	Rack.ReloadTime = gundef.magreload or 1 --Replace with fixed time delay rather than multiplier
-	Rack.ACEPoints	= 0
-
 	local gunclass = RackClasses[Rack.Class] or ErrorNoHalt("Couldn't find the " .. tostring(Rack.Class) .. " gun-class!")
 
 	Rack.Muzzleflash       = gundef.muzzleflash	or gunclass.muzzleflash	or ""
@@ -670,8 +668,6 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	self.ReloadTime = ACF_GetRackValue(BulletData, "reloadspeed") or ACF_GetGunValue(BulletData.Id, "reloadspeed") or 1
 	self.ReloadDelay = ACF_GetRackValue(BulletData, "reloaddelay") or ACF_GetGunValue(BulletData.Id, "reloaddelay") or 1
 	self.Inaccuracy = ACF_GetRackValue(BulletData, "inaccuracy") or ACF_GetGunValue(BulletData.Id, "inaccuracy") or 0
-
-	missile.ACEPoints = CalculateMissileCost(Crate.BulletData)
 
 	if missile:IsValid() then
 		self:EmitSound("acf_extra/tankfx/gnomefather/reload12.wav", 500, 110)
@@ -1300,12 +1296,4 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 
 	return HitRes --This function needs to return HitRes
 
-end
-
-do
-	-- Calculates per-missile points for rack/ammo entities.
-	-- ATGMs use the same performance model as gun ammo.
-	function CalculateMissileCost(BulletData)
-		return ACE_CalcMissileRoundPoints(BulletData)
-	end
 end

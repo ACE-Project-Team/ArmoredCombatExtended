@@ -52,7 +52,6 @@ function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	Charge.FragMass    = fragMass
 	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37
 	Charge.Mass        = physMass
-	Charge.ACEPoints   = fillerMass * (ACF.ExplosivePointsPerKg or 28)
 	Charge.DamageOwner = Owner
 
 	if IsValid(phys) then

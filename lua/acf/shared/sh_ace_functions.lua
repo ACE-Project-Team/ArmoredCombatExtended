@@ -1183,6 +1183,11 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
 	local rawPoints = rate * roundScore * firepowerScale
 	local rateFloor = ACE_Points_RateFloor and ACE_Points_RateFloor() or 0
+	-- Compare against the FLOORED rate's raw product, not the true rate's -- otherwise every
+	-- floor-affected weapon falsely reads as having hit the flat weapon minimum instead.
+	local flooredRate = (rateFloor > 0) and math.max(rate, rateFloor) or rate
+	local flooredRawPoints = flooredRate * roundScore * firepowerScale
+	local minimumApplied = points > flooredRawPoints + 0.01
 
 	return {
 		Points = points,
@@ -1191,10 +1196,11 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 		BaseRoundCost = baseRoundCost,
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
-		MinimumApplied = points > rawPoints + 0.01,
+		MinimumApplied = minimumApplied,
 		-- Distinct from MinimumApplied: this is the delivery-rate floor, not the flat weapon
-		-- minimum, and can engage on builds pricing well above the flat floor.
-		RateFloorApplied = rate > 0 and rate < rateFloor,
+		-- minimum, and can engage on builds pricing well above the flat floor. Mutually
+		-- exclusive with MinimumApplied so a build shows exactly one accurate notice.
+		RateFloorApplied = not minimumApplied and rate > 0 and rate < rateFloor,
 		RateFloorSeconds = rateFloor > 0 and (1.0 / rateFloor) or 0,
 		RoundType = round and round.Type,
 		Round = round

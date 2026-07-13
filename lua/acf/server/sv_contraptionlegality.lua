@@ -72,11 +72,6 @@ do
 	function ACE_EnsureCacheVersion(con)
 		if not con then return false end
 
-		if con.ACECacheVersion == nil then
-			con.ACECacheVersion = ACE.CacheVersion
-			return false
-		end
-
 		if con.ACECacheVersion == ACE.CacheVersion then return false end
 
 		con.ACECacheVersion = ACE.CacheVersion
@@ -84,6 +79,7 @@ do
 		con.ACEArmorCalculated = false
 
 		con.ACEPointsDirty = true
+		con.ACEArmorDirty = true
 		con.ACENonArmorDirty = true
 
 		return true
@@ -121,12 +117,12 @@ do
 	function ACE_MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty)
 		if not con then return end
 
-		if ACE_ClearArmorPointCache and IsEnt(ent) then
-			ACE_ClearArmorPointCache(ent)
-		end
-
 		if armorDirty == nil then armorDirty = true end
 		if nonArmorDirty == nil then nonArmorDirty = true end
+
+		if armorDirty and ACE_ClearArmorPointCache and IsEnt(ent) then
+			ACE_ClearArmorPointCache(ent)
+		end
 
 		con.ACEPointsDirty = true
 		con.ACEArmorDirty = con.ACEArmorDirty or armorDirty
@@ -139,53 +135,67 @@ do
 
 	-- Orphan weapons invalidate the link-anchor contraption that owns their cost.
 	function ACE_PointsInputChanged(ent)
-		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
-		if not con and ACE_GetWeaponAnchorContraption then
-			con = ACE_GetWeaponAnchorContraption(ent)
-		end
-		if not con then return end
+		if not IsEnt(ent) then return end
 
-		ACE_MarkContraptionPointsDirty(con, ent, false, true)
+		local previous = ent._ACEPointsOwnerConRef
+		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+		if not con and ACE_GetWeaponAnchorContraption then con = ACE_GetWeaponAnchorContraption(ent) end
+
+		ent._ACEPointsOwnerConRef = con
+
+		if previous and previous ~= con then
+			ACE_MarkContraptionPointsDirty(previous, ent, false, true)
+		end
+		if con then ACE_MarkContraptionPointsDirty(con, ent, false, true) end
 	end
 
 	-- Initialize point tracking when a contraption is created.
 	hook.Add("cfw.contraption.created", "ACE_InitPoints", ACE_InitPts)
-	-- Initialize point tracking when a family is created.
-	hook.Add("cfw.family.created", "ACE_InitPoints", ACE_InitPts)
 
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
 
-		if ent._ACEPointsConRef and ent._ACEPointsConRef ~= con then
-			ACE_RemPts(ent._ACEPointsConRef, ent)
+		local previous = ent._ACEPointsConRef
+		local previousOwner = ent._ACEPointsOwnerConRef
+
+		if previous and previous ~= con then
+			ACE_MarkContraptionPointsDirty(previous, ent, true, true)
+		end
+		if previousOwner and previousOwner ~= con and previousOwner ~= previous then
+			ACE_MarkContraptionPointsDirty(previousOwner, ent, false, true)
 		end
 
 		ent._ACEPointsConRef = con
-
+		ent._ACEPointsOwnerConRef = con
 		ACE_MarkContraptionPointsDirty(con, ent, true, true)
 	end
 
 	-- Handle entity removal and update point totals.
 	function ACE_RemPts(con, ent)
-		if not IsEnt(ent) then return end
-		if ent.IsBeingRemoved and ent:IsBeingRemoved() then return end
-		if ent._ACEPointsConRef and ent._ACEPointsConRef ~= con then return end
+		if not con then return end
 
-		ent._ACEPointsConRef = nil
+		local valid = IsEnt(ent)
+		local removing = valid and ent.IsBeingRemoved and ent:IsBeingRemoved()
+		local previous = valid and ent._ACEPointsOwnerConRef
+
+		if valid and ent._ACEPointsConRef == con then ent._ACEPointsConRef = nil end
+		if valid and previous == con then ent._ACEPointsOwnerConRef = nil end
 
 		ACE_MarkContraptionPointsDirty(con, ent, true, true)
+
+		if previous and previous ~= con then
+			ACE_MarkContraptionPointsDirty(previous, ent, false, true)
+		end
+
+		if valid and not removing then ACE_PointsInputChanged(ent) end
 	end
 
 	-- Track point totals when entities are added.
 	hook.Add("cfw.contraption.entityAdded", "ACE_AddPoints", ACE_AddPts)
-	-- Track point totals when entities are added to a family.
-	hook.Add("cfw.family.added", "ACE_AddPoints", ACE_AddPts)
 
 	-- Track point totals when entities are removed.
 	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE_RemPts)
-	-- Track point totals when entities are removed from a family.
-	hook.Add("cfw.family.subbed", "ACE_RemPoints", ACE_RemPts)
 end
 
 -- ------------------------------------------------------------
@@ -212,10 +222,12 @@ do
 
 		OldSetMass(self, mass)
 
+		if ACE_ClearArmorPointCache then ACE_ClearArmorPointCache(ent) end
+
 		local con = ent.GetContraption and ent:CFW_GetContraption()
 		if not con then return end
 
-		ACE_MarkContraptionPointsDirty(con, ent, true, true)
+		ACE_MarkContraptionPointsDirty(con, nil, true, true)
 	end
 end
 
@@ -225,6 +237,7 @@ end
 
 -- Clear derived point caches globally; contraptions rebuild on demand.
 local function ACE_ClearAllCaches()
+	ACE.ArmorPointCache = {}
 	ACE.CacheVersion = (ACE.CacheVersion or 1) + 1
 end
 
@@ -234,7 +247,8 @@ end)
 
 -- Mark armor points dirty for callers that know only armor changed.
 function ACE_MarkArmorDirty(con, ent)
+	if ACE_ClearArmorPointCache and IsEnt(ent) then ACE_ClearArmorPointCache(ent) end
 	if not con then return end
-	ACE_MarkContraptionPointsDirty(con, ent, true, false)
+	ACE_MarkContraptionPointsDirty(con, nil, true, false)
 end
 

@@ -1025,13 +1025,22 @@ function ACE_IsAmmoMissileType(bdata)
 	return classData and classData.type == "missile" or false
 end
 
--- Compute a gun's configured sustained RPS from its current setup.
-function ACE_GetGunConfiguredRps(ent, rofLimit)
+-- Compute a gun's sustained RPS for one explicit ammo configuration.
+function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 	if not ACE_IsEnt(ent) or ent:GetClass() ~= "acf_gun" then return 0 end
 
-	local bdata = ent.BulletData or {}
+	local explicitCandidate = bdata ~= nil
+	bdata = bdata or ent.BulletData or {}
+
 	local roundVolume = tonumber(bdata.RoundVolume)
 	if not roundVolume or roundVolume <= 0 then
+		local length = (tonumber(bdata.ProjLength) or 0) + (tonumber(bdata.PropLength) or 0)
+		roundVolume = (tonumber(bdata.FrArea) or 0) * length
+	end
+
+	if not roundVolume or roundVolume <= 0 then
+		if explicitCandidate then return 0 end
+
 		local reload = tonumber(ent.ReloadTime)
 		local baseRps = reload and reload > 0 and 1 / reload or (tonumber(ent.RateOfFire) or 0) / 60
 		local limitRps = (tonumber(rofLimit) or 0) / 60
@@ -1042,7 +1051,7 @@ function ACE_GetGunConfiguredRps(ent, rofLimit)
 	local adj = tonumber(bdata.LengthAdj) or 1
 	local fireRateModifier = (tonumber(ent.RoFmod) or 1) * (tonumber(ent.PGRoFmod) or 1)
 
-	local crate = bdata.Crate and Entity(bdata.Crate) or nil
+	if not explicitCandidate and not ACE_IsEnt(crate) and bdata.Crate then crate = Entity(bdata.Crate) end
 	if ACE_IsEnt(crate) and crate.RoFMul then
 		fireRateModifier = fireRateModifier * (crate.RoFMul + 1)
 	end
@@ -1069,147 +1078,110 @@ function ACE_GetGunConfiguredRps(ent, rofLimit)
 	return 1 / reloadTime
 end
 
--- Best-scoring candidate round used by both pricing and readout: linked crates, contraption
--- crates by Id, then the gun's own round.
-local function ACE_ResolveGunBestRound(gun, conEnts)
-	if not ACE_IsEnt(gun) then return nil end
+-- Resolve the reload time attached to a rack ammo candidate, never its live tube state.
+function ACE_GetRackConfiguredReloadTime(rack, bdata)
+	if not ACE_IsEnt(rack) or rack:GetClass() ~= "acf_rack" then return 1 end
 
-	local best, bestScore, scored = nil, -1, false
-	local function consider(bdata)
+	local reload
+	if istable(bdata) then
+		reload = ACF_GetRackValue(bdata, "reloadspeed") or ACF_GetGunValue(bdata.Id, "reloadspeed")
+	end
+	if reload == nil then reload = ACF_GetRackValue(rack.Id, "magreload") end
+
+	reload = tonumber(reload) or 1
+	return reload > 0 and reload or 1
+end
+
+-- Resolve the complete gun configuration with the highest final rate x round score.
+local function ACE_ResolveGunPricingCandidate(gun, conEnts)
+	if not ACE_IsEnt(gun) then return end
+
+	local best
+	local function consider(bdata, crate)
 		local round = ACE_Points_RoundFromBullet(bdata)
 		if not round then return end
-		local score = ACE_Points_RoundScore(round)
-		if score > bestScore then best, bestScore = round, score end
-		scored = true
+
+		local rate = ACE_Points_GunSustainedRps(gun, bdata, crate)
+		local roundScore = ACE_Points_RoundScore(round)
+		local candidate = {
+			Round = round,
+			Rate = rate,
+			RoundScore = roundScore,
+			FinalScore = rate * roundScore,
+			SourceIndex = ACE_IsEnt(crate) and crate:EntIndex() or math.huge,
+		}
+
+		if ACE_Points_IsBetterCandidate(candidate, best) then best = candidate end
 	end
 
-	local link = gun.AmmoLink
-	if istable(link) then
-		for _, crate in pairs(link) do
-			if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData) end
+	for _, crate in pairs(gun.AmmoLink or {}) do
+		if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
+	end
+	if best then return best end
+
+	if conEnts == nil then
+		local con = ACE_GetContraptionFromEntity(gun)
+		conEnts = con and ACE_GetContraptionEntities(con, gun) or {}
+	end
+
+	for _, ent in ipairs(conEnts or {}) do
+		if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" and istable(ent.BulletData)
+			and ent.BulletData.Id == gun.Id then
+			consider(ent.BulletData, ent)
 		end
 	end
 
-	if not scored and istable(conEnts) then
-		for _, ent in ipairs(conEnts) do
-			if ACE_IsEnt(ent) and ent:GetClass() == "acf_ammo" and istable(ent.BulletData)
-				and ent.BulletData.Id == gun.Id then
-				consider(ent.BulletData)
+	return best
+end
+
+-- Resolve the complete rack configuration with the highest final rate x round score.
+local function ACE_ResolveRackPricingCandidate(rack)
+	if not ACE_IsEnt(rack) then return end
+
+	local best
+	for _, crate in pairs(rack.AmmoLink or {}) do
+		if ACE_IsEnt(crate) and istable(crate.BulletData) then
+			local round = ACE_Points_RoundFromBullet(crate.BulletData)
+			if round then
+				local reload = ACE_GetRackConfiguredReloadTime(rack, crate.BulletData)
+				local rate = ACE_Points_RackRate(reload, rack.MaxMissile)
+				local roundScore = ACE_Points_RoundScore(round)
+				local candidate = {
+					Round = round,
+					Rate = rate,
+					RoundScore = roundScore,
+					FinalScore = rate * roundScore,
+					SourceIndex = crate:EntIndex(),
+				}
+
+				if ACE_Points_IsBetterCandidate(candidate, best) then best = candidate end
 			end
 		end
 	end
 
-	if not scored and istable(gun.BulletData) then consider(gun.BulletData) end
-
 	return best
 end
 
--- Best-scoring candidate round for a rack, mirroring ACE_Points_RackBestScore (linked crates
--- -> the rack's own non-Empty round). Readout-only. Returns the round table or nil.
-local function ACE_ResolveRackBestRound(rack)
-	if not ACE_IsEnt(rack) then return nil end
-
-	local best, bestScore, scored = nil, -1, false
-	local function consider(bdata)
-		local round = ACE_Points_RoundFromBullet(bdata)
-		if not round then return end
-		local score = ACE_Points_RoundScore(round)
-		if score > bestScore then best, bestScore = round, score end
-		scored = true
-	end
-
-	local link = rack.AmmoLink
-	if istable(link) then
-		for _, crate in pairs(link) do
-			if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData) end
-		end
-	end
-
-	if not scored and istable(rack.BulletData) then
-		local rtype = rack.BulletData.Type
-		if rtype and rtype ~= "" and rtype ~= "Empty" then consider(rack.BulletData) end
-	end
-
-	return best
-end
-
--- Callers may supply a cached contraption entity list for gun round selection.
-function ACE_GetGunFirepowerPointsFor(ent, conEnts)
-	if not ACE_IsEnt(ent) then return 0 end
-
-	local class = ent:GetClass()
-	if class == "acf_rack" then
-		return ACE_Points_RackCost(ent.ReloadTime, ent.MaxMissile, ACE_Points_RackBestScore(ent))
-	end
-	if class ~= "acf_gun" then return 0 end
-
-	local round = ACE_ResolveGunBestRound(ent, conEnts)
-	if not round then return ACE_Points_GunCost(ACE_Points_GunSustainedRps(ent), 0, 0) end
-
-	return ACE_Points_GunCost(ACE_Points_GunSustainedRps(ent),
-		ACE_Points_BaseRoundCost(round),
-		ACE_Points_Gate(ACE_Points_GatePen(round)))
-end
-
--- Resolves gun round candidates from the contraption when no list is supplied.
-function ACE_GetGunFirepowerPoints(ent)
-	if not ACE_IsEnt(ent) then return 0 end
-
-	local class = ent:GetClass()
-	if class == "acf_rack" then
-		return ACE_GetGunFirepowerPointsFor(ent, nil)
-	end
-	if class ~= "acf_gun" then return 0 end
-
-	local con = ACE_GetContraptionFromEntity(ent)
-	local conEnts = con and ACE_GetContraptionEntities(con, ent) or {}
-	return ACE_GetGunFirepowerPointsFor(ent, conEnts)
-end
-
--- Returns rate/s, threat, base round cost, round type, and round data for the priced candidate.
-local function ACE_GetGunFirepowerDetail(ent, conEnts)
+local function ACE_ResolveWeaponPricingInputs(ent, conEnts)
 	if not ACE_IsEnt(ent) then return end
 
 	local class = ent:GetClass()
-	local round, rate
+	if class ~= "acf_gun" and class ~= "acf_rack" then return end
 
-	if class == "acf_gun" then
-		round = ACE_ResolveGunBestRound(ent, conEnts)
-		rate  = ACE_Points_GunSustainedRps(ent)
-	elseif class == "acf_rack" then
-		round = ACE_ResolveRackBestRound(ent)
-		rate = ACE_Points_RackRate(ent.ReloadTime, ent.MaxMissile)
-	else
-		return
-	end
-
-	if not round then return rate end
-
-	return rate, ACE_Points_Gate(ACE_Points_GatePen(round)), ACE_Points_BaseRoundCost(round), round.Type, round
-end
-
-function ACE_GetGunFirepowerReadout(ent, conEnts)
-	if not ACE_IsEnt(ent) then return end
-
-	if ent:GetClass() == "acf_gun" and conEnts == nil then
-		local con = ACE_GetContraptionFromEntity(ent)
-		conEnts = con and ACE_GetContraptionEntities(con, ent) or {}
-	end
-
-	local rate, threat, baseRoundCost, roundType, round = ACE_GetGunFirepowerDetail(ent, conEnts)
-	local points
-	if ent:GetClass() == "acf_rack" then
-		points = ACE_Points_RackCost(ent.ReloadTime, ent.MaxMissile,
-			(tonumber(baseRoundCost) or 0) * (tonumber(threat) or 0))
-	else
-		points = ACE_Points_GunCost(rate, baseRoundCost, threat)
-	end
+	local candidate = class == "acf_gun"
+		and ACE_ResolveGunPricingCandidate(ent, conEnts)
+		or ACE_ResolveRackPricingCandidate(ent)
+	local round = candidate and candidate.Round
+	local rate = candidate and candidate.Rate or 0
+	local threat = round and ACE_Points_Gate(ACE_Points_GatePen(round)) or 0
+	local baseRoundCost = round and ACE_Points_BaseRoundCost(round) or 0
+	local roundScore = threat * baseRoundCost
+	local points = class == "acf_gun"
+		and ACE_Points_GunCost(rate, baseRoundCost, threat)
+		or ACE_Points_RackCostFromRate(rate, roundScore)
 	local model = ACE.PointsModel or {}
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
-	local rawPoints = (tonumber(rate) or 0)
-		* (tonumber(threat) or 0)
-		* (tonumber(baseRoundCost) or 0)
-		* firepowerScale
+	local rawPoints = rate * roundScore * firepowerScale
 
 	return {
 		Points = points,
@@ -1219,9 +1191,23 @@ function ACE_GetGunFirepowerReadout(ent, conEnts)
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
 		MinimumApplied = points > rawPoints + 0.01,
-		RoundType = roundType,
+		RoundType = round and round.Type,
 		Round = round
 	}
+end
+
+-- Callers may supply a shared contraption entity list for the unlinked-gun fallback.
+function ACE_GetGunFirepowerPointsFor(ent, conEnts)
+	local readout = ACE_ResolveWeaponPricingInputs(ent, conEnts)
+	return readout and readout.Points or 0
+end
+
+function ACE_GetGunFirepowerPoints(ent)
+	return ACE_GetGunFirepowerPointsFor(ent, nil)
+end
+
+function ACE_GetGunFirepowerReadout(ent, conEnts)
+	return ACE_ResolveWeaponPricingInputs(ent, conEnts)
 end
 
 function ACE_GetGunFirepowerPricingLine(readout)
@@ -1242,7 +1228,7 @@ function ACE_GetRoundLethalityLine(round)
 
 	local base, hole, blast = ACE_Points_PostPenParts(round)
 	local dmg = base + hole + blast
-	if dmg <= 0 then return nil end
+	if dmg <= 0 then return string.format("%s utility round", round.Type or "Unspecified") end
 
 	local rawPen = tonumber(round.maxPen) or 0
 	local pen = ACE_Points_LethalityPen(round)

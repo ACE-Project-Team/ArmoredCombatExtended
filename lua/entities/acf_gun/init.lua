@@ -66,6 +66,10 @@ function ENT:Initialize()
 
 	self.CanLegalCheck		= true
 
+	self:CallOnRemove("ACE_Points", function(ent)
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent) end
+	end)
+
 end
 
 do
@@ -321,6 +325,9 @@ function ENT:UpdateOverlayText()
 			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
 			if pricing then text = text .. "\nPricing: " .. pricing end
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round)
+			if roundLine then text = text .. "\nPricing Round: " .. roundLine end
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end

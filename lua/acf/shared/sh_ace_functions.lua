@@ -1033,12 +1033,10 @@ function ACE_GetGunConfiguredRps(ent, rofLimit)
 	local roundVolume = tonumber(bdata.RoundVolume)
 	if not roundVolume or roundVolume <= 0 then
 		local reload = tonumber(ent.ReloadTime)
-		if reload and reload > 0 then return 1 / reload end
-
-		local rof = tonumber(ent.RateOfFire)
-		if rof and rof > 0 then return rof / 60 end
-
-		return 0
+		local baseRps = reload and reload > 0 and 1 / reload or (tonumber(ent.RateOfFire) or 0) / 60
+		local limitRps = (tonumber(rofLimit) or 0) / 60
+		if limitRps > 0 then return math.min(baseRps, limitRps) end
+		return baseRps
 	end
 
 	local adj = tonumber(bdata.LengthAdj) or 1

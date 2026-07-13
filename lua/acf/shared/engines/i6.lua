@@ -16,7 +16,6 @@ ACF_DefineEngine( "2.2-I6", {
 	flywheelmass = 0.1,
 	idlerpm = 800,
 	limitrpm = 7200,
-	acepoints = 235
 } )
 
 ACF_DefineEngine( "4.8-I6", {
@@ -32,7 +31,6 @@ ACF_DefineEngine( "4.8-I6", {
 	flywheelmass = 0.2,
 	idlerpm = 900,
 	limitrpm = 5500,
-	acepoints = 501
 } )
 
 ACF_DefineEngine( "17.2-I6", {
@@ -48,7 +46,6 @@ ACF_DefineEngine( "17.2-I6", {
 	flywheelmass = 2.5,
 	idlerpm = 800,
 	limitrpm = 4250,
-	acepoints = 1039
 } )
 
 -- Diesel
@@ -66,7 +63,6 @@ ACF_DefineEngine( "3.0-I6", {
 	flywheelmass = 0.5,
 	idlerpm = 650,
 	limitrpm = 4500,
-	acepoints = 249
 } )
 
 ACF_DefineEngine( "6.5-I6", {
@@ -82,7 +78,6 @@ ACF_DefineEngine( "6.5-I6", {
 	flywheelmass = 1.5,
 	idlerpm = 600,
 	limitrpm = 4000,
-	acepoints = 573
 } )
 
 ACF_DefineEngine( "20.0-I6", {
@@ -98,5 +93,4 @@ ACF_DefineEngine( "20.0-I6", {
 	flywheelmass = 8,
 	idlerpm = 400,
 	limitrpm = 2600,
-	acepoints = 1222
 } )

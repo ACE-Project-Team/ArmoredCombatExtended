@@ -826,15 +826,14 @@ function ENT:OnRestore()
 	Wire_Restored(self)
 end
 
---New Overlay text that is shown when you are looking at the rack.
 function ENT:GetOverlayText()
 
-	local Ammo		= self.CurMissile	-- Ammo count
-	local FireRate	= self.FireDelay or 1	-- How many time take one lauch from another. in secs
-	local Reload		= self.ReloadTime		-- reload time. in secs
+	local Ammo		= self.CurMissile
+	local FireRate	= self.FireDelay or 1
+	local Reload		= self.ReloadTime
 	local ReloadDelay   = self.ReloadDelay
-	local ReloadBonus	= 1-self.ReloadMultiplierBonus  -- the word explains by itself
-	local Status		= self.RackStatus				-- this was used to show ilegality issues before. Now this shows about rack state (reloading?, ready?, empty and so on...)
+	local ReloadBonus	= 1-self.ReloadMultiplierBonus
+	local Status		= self.RackStatus
 	local txt = ""
 
 	txt = "-  " .. Status
@@ -875,6 +874,18 @@ function ENT:GetOverlayText()
 
 	if not self.Legal then
 		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
+
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
+		if readout then
+			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
+			if pricing then txt = txt .. "\nPricing: " .. pricing end
+			if readout.MinimumApplied then
+				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			end
+		end
 	end
 
 	self:SetOverlayText(txt)

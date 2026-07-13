@@ -200,17 +200,18 @@ function ACE_Points_GunCost(sustainedRps, baseRoundCost, threat)
 		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
 end
 
--- Rack firepower cost (scaled). rackRate is the reload rate CAPPED at the tube count over the
--- engagement window (maxMissile/RACK_WINDOW) so a rack is not priced as an infinite-reload DPS
--- machine; RACK_FLAT floors it. reloadTime defaults to 10 (nil/0), maxMissile defaults to 1.
--- bestScore is the max ACE_Points_RoundScore over the rack's candidate rounds (adapter supplies it).
-function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
+function ACE_Points_RackRate(reloadTime, maxMissile)
 	local rt = tonumber(reloadTime) or 0
 	if rt == 0 then rt = 10.0 end
 	local mm = tonumber(maxMissile) or 0
 	if mm == 0 then mm = 1 end
-	local rackRate = min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
-	return max(Model.kGun * rackRate * (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+	return min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
+end
+
+-- Tube count caps sustained rack rate over the engagement window.
+function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
+	return max(Model.kGun * ACE_Points_RackRate(reloadTime, maxMissile)
+		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
 end
 
 -- Mounted charges use one tube-window without the rack hardware floor. Stored ammo remains free.

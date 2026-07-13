@@ -315,6 +315,18 @@ function ENT:UpdateOverlayText()
 
 	text = text .. "\nRounds Per Minute: " .. math.Round( self.RateOfFire or 0, 2 )
 
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
+		if readout then
+			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
+			if pricing then text = text .. "\nPricing: " .. pricing end
+			if readout.MinimumApplied then
+				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			end
+		end
+	end
+
 	text = text .. "\nTemp: " .. math.Round(self.Heat) .. " °C / 200 °C"
 
 	if #self.CrewLink > 0 then

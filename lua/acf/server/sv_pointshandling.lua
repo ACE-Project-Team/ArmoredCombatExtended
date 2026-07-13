@@ -106,7 +106,6 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 		con.ACEArmorPoints = armorPts
 		con.ACEArmorDirty = false
 		con.ACEArmorCalculated = true
-		con.ACEArmorLastCalc = CurTime()
 	end
 
 	local armorPts = con.ACEArmorPoints or totals.Armor or 0
@@ -115,10 +114,6 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	con.ACEPoints = (con.ACEPointsNonArmor or 0) + armorPts
 	con.ACEPointsDirty = con.ACEArmorDirty or con.ACENonArmorDirty or false
 
-	if not con.ACEPointsDirty then
-		con.OTWarnings = con.OTWarnings or {}
-		con.OTWarnings.WarnedModified = false
-	end
 end
 
 -- Ensure point data is initialized and current.
@@ -126,7 +121,7 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	if not con then return end
 
 	local cacheStale = ACE_EnsureCacheVersion and ACE_EnsureCacheVersion(con) or false
-	local needsInit = not con.ACEArmorCalculated or (con.ACEArmorLastCalc or 0) <= 0
+	local needsInit = not con.ACEArmorCalculated
 	if not force and not needsInit and not con.ACEPointsDirty and not con.ACEArmorDirty
 		and not con.ACENonArmorDirty and not cacheStale then
 		return

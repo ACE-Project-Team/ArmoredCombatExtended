@@ -1,5 +1,3 @@
---TODO: merge this file with cl_acfmenu_gui.lua since having 2 files for the same function is irrevelant. Little transition has been made though
-
 include("acf/client/cl_acfmenu_missileui.lua")
 
 if not ACF then ACF = {} end
@@ -32,7 +30,7 @@ local function FormatWithCommas(Value, Decimals)
 	return string.Comma(math.floor(Number + 0.5))
 end
 
-function SetMissileGUIEnabled(_, enabled, gundata)
+local function SetMissileGUIEnabled(_, enabled, gundata)
 
 	if enabled then
 
@@ -54,6 +52,7 @@ function SetMissileGUIEnabled(_, enabled, gundata)
 
 			acfmenupanel.CData.GuidanceSelect.OnSelect = function( _ , _ , data )
 				RunConsoleCommand( "acfmenu_data7", data )
+				if acfmenupanel.QueueRoundCostPreview then acfmenupanel:QueueRoundCostPreview() end
 
 				local gun = {}
 
@@ -194,7 +193,7 @@ end
 
 
 
-function CreateRackSelectGUI(node)
+local function CreateRackSelectGUI(node)
 
 	if not acfmenupanel.CData.MissileSpacer then
 		local spacer = vgui.Create("DPanel")
@@ -253,7 +252,6 @@ function CreateRackSelectGUI(node)
 		acfmenupanel.CustomDisplay:AddItem( configPanel )
 
 	else
-		default = acfmenupanel.CData.RackSelect:GetValue()
 		acfmenupanel.CData.RackSelect:SetVisible(true)
 	end
 
@@ -277,13 +275,15 @@ end
 
 
 
-function ModifyACFMenu(panel)
+local OldAmmoSelect
 
-	oldAmmoSelect = oldAmmoSelect or panel.AmmoSelect
+local function ModifyACFMenu(panel)
+
+	OldAmmoSelect = OldAmmoSelect or panel.AmmoSelect
 
 	panel.AmmoSelect = function(panel, blacklist)
 
-		oldAmmoSelect(panel, blacklist)
+		OldAmmoSelect(panel, blacklist)
 
 		acfmenupanel.CData.CaliberSelect.OnSelect = function( _ , _ , data )
 			acfmenupanel.AmmoData["Data"] = ACFEnts["Guns"][data]["round"]
@@ -365,7 +365,7 @@ function ModifyACFMenu(panel)
 
 end
 
-function FindACFMenuPanel()
+local function FindACFMenuPanel()
 	if acfmenupanel and ModifyACFMenu(acfmenupanel) then
 		timer.Remove("FindACFMenuPanel")
 	end

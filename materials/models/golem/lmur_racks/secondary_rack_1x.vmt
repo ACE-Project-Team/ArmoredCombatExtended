@@ -1,0 +1,36 @@
+VertexLitGeneric
+{
+	$basetexture "models/golem/lmur_racks/secondary_rack_1x_rgb"
+	$bumpmap "models/golem/lmur_racks/secondary_rack_1x_n"
+
+	$envmap "models/golem/lmur_racks/specularity_00"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.15 0.15 0.15]"
+
+	$phong 1
+	$phongexponenttexture "models/golem/lmur_racks/secondary_rack_1x_e"
+	$phongfresnelranges "[1 0.1 0]"
+	$phongalbedotint 1
+	$phongboost 1.01
+	$phongalbedoboost 10
+
+	$rimlight 1
+	$rimlightexponent 100
+	$rimlightboost 1
+
+	$color2 "[0 0 0]"
+	$blendtintbybasealpha 1
+
+	$rimmask 1
+
+	Proxies
+	{
+		MwEnvMapTint
+		{
+			min 0
+			max 1
+			envmap "models\golem\lmur_racks\specularity_00"
+			color "[0.149 0.149 0.149]"
+		}
+	}
+}

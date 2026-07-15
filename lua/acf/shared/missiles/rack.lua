@@ -86,6 +86,39 @@ ACF_DefineRack("4xRK", {
 	}
 } )
 
+
+ACF_DefineRack("1x LMUR", {
+	name = "1x LMUR ATGM",
+	desc = "An LMUR rack designed to carry 1 missile.",
+	model    = "models/missiles/lmur_rack1x.mdl",
+	gunclass = "RK",
+	weight = 50,
+	year = 1984,
+
+	mountpoints =
+	{
+			missile1 = { pos = Vector(-17.4,0,-6.8), scaledir = Vector(0,0,-1)},
+
+	}
+} )
+
+
+
+ACF_DefineRack("2x LMUR", {
+	name = "2x LMUR ATGM",
+	desc = "An LMUR rack designed to carry 2 missiles.",
+	model    = "models/missiles/lmur_rack2x.mdl",
+	gunclass = "RK",
+	weight = 50,
+	year = 1984,
+
+	mountpoints =
+	{
+			missile1 = { pos = Vector(-6.4,-8.1,-8.3), scaledir = Vector(0,0,-1)},
+			missile2 = { pos = Vector(-6.4,8.1,-8.3), scaledir = Vector(0,0,-1)},
+	}
+} )
+
 ACF_DefineRack("2x AGM-114", {
 	name = "Dual AGM-114 Rack",
 	desc = "An AGM-114 rack designed to carry 2 missiles.",

@@ -11,15 +11,6 @@ local GunTable = ACF.Weapons.Guns
 local CrewLinkDistBase = 200
 local AmmoLinkDistBase = 512
 
-local function MarkGunPointStateDirty(Gun)
-	if not ACE_MarkContraptionPointsDirty then return end
-
-	local Contraption = Gun.GetContraption and Gun:GetContraption() or nil
-	if not Contraption then return end
-
-	ACE_MarkContraptionPointsDirty(Contraption, Gun, false, true)
-end
-
 local function AttemptFirstLoad(Gun, Crate)
 	if not IsValid(Gun) or not IsValid(Crate) then return end
 	if Gun.BulletData.Type ~= "Empty" then return end
@@ -74,6 +65,10 @@ function ENT:Initialize()
 	self.LastThink           = 0
 
 	self.CanLegalCheck		= true
+
+	self:CallOnRemove("ACE_Points", function(ent)
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "gun-removed") end
+	end)
 
 end
 
@@ -193,7 +188,6 @@ do
 		Gun.Class           = Lookup.gunclass
 		Gun.Heat            = ACE.AmbientTemp
 		Gun.LinkRangeMul    = math.max(Gun.Caliber / 10,1) ^ 1.2
-		Gun.ACEPoints		= 0
 		Gun.RequiresGunner	= false
 		local GunnerExcluded	= Lookup.gunnerexception or false
 
@@ -325,6 +319,23 @@ function ENT:UpdateOverlayText()
 
 	text = text .. "\nRounds Per Minute: " .. math.Round( self.RateOfFire or 0, 2 )
 
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
+		if readout then
+			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
+			if pricing then text = text .. "\nPricing: " .. pricing end
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round)
+			if roundLine then text = text .. "\nPricing Round: " .. roundLine end
+			if readout.MinimumApplied then
+				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			end
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout)
+			if floorLine then text = text .. "\n" .. floorLine end
+		end
+	end
+
 	text = text .. "\nTemp: " .. math.Round(self.Heat) .. " °C / 200 °C"
 
 	if #self.CrewLink > 0 then
@@ -398,6 +409,11 @@ function ENT:Link( Target )
 		self.HasGunner = true
 		Target.LinkedGun = self
 
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "gunner-linked" )
+			ACE_PointsInputChanged( Target, "gunner-linked" )
+		end
+
 		return true, "Link successful!"
 
 	-- the loader
@@ -428,6 +444,11 @@ function ENT:Link( Target )
 
 		self.LoaderCount = self.LoaderCount + 1
 		Target.LinkedGun = self
+
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "loader-linked" )
+			ACE_PointsInputChanged( Target, "loader-linked" )
+		end
 
 		return true, "Link successful!"
 
@@ -485,6 +506,11 @@ function ENT:Link( Target )
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "gun-ammo-linked" )
+			ACE_PointsInputChanged( Target, "gun-ammo-linked" )
+		end
+
 		return true, "Link successful!"
 
 	else
@@ -518,6 +544,11 @@ function ENT:Unlink( Target )
 	end
 
 	if Success then
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "gun-unlinked" )
+			ACE_PointsInputChanged( Target, "gun-unlinked" )
+		end
+
 		return true, "Unlink successful!"
 	else
 		return false, "That entity is not linked to this gun!"
@@ -588,8 +619,8 @@ function ENT:TriggerInput(iname, value)
 			self.ROFLimit = 0
 		end
 
-		if oldLimit ~= self.ROFLimit then
-			MarkGunPointStateDirty(self)
+		if oldLimit ~= self.ROFLimit and ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "gun-rof-limit" )
 		end
 	end
 end

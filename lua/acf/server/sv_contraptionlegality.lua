@@ -160,6 +160,24 @@ do
 			if IsEnt(weapon) then ACE_PointsInputChanged(weapon, "linked-crate-moved") end
 		end
 	end
+	-- Damage can split a warned vehicle into a fresh CFW contraption. Preserve the one-time
+	-- point warning across that split so debris and detached sections cannot repeat it.
+	local function ACE_InheritPointWarning(parent, child)
+		if not parent or not child then return end
+		if not parent.OTWarnings or not parent.OTWarnings.WarnedOverPoints then return end
+
+		child.OTWarnings = child.OTWarnings or {}
+		child.OTWarnings.WarnedOverPoints = true
+	end
+
+	hook.Add("cfw.contraption.split", "ACE_InheritPointWarning", ACE_InheritPointWarning)
+
+	-- Flag contraptions that are being removed to suppress dirty warnings.
+	hook.Add("cfw.contraption.removed", "ACE_ContraptionRemoving", function(con)
+		if not con then return end
+		con.ACERemoving = true
+		if con.OTWarnings then con.OTWarnings.WarnedModified = true end
+	end)
 
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)

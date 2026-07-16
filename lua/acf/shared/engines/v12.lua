@@ -16,6 +16,7 @@ ACF_DefineEngine( "4.6-V12", {
 	flywheelmass = 0.2,
 	idlerpm = 1000,
 	limitrpm = 8000,
+	acepoints = 473
 } )
 
 ACF_DefineEngine( "7.0-V12", {
@@ -31,6 +32,7 @@ ACF_DefineEngine( "7.0-V12", {
 	flywheelmass = 0.45,
 	idlerpm = 800,
 	limitrpm = 7500,
+	acepoints = 564
 } )
 
 ACF_DefineEngine( "23.0-V12", {
@@ -46,6 +48,7 @@ ACF_DefineEngine( "23.0-V12", {
 	flywheelmass = 5,
 	idlerpm = 600,
 	limitrpm = 3250,
+	acepoints = 1594
 } )
 
 ACF_DefineEngine( "25.0-V12", {
@@ -61,6 +64,7 @@ ACF_DefineEngine( "25.0-V12", {
 	flywheelmass = 5.2,
 	idlerpm = 500,
 	limitrpm = 5000,
+	acepoints = 2563
 } )
 
 -- Diesel
@@ -78,6 +82,7 @@ ACF_DefineEngine( "4.0-V12", {
 	flywheelmass = 0.475,
 	idlerpm = 650,
 	limitrpm = 4000,
+	acepoints = 414
 } )
 
 ACF_DefineEngine( "9.2-V12", {
@@ -93,6 +98,7 @@ ACF_DefineEngine( "9.2-V12", {
 	flywheelmass = 2.5,
 	idlerpm = 675,
 	limitrpm = 3500,
+	acepoints = 730
 } )
 
 ACF_DefineEngine( "21.0-V12", {
@@ -108,6 +114,7 @@ ACF_DefineEngine( "21.0-V12", {
 	flywheelmass = 7,
 	idlerpm = 400,
 	limitrpm = 2500,
+	acepoints = 2460
 } )
 
 ACF_DefineEngine( "13.0-V12", {
@@ -123,6 +130,7 @@ ACF_DefineEngine( "13.0-V12", {
 	flywheelmass = 1,
 	idlerpm = 700,
 	limitrpm = 4250,
+	acepoints = 711
 } )
 
 ACF_DefineEngine( "16.5-V12", {
@@ -138,6 +146,7 @@ ACF_DefineEngine( "16.5-V12", {
 	flywheelmass = 2,
 	idlerpm = 675,
 	limitrpm = 3500,
+	acepoints = 1071
 } )
 
 ACF_DefineEngine( "24.8-V12", {
@@ -153,6 +162,7 @@ ACF_DefineEngine( "24.8-V12", {
 	flywheelmass = 7,
 	idlerpm = 500,
 	limitrpm = 2800,
+	acepoints = 2799
 } )
 
 ACF_DefineEngine( "27.0-V12", {
@@ -168,4 +178,5 @@ ACF_DefineEngine( "27.0-V12", {
 	flywheelmass = 6.6,
 	idlerpm = 500,
 	limitrpm = 2800,
+	acepoints = 3436
 } )

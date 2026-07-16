@@ -16,6 +16,7 @@ ACF_DefineEngine( "1.5-I4", {
 	flywheelmass = 0.06,
 	idlerpm = 900,
 	limitrpm = 7500,
+	acepoints = 170
 } )
 
 ACF_DefineEngine( "3.7-I4", {
@@ -31,6 +32,7 @@ ACF_DefineEngine( "3.7-I4", {
 	flywheelmass = 0.2,
 	idlerpm = 900,
 	limitrpm = 6500,
+	acepoints = 394
 } )
 
 ACF_DefineEngine( "16.0-I4", {
@@ -46,6 +48,7 @@ ACF_DefineEngine( "16.0-I4", {
 	flywheelmass = 4,
 	idlerpm = 500,
 	limitrpm = 3500,
+	acepoints = 750
 } )
 
 -- Diesel
@@ -63,6 +66,7 @@ ACF_DefineEngine( "1.6-I4", {
 	flywheelmass = 0.2,
 	idlerpm = 650,
 	limitrpm = 5000,
+	acepoints = 207
 } )
 
 ACF_DefineEngine( "3.1-I4", {
@@ -78,6 +82,7 @@ ACF_DefineEngine( "3.1-I4", {
 	flywheelmass = 1,
 	idlerpm = 500,
 	limitrpm = 4000,
+	acepoints = 352
 } )
 
 ACF_DefineEngine( "15.0-I4", {
@@ -93,4 +98,5 @@ ACF_DefineEngine( "15.0-I4", {
 	flywheelmass = 5,
 	idlerpm = 450,
 	limitrpm = 2100,
+	acepoints = 822
 } )

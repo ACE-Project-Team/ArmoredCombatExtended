@@ -13,6 +13,7 @@ ACF_DefineEngine( "4.3-V10", {
 	flywheelmass = 0.2,
 	idlerpm = 900,
 	limitrpm = 6250,
+	acepoints = 454
 } )
 
 ACF_DefineEngine( "8.0-V10", {
@@ -28,6 +29,7 @@ ACF_DefineEngine( "8.0-V10", {
 	flywheelmass = 0.5,
 	idlerpm = 750,
 	limitrpm = 6500,
+	acepoints = 799
 } )
 
 ACF_DefineEngine( "22.0-V10", {
@@ -43,6 +45,7 @@ ACF_DefineEngine( "22.0-V10", {
 	flywheelmass = 5,
 	idlerpm = 525,
 	limitrpm = 2500,
+	acepoints = 1820
 } )
 ACF_DefineEngine( "23.0-V10", {
 	name = "23.0L V10 Petrol",
@@ -57,4 +60,5 @@ ACF_DefineEngine( "23.0-V10", {
 	flywheelmass = 0.45,
 	idlerpm = 1000,
 	limitrpm = 9000,
+	acepoints = 2705
 } )

@@ -27,6 +27,7 @@ ACF_defineGun("37mmC", { --id
 		maxlength = 48,
 		propweight = 1.125
 	},
+	acepoints = 600
 } )
 
 ACF_defineGun("50mmC", {
@@ -43,6 +44,7 @@ ACF_defineGun("50mmC", {
 		maxlength = 63,
 		propweight = 2.1
 	},
+	acepoints = 800
 } )
 
 ACF_defineGun("75mmC", {
@@ -59,6 +61,7 @@ ACF_defineGun("75mmC", {
 		maxlength = 78,
 		propweight = 3.8
 	},
+	acepoints = 1100
 } )
 
 ACF_defineGun("85mmC", {
@@ -75,6 +78,7 @@ ACF_defineGun("85mmC", {
 		maxlength = 85.5,
 		propweight = 6.65
 	},
+	acepoints = 1200
 } )
 
 ACF_defineGun("100mmC", {
@@ -91,6 +95,7 @@ ACF_defineGun("100mmC", {
 		maxlength = 93,
 		propweight = 9.5
 	},
+	acepoints = 1400
 } )
 
 ACF_defineGun("120mmC", {
@@ -107,6 +112,7 @@ ACF_defineGun("120mmC", {
 		maxlength = 110,
 		propweight = 18
 	},
+	acepoints = 1700
 } )
 
 ACF_defineGun("140mmC", {
@@ -123,6 +129,7 @@ ACF_defineGun("140mmC", {
 		maxlength = 127,
 		propweight = 28
 	},
+	acepoints = 1825
 } )
 
 ACF_defineGun("170mmC", {
@@ -139,6 +146,7 @@ ACF_defineGun("170mmC", {
 		maxlength = 154,
 		propweight = 34
 	},
+	acepoints = 2400
 } )
 
 do

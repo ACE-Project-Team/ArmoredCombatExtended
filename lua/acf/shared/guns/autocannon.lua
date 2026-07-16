@@ -30,6 +30,7 @@ do
 			maxlength = 32,
 			propweight = 0.13
 		},
+		acepoints = 300
 	} )
 
 	ACF_defineGun("30mmAC", {
@@ -47,6 +48,7 @@ do
 			maxlength = 39,
 			propweight = 0.350
 		},
+		acepoints = 425
 	} )
 
 	ACF_defineGun("40mmAC", {
@@ -64,6 +66,7 @@ do
 			maxlength = 45,
 			propweight = 0.9
 		},
+		acepoints = 600
 	} )
 
 	ACF_defineGun("50mmAC", {
@@ -81,6 +84,7 @@ do
 			maxlength = 52,
 			propweight = 1.2
 		},
+		acepoints = 1200
 	} )
 
 	ACF_defineGun("20mmHAC", { --id
@@ -98,6 +102,7 @@ do
 			maxlength = 24,
 			propweight = 0.13
 		},
+		acepoints = 375
 	} )
 
 	ACF_defineGun("30mmHAC", {
@@ -115,6 +120,7 @@ do
 			maxlength = 28,
 			propweight = 0.350
 		},
+		acepoints = 525
 	} )
 
 	ACF_defineGun("40mmHAC", {
@@ -132,6 +138,7 @@ do
 			maxlength = 34,
 			propweight = 0.9
 		},
+		acepoints = 800
 	} )
 end
 

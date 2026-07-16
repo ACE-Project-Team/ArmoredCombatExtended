@@ -16,6 +16,7 @@ ACF_DefineEngine( "1.2-I3", {
 	flywheelmass = 0.05,
 	idlerpm = 1100,
 	limitrpm = 6000,
+	acepoints = 144
 } )
 
 ACF_DefineEngine( "3.4-I3", {
@@ -31,6 +32,7 @@ ACF_DefineEngine( "3.4-I3", {
 	flywheelmass = 0.2,
 	idlerpm = 900,
 	limitrpm = 6800,
+	acepoints = 333
 } )
 
 ACF_DefineEngine( "13.5-I3", {
@@ -46,6 +48,7 @@ ACF_DefineEngine( "13.5-I3", {
 	flywheelmass = 3.7,
 	idlerpm = 500,
 	limitrpm = 3900,
+	acepoints = 701
 } )
 
 -- Diesel
@@ -63,6 +66,7 @@ ACF_DefineEngine( "1.1-I3", {
 	flywheelmass = 0.2,
 	idlerpm = 550,
 	limitrpm = 3000,
+	acepoints = 126
 } )
 
 ACF_DefineEngine( "2.8-I3", {
@@ -78,6 +82,7 @@ ACF_DefineEngine( "2.8-I3", {
 	flywheelmass = 1,
 	idlerpm = 600,
 	limitrpm = 3800,
+	acepoints = 305
 } )
 
 ACF_DefineEngine( "11.0-I3", {
@@ -93,4 +98,5 @@ ACF_DefineEngine( "11.0-I3", {
 	flywheelmass = 5,
 	idlerpm = 550,
 	limitrpm = 2000,
+	acepoints = 682
 } )

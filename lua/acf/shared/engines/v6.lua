@@ -11,6 +11,7 @@ ACF_DefineEngine( "3.6-V6", {
 	flywheelmass = 0.25,
 	idlerpm = 700,
 	limitrpm = 5000,
+	acepoints = 319
 } )
 
 ACF_DefineEngine( "6.2-V6", {
@@ -26,6 +27,7 @@ ACF_DefineEngine( "6.2-V6", {
 	flywheelmass = 0.45,
 	idlerpm = 800,
 	limitrpm = 5000,
+	acepoints = 596
 } )
 
 ACF_DefineEngine( "5.2-V6", {
@@ -41,6 +43,7 @@ ACF_DefineEngine( "5.2-V6", {
 	flywheelmass = 0.8,
 	idlerpm = 650,
 	limitrpm = 4300,
+	acepoints = 576
 } )
 
 ACF_DefineEngine( "12.0-V6", {
@@ -56,6 +59,7 @@ ACF_DefineEngine( "12.0-V6", {
 	flywheelmass = 4,
 	idlerpm = 600,
 	limitrpm = 3800,
+	acepoints = 1389
 } )
 
 ACF_DefineEngine( "15.0-V6", {
@@ -71,4 +75,5 @@ ACF_DefineEngine( "15.0-V6", {
 	flywheelmass = 6.4,
 	idlerpm = 400,
 	limitrpm = 3100,
+	acepoints = 1507
 } )

@@ -11,6 +11,7 @@ function ENT:Initialize()
 	ACE_InitializeCrewseat(self, self.ModelType)
 
 	self.LinkedGun = nil
+	self.ACEPoints = 1
 
 	self.Inputs = WireLib.CreateInputs(self, {})
 

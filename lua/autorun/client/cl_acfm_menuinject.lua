@@ -32,7 +32,7 @@ local function FormatWithCommas(Value, Decimals)
 	return string.Comma(math.floor(Number + 0.5))
 end
 
-local function SetMissileGUIEnabled(_, enabled, gundata)
+function SetMissileGUIEnabled(_, enabled, gundata)
 
 	if enabled then
 
@@ -54,7 +54,6 @@ local function SetMissileGUIEnabled(_, enabled, gundata)
 
 			acfmenupanel.CData.GuidanceSelect.OnSelect = function( _ , _ , data )
 				RunConsoleCommand( "acfmenu_data7", data )
-				if acfmenupanel.QueueRoundCostPreview then acfmenupanel:QueueRoundCostPreview() end
 
 				local gun = {}
 
@@ -195,7 +194,7 @@ end
 
 
 
-local function CreateRackSelectGUI(node)
+function CreateRackSelectGUI(node)
 
 	if not acfmenupanel.CData.MissileSpacer then
 		local spacer = vgui.Create("DPanel")
@@ -254,6 +253,7 @@ local function CreateRackSelectGUI(node)
 		acfmenupanel.CustomDisplay:AddItem( configPanel )
 
 	else
+		default = acfmenupanel.CData.RackSelect:GetValue()
 		acfmenupanel.CData.RackSelect:SetVisible(true)
 	end
 
@@ -277,15 +277,13 @@ end
 
 
 
-local OldAmmoSelect
+function ModifyACFMenu(panel)
 
-local function ModifyACFMenu(panel)
-
-	OldAmmoSelect = OldAmmoSelect or panel.AmmoSelect
+	oldAmmoSelect = oldAmmoSelect or panel.AmmoSelect
 
 	panel.AmmoSelect = function(panel, blacklist)
 
-		OldAmmoSelect(panel, blacklist)
+		oldAmmoSelect(panel, blacklist)
 
 		acfmenupanel.CData.CaliberSelect.OnSelect = function( _ , _ , data )
 			acfmenupanel.AmmoData["Data"] = ACFEnts["Guns"][data]["round"]
@@ -367,7 +365,7 @@ local function ModifyACFMenu(panel)
 
 end
 
-local function FindACFMenuPanel()
+function FindACFMenuPanel()
 	if acfmenupanel and ModifyACFMenu(acfmenupanel) then
 		timer.Remove("FindACFMenuPanel")
 	end

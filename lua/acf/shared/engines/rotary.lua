@@ -14,6 +14,7 @@ ACF_DefineEngine( "900cc-R", {
 	flywheelmass = 0.06,
 	idlerpm = 950,
 	limitrpm = 9200,
+	acepoints = 179
 } )
 
 ACF_DefineEngine( "1.3L-R", {
@@ -29,6 +30,7 @@ ACF_DefineEngine( "1.3L-R", {
 	flywheelmass = 0.06,
 	idlerpm = 950,
 	limitrpm = 9000,
+	acepoints = 280
 } )
 
 ACF_DefineEngine( "2.0L-R", {
@@ -44,4 +46,5 @@ ACF_DefineEngine( "2.0L-R", {
 	flywheelmass = 0.1,
 	idlerpm = 950,
 	limitrpm = 9500,
+	acepoints = 447
 } )

@@ -14,6 +14,7 @@ ACF_DefineEngine( "1.4-B4", {
 	flywheelmass = 0.06,
 	idlerpm = 600,
 	limitrpm = 4500,
+	acepoints = 119
 } )
 
 ACF_DefineEngine( "2.1-B4", {
@@ -29,6 +30,7 @@ ACF_DefineEngine( "2.1-B4", {
 	flywheelmass = 0.15,
 	idlerpm = 700,
 	limitrpm = 5000,
+	acepoints = 226
 } )
 
 ACF_DefineEngine( "3.2-B4", {
@@ -44,6 +46,7 @@ ACF_DefineEngine( "3.2-B4", {
 	flywheelmass = 0.15,
 	idlerpm = 900,
 	limitrpm = 6500,
+	acepoints = 412
 } )
 
 ACF_DefineEngine( "2.4-B4", {
@@ -59,6 +62,7 @@ ACF_DefineEngine( "2.4-B4", {
 	flywheelmass = 0.4,
 	idlerpm = 550,
 	limitrpm = 2800,
+	acepoints = 193
 } )
 
 ACF_DefineEngine( "7.4-B4", {
@@ -74,6 +78,7 @@ ACF_DefineEngine( "7.4-B4", {
 	flywheelmass = 4.3,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 1398
 } )
 
 ACF_DefineEngine( "8.2-B4", {
@@ -89,6 +94,7 @@ ACF_DefineEngine( "8.2-B4", {
 	flywheelmass = 4.3,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 1457
 } )
 
 ACF_DefineEngine( "14.3-B4", {
@@ -104,4 +110,5 @@ ACF_DefineEngine( "14.3-B4", {
 	flywheelmass = 6.8,
 	idlerpm = 400,
 	limitrpm = 2600,
+	acepoints = 2013
 } )

@@ -14,6 +14,7 @@ ACF_DefineEngine( "2.8-B6", {
 	flywheelmass = 0.08,
 	idlerpm = 750,
 	limitrpm = 7250,
+	acepoints = 247
 } )
 
 ACF_DefineEngine( "5.0-B6", {
@@ -29,6 +30,7 @@ ACF_DefineEngine( "5.0-B6", {
 	flywheelmass = 0.11,
 	idlerpm = 900,
 	limitrpm = 6800,
+	acepoints = 564
 } )
 
 ACF_DefineEngine( "8.3-B6", {
@@ -44,6 +46,7 @@ ACF_DefineEngine( "8.3-B6", {
 	flywheelmass = 0.65,
 	idlerpm = 500,
 	limitrpm = 4200,
+	acepoints = 677
 } )
 
 ACF_DefineEngine( "10.0-B6", {
@@ -59,6 +62,7 @@ ACF_DefineEngine( "10.0-B6", {
 	flywheelmass = 1,
 	idlerpm = 620,
 	limitrpm = 4500,
+	acepoints = 1429
 } )
 
 ACF_DefineEngine( "5.4-B6", {
@@ -74,6 +78,7 @@ ACF_DefineEngine( "5.4-B6", {
 	flywheelmass = 0.65,
 	idlerpm = 500,
 	limitrpm = 3500,
+	acepoints = 531
 } )
 
 ACF_DefineEngine( "15.8-B6", {
@@ -89,6 +94,7 @@ ACF_DefineEngine( "15.8-B6", {
 	flywheelmass = 1,
 	idlerpm = 620,
 	limitrpm = 4900,
+	acepoints = 1354
 } )
 
 ACF_DefineEngine( "13.6-B6", {
@@ -104,6 +110,7 @@ ACF_DefineEngine( "13.6-B6", {
 	flywheelmass = 6,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 1734
 } )
 
 ACF_DefineEngine( "20.7-B6", {
@@ -119,6 +126,7 @@ ACF_DefineEngine( "20.7-B6", {
 	flywheelmass = 6.4,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 2041
 } )
 
 ACF_DefineEngine( "22.9-B6", {
@@ -134,6 +142,7 @@ ACF_DefineEngine( "22.9-B6", {
 	flywheelmass = 6.4,
 	idlerpm = 600,
 	limitrpm = 2600,
+	acepoints = 2684
 } )
 
 ACF_DefineEngine( "25.9-B6", {
@@ -149,4 +158,5 @@ ACF_DefineEngine( "25.9-B6", {
 	flywheelmass = 6.6,
 	idlerpm = 600,
 	limitrpm = 2800,
+	acepoints = 3132
 } )

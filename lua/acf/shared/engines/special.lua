@@ -14,6 +14,7 @@ ACF_DefineEngine( "0.9L-I2", {
 	flywheelmass = 0.085,
 	idlerpm = 750,
 	limitrpm = 6000,
+	acepoints = 219
 } )
 
 ACF_DefineEngine( "1.0L-I4", {
@@ -30,6 +31,7 @@ ACF_DefineEngine( "1.0L-I4", {
 	flywheelmass = 0.031,
 	idlerpm = 1200,
 	limitrpm = 12000,
+	acepoints = 254
 } )
 
 ACF_DefineEngine( "1.8L-V4", {
@@ -45,6 +47,7 @@ ACF_DefineEngine( "1.8L-V4", {
 	flywheelmass = 0.04,
 	idlerpm = 900,
 	limitrpm = 7500,
+	acepoints = 294
 } )
 
 ACF_DefineEngine( "1.9L-I4", {
@@ -60,6 +63,7 @@ ACF_DefineEngine( "1.9L-I4", {
 	flywheelmass = 0.06,
 	idlerpm = 950,
 	limitrpm = 9000,
+	acepoints = 496
 } )
 
 ACF_DefineEngine( "2.4L-V6", {
@@ -75,6 +79,7 @@ ACF_DefineEngine( "2.4L-V6", {
 	flywheelmass = 0.075,
 	idlerpm = 950,
 	limitrpm = 8000,
+	acepoints = 431
 } )
 
 ACF_DefineEngine( "2.6L-Wankel", {
@@ -90,6 +95,7 @@ ACF_DefineEngine( "2.6L-Wankel", {
 	flywheelmass = 0.11,
 	idlerpm = 1200,
 	limitrpm = 9500,
+	acepoints = 745
 } )
 
 ACF_DefineEngine( "2.9-V8", {
@@ -105,6 +111,7 @@ ACF_DefineEngine( "2.9-V8", {
 	flywheelmass = 0.075,
 	idlerpm = 1000,
 	limitrpm = 10000,
+	acepoints = 500
 } )
 
 ACF_DefineEngine( "3.0-V12", {
@@ -121,6 +128,7 @@ ACF_DefineEngine( "3.0-V12", {
 	flywheelmass = 0.1,
 	idlerpm = 1200,
 	limitrpm = 12500,
+	acepoints = 969
 } )
 
 ACF_DefineEngine( "3.8-I6", {
@@ -136,6 +144,7 @@ ACF_DefineEngine( "3.8-I6", {
 	flywheelmass = 0.1,
 	idlerpm = 1100,
 	limitrpm = 9000,
+	acepoints = 634
 } )
 
 ACF_DefineEngine( "5.3-V10", {
@@ -151,6 +160,7 @@ ACF_DefineEngine( "5.3-V10", {
 	flywheelmass = 0.15,
 	idlerpm = 1100,
 	limitrpm = 9000,
+	acepoints = 904
 } )
 
 ACF_DefineEngine( "7.2-V8", {
@@ -166,4 +176,5 @@ ACF_DefineEngine( "7.2-V8", {
 	flywheelmass = 0.15,
 	idlerpm = 1000,
 	limitrpm = 8500,
+	acepoints = 906
 } )

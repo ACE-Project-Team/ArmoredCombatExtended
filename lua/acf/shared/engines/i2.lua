@@ -14,6 +14,7 @@ ACF_DefineEngine( "0.8L-I2", {
 	flywheelmass = 0.12,
 	idlerpm = 500,
 	limitrpm = 2950,
+	acepoints = 87
 } )
 
 
@@ -31,4 +32,5 @@ ACF_DefineEngine( "10.0-I2", {
 	flywheelmass = 7,
 	idlerpm = 350,
 	limitrpm = 1200,
+	acepoints = 685
 } )

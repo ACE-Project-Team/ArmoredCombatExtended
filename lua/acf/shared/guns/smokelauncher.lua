@@ -26,6 +26,7 @@ ACF_defineGun("40mmSL", { --id
 		maxlength	= 17.5,
 		propweight	= 0.007
 	},
+	acepoints = 10,
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
@@ -43,6 +44,7 @@ ACF_defineGun("20mmSL", { --id
 		maxlength	= 17.5,
 		propweight	= 0.0055
 	},
+	acepoints = 5,
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
@@ -62,5 +64,6 @@ ACF_defineGun("40mmCL", { --id
 		maxlength	= 17.5,
 		propweight	= 0.007
 	},
+	acepoints = 30,
 	gunnerexception = true --Bypasses regular gunner rules.
 } )

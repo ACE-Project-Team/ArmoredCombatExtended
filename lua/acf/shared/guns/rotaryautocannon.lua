@@ -28,6 +28,7 @@ do
 			maxlength = 25,
 			propweight = 0.06
 		},
+		acepoints = 200
 	} )
 
 	ACF_defineGun("20mmRAC", {
@@ -44,6 +45,7 @@ do
 			maxlength = 36,
 			propweight = 0.12
 		},
+		acepoints = 1100
 	} )
 
 	ACF_defineGun("30mmRAC", {
@@ -60,6 +62,7 @@ do
 			maxlength = 45,
 			propweight = 0.350
 		},
+		acepoints = 1500
 	} )
 end
 

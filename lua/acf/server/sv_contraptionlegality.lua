@@ -155,18 +155,6 @@ do
 	-- Initialize point tracking when a family is created.
 	hook.Add("cfw.family.created", "ACE_InitPoints", ACE_InitPts)
 
-	-- Damage can split a warned vehicle into a fresh CFW contraption. Preserve the one-time
-	-- point warning across that split so debris and detached sections cannot repeat it.
-	local function ACE_InheritPointWarning(parent, child)
-		if not parent or not child then return end
-		if not parent.OTWarnings or not parent.OTWarnings.WarnedOverPoints then return end
-
-		child.OTWarnings = child.OTWarnings or {}
-		child.OTWarnings.WarnedOverPoints = true
-	end
-
-	hook.Add("cfw.contraption.split", "ACE_InheritPointWarning", ACE_InheritPointWarning)
-
 	-- Flag contraptions that are being removed to suppress dirty warnings.
 	hook.Add("cfw.contraption.removed", "ACE_ContraptionRemoving", function(con)
 		if not con then return end

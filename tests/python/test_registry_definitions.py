@@ -17,14 +17,14 @@ ROUND_ROOT = SHARED_ROOT / "rounds"
 
 DEFINITION_FUNCTIONS = {
     "ACF_DefineEntity",
-    "ACE_DefineCrewseat",
-    "ACE_DefineExtras",
-    "ACE_DefineMuzzleFlash",
-    "ACE_DefineGunFireSound",
+    "ACE.DefineCrewseat",
+    "ACE.DefineExtras",
+    "ACE.DefineMuzzleFlash",
+    "ACE.DefineGunFireSound",
     "ACF_defineGunClass",
     "ACF_defineGun",
-    "ACE_DefineAmmoCrate",
-    "ACE_DefineLegacyAmmoCrate",
+    "ACE.DefineAmmoCrate",
+    "ACE.DefineLegacyAmmoCrate",
     "ACF_DefineRack",
     "ACF_DefineRackClass",
     "ACF_DefineEngine",
@@ -40,8 +40,8 @@ DEFINITION_FUNCTIONS = {
     "ACF_DefineIRST",
     "ACF_DefineIRSTClass",
     "ACF_DefineVHeatSource",
-    "ACE_DefineExplosive",
-    "ACE_DefineMine",
+    "ACE.DefineExplosive",
+    "ACE.DefineMine",
 }
 
 

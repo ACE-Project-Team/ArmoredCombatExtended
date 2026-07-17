@@ -6,7 +6,10 @@ ACF = { PointsLimit = math.huge, MaxWeight = math.huge }
 CFW = {
 	Classes = {
 		Contraption = {
-			Defuse = function(self) self._defuseCalled = true end,
+			Defuse = function(self)
+				self._defuseCalled = true
+				if self._defuseFailure then self._defuseFailure() end
+			end,
 		},
 	},
 }
@@ -371,6 +374,21 @@ assertEvent("defuse-contraption-removal", function()
 end, { defuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-removed", {
 	recalculations = 0,
 })
+
+local failedDefuseCon = newContraption("failed-defuse")
+local failedDefuseEnt = newEntity(failedDefuseCon, "prop_physics")
+failedDefuseCon.ents[failedDefuseEnt] = true
+failedDefuseCon._defuseFailure = function()
+	failedDefuseCon.ents[failedDefuseEnt] = nil
+	hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(failedDefuseCon, failedDefuseEnt)
+	error("simulated Defuse failure")
+end
+assertEvent("failed-defuse-recovers-one-invalidation", function()
+	local ok = pcall(CFW.Classes.Contraption.Defuse, failedDefuseCon)
+	assert(not ok, "simulated Defuse failure was swallowed")
+end, { failedDefuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-defuse-aborted")
+assert(not failedDefuseCon._ACEPointsDefusing and not failedDefuseCon._ACEPointsDefuseRemovalSeen,
+	"failed Defuse did not clear temporary lifecycle state")
 
 local multiDefuseCon = newContraption("multi-defuse")
 local multiDefuseFirst = newEntity(multiDefuseCon, "prop_physics")

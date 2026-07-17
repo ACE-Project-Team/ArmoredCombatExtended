@@ -409,9 +409,20 @@ do
 		local oldDefuse = class.Defuse
 		class.Defuse = function(self, ...)
 			self._ACEPointsDefusing = true
+			self._ACEPointsDefuseRemovalSeen = nil
 			local result = { pcall(oldDefuse, self, ...) }
+			local removedEntity = self._ACEPointsDefuseRemovalSeen
 			self._ACEPointsDefusing = nil
-			if not result[1] then error(result[2], 0) end
+			self._ACEPointsDefuseRemovalSeen = nil
+			if not result[1] then
+				-- A failing Defuse may have already removed entities, but never reach
+				-- cfw.contraption.removed. Recover the cache state once before
+				-- preserving CFW's original error.
+				if removedEntity then
+					ACE_NotifyPointsInvalidated(self, "contraption-defuse-aborted")
+				end
+				error(result[2], 0)
+			end
 			return unpack(result, 2)
 		end
 		ACE._ACEWrappedDefuse = true
@@ -640,6 +651,7 @@ do
 		-- callback. The wrapper identifies that one logical operation, so defer
 		-- every intermediate entity removal to the final structural event.
 		if con._ACEPointsDefusing then
+			con._ACEPointsDefuseRemovalSeen = true
 			if ent and ent._ACEPointsConRef == con then ent._ACEPointsConRef = nil end
 			if ent and ent._ACEPointsOwnerConRef == con then ent._ACEPointsOwnerConRef = nil end
 			return

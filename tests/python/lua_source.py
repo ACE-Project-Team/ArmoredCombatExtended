@@ -101,7 +101,10 @@ def iter_named_calls(source: str, function_name: str):
         index = match.end()
         if token != function_parts[0]:
             continue
-        if match.start() > 0 and source[match.start() - 1] == ".":
+        previous = match.start() - 1
+        while previous >= 0 and source[previous] in " \t":
+            previous -= 1
+        if previous >= 0 and source[previous] == ".":
             continue
 
         matched = True

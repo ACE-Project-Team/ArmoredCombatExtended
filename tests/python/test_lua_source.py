@@ -39,6 +39,7 @@ class LuaSourceHelperTests(unittest.TestCase):
         -- ACE.DefineMine(\"fake-comment\")
         local text = 'ACE.DefineMine(\\\"fake-string\\\")'
         object.ACE.DefineMine(\"not-a-global-call\")
+        object . ACE.DefineMine(\"also-not-a-global-call\")
         ACE . DefineMine(\"real\")
         """
 

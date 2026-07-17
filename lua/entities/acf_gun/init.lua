@@ -26,17 +26,16 @@ end
 -- Compute the next-shot reload time without mutating ammo, stamina, or the active
 -- reload timer. Link changes and ROFLimit use this same calculation as LoadAmmo so
 -- the visible Fire Rate cannot lag behind the configured weapon state.
-local function GetGunReloadTime(Gun, AmmoEnt)
-	if not IsValid(AmmoEnt) or not AmmoEnt.BulletData then return end
+local function GetGunReloadTime(Gun, BulletData, RoFMul)
+	if not BulletData then return end
 
-	local BulletData = AmmoEnt.BulletData
 	local Adj = BulletData.LengthAdj or 1
 	local MaxRof = Gun.ROFLimit
 	if Gun.maxrof then
 		MaxRof = MaxRof ~= 0 and math.min(Gun.maxrof, MaxRof) or Gun.maxrof
 	end
 
-	local FireRateModifier = Gun.RoFmod * Gun.PGRoFmod * ((AmmoEnt.RoFMul or 0) + 1)
+	local FireRateModifier = Gun.RoFmod * Gun.PGRoFmod * ((RoFMul or 0) + 1)
 	local DefaultReloadTime = ((math.max(BulletData.RoundVolume, Gun.MinLengthBonus / Adj) / 500) ^ 0.60)
 		* FireRateModifier
 	local LowestReloadTime = MaxRof > 0 and 60 / MaxRof or DefaultReloadTime
@@ -53,11 +52,20 @@ local function GetGunReloadTime(Gun, AmmoEnt)
 end
 
 local function RefreshGunRateOfFire(Gun, AmmoEnt)
-	AmmoEnt = IsValid(AmmoEnt) and AmmoEnt or Gun:FindNextCrate()
-	local ReloadTime = GetGunReloadTime(Gun, AmmoEnt)
+	local BulletData
+	local RoFMul
+	if IsValid(AmmoEnt) and AmmoEnt.BulletData then
+		BulletData = AmmoEnt.BulletData
+		RoFMul = AmmoEnt.RoFMul
+	elseif Gun.BulletData and Gun.BulletData.Type ~= "Empty" then
+		BulletData = Gun.BulletData
+		local Crate = BulletData.Crate and Entity(BulletData.Crate)
+		RoFMul = IsValid(Crate) and Crate.RoFMul or 0
+	end
+
+	local ReloadTime = GetGunReloadTime(Gun, BulletData, RoFMul)
 	if not ReloadTime then return false end
 
-	Gun.ReloadTime = ReloadTime
 	Gun.RateOfFire = 60 / ReloadTime
 	Wire_TriggerOutput(Gun, "Fire Rate", Gun.RateOfFire)
 
@@ -1069,7 +1077,7 @@ function ENT:LoadAmmo( AddTime, Reload )
 		self.BulletData = AmmoEnt.BulletData
 		self.BulletData.Crate = AmmoEnt:EntIndex()
 
-		local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt)
+		local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt.BulletData, AmmoEnt.RoFMul)
 		self.ReloadTime = ReloadTime
 		if IsValid(Loader) then Loader:DecreaseStamina() end
 

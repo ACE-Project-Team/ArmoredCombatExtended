@@ -116,8 +116,13 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertIn("local function RefreshGunRateOfFire", gun)
         self.assertIn("RefreshGunRateOfFire(self, Target)", gun)
         self.assertGreaterEqual(gun.count("RefreshGunRateOfFire(self)"), 3)
-        self.assertIn("local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt)", gun)
+        self.assertIn("local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt.BulletData, AmmoEnt.RoFMul)", gun)
         self.assertIn("if IsValid(Loader) then Loader:DecreaseStamina() end", gun)
+
+        refresh = gun[gun.index("local function RefreshGunRateOfFire") : gun.index("function ENT:Initialize")]
+        self.assertNotIn("FindNextCrate", refresh)
+        self.assertNotIn("Gun.ReloadTime", refresh)
+        self.assertIn("Entity(BulletData.Crate)", refresh)
 
     def test_non_entity_armor_producers_use_the_armor_boundary(self):
         for relative, reason in (

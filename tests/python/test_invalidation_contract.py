@@ -155,6 +155,7 @@ class InvalidationContractTests(unittest.TestCase):
 
         self.assertNotIn('hook.Add("PhysgunDrop", "ACE_PointsUnfreezeInvalidation"', legality)
         self.assertIn("if ent._ACEPointsFrozen == false then return end", legality)
+        self.assertIn("vehicle._ACEPointsFrozen ~= false", legality)
 
     def test_matrix_selftest_is_discovered_by_the_offline_runner(self):
         runner = source("tests/run_luajit_tests.py")

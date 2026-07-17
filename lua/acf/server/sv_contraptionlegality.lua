@@ -821,7 +821,10 @@ end)
 hook.Add("PlayerEnteredVehicle", "ACE_PointsVehicleUnfreezeInvalidation", function(_, vehicle)
 	if IsEnt(vehicle) and vehicle.CFW_GetContraption then
 		local con = vehicle:CFW_GetContraption()
-		if con and vehicle._ACEPointsFrozen then
+		-- Match PlayerUnfrozeObject: pasted vehicles can arrive already frozen
+		-- without an ACE marker, but their first post-entry unfreeze still changes
+		-- point inputs. Once recorded false, repeated entry hooks are no-ops.
+		if con and vehicle._ACEPointsFrozen ~= false then
 			vehicle._ACEPointsFrozen = false
 			ACE.NotifyPointsInvalidated(con, "unfreeze-on-entry")
 		end

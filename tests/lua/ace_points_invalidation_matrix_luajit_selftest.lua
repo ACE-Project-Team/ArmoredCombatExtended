@@ -515,6 +515,16 @@ assertNoEvent("duplicate-vehicle-entry-unfreeze", function()
 	return hookHandlers.PlayerEnteredVehicle.ACE_PointsVehicleUnfreezeInvalidation(nil, vehicle)
 end)
 
+local pastedFrozenVehicle = newEntity(conC, "prop_vehicle_prisoner_pod", {
+	CFW_GetContraption = function() return conC end,
+})
+assertEvent("pasted-frozen-vehicle-entry-unfreeze", function()
+	return hookHandlers.PlayerEnteredVehicle.ACE_PointsVehicleUnfreezeInvalidation(nil, pastedFrozenVehicle)
+end, { conC }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "unfreeze-on-entry")
+assertNoEvent("duplicate-pasted-frozen-vehicle-entry-unfreeze", function()
+	return hookHandlers.PlayerEnteredVehicle.ACE_PointsVehicleUnfreezeInvalidation(nil, pastedFrozenVehicle)
+end)
+
 -- Cache-version transitions and the global command cover every active category.
 local stale = newContraption("stale")
 stale.ACECacheVersion = ACE.CacheVersion - 1

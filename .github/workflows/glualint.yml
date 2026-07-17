@@ -48,7 +48,6 @@ jobs:
       branch: public
       gluatest-ref: 735e52d20c69d14c9a2a8d42f3d6428d1af0936b
       dockerbuild: 'true'
-      custom-overrides: ${{ github.workspace }}/tests/gluatest_overrides/
       additional-setup: bash project/tests/prepare_gluatest_dependencies.sh
       timeout: '5'
       logs-as-artifact: 'true'

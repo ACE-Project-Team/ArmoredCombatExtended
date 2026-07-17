@@ -1,4 +1,4 @@
-local function countEntries(registry, name)
+local function countEntries(registry)
 	local count = 0
 	for id, entry in pairs(registry) do
 		expect(type(id)).to.equal("string")
@@ -28,12 +28,12 @@ return {
 					"Extras", "Explosives", "Mobility",
 				}) do
 					expect(ACF.Weapons[name]).to.exist()
-					countEntries(ACF.Weapons[name], name)
+					countEntries(ACF.Weapons[name])
 				end
 
 				for _, name in ipairs({ "GunClass", "Rack", "Radar" }) do
 					expect(ACF.Classes[name]).to.exist()
-					countEntries(ACF.Classes[name], name)
+					countEntries(ACF.Classes[name])
 				end
 			end,
 		},
@@ -70,7 +70,7 @@ return {
 				expect(ACE.MineData).to.exist()
 				expect(ACE.GSounds).to.exist()
 				expect(ACE.GSounds.GunFire).to.exist()
-				countEntries(ACE.MineData, "MineData")
+				countEntries(ACE.MineData)
 			end,
 		},
 		{

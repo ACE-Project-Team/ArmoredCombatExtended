@@ -7,6 +7,13 @@ set -euo pipefail
 override_root="${GITHUB_WORKSPACE}/garrysmod_override/addons"
 mkdir --parents "$override_root"
 
+# The reusable workflow's custom-overrides input is evaluated outside the caller's
+# workspace context. Copy the guard from the checked-out project explicitly instead.
+guard_root="${GITHUB_WORKSPACE}/garrysmod_override/lua/autorun"
+mkdir --parents "$guard_root"
+cp "${GITHUB_WORKSPACE}/project/tests/gluatest_overrides/lua/autorun/ace_gluatest_guard.lua" \
+	"${guard_root}/ace_gluatest_guard.lua"
+
 clone_at_commit() {
 	local repository="$1"
 	local commit="$2"

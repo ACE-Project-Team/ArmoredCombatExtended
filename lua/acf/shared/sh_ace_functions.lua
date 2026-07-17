@@ -1233,7 +1233,7 @@ function ACE_GetGunFirepowerPricingLine(readout, menuFormat)
 			string.Comma(math.Round(readout.RawPoints)))
 	end
 
-	return string.format("%.1f rounds/min x %.1f%% threat x %.1f base x %.1f scale",
+	return string.format("%.1f rpm / 60 x %.1f%% threat x %.1f base x %.1f scale",
 		readout.Rate * 60,
 		readout.Threat * 100,
 		readout.BaseRoundCost,
@@ -1250,7 +1250,7 @@ function ACE_GetRateFloorLine(readout, menuFormat)
 			readout.RateFloorSeconds or 0, readout.Rate or 0)
 	end
 
-	return string.format("Slow-Fire Floor Applied: rate priced at %.1f rounds/min (true rate %.1f rounds/min)",
+	return string.format("Slow-Fire Floor Applied: rate priced at %.1f rpm (true rate %.1f rpm)",
 		(readout.RateFloorSeconds or 0) > 0 and (60 / readout.RateFloorSeconds) or 0,
 		(readout.Rate or 0) * 60)
 end

@@ -330,7 +330,7 @@ local function ACE_GetPopupPoints(ent)
 			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then lines[#lines + 1] = floorLine end
 			local roundLine = readout.Round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(readout.Round, true)
-			if roundLine then lines[#lines + 1] = "Round: " .. roundLine end
+			if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 		end
 	elseif cls == "acf_ammo" then
 		componentPoints = 0
@@ -339,7 +339,7 @@ local function ACE_GetPopupPoints(ent)
 			if round then
 				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round, true)
 				lines[#lines + 1] = "Crate Inventory Points: 0"
-				if roundLine then lines[#lines + 1] = "Round: " .. roundLine end
+				if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
 					.. string.format("%.1f", ACE_Points_BaseRoundCost(round))
 			end

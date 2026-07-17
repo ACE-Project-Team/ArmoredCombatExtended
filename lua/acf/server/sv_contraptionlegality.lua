@@ -12,22 +12,33 @@ ACE.PointsStateVersion = POINTS_STATE_VERSION
 -- CFW's mass extension assumes its aggregate was initialized before a physics rebuild or
 -- membership transition reaches SetMass/entityAdded/entityRemoved. Reconstruct a missing
 -- aggregate from CFW's own per-entity mass ledger at the ACE lifecycle boundary.
-local function ACE_EnsureCFWMassTotal(class, members)
+local function ACE_GetCFWEntityMass(ent, initializeLedger)
+	local mass = ent._mass
+	if mass == nil and ent.GetPhysicsObject then
+		local phys = ent:GetPhysicsObject()
+		mass = IsValid(phys) and phys:GetMass() or 0
+		if initializeLedger then ent._mass = mass end
+	end
+
+	return mass or 0
+end
+
+local function ACE_EnsureCFWMassTotal(class, members, include, exclude)
 	if not class or class.totalMass ~= nil then return end
 
 	local total = 0
 	for key, value in pairs(members or {}) do
 		local member = value == true and key or value
-		if IsValid(member) then
-			local mass = member._mass
-			if mass == nil and member.GetPhysicsObject then
-				local phys = member:GetPhysicsObject()
-				mass = IsValid(phys) and phys:GetMass() or 0
-			end
-			mass = mass or 0
-
-			total = total + mass
+		if IsValid(member) and member ~= exclude then
+			total = total + ACE_GetCFWEntityMass(member, true)
 		end
+	end
+
+	-- entityAdded fires after the entity is inserted; entityRemoved fires after it
+	-- is removed. Include/exclude the transition entity so a late aggregate
+	-- recovery does not double-count either hook's pending mass update.
+	if IsValid(include) and (not members or not members[include]) then
+		total = total + ACE_GetCFWEntityMass(include, true)
 	end
 
 	class.totalMass = total
@@ -193,6 +204,15 @@ do
 
 	-- Initialize point tracking when a contraption is created.
 	hook.Add("cfw.contraption.created", "ACE_InitPoints", ACE_InitPts)
+	hook.Add("cfw.family.created", "ACE_InitFamilyMass", function(family)
+		ACE_EnsureCFWMassTotal(family, family.ents)
+	end)
+	hook.Add("cfw.family.added", "ACE_RecoverFamilyMassOnAdd", function(family, ent)
+		ACE_EnsureCFWMassTotal(family, family.ents, nil, ent)
+	end)
+	hook.Add("cfw.family.subbed", "ACE_RecoverFamilyMassOnRemove", function(family, ent)
+		ACE_EnsureCFWMassTotal(family, family.ents, ent)
+	end)
 
 	-- Damage can split a warned vehicle into a fresh CFW contraption. Preserve the one-time
 	-- point warning across that split so debris and detached sections cannot repeat it.
@@ -226,7 +246,7 @@ do
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
-		ACE_EnsureCFWMassTotal(con, con.ents)
+		ACE_EnsureCFWMassTotal(con, con.ents, nil, ent)
 
 		local previous = ent._ACEPointsConRef
 		local previousOwner = ent._ACEPointsOwnerConRef
@@ -247,6 +267,7 @@ do
 	-- Handle entity removal and update point totals.
 	function ACE_RemPts(con, ent)
 		if not con then return end
+		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 
 		local valid = IsEnt(ent)
 		local removing = valid and ent.IsBeingRemoved and ent:IsBeingRemoved()

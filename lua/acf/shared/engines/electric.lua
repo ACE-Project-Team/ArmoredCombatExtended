@@ -16,7 +16,6 @@ ACF_DefineEngine( "Electric-Small", {
 	limitrpm			= 18215,
 	iselec			= true,
 	flywheeloverride	= 4750,
-	acepoints = 953
 } )
 
 ACF_DefineEngine( "Electric-Medium", {
@@ -34,7 +33,6 @@ ACF_DefineEngine( "Electric-Medium", {
 	limitrpm			= 20000,
 	iselec			= true,
 	flywheeloverride	= 8000,
-	acepoints = 1672
 
 } )
 
@@ -53,7 +51,6 @@ ACF_DefineEngine( "Electric-Large", {
 	limitrpm			= 20000,
 	iselec			= true,
 	flywheeloverride	= 8000,
-	acepoints = 2228
 
 } )
 
@@ -72,7 +69,6 @@ ACF_DefineEngine( "Electric-Tiny-NoBatt", {
 	limitrpm = 11300,
 	iselec = true,
 	flywheeloverride = 4750,
-	acepoints = 248
 } )
 
 
@@ -92,7 +88,6 @@ ACF_DefineEngine( "Electric-Small-NoBatt", {
 	limitrpm = 18215,
 	iselec = true,
 	flywheeloverride = 4750,
-	acepoints = 570
 } )
 
 ACF_DefineEngine( "Electric-Medium-NoBatt", {
@@ -110,7 +105,6 @@ ACF_DefineEngine( "Electric-Medium-NoBatt", {
 	limitrpm = 20000,
 	iselec = true,
 	flywheeloverride = 8000,
-	acepoints = 1184
 } )
 
 ACF_DefineEngine( "Electric-Large-NoBatt", {
@@ -128,7 +122,6 @@ ACF_DefineEngine( "Electric-Large-NoBatt", {
 	limitrpm = 20000,
 	iselec = true,
 	flywheeloverride = 6000,
-	acepoints = 2018
 } )
 
 

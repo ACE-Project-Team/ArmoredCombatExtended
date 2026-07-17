@@ -13,7 +13,6 @@ function ENT:Initialize()
 
 	self.Stamina = 100
 	self.LinkedGun = nil
-	self.ACEPoints = 400
 
 	self.Inputs = WireLib.CreateInputs(self, {})
 

@@ -5,13 +5,49 @@ on:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
+      - 'tests/**'
+      - 'test.py'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
+      - 'tests/**'
+      - 'test.py'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ace-quality-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   Lint:
-    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
+    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@7d26f3a416e6174991c21c962aaf295ff3e17f52 # master, 2026-07-17
     with:
       config: .glualint.json
+
+  OfflineTests:
+    name: Offline definition tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out ACE
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Run Python tests
+        run: python -m unittest discover -s tests/python -p 'test_*.py' -v
+
+  GLuaTest:
+    name: Native GMod server tests
+    uses: CFC-Servers/GLuaTest/.github/workflows/run_tests.yml@735e52d20c69d14c9a2a8d42f3d6428d1af0936b # main, 2026-07-17
+    with:
+      branch: public
+      gluatest-ref: 735e52d20c69d14c9a2a8d42f3d6428d1af0936b
+      dockerbuild: 'true'
+      additional-setup: bash project/tests/prepare_gluatest_dependencies.sh
+      timeout: '5'
+      logs-as-artifact: 'true'

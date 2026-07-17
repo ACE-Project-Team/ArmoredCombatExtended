@@ -222,7 +222,7 @@ do
 		}
 	end
 
-	local function ACE_ApplyPointInvalidation(con, ent, reason, categories, event)
+	local function ACE_ApplyPointInvalidation(con, ent, categories)
 		if not con then return end
 
 		local generation = (con.ACEPointsGeneration or con.ACEPointsRevision or 0) + 1
@@ -302,7 +302,7 @@ do
 		}
 
 		for _, con in ipairs(affected) do
-			ACE_ApplyPointInvalidation(con, event.Entity, event.Reason, event.Categories, event)
+			ACE_ApplyPointInvalidation(con, event.Entity, event.Categories)
 			event.CacheGenerations[con] = {
 				Points = con.ACEPointsGeneration or 0,
 				Cache = con.ACECacheGeneration or 0,
@@ -635,6 +635,15 @@ do
 		if not con then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 		ACE.PointContraptions[con] = true
+
+		-- CFW Defuse emits entity removals before its final contraption-removal
+		-- callback. The wrapper identifies that one logical operation, so defer
+		-- every intermediate entity removal to the final structural event.
+		if con._ACEPointsDefusing then
+			if ent and ent._ACEPointsConRef == con then ent._ACEPointsConRef = nil end
+			if ent and ent._ACEPointsOwnerConRef == con then ent._ACEPointsOwnerConRef = nil end
+			return
+		end
 
 		if ent and ent._ACEPointsRemovalNotified then
 			ent._ACEPointsRemovalNotified = nil

@@ -313,7 +313,6 @@ end)
 assert(ACE.ArmorPointCache[orphan.index] == nil, "orphan armor cache was not cleared")
 
 -- Linked ammo and cross-contraption endpoint batches.
-local linkedWeaponA = newEntity(conA, "acf_gun")
 local linkedWeaponB = newEntity(conB, "acf_gun")
 local ammo = newEntity(conA, "acf_ammo", { Master = { linkedWeaponB } })
 assertEvent("linked-crate-batch", function()
@@ -359,16 +358,19 @@ end, { conA }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, 
 local defuseCon = newContraption("defuse")
 local defuseEnt = newEntity(defuseCon, "prop_physics")
 defuseCon.ents[defuseEnt] = true
+defuseCon._ACEPointsDefusing = true
 assertNoEvent("defuse-intermediate-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)
 end)
 defuseCon.ents[defuseEnt] = nil
-assertEvent("defuse-final-removal", function()
+assertNoEvent("defuse-final-entity-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)
-end, { defuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-removed")
-assertNoEvent("defuse-contraption-removal-is-not-duplicated", function()
-	return hookHandlers["cfw.contraption.removed"].ACE_ContraptionRemoving(defuseCon)
 end)
+assertEvent("defuse-contraption-removal", function()
+	return hookHandlers["cfw.contraption.removed"].ACE_ContraptionRemoving(defuseCon)
+end, { defuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-removed", {
+	recalculations = 0,
+})
 
 local multiDefuseCon = newContraption("multi-defuse")
 local multiDefuseFirst = newEntity(multiDefuseCon, "prop_physics")

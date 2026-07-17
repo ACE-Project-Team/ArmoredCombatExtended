@@ -16,7 +16,6 @@ ACF_DefineEngine( "5.7-V8", {
 	flywheelmass = 0.15,
 	idlerpm = 800,
 	limitrpm = 6500,
-	acepoints = 522
 } )
 
 ACF_DefineEngine( "9.0-V8", {
@@ -32,7 +31,6 @@ ACF_DefineEngine( "9.0-V8", {
 	flywheelmass = 0.25,
 	idlerpm = 700,
 	limitrpm = 5500,
-	acepoints = 636
 } )
 
 ACF_DefineEngine( "18.0-V8", {
@@ -48,7 +46,6 @@ ACF_DefineEngine( "18.0-V8", {
 	flywheelmass = 2.8,
 	idlerpm = 600,
 	limitrpm = 3800,
-	acepoints = 1403
 } )
 
 -- Diesel
@@ -66,7 +63,6 @@ ACF_DefineEngine( "4.5-V8", {
 	flywheelmass = 0.75,
 	idlerpm = 800,
 	limitrpm = 5000,
-	acepoints = 573
 } )
 
 ACF_DefineEngine( "7.8-V8", {
@@ -82,7 +78,6 @@ ACF_DefineEngine( "7.8-V8", {
 	flywheelmass = 1.6,
 	idlerpm = 650,
 	limitrpm = 4000,
-	acepoints = 774
 } )
 
 ACF_DefineEngine( "19.0-V8", {
@@ -98,5 +93,4 @@ ACF_DefineEngine( "19.0-V8", {
 	flywheelmass = 4.5,
 	idlerpm = 500,
 	limitrpm = 2500,
-	acepoints = 1605
 } )

@@ -116,6 +116,9 @@ function ENT:Initialize()
 
 	self.CanLegalCheck = true
 
+	self:CallOnRemove("ACE_Points", function(ent)
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "rack-removed") end
+	end)
 end
 
 
@@ -165,8 +168,6 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 
 	Rack.MaxMissile = table.Count(gundef.mountpoints) or 1
 	Rack.ReloadTime = gundef.magreload or 1 --Replace with fixed time delay rather than multiplier
-	Rack.ACEPoints	= 0
-
 	local gunclass = RackClasses[Rack.Class] or ErrorNoHalt("Couldn't find the " .. tostring(Rack.Class) .. " gun-class!")
 
 	Rack.Muzzleflash       = gundef.muzzleflash	or gunclass.muzzleflash	or ""
@@ -671,8 +672,6 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	self.ReloadDelay = ACF_GetRackValue(BulletData, "reloaddelay") or ACF_GetGunValue(BulletData.Id, "reloaddelay") or 1
 	self.Inaccuracy = ACF_GetRackValue(BulletData, "inaccuracy") or ACF_GetGunValue(BulletData.Id, "inaccuracy") or 0
 
-	missile.ACEPoints = CalculateMissileCost(Crate.BulletData)
-
 	if missile:IsValid() then
 		self:EmitSound("acf_extra/tankfx/gnomefather/reload12.wav", 500, 110)
 		return true
@@ -830,15 +829,14 @@ function ENT:OnRestore()
 	Wire_Restored(self)
 end
 
---New Overlay text that is shown when you are looking at the rack.
 function ENT:GetOverlayText()
 
-	local Ammo		= self.CurMissile	-- Ammo count
-	local FireRate	= self.FireDelay or 1	-- How many time take one lauch from another. in secs
-	local Reload		= self.ReloadTime		-- reload time. in secs
+	local Ammo		= self.CurMissile
+	local FireRate	= self.FireDelay or 1
+	local Reload		= self.ReloadTime
 	local ReloadDelay   = self.ReloadDelay
-	local ReloadBonus	= 1-self.ReloadMultiplierBonus  -- the word explains by itself
-	local Status		= self.RackStatus				-- this was used to show ilegality issues before. Now this shows about rack state (reloading?, ready?, empty and so on...)
+	local ReloadBonus	= 1-self.ReloadMultiplierBonus
+	local Status		= self.RackStatus
 	local txt = ""
 
 	txt = "-  " .. Status
@@ -879,6 +877,23 @@ function ENT:GetOverlayText()
 
 	if not self.Legal then
 		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
+
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
+		if readout then
+			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
+			if pricing then txt = txt .. "\nPricing: " .. pricing end
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round)
+			if roundLine then txt = txt .. "\nPricing Round: " .. roundLine end
+			if readout.MinimumApplied then
+				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			end
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout)
+			if floorLine then txt = txt .. "\n" .. floorLine end
+		end
 	end
 
 	self:SetOverlayText(txt)
@@ -962,6 +977,10 @@ function ENT:Link( Target )
 
 	self:SetOverlayText(txt)
 
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged( self, "rack-ammo-linked" )
+		ACE_PointsInputChanged( Target, "rack-ammo-linked" )
+	end
 	return true, "Link successful!"
 
 end
@@ -980,6 +999,10 @@ function ENT:Unlink( Target )
 
 		self:GetOverlayText()
 
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged( self, "rack-unlinked" )
+			ACE_PointsInputChanged( Target, "rack-unlinked" )
+		end
 		return true, "Unlink successful!"
 	else
 		return false, "That entity is not linked to this gun!"
@@ -1290,12 +1313,4 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 
 	return HitRes --This function needs to return HitRes
 
-end
-
-do
-	-- Calculates per-missile points for rack/ammo entities.
-	-- ATGMs use the same performance model as gun ammo.
-	function CalculateMissileCost(BulletData)
-		return ACE_CalcMissileRoundPoints(BulletData)
-	end
 end

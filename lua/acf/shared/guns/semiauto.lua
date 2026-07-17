@@ -29,7 +29,6 @@ ACF_defineGun("25mmSA", { --id
 		maxlength = 39,
 		propweight = 0.5
 	},
-	acepoints = 600
 } )
 
 ACF_defineGun("37mmSA", {
@@ -48,7 +47,6 @@ ACF_defineGun("37mmSA", {
 		maxlength = 42,
 		propweight = 1.125
 	},
-	acepoints = 700
 } )
 
 ACF_defineGun("45mmSA", { --
@@ -67,7 +65,6 @@ ACF_defineGun("45mmSA", { --
 		maxlength = 52,
 		propweight = 1.8
 	},
-	acepoints = 1000
 } )
 
 ACF_defineGun("57mmSA", {
@@ -86,7 +83,6 @@ ACF_defineGun("57mmSA", {
 		maxlength = 62,
 		propweight = 2
 	},
-	acepoints = 1400
 } )
 
 ACF_defineGun("76mmSA", {
@@ -105,5 +101,4 @@ ACF_defineGun("76mmSA", {
 		maxlength = 70,
 		propweight = 4.75
 	},
-	acepoints = 1900
 } )

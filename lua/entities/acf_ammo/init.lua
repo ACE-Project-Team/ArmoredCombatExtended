@@ -469,6 +469,15 @@ function ENT:Update( ArgsTable )
 	self.LastMass = 1 -- force update of mass
 	self:UpdateMass()
 
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged( self, "ammo-updated" )
+		-- Linked guns may sit in a different contraption; their firepower prices
+		-- this crate's round, so their side must go stale-proof too.
+		for _, Gun in pairs( self.Master or {} ) do
+			if IsValid( Gun ) then ACE_PointsInputChanged( Gun, "linked-ammo-updated" ) end
+		end
+	end
+
 	return true, msg
 
 end
@@ -500,6 +509,16 @@ function ENT:UpdateOverlayText()
 
 		if RoundData and RoundData.cratetxt then
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
+		end
+
+		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost then
+			local round = ACE_Points_RoundFromBullet( self.BulletData )
+			if round then
+				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine( round )
+				if roundLine then text = text .. "\nLethality: " .. roundLine end
+				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE_Points_BaseRoundCost(round)))
+				text = text .. "\nCrate Inventory Points: 0"
+			end
 		end
 
 		if self.IsScalable then
@@ -597,6 +616,7 @@ do
 
 		self.ConvertData    = ACF.RoundTypes[self.RoundType].convert
 		self.BulletData     = self:ConvertData( PlayerData )
+		if IsMissileAmmo( self ) then self.BulletData.Data7 = self.RoundData7 end
 
 		self:BuildAmmoCapacity()
 
@@ -621,7 +641,6 @@ do
 			AmmoMaxMass = Vol
 
 			WireName = "ACE Universal Supply Crate"
-			self.ACEPoints = 4000
 		else
 
 			self.IsTwoPiece = false
@@ -674,14 +693,6 @@ do
 			debugoverlay.Text(self:GetPos() + Vector(0,0,50), "Bullet Dimensions", 20)
 			debugoverlay.Text(self:GetPos() + Vector(0,0,15), "Mass per Round: " .. (self.BulletData.ProjMass + self.BulletData.PropMass) .. "kgs", 20 )
 			debugoverlay.Text(self:GetPos() + Vector(0,0,10), "Total Ammo Mass: " .. self.AmmoMassMax .. "kgs", 20 )
-
-			if WeaponType ~= "missile" then
-				self.ACEPoints = math.ceil(self.AmmoMassMax / 1000 * ACE.AmmoPointsPerTon)
-			else
-				local MissileCost = CalculateMissileCost(self.BulletData)
-				self.ACEPoints = Capacity * MissileCost
-			end
-
 			WireName = AmmoGunData.name .. " Ammo"
 
 		-- end capacity calculations

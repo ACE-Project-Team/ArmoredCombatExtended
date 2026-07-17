@@ -138,7 +138,7 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 	Owner:AddCount("_acf_rack", Rack)
 	Owner:AddCleanup( "acfmenu", Rack )
 
-	if not ACE.CheckRack( Id ) then
+	if not ACE_CheckRack( Id ) then
 		Id = "1xRK"
 	end
 
@@ -791,7 +791,7 @@ function ENT:LoadAmmo()
 	self:GetOverlayText()
 
 	self:Think()
-	if IsValid(missile) and ACE.PointsInputChanged then
+	if missile and ACE.PointsInputChanged then
 		ACE.PointsInputChanged(self, "rack-preloaded", {
 			Ammo = true,
 			Firepower = true,
@@ -911,17 +911,17 @@ function ENT:GetOverlayText()
 		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
-	if ACE.GetGunFirepowerReadout then
-		local readout = ACE.GetGunFirepowerReadout(self)
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
 			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE.GetRoundLethalityLine
-				and ACE.GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round, true)
 			if roundLine then txt = txt .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then txt = txt .. "\n" .. floorLine end
 		end
 	end

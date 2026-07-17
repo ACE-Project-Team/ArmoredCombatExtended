@@ -101,6 +101,7 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertEqual(len(gun_endpoint_calls), 4)
         self.assertEqual(len(rack_endpoint_calls), 2)
         self.assertIn("ReadyRack = true", rack)
+        self.assertIn("if missile and ACE_PointsInputChanged", rack)
         self.assertIn('ACE_PointsInputChanged(self, "rack-missile-fired"', rack)
         self.assertIn('ACE_PointsInputChanged(self, "rack-missile-reloaded"', rack)
 

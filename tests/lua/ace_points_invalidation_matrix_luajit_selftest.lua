@@ -480,6 +480,30 @@ assertNoEvent("duplicate-unfreeze", function()
 	return hookHandlers.PlayerUnfrozeObject.ACE_PointsUnfreezeInvalidation(nil, freezeEntity)
 end)
 
+-- A pasted prop may be frozen before ACE registers the freeze. Its first
+-- completed unfreeze must still invalidate, and later callbacks remain deduped.
+local pastedFrozenEntity = newEntity(conC, "prop_physics")
+assertEvent("pasted-frozen-unfreeze", function()
+	return hookHandlers.PlayerUnfrozeObject.ACE_PointsUnfreezeInvalidation(nil, pastedFrozenEntity)
+end, { conC }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "unfreeze")
+assertNoEvent("duplicate-pasted-frozen-unfreeze", function()
+	return hookHandlers.PlayerUnfrozeObject.ACE_PointsUnfreezeInvalidation(nil, pastedFrozenEntity)
+end)
+
+-- Version-2 contraptions predate generation fields and the active registry.
+local legacy = {
+	ents = {},
+	totalMass = 0,
+	ACEInitDone = true,
+	ACEPointsStateVersion = 2,
+	ACEPointsGeneration = 12,
+}
+assert(ACE_EnsurePointsState(legacy), "version-2 contraption did not migrate")
+assert(legacy.ACEPointsStateVersion == ACE.PointsStateVersion,
+	"version-2 contraption did not receive the current state version")
+assert(legacy.ACEPointsGeneration == 0 and ACE.PointContraptions[legacy],
+	"version-2 contraption did not initialize generation state and registry")
+
 local vehicle = newEntity(conC, "prop_vehicle_prisoner_pod", {
 	_ACEPointsFrozen = true,
 	CFW_GetContraption = function() return conC end,

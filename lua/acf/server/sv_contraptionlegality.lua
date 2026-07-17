@@ -8,7 +8,10 @@ local IsEnt = ACE.IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
 ACE.PointsEventId = ACE.PointsEventId or 0
 ACE.PointContraptions = ACE.PointContraptions or {}
-local POINTS_STATE_VERSION = 2
+-- Version 3 adds invalidation generations and the active-contraption registry.
+-- Bump this whenever the per-contraption invalidation schema changes so live
+-- contraptions cannot skip initialization after a hot reload.
+local POINTS_STATE_VERSION = 3
 ACE.PointsStateVersion = POINTS_STATE_VERSION
 
 -- CFW's mass extension assumes its aggregate was initialized before a physics rebuild or
@@ -795,7 +798,10 @@ local function ACE_NotifyPhysicsTransition(ent, reason, frozen)
 		if ent._ACEPointsFrozen then return end
 		ent._ACEPointsFrozen = true
 	else
-		if not ent._ACEPointsFrozen then return end
+		-- Pasted props can be frozen before ACE sees them. PlayerUnfrozeObject is
+		-- still a completed state transition in that case, so only suppress a
+		-- duplicate notification after we have recorded this entity as unfrozen.
+		if ent._ACEPointsFrozen == false then return end
 		ent._ACEPointsFrozen = false
 	end
 

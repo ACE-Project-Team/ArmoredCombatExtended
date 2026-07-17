@@ -129,6 +129,9 @@ class InvalidationContractTests(unittest.TestCase):
         pointshandling = source("lua/acf/server/sv_pointshandling.lua")
 
         self.assertIn("function ACE_NotifyPointsInvalidated", legality)
+
+        self.assertIn("local POINTS_STATE_VERSION = 3", legality)
+        self.assertIn("ACE.PointContraptions[con] = true", legality)
         self.assertIn("ACE_OnContraptionsPointsInvalidated", legality)
         self.assertIn("ACE_NotifyContraptionPointsInvalidated", pointshandling)
         self.assertIn("ACE_OnContraptionPointsInvalidated", pointshandling)
@@ -151,6 +154,7 @@ class InvalidationContractTests(unittest.TestCase):
                 self.assertIn(f'hook.Add("{hook_name}"', legality)
 
         self.assertNotIn('hook.Add("PhysgunDrop", "ACE_PointsUnfreezeInvalidation"', legality)
+        self.assertIn("if ent._ACEPointsFrozen == false then return end", legality)
 
     def test_matrix_selftest_is_discovered_by_the_offline_runner(self):
         runner = source("tests/run_luajit_tests.py")

@@ -9,6 +9,38 @@ ACE.CacheVersion = ACE.CacheVersion or 1
 local POINTS_STATE_VERSION = 2
 ACE.PointsStateVersion = POINTS_STATE_VERSION
 
+-- CFW's mass extension assumes its aggregate was initialized before a physics rebuild or
+-- membership transition reaches SetMass/entityAdded/entityRemoved. Reconstruct a missing
+-- aggregate from CFW's own per-entity mass ledger at the ACE lifecycle boundary.
+local function ACE_EnsureCFWMassTotal(class, members)
+	if not class or class.totalMass ~= nil then return end
+
+	local total = 0
+	for key, value in pairs(members or {}) do
+		local member = value == true and key or value
+		if IsValid(member) then
+			local mass = member._mass
+			if mass == nil and member.GetPhysicsObject then
+				local phys = member:GetPhysicsObject()
+				mass = IsValid(phys) and phys:GetMass() or 0
+			end
+			mass = mass or 0
+
+			total = total + mass
+		end
+	end
+
+	class.totalMass = total
+end
+
+local function ACE_EnsureCFWMassState(ent)
+	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
+	ACE_EnsureCFWMassTotal(con, con and con.ents)
+
+	local family = ent.GetFamily and ent:GetFamily()
+	ACE_EnsureCFWMassTotal(family, family and family.ents)
+end
+
 -- ------------------------------------------------------------
 -- Legal check throttle (prevents chat spam)
 -- ------------------------------------------------------------
@@ -89,6 +121,7 @@ do
 
 		con.ACEInitDone = true
 		con.ACEPointsStateVersion = POINTS_STATE_VERSION
+		ACE_EnsureCFWMassTotal(con, con.ents)
 
 		con.ACECacheVersion = ACE.CacheVersion
 		con.ACEPoints = 0
@@ -193,6 +226,7 @@ do
 	-- Handle entity addition and update point totals.
 	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
+		ACE_EnsureCFWMassTotal(con, con.ents)
 
 		local previous = ent._ACEPointsConRef
 		local previousOwner = ent._ACEPointsOwnerConRef
@@ -251,6 +285,8 @@ do
 	-- Override PhysObj:SetMass to mark armor dirty when needed.
 	function PHYS:SetMass(mass)
 		local ent = self:GetEntity()
+		if IsEnt(ent) then ACE_EnsureCFWMassState(ent) end
+
 		local currentMass = self:GetMass()
 		local result = OldSetMass(self, mass)
 

@@ -271,12 +271,7 @@ local PointClassToType = {
 }
 
 local function ACE_FormatPoints(points)
-	points = math.Round(tonumber(points) or 0, 1)
-	local whole = math.floor(points)
-	local frac = math.floor((points - whole) * 10 + 0.5)
-	local text = string.Comma(whole)
-	if frac > 0 then text = text .. "." .. frac end
-	return text .. "pts"
+	return string.format("%.1fpts", math.Round(tonumber(points) or 0, 1))
 end
 
 -- Use compact millions while preserving exact thousands below $1M.
@@ -328,7 +323,7 @@ local function ACE_GetPopupPoints(ent)
 
 		if readout then
 			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout)
-			if pricing then lines[#lines + 1] = "Pricing: " .. pricing end
+			if pricing then lines[#lines + 1] = pricing end
 			if readout.MinimumApplied then
 				lines[#lines + 1] = "Weapon Minimum Applied: " .. ACE_FormatPoints(readout.Points)
 			end
@@ -346,7 +341,7 @@ local function ACE_GetPopupPoints(ent)
 				lines[#lines + 1] = "Crate Inventory Points: 0"
 				if roundLine then lines[#lines + 1] = "Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
-					.. string.Comma(math.Round(ACE_Points_BaseRoundCost(round)))
+					.. string.format("%.1f", ACE_Points_BaseRoundCost(round))
 			end
 		end
 	else
@@ -373,13 +368,6 @@ local function ACE_GetPopupPoints(ent)
 			lines[#lines + 1] = "Mfg. Cost: " .. ACE_FormatMoney(mfgCost)
 		end
 	end
-	if con and ACE_GetContraptionEntities and ACE_Manu_ContraptionCost then
-		local conMfg = ACE_Manu_ContraptionCost(ACE_GetContraptionEntities(con, ent))
-		if conMfg and conMfg.Total > 0 then
-			lines[#lines + 1] = "Contraption Mfg: " .. ACE_FormatMoney(conMfg.Total)
-		end
-	end
-
 	local total = armorPoints + componentPoints
 	-- Point-free entities may still have manufacturing lines.
 	if total <= 0 and #lines == 0 then

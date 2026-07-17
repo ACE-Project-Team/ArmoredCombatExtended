@@ -1224,12 +1224,11 @@ function ACE_GetGunFirepowerPricingLine(readout)
 	if not istable(readout) then return end
 	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
 
-	return string.format("%.3f/s x %.1f%% threat x %s base x %.4f scale = %s pts",
-		readout.Rate,
+	return string.format("%.1f rounds/min x %.1f%% threat x %.1f base x %.1f scale",
+		readout.Rate * 60,
 		readout.Threat * 100,
-		string.Comma(math.Round(readout.BaseRoundCost)),
-		readout.FirepowerScale,
-		string.Comma(math.Round(readout.RawPoints)))
+		readout.BaseRoundCost,
+		readout.FirepowerScale)
 end
 
 -- Tells a player when their weapon priced off the delivery-rate floor instead of its true,
@@ -1237,8 +1236,9 @@ end
 function ACE_GetRateFloorLine(readout)
 	if not istable(readout) or not readout.RateFloorApplied then return end
 
-	return string.format("Slow-Fire Floor Applied: rate priced at 1 round / %.0fs (true rate %.3f/s)",
-		readout.RateFloorSeconds or 0, readout.Rate or 0)
+	return string.format("Slow-Fire Floor Applied: rate priced at %.1f rounds/min (true rate %.1f rounds/min)",
+		(readout.RateFloorSeconds or 0) > 0 and (60 / readout.RateFloorSeconds) or 0,
+		(readout.Rate or 0) * 60)
 end
 
 -- Formats the lethality factors used by the points model.
@@ -1253,8 +1253,8 @@ function ACE_GetRoundLethalityLine(round)
 	local pen = ACE_Points_LethalityPen(round)
 	local penLabel = (pen > rawPen + 0.5) and "mm HE-equiv" or "mm pen"
 
-	local line = string.format("%s %d%s x %.2f dmg (%d + %.2f hole + %.2f blast)",
-		round.Type or "Round", math.Round(pen), penLabel, dmg, base, hole, blast)
+	local line = string.format("%s %.1f%s x %.1f dmg",
+		round.Type or "Round", pen, penLabel, dmg)
 
 	local guid = ACE_Points_GuidanceMul(round)
 	if guid ~= 1.0 then
@@ -1262,7 +1262,7 @@ function ACE_GetRoundLethalityLine(round)
 	end
 	local intrinsicValue = ACE_Points_IntrinsicValueMul(round)
 	if intrinsicValue ~= 1.0 then
-		line = line .. string.format(" x %.2f HE utility", intrinsicValue)
+		line = line .. string.format(" x %.1f HE utility", intrinsicValue)
 	end
 
 	return line

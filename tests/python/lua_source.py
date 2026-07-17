@@ -123,6 +123,22 @@ def iter_named_calls(source: str, function_name: str):
         if not matched:
             continue
 
+        matched = True
+        for part in function_parts[1:]:
+            index = skip_space_and_comments(source, index)
+            if index >= len(source) or source[index] != ".":
+                matched = False
+                break
+            index = skip_space_and_comments(source, index + 1)
+            part_match = IDENTIFIER.match(source, index)
+            if not part_match or part_match.group(0) != part:
+                matched = False
+                break
+            index = part_match.end()
+
+        if not matched:
+            continue
+
         call_index = skip_space_and_comments(source, index)
         if call_index >= len(source) or source[call_index] != "(":
             continue

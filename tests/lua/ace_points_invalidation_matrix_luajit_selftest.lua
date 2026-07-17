@@ -390,6 +390,24 @@ end, { failedDefuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRa
 assert(not failedDefuseCon._ACEPointsDefusing and not failedDefuseCon._ACEPointsDefuseRemovalSeen,
 	"failed Defuse did not clear temporary lifecycle state")
 
+local finalizedDefuseCon = newContraption("finalized-defuse")
+local finalizedDefuseEnt = newEntity(finalizedDefuseCon, "prop_physics")
+finalizedDefuseCon.ents[finalizedDefuseEnt] = true
+finalizedDefuseCon._defuseFailure = function()
+	finalizedDefuseCon.ents[finalizedDefuseEnt] = nil
+	hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(finalizedDefuseCon, finalizedDefuseEnt)
+	hookHandlers["cfw.contraption.removed"].ACE_ContraptionRemoving(finalizedDefuseCon)
+	error("simulated post-finalization Defuse failure")
+end
+assertEvent("post-finalization-defuse-failure-does-not-duplicate", function()
+	local ok = pcall(CFW.Classes.Contraption.Defuse, finalizedDefuseCon)
+	assert(not ok, "simulated post-finalization Defuse failure was swallowed")
+end, { finalizedDefuseCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-removed", {
+	recalculations = 0,
+})
+assert(not finalizedDefuseCon._ACEPointsDefusing and not finalizedDefuseCon._ACEPointsDefuseFinalized,
+	"post-finalization Defuse failure did not clear temporary lifecycle state")
+
 local multiDefuseCon = newContraption("multi-defuse")
 local multiDefuseFirst = newEntity(multiDefuseCon, "prop_physics")
 local multiDefuseSecond = newEntity(multiDefuseCon, "prop_physics")

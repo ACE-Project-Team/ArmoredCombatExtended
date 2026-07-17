@@ -410,15 +410,18 @@ do
 		class.Defuse = function(self, ...)
 			self._ACEPointsDefusing = true
 			self._ACEPointsDefuseRemovalSeen = nil
+			self._ACEPointsDefuseFinalized = nil
 			local result = { pcall(oldDefuse, self, ...) }
 			local removedEntity = self._ACEPointsDefuseRemovalSeen
+			local finalized = self._ACEPointsDefuseFinalized
 			self._ACEPointsDefusing = nil
 			self._ACEPointsDefuseRemovalSeen = nil
+			self._ACEPointsDefuseFinalized = nil
 			if not result[1] then
 				-- A failing Defuse may have already removed entities, but never reach
 				-- cfw.contraption.removed. Recover the cache state once before
 				-- preserving CFW's original error.
-				if removedEntity then
+				if removedEntity and not finalized then
 					ACE_NotifyPointsInvalidated(self, "contraption-defuse-aborted")
 				end
 				error(result[2], 0)
@@ -583,6 +586,7 @@ do
 		if pending ~= PENDING_REMOVAL_NOTIFIED then
 			ACE.NotifyPointsInvalidated(con, "contraption-removed")
 		end
+		if con._ACEPointsDefusing then con._ACEPointsDefuseFinalized = true end
 		ACE_ClearContraptionTransition(con)
 		ACE.PointContraptions[con] = nil
 	end)

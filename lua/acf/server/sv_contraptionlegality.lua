@@ -23,7 +23,7 @@ local function ACE_GetCFWEntityMass(ent, initializeLedger)
 	return mass or 0
 end
 
-local function ACE_EnsureCFWMassTotal(class, members, include, exclude)
+local function ACE_EnsureCFWMassTotal(class, members, include, exclude, excludeMass)
 	if not class or class.totalMass ~= nil then return end
 
 	local total = 0
@@ -32,6 +32,12 @@ local function ACE_EnsureCFWMassTotal(class, members, include, exclude)
 		if IsValid(member) and member ~= exclude then
 			total = total + ACE_GetCFWEntityMass(member, true)
 		end
+	end
+
+	-- SetMass can be nested inside CFW's wrapper after CFW has already written the new
+	-- entity ledger value. Reinsert the pre-change physical mass so CFW's delta applies once.
+	if IsValid(exclude) and members and members[exclude] and isnumber(excludeMass) then
+		total = total + excludeMass
 	end
 
 	-- entityAdded fires after the entity is inserted; entityRemoved fires after it
@@ -44,12 +50,12 @@ local function ACE_EnsureCFWMassTotal(class, members, include, exclude)
 	class.totalMass = total
 end
 
-local function ACE_EnsureCFWMassState(ent)
+local function ACE_EnsureCFWMassState(ent, currentMass)
 	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
-	ACE_EnsureCFWMassTotal(con, con and con.ents)
+	ACE_EnsureCFWMassTotal(con, con and con.ents, nil, ent, currentMass)
 
 	local family = ent.GetFamily and ent:GetFamily()
-	ACE_EnsureCFWMassTotal(family, family and family.ents)
+	ACE_EnsureCFWMassTotal(family, family and family.ents, nil, ent, currentMass)
 end
 
 -- ------------------------------------------------------------
@@ -306,9 +312,15 @@ do
 	-- Override PhysObj:SetMass to mark armor dirty when needed.
 	function PHYS:SetMass(mass)
 		local ent = self:GetEntity()
-		if IsEnt(ent) then ACE_EnsureCFWMassState(ent) end
-
 		local currentMass = self:GetMass()
+		if IsEnt(ent) then
+			-- Initialize the ledger before an inner CFW wrapper calculates its delta. An outer
+			-- CFW wrapper has already captured its old ledger value and will overwrite this
+			-- field again after the nested call.
+			if ent._mass == nil then ent._mass = currentMass end
+			ACE_EnsureCFWMassState(ent, currentMass)
+		end
+
 		local result = OldSetMass(self, mass)
 
 		if not IsEnt(ent) then

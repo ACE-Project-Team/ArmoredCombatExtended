@@ -126,8 +126,9 @@ local function ReconcilePrimitiveArmor(ent)
 	MarkPrimitiveArmorDirty(ent, "primitive-physics-rebuilt")
 end
 
--- Primitive_PostRebuildPhysics fires before Primitive restores its mass/material props. The
--- PhysObj:SetMass wrapper calls ACE_PrimitivePropertiesApplied after that final property write.
+-- Primitive_PostRebuildPhysics fires before Primitive restores its serialized mass/material props.
+-- The PhysObj:SetMass wrapper lets ACE finalize its mass-dependent armor state without a timer;
+-- ACE restores the serialized material in the same finalization path.
 function ACE_PrimitivePropertiesApplied(ent)
 	if not IsValid(ent) or ent.ACE_PrimitiveFinalizing or not ent.ACE_PrimitivePropertiesPending then return end
 	if HasPendingPhysicsClip(ent) and not ent.ACE_PrimitiveClippingHandled then return end

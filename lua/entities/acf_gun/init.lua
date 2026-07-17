@@ -23,6 +23,47 @@ local function AttemptFirstLoad(Gun, Crate)
 	Gun:LoadAmmo(false, true)
 end
 
+-- Compute the next-shot reload time without mutating ammo, stamina, or the active
+-- reload timer. Link changes and ROFLimit use this same calculation as LoadAmmo so
+-- the visible Fire Rate cannot lag behind the configured weapon state.
+local function GetGunReloadTime(Gun, AmmoEnt)
+	if not IsValid(AmmoEnt) or not AmmoEnt.BulletData then return end
+
+	local BulletData = AmmoEnt.BulletData
+	local Adj = BulletData.LengthAdj or 1
+	local MaxRof = Gun.ROFLimit
+	if Gun.maxrof then
+		MaxRof = MaxRof ~= 0 and math.min(Gun.maxrof, MaxRof) or Gun.maxrof
+	end
+
+	local FireRateModifier = Gun.RoFmod * Gun.PGRoFmod * ((AmmoEnt.RoFMul or 0) + 1)
+	local DefaultReloadTime = ((math.max(BulletData.RoundVolume, Gun.MinLengthBonus / Adj) / 500) ^ 0.60)
+		* FireRateModifier
+	local LowestReloadTime = MaxRof > 0 and 60 / MaxRof or DefaultReloadTime
+	local Loader = Gun:ChooseLoader()
+	local CanUseLoader = not ACE_table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
+		and Gun.maxrof and Gun.LoaderCount > 0 and IsValid(Loader)
+
+	if CanUseLoader then
+		local CrewReload = Loader.Stamina / 100
+		return math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, DefaultReloadTime), Loader
+	end
+
+	return math.max(DefaultReloadTime, LowestReloadTime)
+end
+
+local function RefreshGunRateOfFire(Gun, AmmoEnt)
+	AmmoEnt = IsValid(AmmoEnt) and AmmoEnt or Gun:FindNextCrate()
+	local ReloadTime = GetGunReloadTime(Gun, AmmoEnt)
+	if not ReloadTime then return false end
+
+	Gun.ReloadTime = ReloadTime
+	Gun.RateOfFire = 60 / ReloadTime
+	Wire_TriggerOutput(Gun, "Fire Rate", Gun.RateOfFire)
+
+	return true
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -405,6 +446,7 @@ function ENT:Link( Target )
 
 		self.HasGunner = true
 		Target.LinkedGun = self
+		RefreshGunRateOfFire(self)
 
 		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
 			ACE.PointsInputChanged({ self, Target }, "gunner-linked")
@@ -439,6 +481,7 @@ function ENT:Link( Target )
 
 		self.LoaderCount = self.LoaderCount + 1
 		Target.LinkedGun = self
+		RefreshGunRateOfFire(self)
 
 		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
 			ACE.PointsInputChanged({ self, Target }, "loader-linked")
@@ -486,16 +529,7 @@ function ENT:Link( Target )
 			end)
 		end
 
-		local ReloadBuff = 1
-		if not (self.Class == "AC" or self.Class == "MG" or self.Class == "RAC" or self.Class == "HMG" or self.Class == "GL" or self.Class == "SA") then
-			ReloadBuff = 1.25-(self.LoaderCount * 0.25)
-		end
-
-
-		self.ReloadTime = math.max(( ( math.max(Target.BulletData.RoundVolume,self.MinLengthBonus) / 500 ) ^ 0.60 ) * self.RoFmod * self.PGRoFmod * ReloadBuff, self.ROFLimit)
-		self.RateOfFire = 60 / self.ReloadTime
-
-		Wire_TriggerOutput( self, "Fire Rate", self.RateOfFire )
+		RefreshGunRateOfFire(self, Target)
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
@@ -535,6 +569,7 @@ function ENT:Unlink( Target )
 	end
 
 	if Success then
+		RefreshGunRateOfFire(self)
 		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
 			ACE.PointsInputChanged({ self, Target }, "gun-unlinked")
 		end
@@ -608,8 +643,11 @@ function ENT:TriggerInput(iname, value)
 			self.ROFLimit = 0
 		end
 
-		if oldLimit ~= self.ROFLimit and ACE.PointsInputChanged then
-			ACE.PointsInputChanged( self, "gun-rof-limit" )
+		if oldLimit ~= self.ROFLimit then
+			RefreshGunRateOfFire(self)
+			if ACE.PointsInputChanged then
+				ACE.PointsInputChanged(self, "gun-rof-limit")
+			end
 		end
 	end
 end
@@ -1031,53 +1069,9 @@ function ENT:LoadAmmo( AddTime, Reload )
 		self.BulletData = AmmoEnt.BulletData
 		self.BulletData.Crate = AmmoEnt:EntIndex()
 
-		local Adj = not self.BulletData.LengthAdj and 1 or self.BulletData.LengthAdj --FL firerate bonus adjustment
-		local curLoaderStamina = 100
-
-		local curLoader = self:ChooseLoader()
-		if IsValid(curLoader) then
-			curLoaderStamina = curLoader.Stamina
-		end
-
-		local maxRof = self.ROFLimit
-
-		if self.maxrof and self.ROFLimit ~= 0  then
-			maxRof = math.min(self.maxrof, self.ROFLimit)
-		elseif self.maxrof and self.ROFLimit == 0 then
-			maxRof = self.maxrof
-		end
-
-		-- Define a table of valid classes
-		local invalidClasses = {"AC", "MG", "RAC", "HMG", "GL", "SA"}
-
-		local fireRateModifier = self.RoFmod * self.PGRoFmod * (AmmoEnt.RoFMul + 1)
-		local defaultReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus / Adj) / 500) ^ 0.60) * fireRateModifier
-		local lowestReloadTime = defaultReloadTime
-
-		if maxRof > 0 then
-			lowestReloadTime = 60 / maxRof
-		end
-
-		--print(maxRof)
-
-		-- Check if self.Class is in the invalidClasses table
-		if not ACE.table_contains(invalidClasses, self.Class) and self.maxrof then
-
-			if self.LoaderCount > 0 and IsValid(curLoader) then -- if loaders are linked then
-
-				local CrewReload = curLoaderStamina / 100
-				local reloadTime = lowestReloadTime / CrewReload -- in seconds!!!!
-
-				self.ReloadTime = math.Clamp(reloadTime, lowestReloadTime, defaultReloadTime)
-
-				--print(lowestReloadTime, defaultReloadTime)
-				curLoader:DecreaseStamina()
-			else --no loader
-				self.ReloadTime = math.max(defaultReloadTime, lowestReloadTime)
-			end
-		else -- gun cannot have loader
-			self.ReloadTime = math.max(defaultReloadTime, lowestReloadTime)
-		end
+		local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt)
+		self.ReloadTime = ReloadTime
+		if IsValid(Loader) then Loader:DecreaseStamina() end
 
 		Wire_TriggerOutput(self, "Loaded", self.BulletData.Type)
 

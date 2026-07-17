@@ -109,6 +109,16 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertIn('"ammo-updated"', ammo)
         self.assertIn('"ammo-removed"', ammo)
 
+    def test_runtime_rate_refresh_matches_link_unlink_and_load_paths(self):
+        gun = source("lua/entities/acf_gun/init.lua")
+
+        self.assertIn("local function GetGunReloadTime", gun)
+        self.assertIn("local function RefreshGunRateOfFire", gun)
+        self.assertIn("RefreshGunRateOfFire(self, Target)", gun)
+        self.assertGreaterEqual(gun.count("RefreshGunRateOfFire(self)"), 3)
+        self.assertIn("local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt)", gun)
+        self.assertIn("if IsValid(Loader) then Loader:DecreaseStamina() end", gun)
+
     def test_non_entity_armor_producers_use_the_armor_boundary(self):
         for relative, reason in (
             ("lua/starfall/libs_sv/acf.lua", "armor-starfall"),

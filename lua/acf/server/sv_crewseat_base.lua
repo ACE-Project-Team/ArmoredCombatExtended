@@ -9,7 +9,7 @@ include("acf/shared/sh_crewseat_base.lua")
 local crewseatDebug = CreateConVar("acf_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
 
 -- Resolve a crewseat model type from dupe data or the current model path.
-function ACE_CrewseatResolveModelType(ent, info)
+function ACE.CrewseatResolveModelType(ent, info)
 	if not IsValid(ent) then return nil end
 
 	local modelPath = (info and info.Model) or ent:GetModel()
@@ -34,13 +34,13 @@ function ACE_CrewseatResolveModelType(ent, info)
 end
 
 -- Check whether crewseat model debugging is enabled.
-function ACE_CrewseatDebugEnabled()
+function ACE.CrewseatDebugEnabled()
 	return crewseatDebug:GetBool()
 end
 
 -- Print a crewseat debug line when enabled.
-function ACE_CrewseatDebugLog(ent, stage, info, extra)
-	if not ACE_CrewseatDebugEnabled() then return end
+function ACE.CrewseatDebugLog(ent, stage, info, extra)
+	if not ACE.CrewseatDebugEnabled() then return end
 
 	local owner = "Unknown"
 	if ent.CPPIGetOwner then
@@ -60,7 +60,7 @@ function ACE_CrewseatDebugLog(ent, stage, info, extra)
 end
 
 -- Apply dupe model data with a fallback model type and optional legacy override.
-function ACE_CrewseatApplyDupeModel(ent, info, defaultModelType, legacyForceSitting)
+function ACE.CrewseatApplyDupeModel(ent, info, defaultModelType, legacyForceSitting)
 	local modelType = info.ModelType
 	local legacyLocked = false
 	local reason = "preserved"
@@ -101,18 +101,18 @@ function ACE_CrewseatApplyDupeModel(ent, info, defaultModelType, legacyForceSitt
 end
 
 -- Defer model sync so the duplicator can finish applying model data.
-function ACE_CrewseatDeferredModelSync(ent, info)
+function ACE.CrewseatDeferredModelSync(ent, info)
 	timer.Simple(0, function()
 		if not IsValid(ent) then return end
 		if ent.ACE_LegacyCrewseatModelLocked then return end
 		local beforeModel = ent:GetModel()
 		local beforeType = ent.ModelType
-		local modelType = ACE_CrewseatResolveModelType(ent, info)
+		local modelType = ACE.CrewseatResolveModelType(ent, info)
 		if modelType and (beforeModel ~= ent:GetModel() or beforeType ~= ent.ModelType) then
 			ent.ACE_DupeDeferredModel = ent:GetModel()
 			ent.ACE_DupeDeferredModelType = ent.ModelType
 			ent.ACE_DupeDeferredResolved = modelType
-			ACE_CrewseatDebugLog(ent, "DeferredSync", info, "resolved=" .. tostring(modelType))
+			ACE.CrewseatDebugLog(ent, "DeferredSync", info, "resolved=" .. tostring(modelType))
 		end
 	end)
 end
@@ -180,7 +180,7 @@ local randomSuffixes = {
 	"Garcia", "", "Russel", "King", "Musk", "Popov"
 }
 
-function ACE_GenerateCrewName()
+function ACE.GenerateCrewName()
 	local randomNum = math.random(1, 100)
 
 	if randomNum <= 2 then
@@ -223,7 +223,7 @@ end
 -- Returns:
 --  gMag: number (includes gravity, so resting ~= 1)
 --  gVec: Vector (local-space felt acceleration in Gs; resting ~= (0,0,1))
-function ACE_CalcEntityGForce(ent)
+function ACE.CalcEntityGForce(ent)
 	if not IsValid(ent) then
 		return 1, Vector(0, 0, 1)
 	end
@@ -292,7 +292,7 @@ end
 -- =========================================================
 
 -- Shared initialization for crewseats
-function ACE_InitializeCrewseat(ent, modelType)
+function ACE.InitializeCrewseat(ent, modelType)
 	local class = ent:GetClass()
 
 	-- Validate model type, fallback to default if invalid
@@ -322,7 +322,7 @@ function ACE_InitializeCrewseat(ent, modelType)
 	ent.ACF.MaxHealth = ent.ACF.MaxHealth or 1
 	ent.ACF.Armour = ent.ACF.Armour or 1
 
-	ent.Name = ent.Name or ACE_GenerateCrewName()
+	ent.Name = ent.Name or ACE.GenerateCrewName()
 	ent.Weight = weight
 	ent.AnglePenalty = 0
 	ent.GForcePenalty = 0
@@ -354,7 +354,7 @@ end
 local startPenalty = 45
 local maxPenalty = 90
 
-function ACE_UpdateCrewseatAnglePenalty(ent)
+function ACE.UpdateCrewseatAnglePenalty(ent)
 	-- Clamp dot to avoid NaN from acos
 	local dot = math.Clamp(ent:GetUp():Dot(vec_up), -1, 1)
 	local curSeatAngle = math.deg(math.acos(dot))
@@ -365,8 +365,8 @@ end
 
 -- G-force penalty calculation (0..1)
 -- Penalties start at 2G and max out at 6G
-function ACE_UpdateGForcePenalty(ent)
-	local gTotal, gVec = ACE_CalcEntityGForce(ent) -- gVec is local-space felt G vector; rest ~= (0,0,1)
+function ACE.UpdateGForcePenalty(ent)
+	local gTotal, gVec = ACE.CalcEntityGForce(ent) -- gVec is local-space felt G vector; rest ~= (0,0,1)
 	ent.CurrentGForce = gTotal
 	ent.GForceVector = gVec
 
@@ -379,7 +379,7 @@ function ACE_UpdateGForcePenalty(ent)
 end
 
 -- Crewseat-specific legal check (includes model validation)
-function ACE_CrewseatLegalCheck(ent)
+function ACE.CrewseatLegalCheck(ent)
 	if ACF.CurTime > ent.NextLegalCheck then
 		local currentModel = ent:GetModel()
 		if ent.Model ~= currentModel then
@@ -388,7 +388,7 @@ function ACE_CrewseatLegalCheck(ent)
 
 		ent.Legal, ent.LegalIssues = ACF_CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
 
-		if ent.Legal and not (ACE_IsValidCrewseatModel and ACE_IsValidCrewseatModel(currentModel)) then
+		if ent.Legal and not (ACE.IsValidCrewseatModel and ACE.IsValidCrewseatModel(currentModel)) then
 			ent.Legal = false
 			ent.LegalIssues = "Invalid crewseat model"
 		end
@@ -400,7 +400,7 @@ function ACE_CrewseatLegalCheck(ent)
 end
 
 -- Shared OnRemove
-function ACE_CrewseatOnRemove(ent)
+function ACE.CrewseatOnRemove(ent)
 	for Key in pairs(ent.Master or {}) do
 		if ent.Master[Key] and ent.Master[Key]:IsValid() then
 			ent.Master[Key]:Unlink(ent)
@@ -409,19 +409,19 @@ function ACE_CrewseatOnRemove(ent)
 end
 
 -- Shared damage function
-function ACE_CrewseatDamage(ent, Entity, Energy, FrArea, Inflictor)
+function ACE.CrewseatDamage(ent, Entity, Energy, FrArea, Inflictor)
 	ent.ACF.Armour = 3
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, 0, Inflictor)
 	return HitRes
 end
 
 -- Play death sound
-function ACE_CrewseatDeathSound(ent)
+function ACE.CrewseatDeathSound(ent)
 	EmitSound(ent.Sound, ent:GetPos(), 50, CHAN_AUTO, 1, 75, 0, ent.SoundPitch)
 end
 
 -- Find replacement loader seat
-function ACE_FindReplacementLoader(ent, maxDistSqr)
+function ACE.FindReplacementLoader(ent, maxDistSqr)
 	maxDistSqr = maxDistSqr or 624100 -- 20m squared
 
 	local closestDist = math.huge

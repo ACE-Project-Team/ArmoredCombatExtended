@@ -38,13 +38,13 @@ local button3
 local status
 local status2
 
-function ACE_ReceiveDPStatus()
+function ACE.ReceiveDPStatus()
 
 	cvarstat = net.ReadBool() or false
 	Permissions:Update()
 
 end
-net.Receive( "ACE_DPStatus", ACE_ReceiveDPStatus )
+net.Receive( "ACE_DPStatus", ACE.ReceiveDPStatus )
 
 net.Receive("ACF_refreshpermissions", function()
 

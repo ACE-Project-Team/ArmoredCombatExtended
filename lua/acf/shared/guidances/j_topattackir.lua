@@ -283,7 +283,7 @@ function this:AcquireLock(missile)
 		physEnt = classifyent:GetPhysicsObject()
 
 		if IsValid(physEnt) and physEnt:IsMoveable() then
-			BaseTemp = ACE_InfraredHeatFromProp( classifyent , dist )
+			BaseTemp = ACE.InfraredHeatFromProp( classifyent , dist )
 		end
 
 

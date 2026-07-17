@@ -67,7 +67,7 @@ function ENT:Initialize()
 	self.CanLegalCheck		= true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "gun-removed") end
+		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "gun-removed") end
 	end)
 end
 
@@ -152,7 +152,7 @@ do
 		local Gun = ents.Create("acf_gun")
 		if not IsValid(Gun) then return false end
 
-		if not ACE_CheckGun( Id ) then
+		if not ACE.CheckGun( Id ) then
 			Id = BackComp[Id] or "100mmC"
 		end
 
@@ -318,17 +318,17 @@ function ENT:UpdateOverlayText()
 
 	text = text .. "\nRounds Per Minute: " .. math.Round( self.RateOfFire or 0, 2 )
 
-	if ACE_GetGunFirepowerReadout then
-		local readout = ACE_GetGunFirepowerReadout(self)
+	if ACE.GetGunFirepowerReadout then
+		local readout = ACE.GetGunFirepowerReadout(self)
 		if readout then
 			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine
-				and ACE_GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE.GetRoundLethalityLine
+				and ACE.GetRoundLethalityLine(readout.Round, true)
 			if roundLine then text = text .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
+			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
 			if floorLine then text = text .. "\n" .. floorLine end
 		end
 	end
@@ -355,7 +355,7 @@ end
 
 local function IsInRetDist( enta, entb, Distance )
 	if not IsValid(enta) or not IsValid(entb) then return end
-	return ACE_InDist( enta:GetPos(), entb:GetPos(), Distance )
+	return ACE.InDist( enta:GetPos(), entb:GetPos(), Distance )
 end
 
 local BreakSoundTbl = {
@@ -406,9 +406,9 @@ function ENT:Link( Target )
 		self.HasGunner = true
 		Target.LinkedGun = self
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gunner-linked" )
-			ACE_PointsInputChanged( Target, "gunner-linked" )
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "gunner-linked" )
+			ACE.PointsInputChanged( Target, "gunner-linked" )
 		end
 		return true, "Link successful!"
 
@@ -441,9 +441,9 @@ function ENT:Link( Target )
 		self.LoaderCount = self.LoaderCount + 1
 		Target.LinkedGun = self
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "loader-linked" )
-			ACE_PointsInputChanged( Target, "loader-linked" )
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "loader-linked" )
+			ACE.PointsInputChanged( Target, "loader-linked" )
 		end
 		return true, "Link successful!"
 
@@ -501,9 +501,9 @@ function ENT:Link( Target )
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-ammo-linked" )
-			ACE_PointsInputChanged( Target, "gun-ammo-linked" )
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "gun-ammo-linked" )
+			ACE.PointsInputChanged( Target, "gun-ammo-linked" )
 		end
 		return true, "Link successful!"
 
@@ -538,9 +538,9 @@ function ENT:Unlink( Target )
 	end
 
 	if Success then
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-unlinked" )
-			ACE_PointsInputChanged( Target, "gun-unlinked" )
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "gun-unlinked" )
+			ACE.PointsInputChanged( Target, "gun-unlinked" )
 		end
 		return true, "Unlink successful!"
 	else
@@ -578,7 +578,7 @@ function ENT:TriggerInput(iname, value)
 		-- Triggered to fire if conditions are met
 		if self.NextFire < CurTime() then
 			-- Check if it's time to fire
-			self.User = ACE_GetWeaponUser(self, self.Inputs.Fire.Src)
+			self.User = ACE.GetWeaponUser(self, self.Inputs.Fire.Src)
 			if not IsValid(self.User) then
 				self.User = self:CPPIGetOwner()
 			end
@@ -612,8 +612,8 @@ function ENT:TriggerInput(iname, value)
 			self.ROFLimit = 0
 		end
 
-		if oldLimit ~= self.ROFLimit and ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-rof-limit" )
+		if oldLimit ~= self.ROFLimit and ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "gun-rof-limit" )
 		end
 	end
 end
@@ -624,7 +624,7 @@ function ENT:Heat_Function()
 
 	--print(DeltaTime)
 
-	self.Heat = ACE_HeatFromGun( self , self.Heat, self.DeltaTime )
+	self.Heat = ACE.HeatFromGun( self , self.Heat, self.DeltaTime )
 	Wire_TriggerOutput(self, "Heat", math.Round(self.Heat))
 
 	-- TODO: instead of breaking the gun by heat, decrease accurancy and jam it
@@ -920,7 +920,7 @@ do
 			return
 		end
 
-		ACE_DoContraptionLegalCheck(self)
+		ACE.DoContraptionLegalCheck(self)
 
 		local bool = true
 
@@ -1065,7 +1065,7 @@ function ENT:LoadAmmo( AddTime, Reload )
 		--print(maxRof)
 
 		-- Check if self.Class is in the invalidClasses table
-		if not ACE_table_contains(invalidClasses, self.Class) and self.maxrof then
+		if not ACE.table_contains(invalidClasses, self.Class) and self.maxrof then
 
 			if self.LoaderCount > 0 and IsValid(curLoader) then -- if loaders are linked then
 

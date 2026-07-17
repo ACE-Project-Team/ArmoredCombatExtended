@@ -8,7 +8,7 @@ include("acf/shared/sh_acfm_getters.lua")
 
 
 local function checkIfDataIsMissile(data)
-	return ACE_IsAmmoMissileType(data)
+	return ACE.IsAmmoMissileType(data)
 end
 
 

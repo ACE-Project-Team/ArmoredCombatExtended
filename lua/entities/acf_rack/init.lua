@@ -117,7 +117,7 @@ function ENT:Initialize()
 	self.CanLegalCheck = true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "rack-removed") end
+		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "rack-removed") end
 	end)
 end
 
@@ -138,7 +138,7 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 	Owner:AddCount("_acf_rack", Rack)
 	Owner:AddCleanup( "acfmenu", Rack )
 
-	if not ACE_CheckRack( Id ) then
+	if not ACE.CheckRack( Id ) then
 		Id = "1xRK"
 	end
 
@@ -426,7 +426,7 @@ function ENT:ShootMissile()
 
 	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
 
-	ACE_DoContraptionLegalCheck(self)
+	ACE.DoContraptionLegalCheck(self)
 
 	self.NextReload = CT + self.ReloadTime
 
@@ -879,17 +879,17 @@ function ENT:GetOverlayText()
 		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
-	if ACE_GetGunFirepowerReadout then
-		local readout = ACE_GetGunFirepowerReadout(self)
+	if ACE.GetGunFirepowerReadout then
+		local readout = ACE.GetGunFirepowerReadout(self)
 		if readout then
 			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine
-				and ACE_GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE.GetRoundLethalityLine
+				and ACE.GetRoundLethalityLine(readout.Round, true)
 			if roundLine then txt = txt .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
+			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
 			if floorLine then txt = txt .. "\n" .. floorLine end
 		end
 	end
@@ -975,9 +975,9 @@ function ENT:Link( Target )
 
 	self:SetOverlayText(txt)
 
-	if ACE_PointsInputChanged then
-		ACE_PointsInputChanged( self, "rack-ammo-linked" )
-		ACE_PointsInputChanged( Target, "rack-ammo-linked" )
+	if ACE.PointsInputChanged then
+		ACE.PointsInputChanged( self, "rack-ammo-linked" )
+		ACE.PointsInputChanged( Target, "rack-ammo-linked" )
 	end
 	return true, "Link successful!"
 
@@ -997,9 +997,9 @@ function ENT:Unlink( Target )
 
 		self:GetOverlayText()
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "rack-unlinked" )
-			ACE_PointsInputChanged( Target, "rack-unlinked" )
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged( self, "rack-unlinked" )
+			ACE.PointsInputChanged( Target, "rack-unlinked" )
 		end
 		return true, "Unlink successful!"
 	else

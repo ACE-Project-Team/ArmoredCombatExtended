@@ -78,7 +78,7 @@ function ACF_Activate( Entity , Recalc )
 	local Ductility = math.Clamp( Entity.ACF.Ductility, -0.8, 0.8 )
 
 	local Mat	= Entity.ACF.Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	local massMod	= MatData.massMod
 
@@ -193,7 +193,7 @@ function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
 	local Mat			= Entity.ACF.Material or "RHA"	--very important thing
-	local MatData		= ACE_GetMaterialData( Mat )
+	local MatData		= ACE.GetMaterialData( Mat )
 
 	local damageMult		= 1
 
@@ -222,7 +222,7 @@ function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	end
 
 	-- RHA Penetration
-	local maxPenetration = ACE_CalcPenetration(Energy, FrArea)
+	local maxPenetration = ACE.CalcPenetration(Energy, FrArea)
 
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
@@ -609,7 +609,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE_CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
+function ACE.CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -644,7 +644,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE_CreateSZRope( Pos, Ent, LPos1, LPos2 )
+function ACE.CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -673,7 +673,7 @@ function ACE_CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 end
 
-function ACE_VisualizeSZ(Point1, Point2)
+function ACE.VisualizeSZ(Point1, Point2)
 
 	local SZEnt = ents.Create("prop_physics")
 	if SZEnt:IsValid() then
@@ -693,81 +693,81 @@ function ACE_VisualizeSZ(Point1, Point2)
 	local PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	local LPT1 = SZEnt:WorldToLocal(PT1)
 	local LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	--Lower Rectangle
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 	--4 corners
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 --[[
 	PT1 = Vector(Point1.x,Point1.y,Point1.z)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 ]]--
 
 	return SZEnt
@@ -786,7 +786,7 @@ local WireTable = {
 	gmod_wire_joystick_multi = true
 }
 
-function ACE_GetWeaponUser( Weapon, inp )
+function ACE.GetWeaponUser( Weapon, inp )
 	if not IsValid(inp) then return end
 
 	if inp:GetClass() == "gmod_wire_adv_pod" then
@@ -811,13 +811,13 @@ function ACE_GetWeaponUser( Weapon, inp )
 		end
 	elseif inp:GetClass() == "gmod_wire_expression2" then
 		if inp.Inputs.Fire then
-			return ACE_GetWeaponUser( Weapon, inp.Inputs.Fire.Src )
+			return ACE.GetWeaponUser( Weapon, inp.Inputs.Fire.Src )
 		elseif inp.Inputs.Shoot then
-			return ACE_GetWeaponUser( Weapon, inp.Inputs.Shoot.Src )
+			return ACE.GetWeaponUser( Weapon, inp.Inputs.Shoot.Src )
 		elseif inp.Inputs then
 			for _,v in pairs(inp.Inputs) do
 				if IsValid(v.Src) and WireTable[v.Src:GetClass()] then
-					return ACE_GetWeaponUser( Weapon, v.Src )
+					return ACE.GetWeaponUser( Weapon, v.Src )
 				end
 			end
 		end

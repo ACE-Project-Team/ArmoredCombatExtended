@@ -175,7 +175,7 @@ do
 			Tank:Spawn()
 
 			-- If the crate is not valid in the system, but it could be scalable.
-			if not ACE_CheckFuelTank( Data1 ) then
+			if not ACE.CheckFuelTank( Data1 ) then
 
 				-- Reminder: When the legacy fueltanks get deleted. Do the same as ammo crates.
 				local Scale = ConvertStringScale(Data1)
@@ -215,7 +215,7 @@ do
 				end
 			end
 
-			if ACE_CheckFuelTank( Data1 ) then
+			if ACE.CheckFuelTank( Data1 ) then
 
 				local TankData = TankTable[Data1]
 

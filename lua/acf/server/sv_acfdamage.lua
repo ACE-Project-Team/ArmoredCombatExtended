@@ -90,7 +90,7 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 		IsValid(Gun) and Gun:EntIndex() or "nil"
 	)
 
-	local Radius       = ACE_CalculateHERadius(FillerMass) -- Scalling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m.
+	local Radius       = ACE.CalculateHERadius(FillerMass) -- Scalling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m.
 	local MaxSphere    = 4 * PI * (Radius * 2.54) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Power        = FillerMass * ACF.HEPower -- Power in KiloJoules of the filler mass of  TNT
 	local Amp          = math.min(Power / 2000, 50)
@@ -143,7 +143,7 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			local SqDist = Hitpos:DistToSqr( epos )
 			if SqDist > RadSq then continue end --Perhaps a table storing positions would be faster?
 
-			local LosArmor = ACE_LOSMultiTrace(Hitpos,epos, HEPen)
+			local LosArmor = ACE.LOSMultiTrace(Hitpos,epos, HEPen)
 			--print("LosArmor: " .. LosArmor)
 
 			local Dist = math.sqrt(SqDist)
@@ -411,7 +411,7 @@ function ACF_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 	if not ACF.Spalling then return end
 
 	local Mat		= Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	-- Spall damage
 	local SpallMul	= MatData.spallmult or 1
@@ -541,7 +541,7 @@ function ACF_PropShockwave( HitPos, HitVec, Filter, Caliber )
 				local space = math.abs( (HitFronts[iteration] - HitBacks[iteration - 1]):Length() )
 				--prop's material
 				local mat = tracefront.Entity.ACF and tracefront.Entity.ACF.Material or "RHA"
-				local MatData = ACE_GetMaterialData( mat )
+				local MatData = ACE.GetMaterialData( mat )
 				local Hasvoid = false
 				local NotOverlap = false
 				--print("DATA TABLE - DONT FUCKING DELETE")
@@ -617,7 +617,7 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 	if not ACF.Spalling then return end
 
 	local Mat		= Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	-- Spall damage
 	local SpallMul	= MatData.spallmult or 1
@@ -731,7 +731,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- print("ANGLE: " .. Angle)
 
 		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
-		local MatData	= ACE_GetMaterialData( Mat )
+		local MatData	= ACE.GetMaterialData( Mat )
 
 		local spall_resistance = MatData.spallresist
 
@@ -1089,7 +1089,7 @@ function ACF_HEKill( Entity , HitVector , Energy , BlastPos )
 	do
 		--ERA props should not create debris
 		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
-		local MatData = ACE_GetMaterialData( Mat )
+		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
 
@@ -1145,7 +1145,7 @@ function ACF_APKill( Entity , HitVector , Power )
 	do
 		--ERA props should not create debris
 		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
-		local MatData = ACE_GetMaterialData( Mat )
+		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
 
@@ -1204,7 +1204,7 @@ do
 		HVAP = true
 	}
 	local function IsMissileAmmoData( bullet )
-		local gunClass = ACE_GetAmmoGunClass(bullet)
+		local gunClass = ACE.GetAmmoGunClass(bullet)
 		if not gunClass then return false end
 
 		local classes = ACF and ACF.Classes and ACF.Classes.GunClass
@@ -1214,19 +1214,19 @@ do
 	end
 
 	local function ResolveCookoffRoundType(ent, bullet)
-		return ACE_ResolveAmmoType(ent, bullet)
+		return ACE.ResolveAmmoType(ent, bullet)
 	end
 
 	local function GetCookoffBlastMass(bullet, roundType)
-		return ACE_GetAmmoCookoffBlastMass(roundType, bullet)
+		return ACE.GetAmmoCookoffBlastMass(roundType, bullet)
 	end
 
 	local function GetCookoffAmmoCount(roundType, ammo, isMissile)
-		return ACE_GetAmmoCookoffAmmoCount(roundType, ammo, isMissile)
+		return ACE.GetAmmoCookoffAmmoCount(roundType, ammo, isMissile)
 	end
 
 	local function GetCookoffExplosionClass(roundType, isMissile)
-		return ACE_GetAmmoCookoffClass(roundType, isMissile)
+		return ACE.GetAmmoCookoffClass(roundType, isMissile)
 	end
 
 	--converts what would be multiple simultaneous cache detonations into one large explosion
@@ -1264,8 +1264,8 @@ do
 			local IsMissile = IsMissileAmmoData(ent.BulletData)
 			local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
 			local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
-			local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
-			local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
+			local PropScale = ACE.GetAmmoCookoffPropScale(CookClass)
+			local AmmoScale = ACE.GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
 			HEWeight = ( ( HE + Propel * PropScale * ( ACF.PBase / ACF.HEPower ) ) * AmmoCount ) * AmmoScale
 			DebugExplosion("AmmoCalc", "Type", RoundTypeCook, "HE", HE, "Propel", Propel, "Ammo", Ammo, "AmmoCount", AmmoCount, "PropScale", PropScale, "AmmoScale", AmmoScale, "HEWeight", HEWeight, "EntIndex", ent:EntIndex())
@@ -1294,7 +1294,7 @@ do
 			MaxGroup
 		)
 
-		local Radius    = ACE_CalculateHERadius( HEWeight )
+		local Radius    = ACE.CalculateHERadius( HEWeight )
 		local BasePos   = ent:LocalToWorld(ent:OBBCenter())
 		local Pos = BasePos
 
@@ -1422,8 +1422,8 @@ do
 							local IsMissile = IsMissileAmmoData(Found.BulletData)
 							local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
 							local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
-							local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
-							local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
+							local PropScale = ACE.GetAmmoCookoffPropScale(CookClass)
+							local AmmoScale = ACE.GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
 							local AmmoHEWeight = ( HE + Propel * PropScale * ACF.APAmmoDetonateFactor * ( ACF.PBase / ACF.HEPower))
 							if AmmoHEWeight > HighestHEWeight then
@@ -1489,7 +1489,7 @@ do
 						DebugExplosion("ExplodePos:Add", "Found", Found:EntIndex(), "Pos", tostring(FoundPos), "FoundHE", FoundHEWeight, "TotalHE", HEWeight + FoundHEWeight)
 
 						HEWeight = HEWeight + FoundHEWeight
-						DebugExplosion("ExplodePos:Accum", "TotalHE", HEWeight, "Radius", ACE_CalculateHERadius(HEWeight))
+						DebugExplosion("ExplodePos:Accum", "TotalHE", HEWeight, "Radius", ACE.CalculateHERadius(HEWeight))
 
 						Found.IsExplosive   = false
 						Found.DamageAction  = false
@@ -1518,7 +1518,7 @@ do
 			if HEWeight > LastHE then
 				Search = true
 				LastHE = HEWeight
-				Radius = ACE_CalculateHERadius( HEWeight )
+				Radius = ACE.CalculateHERadius( HEWeight )
 				DebugExplosion("ExplodePos:RadiusUpdate", "TotalHE", HEWeight, "Radius", Radius)
 			else
 				Search = false
@@ -1555,7 +1555,7 @@ do
 			HEWeight = MaxHE
 		end
 
-		Radius	= ACE_CalculateHERadius( HEWeight )
+		Radius	= ACE.CalculateHERadius( HEWeight )
 
 		--Sets the ratio of HE blast pen so it no longer pens 300mm when 10 shells cookoff.
 		--Blastpen will use the HEpower of 2 of the biggest HE detonations or 1/10th the HE power. Whichever is bigger.
@@ -1603,7 +1603,7 @@ function ACF_GetHitAngle( HitNormal , HitVector )
 
 end
 
-function ACE_CalculateHERadius( HEWeight )
+function ACE.CalculateHERadius( HEWeight )
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
 	return Radius
 end
@@ -1614,7 +1614,7 @@ end
 --Calculates the effective armor between two points
 --Effangle, Type(1 = KE, 2 = HEAT), Filter
 --Might make for a nice e2 function if people probably wouldn't eat the server with it
-function ACE_LOSMultiTrace(StartVec, EndVec, PenetrationMax)
+function ACE.LOSMultiTrace(StartVec, EndVec, PenetrationMax)
 
 	debugoverlay.Line( StartVec, EndVec, 30 , Color(255,0,0), true )
 
@@ -1645,7 +1645,7 @@ function ACE_LOSMultiTrace(StartVec, EndVec, PenetrationMax)
 				else
 					local Angle		= ACF_GetHitAngle( TraceLine.HitNormal , Normal )
 					local Mat			= TraceEnt.ACF.Material or "RHA"	--very important thing
-					local MatData		= ACE_GetMaterialData( Mat )
+					local MatData		= ACE.GetMaterialData( Mat )
 					local armor = TraceEnt.ACF.Armour
 					local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor ) * MatData["effectiveness"]
 					TotalArmor = TotalArmor + losArmor

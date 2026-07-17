@@ -18,7 +18,7 @@ function EFFECT:Init( data )
 			Sound = "acf_extra/airfx/rocket_fire2.wav"
 		end
 
-		ACE_SimpleSound( Sound, Missile:WorldSpaceCenter(), SoundPitch, 4000 )
+		ACE.SimpleSound( Sound, Missile:WorldSpaceCenter(), SoundPitch, 4000 )
 	end
 end
 

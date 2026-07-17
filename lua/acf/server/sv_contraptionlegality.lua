@@ -4,7 +4,7 @@ include("acf/shared/sh_ace_functions.lua")
 include("acf/server/sv_pointshandling.lua")
 
 
-local IsEnt = ACE_IsEnt
+local IsEnt = ACE.IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
 local POINTS_STATE_VERSION = 2
 ACE.PointsStateVersion = POINTS_STATE_VERSION
@@ -63,7 +63,7 @@ end
 -- ------------------------------------------------------------
 
 -- Run a legality scan for a contraption.
-function ACE_DoContraptionLegalCheck(checkEnt)
+function ACE.DoContraptionLegalCheck(checkEnt)
 	checkEnt.CanLegalCheck = checkEnt.CanLegalCheck or false
 	if not checkEnt.CanLegalCheck then return end
 
@@ -75,7 +75,7 @@ function ACE_DoContraptionLegalCheck(checkEnt)
 	local con = checkEnt:CFW_GetContraption() or {}
 	if table.IsEmpty(con) then return end
 
-	ACE_CheckLegalCont(con)
+	ACE.CheckLegalCont(con)
 end
 
 -- ------------------------------------------------------------
@@ -83,16 +83,16 @@ end
 -- ------------------------------------------------------------
 
 -- Evaluate legality for a contraption.
-function ACE_CheckLegalCont(con)
+function ACE.CheckLegalCont(con)
 	con.OTWarnings = con.OTWarnings or {}
 
-	if ACE_EnsureContraptionPoints then
-		ACE_EnsureContraptionPoints(con, nil, false)
+	if ACE.EnsureContraptionPoints then
+		ACE.EnsureContraptionPoints(con, nil, false)
 	end
 
 	local points = con.ACEPoints or 0
 	if points > ACF.PointsLimit and not con.OTWarnings.WarnedOverPoints then
-		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
+		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
 		local above = points - ACF.PointsLimit
 		chatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "pts] over the limit costing [" ..
@@ -103,7 +103,7 @@ function ACE_CheckLegalCont(con)
 	end
 
 	if con.totalMass > ACF.MaxWeight and not con.OTWarnings.WarnedOverWeight then
-		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
+		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
 		local above = con.totalMass - ACF.MaxWeight
 		chatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "kg] over the limit, weighing [" ..
@@ -120,19 +120,19 @@ end
 
 do
 	-- Sync per-contraption cache version and invalidate stale local caches.
-	function ACE_EnsureCacheVersion(con)
+	function ACE.EnsureCacheVersion(con)
 		if not con then return false end
 
 		if con.ACECacheVersion == ACE.CacheVersion then return false end
 
 		con.ACECacheVersion = ACE.CacheVersion
-		ACE_MarkContraptionPointsDirty(con, nil, true, true, "cache-version-changed")
+		ACE.MarkContraptionPointsDirty(con, nil, true, true, "cache-version-changed")
 
 		return true
 	end
 
 	-- Initialize per-contraption points state.
-	function ACE_EnsurePointsState(con)
+	function ACE.EnsurePointsState(con)
 		if not con then return false end
 		if con.ACEInitDone and con.ACEPointsStateVersion == POINTS_STATE_VERSION then return false end
 
@@ -163,22 +163,22 @@ do
 		end
 
 		con.ACEPointsRevision = 0
-		ACE_MarkContraptionPointsDirty(con, nil, true, true, "contraption-created")
+		ACE.MarkContraptionPointsDirty(con, nil, true, true, "contraption-created")
 
 		return true
 	end
 
-	local ACE_InitPts = ACE_EnsurePointsState
+	local ACE_InitPts = ACE.EnsurePointsState
 
 	-- Mark a contraption's derived point totals dirty.
-	function ACE_MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
+	function ACE.MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
 		if not con then return end
 
 		if armorDirty == nil then armorDirty = true end
 		if nonArmorDirty == nil then nonArmorDirty = true end
 
-		if armorDirty and ACE_ClearArmorPointCache and IsEnt(ent) then
-			ACE_ClearArmorPointCache(ent)
+		if armorDirty and ACE.ClearArmorPointCache and IsEnt(ent) then
+			ACE.ClearArmorPointCache(ent)
 		end
 
 		con.ACEPointsDirty = true
@@ -189,23 +189,23 @@ do
 			con.ACEArmorCalculated = false
 		end
 
-		ACE_NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty)
+		ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty)
 	end
 
 	-- Orphan weapons invalidate the link-anchor contraption that owns their cost.
-	function ACE_PointsInputChanged(ent, reason)
+	function ACE.PointsInputChanged(ent, reason)
 		if not IsEnt(ent) then return end
 
 		local previous = ent._ACEPointsOwnerConRef
-		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
-		if not con and ACE_GetWeaponAnchorContraption then con = ACE_GetWeaponAnchorContraption(ent) end
+		local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
+		if not con and ACE.GetWeaponAnchorContraption then con = ACE.GetWeaponAnchorContraption(ent) end
 
 		ent._ACEPointsOwnerConRef = con
 
 		if previous and previous ~= con then
-			ACE_MarkContraptionPointsDirty(previous, ent, false, true, "weapon-owner-changed")
+			ACE.MarkContraptionPointsDirty(previous, ent, false, true, "weapon-owner-changed")
 		end
-		if con then ACE_MarkContraptionPointsDirty(con, ent, false, true, reason or "entity-updated") end
+		if con then ACE.MarkContraptionPointsDirty(con, ent, false, true, reason or "entity-updated") end
 	end
 
 	-- Initialize point tracking when a contraption is created.
@@ -252,17 +252,17 @@ do
 	end)
 
 	-- Refresh orphan-weapon ownership after a linked crate changes contraptions.
-	function ACE_NotifyCrateWeapons(ent, reason)
+	function ACE.NotifyCrateWeapons(ent, reason)
 		if not ent or not ent.GetClass or ent:GetClass() ~= "acf_ammo" then return end
 		if type(ent.Master) ~= "table" then return end
 
 		for _, weapon in pairs(ent.Master or {}) do
-			if IsEnt(weapon) then ACE_PointsInputChanged(weapon, reason or "linked-crate-moved") end
+			if IsEnt(weapon) then ACE.PointsInputChanged(weapon, reason or "linked-crate-moved") end
 		end
 	end
 
 	-- Handle entity addition and update point totals.
-	function ACE_AddPts(con, ent)
+	function ACE.AddPts(con, ent)
 		if not IsEnt(ent) then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, nil, ent)
 
@@ -270,20 +270,20 @@ do
 		local previousOwner = ent._ACEPointsOwnerConRef
 
 		if previous and previous ~= con then
-			ACE_MarkContraptionPointsDirty(previous, ent, true, true, "entity-moved")
+			ACE.MarkContraptionPointsDirty(previous, ent, true, true, "entity-moved")
 		end
 		if previousOwner and previousOwner ~= con and previousOwner ~= previous then
-			ACE_MarkContraptionPointsDirty(previousOwner, ent, false, true, "weapon-owner-changed")
+			ACE.MarkContraptionPointsDirty(previousOwner, ent, false, true, "weapon-owner-changed")
 		end
 
 		ent._ACEPointsConRef = con
 		ent._ACEPointsOwnerConRef = con
-		ACE_MarkContraptionPointsDirty(con, ent, true, true, "entity-added")
-		ACE_NotifyCrateWeapons(ent)
+		ACE.MarkContraptionPointsDirty(con, ent, true, true, "entity-added")
+		ACE.NotifyCrateWeapons(ent)
 	end
 
 	-- Handle entity removal and update point totals.
-	function ACE_RemPts(con, ent)
+	function ACE.RemPts(con, ent)
 		if not con then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 
@@ -294,21 +294,21 @@ do
 		if valid and ent._ACEPointsConRef == con then ent._ACEPointsConRef = nil end
 		if valid and previous == con then ent._ACEPointsOwnerConRef = nil end
 
-		ACE_MarkContraptionPointsDirty(con, ent, true, true, "entity-removed")
+		ACE.MarkContraptionPointsDirty(con, ent, true, true, "entity-removed")
 
 		if previous and previous ~= con then
-			ACE_MarkContraptionPointsDirty(previous, ent, false, true, "weapon-owner-changed")
+			ACE.MarkContraptionPointsDirty(previous, ent, false, true, "weapon-owner-changed")
 		end
 
-		ACE_NotifyCrateWeapons(ent)
-		if valid and not removing then ACE_PointsInputChanged(ent, "entity-detached") end
+		ACE.NotifyCrateWeapons(ent)
+		if valid and not removing then ACE.PointsInputChanged(ent, "entity-detached") end
 	end
 
 	-- Track point totals when entities are added.
-	hook.Add("cfw.contraption.entityAdded", "ACE_AddPoints", ACE_AddPts)
+	hook.Add("cfw.contraption.entityAdded", "ACE_AddPoints", ACE.AddPts)
 
 	-- Track point totals when entities are removed.
-	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE_RemPts)
+	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE.RemPts)
 end
 
 -- ------------------------------------------------------------
@@ -339,8 +339,8 @@ do
 			return result
 		end
 
-		if ent.IsPrimitive and ACE_PrimitivePropertiesApplied then
-			ACE_PrimitivePropertiesApplied(ent)
+		if ent.IsPrimitive and ACE.PrimitivePropertiesApplied then
+			ACE.PrimitivePropertiesApplied(ent)
 		end
 
 		if math.abs(mass - currentMass) < 0.01 then
@@ -349,8 +349,8 @@ do
 
 		if ent:GetClass() ~= "prop_physics" and not ent.IsPrimitive then return result end
 
-		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
-		ACE_MarkArmorDirty(con, ent, "mass-changed")
+		local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
+		ACE.MarkArmorDirty(con, ent, "mass-changed")
 
 		return result
 	end
@@ -371,21 +371,21 @@ concommand.Add("ace_cache_clear_all", function()
 end)
 
 -- Mark armor points dirty for callers that know only armor changed.
-function ACE_MarkArmorDirty(con, ent, reason)
+function ACE.MarkArmorDirty(con, ent, reason)
 	if not con then
-		if ACE_ClearArmorPointCache and IsEnt(ent) then ACE_ClearArmorPointCache(ent) end
+		if ACE.ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
 		return
 	end
 
-	ACE_MarkContraptionPointsDirty(con, ent, true, false, reason or "armor-updated")
+	ACE.MarkContraptionPointsDirty(con, ent, true, false, reason or "armor-updated")
 end
 
 -- Reprice clipped armor after Proper Clipping replaces its physics object.
 local function ACE_ProperClippingPhysicsChanged(ent)
 	if not IsEnt(ent) then return end
 
-	local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
-	ACE_MarkArmorDirty(con, ent, "armor-clipped")
+	local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
+	ACE.MarkArmorDirty(con, ent, "armor-clipped")
 end
 
 hook.Add("ProperClippingPhysicsClipped", "ACE_ProperClippingArmorChanged", ACE_ProperClippingPhysicsChanged)

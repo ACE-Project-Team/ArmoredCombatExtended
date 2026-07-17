@@ -21,8 +21,8 @@ return {
 					"cfw.contraption.split",
 					"cfw.contraption.merged",
 					"cfw.contraption.removed",
-					"OnPhysgunFreeze",
-					"PhysgunDrop",
+					"PlayerFrozeObject",
+					"PlayerUnfrozeObject",
 					"PlayerEnteredVehicle",
 					"ProperClippingPhysicsClipped",
 					"ProperClippingPhysicsReset",
@@ -36,6 +36,8 @@ return {
 			func = function()
 				local first = { ents = {}, totalMass = 0 }
 				local second = { ents = {}, totalMass = 0 }
+				ACE_EnsurePointsState(first)
+				ACE_EnsurePointsState(second)
 				local batches = 0
 				local compatibility = 0
 				local recalculations = 0
@@ -79,6 +81,7 @@ return {
 			name = "deduplicates repeated endpoints before generation advance",
 			func = function()
 				local con = { ents = {}, totalMass = 0 }
+				ACE_EnsurePointsState(con)
 				local event = ACE_NotifyPointsInvalidated({ con, con, con }, "native-duplicate", {
 					Warning = true,
 				})

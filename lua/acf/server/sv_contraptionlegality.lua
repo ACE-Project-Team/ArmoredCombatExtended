@@ -802,11 +802,13 @@ local function ACE_NotifyPhysicsTransition(ent, reason, frozen)
 	ACE.PointsInputChanged(ent, reason)
 end
 
-hook.Add("OnPhysgunFreeze", "ACE_PointsFreezeInvalidation", function(_, _, ent)
+-- These are emitted after the base gamemode actually changes the physics state.
+-- In particular, PhysgunDrop only releases a held entity; it is not an unfreeze.
+hook.Add("PlayerFrozeObject", "ACE_PointsFreezeInvalidation", function(_, ent)
 	ACE_NotifyPhysicsTransition(ent, "freeze", true)
 end)
 
-hook.Add("PhysgunDrop", "ACE_PointsUnfreezeInvalidation", function(_, ent)
+hook.Add("PlayerUnfrozeObject", "ACE_PointsUnfreezeInvalidation", function(_, ent)
 	ACE_NotifyPhysicsTransition(ent, "unfreeze", false)
 end)
 

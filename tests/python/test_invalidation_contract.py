@@ -141,14 +141,16 @@ class InvalidationContractTests(unittest.TestCase):
             "cfw.contraption.split",
             "cfw.contraption.merged",
             "cfw.contraption.removed",
-            "OnPhysgunFreeze",
-            "PhysgunDrop",
+            "PlayerFrozeObject",
+            "PlayerUnfrozeObject",
             "PlayerEnteredVehicle",
             "ProperClippingPhysicsClipped",
             "ProperClippingPhysicsReset",
         ):
             with self.subTest(hook=hook_name):
                 self.assertIn(f'hook.Add("{hook_name}"', legality)
+
+        self.assertNotIn('hook.Add("PhysgunDrop", "ACE_PointsUnfreezeInvalidation"', legality)
 
     def test_matrix_selftest_is_discovered_by_the_offline_runner(self):
         runner = source("tests/run_luajit_tests.py")

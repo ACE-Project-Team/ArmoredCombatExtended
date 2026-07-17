@@ -465,19 +465,19 @@ assertEvent("clipping-reset", function()
 	return hookHandlers.ProperClippingPhysicsReset.ACE_ProperClippingArmorReset(massEntity)
 end, { conB }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "armor-clipped")
 
--- Freeze/drop and vehicle-entry transitions are idempotent.
+-- Completed freeze/unfreeze and vehicle-entry transitions are idempotent.
 local freezeEntity = newEntity(conC, "prop_physics")
 assertEvent("freeze", function()
-	return hookHandlers.OnPhysgunFreeze.ACE_PointsFreezeInvalidation(nil, nil, freezeEntity)
+	return hookHandlers.PlayerFrozeObject.ACE_PointsFreezeInvalidation(nil, freezeEntity)
 end, { conC }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "freeze")
 assertNoEvent("duplicate-freeze", function()
-	return hookHandlers.OnPhysgunFreeze.ACE_PointsFreezeInvalidation(nil, nil, freezeEntity)
+	return hookHandlers.PlayerFrozeObject.ACE_PointsFreezeInvalidation(nil, freezeEntity)
 end)
 assertEvent("unfreeze", function()
-	return hookHandlers.PhysgunDrop.ACE_PointsUnfreezeInvalidation(nil, freezeEntity)
+	return hookHandlers.PlayerUnfrozeObject.ACE_PointsUnfreezeInvalidation(nil, freezeEntity)
 end, { conC }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "unfreeze")
 assertNoEvent("duplicate-unfreeze", function()
-	return hookHandlers.PhysgunDrop.ACE_PointsUnfreezeInvalidation(nil, freezeEntity)
+	return hookHandlers.PlayerUnfrozeObject.ACE_PointsUnfreezeInvalidation(nil, freezeEntity)
 end)
 
 local vehicle = newEntity(conC, "prop_vehicle_prisoner_pod", {

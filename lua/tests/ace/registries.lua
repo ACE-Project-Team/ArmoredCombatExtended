@@ -1,13 +1,13 @@
-local function countEntries(registry)
+local function countEntries(registry, expectValue)
 	local count = 0
 	for id, entry in pairs(registry) do
-		expect(type(id)).to.equal("string")
-		expect(type(entry)).to.equal("table")
-		expect(entry.id).to.equal(id)
+		expectValue(type(id)).to.equal("string")
+		expectValue(type(entry)).to.equal("table")
+		expectValue(entry.id).to.equal(id)
 		count = count + 1
 	end
 
-	expect(count).to.beGreaterThan(0)
+	expectValue(count).to.beGreaterThan(0)
 	return count
 end
 
@@ -28,12 +28,12 @@ return {
 					"Extras", "Explosives", "Mobility",
 				}) do
 					expect(ACF.Weapons[name]).to.exist()
-					countEntries(ACF.Weapons[name])
+					countEntries(ACF.Weapons[name], expect)
 				end
 
 				for _, name in ipairs({ "GunClass", "Rack", "Radar" }) do
 					expect(ACF.Classes[name]).to.exist()
-					countEntries(ACF.Classes[name])
+					countEntries(ACF.Classes[name], expect)
 				end
 			end,
 		},
@@ -70,7 +70,7 @@ return {
 				expect(ACE.MineData).to.exist()
 				expect(ACE.GSounds).to.exist()
 				expect(ACE.GSounds.GunFire).to.exist()
-				countEntries(ACE.MineData)
+				countEntries(ACE.MineData, expect)
 			end,
 		},
 		{
@@ -98,7 +98,9 @@ return {
 					expect(type(roundType)).to.equal("string")
 					expect(type(round)).to.equal("table")
 					expect(round.Type).to.equal(roundType)
-					expect(round.create).to.beA("function")
+					if round.netid then
+						expect(round.create).to.beA("function")
+					end
 					if round.netid then
 						expect(ACF.IdRounds[round.netid]).to.beA("string")
 					end

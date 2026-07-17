@@ -885,7 +885,7 @@ function ACE_GetArmorPoints(ent)
 	local previousFallbackMaterial = ent.ACF_Material
 
 	local primitiveArmorPending = ent.IsPrimitive and (
-		ent.ACE_PrimitiveRestoreSavedArmor or ent.ACE_PrimitiveArmorRecalcQueued
+		ent.ACE_PrimitiveRestoreSavedArmor or ent.ACE_PrimitiveArmorPending
 	)
 	if ACF_Check and not primitiveArmorPending then
 		ACF_Check(ent)
@@ -1458,6 +1458,5 @@ function ACE_GetEntPoints(ent)
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
 	return (tonumber(ent.ACEPoints) or 0) * scale
 end
-
 
 

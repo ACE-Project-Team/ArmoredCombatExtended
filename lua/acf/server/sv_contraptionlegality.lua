@@ -315,6 +315,10 @@ do
 			return result
 		end
 
+		if ent.IsPrimitive and ACE_PrimitivePropertiesApplied then
+			ACE_PrimitivePropertiesApplied(ent)
+		end
+
 		if math.abs(mass - currentMass) < 0.01 then
 			return result
 		end

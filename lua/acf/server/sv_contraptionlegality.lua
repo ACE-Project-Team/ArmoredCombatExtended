@@ -6,6 +6,8 @@ include("acf/server/sv_pointshandling.lua")
 
 local IsEnt = ACE_IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
+local POINTS_STATE_VERSION = 2
+ACE.PointsStateVersion = POINTS_STATE_VERSION
 
 -- ------------------------------------------------------------
 -- Legal check throttle (prevents chat spam)
@@ -81,9 +83,12 @@ do
 	end
 
 	-- Initialize per-contraption points state.
-	local function ACE_InitPts(con)
-		if con.ACEInitDone then return end
+	function ACE_EnsurePointsState(con)
+		if not con then return false end
+		if con.ACEInitDone and con.ACEPointsStateVersion == POINTS_STATE_VERSION then return false end
+
 		con.ACEInitDone = true
+		con.ACEPointsStateVersion = POINTS_STATE_VERSION
 
 		con.ACECacheVersion = ACE.CacheVersion
 		con.ACEPoints = 0
@@ -109,7 +114,11 @@ do
 
 		con.ACEPointsRevision = 0
 		ACE_MarkContraptionPointsDirty(con, nil, true, true, "contraption-created")
+
+		return true
 	end
+
+	local ACE_InitPts = ACE_EnsurePointsState
 
 	-- Mark a contraption's derived point totals dirty.
 	function ACE_MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
@@ -172,11 +181,12 @@ do
 	end)
 
 	-- Refresh orphan-weapon ownership after a linked crate changes contraptions.
-	local function ACE_NotifyCrateWeapons(ent)
-		if not IsEnt(ent) or ent:GetClass() ~= "acf_ammo" then return end
+	function ACE_NotifyCrateWeapons(ent, reason)
+		if not ent or not ent.GetClass or ent:GetClass() ~= "acf_ammo" then return end
+		if type(ent.Master) ~= "table" then return end
 
 		for _, weapon in pairs(ent.Master or {}) do
-			if IsEnt(weapon) then ACE_PointsInputChanged(weapon, "linked-crate-moved") end
+			if IsEnt(weapon) then ACE_PointsInputChanged(weapon, reason or "linked-crate-moved") end
 		end
 	end
 

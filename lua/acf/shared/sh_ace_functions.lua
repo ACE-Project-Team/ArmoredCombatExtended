@@ -1322,16 +1322,29 @@ function ACE_GetAmmoMaxPen(bdata)
 	return (filler * hePower) / blastDiv
 end
 
--- Link anchor of a weapon with no CFW contraption of its own: the FIRST valid linked crate
--- that has one. Exactly one contraption adopts (and bills) such a weapon, deterministically.
+-- Link anchor of a weapon with no CFW contraption of its own: the valid linked crate with the
+-- lowest EntIndex that has a contraption. Exactly one contraption adopts (and bills) such a
+-- weapon, independently of the order in which crates were linked.
 function ACE_GetWeaponAnchorContraption(weapon)
 	if not ACE_IsEnt(weapon) then return end
-	for _, crate in ipairs(weapon.AmmoLink or {}) do
+
+	local anchor
+	local anchorIndex
+
+	for _, crate in pairs(weapon.AmmoLink or {}) do
 		if ACE_IsEnt(crate) then
 			local con = ACE_GetContraptionFromEntity(crate)
-			if con then return con end
+			if con then
+				local crateIndex = crate:EntIndex()
+				if not anchorIndex or crateIndex < anchorIndex then
+					anchor = con
+					anchorIndex = crateIndex
+				end
+			end
 		end
 	end
+
+	return anchor
 end
 
 -- Collect entities belonging to a contraption. BILLING RULE: every entity prices in exactly

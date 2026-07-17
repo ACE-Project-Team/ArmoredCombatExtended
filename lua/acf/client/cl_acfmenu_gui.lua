@@ -440,6 +440,7 @@ function PANEL:UpdateRoundCostPreview()
 	local DisplayTable = self.ActiveDisplayTable
 	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
 	if not ACF_GetRoundFromCVars or not ACE_Points_RoundFromBullet or not ACE_Points_BaseRoundCost then return end
+	if not IsValid(self.CustomDisplay) then return end
 
 	local RoundType = ACF.RoundTypes[DisplayTable.Type or ""]
 	if not RoundType or not isfunction(RoundType.convert) then return end

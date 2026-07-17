@@ -160,6 +160,7 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	if con._ACEPointsEnsuring then return end
 
 	con._ACEPointsEnsuring = true
+	if ACE_EnsurePointsState then ACE_EnsurePointsState(con) end
 
 	local cacheStale = ACE_EnsureCacheVersion and ACE_EnsureCacheVersion(con) or false
 	local needsInit = not con.ACEArmorCalculated

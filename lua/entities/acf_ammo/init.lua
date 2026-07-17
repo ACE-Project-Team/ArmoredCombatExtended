@@ -1064,6 +1064,9 @@ end
 
 function ENT:OnRemove()
 
+	-- Preserve linked weapons before CFW's removal hook can receive an invalid crate.
+	if ACE_NotifyCrateWeapons then ACE_NotifyCrateWeapons(self, "ammo-removed") end
+
 	for Key in pairs(self.Master) do
 		if self.Master[Key] and self.Master[Key]:IsValid() then
 			self.Master[Key]:Unlink( self )

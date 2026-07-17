@@ -447,11 +447,18 @@ do
 			sourceList = { sources }
 		end
 		local explicit = {}
+		local primaryCurrent
+		local primaryPrevious
+		if ACE_IsContraption(sourceList[1]) then primaryCurrent = sourceList[1] end
 
-		for _, ent in ipairs(sourceList) do
+		for index, ent in ipairs(sourceList) do
 			if IsEnt(ent) then
 				local previous = ent._ACEPointsOwnerConRef
 				local current = ACE_GetPointContraption(ent)
+				if index == 1 then
+					primaryCurrent = current
+					primaryPrevious = previous
+				end
 				ent._ACEPointsOwnerConRef = current
 
 				if previous and previous ~= current then explicit[#explicit + 1] = previous end
@@ -478,9 +485,7 @@ do
 		if event and reason and string.find(reason, "removed", 1, true) then
 			local ent = sourceList[1]
 			if IsEnt(ent) then ent._ACEPointsRemovalNotified = true end
-			for _, con in ipairs(event.AffectedContraptions) do
-				ACE_MarkContraptionRemovalNotified(con)
-			end
+			ACE_MarkContraptionRemovalNotified(primaryCurrent or primaryPrevious)
 		end
 		return event
 	end

@@ -320,6 +320,17 @@ assertEvent("linked-crate-batch", function()
 	return ACE_NotifyCrateWeapons(ammo, "linked-crate")
 end, { conA, conB }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "linked-crate")
 
+local removalParent = newContraption("ammo-removal-parent")
+local removalChild = newContraption("ammo-removal-child")
+local removalGun = newEntity(conB, "acf_gun")
+local removalAmmo = newEntity(removalParent, "acf_ammo", { Master = { removalGun } })
+assertEvent("cross-contraption-ammo-removal", function()
+	return ACE_PointsInputChanged({ removalAmmo, removalGun }, "ammo-removed")
+end, { removalParent, conB }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "ammo-removed")
+assertEvent("split-after-cross-contraption-ammo-removal", function()
+	return hookHandlers["cfw.contraption.split"].ACE_InheritPointWarning(conB, removalChild)
+end, { conB, removalChild }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-split")
+
 -- Creation, add/remove, split, merge, and final removal hook ordering.
 local created = { ents = {}, totalMass = 0 }
 assertNoEvent("contraption-created-initialization", function()

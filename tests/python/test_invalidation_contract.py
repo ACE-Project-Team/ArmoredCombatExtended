@@ -66,6 +66,8 @@ class InvalidationContractTests(unittest.TestCase):
             (
                 "rack-removed",
                 "rack-preloaded",
+                "rack-missile-fired",
+                "rack-missile-reloaded",
                 "rack-links-pasted",
                 "rack-ammo-linked",
                 "rack-unlinked",
@@ -99,6 +101,8 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertEqual(len(gun_endpoint_calls), 4)
         self.assertEqual(len(rack_endpoint_calls), 2)
         self.assertIn("ReadyRack = true", rack)
+        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-fired"', rack)
+        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-reloaded"', rack)
 
         self.assertIn("self._ACEPointsSuppress = true", ammo)
         self.assertIn('"ammo-updated"', ammo)

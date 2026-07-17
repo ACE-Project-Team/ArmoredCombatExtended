@@ -1069,7 +1069,6 @@ function ENT:OnRemove()
 	for _, Gun in pairs(self.Master or {}) do
 		if IsValid(Gun) then pointSources[#pointSources + 1] = Gun end
 	end
-	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
 	self._ACEPointsSuppress = true
 
 	for Key in pairs(self.Master) do
@@ -1079,6 +1078,7 @@ function ENT:OnRemove()
 		end
 	end
 	self._ACEPointsSuppress = nil
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
 	for k,v in pairs(ACF.AmmoCrates) do
 		if v == self then
 			table.remove(ACF.AmmoCrates,k)

@@ -426,7 +426,7 @@ function ENT:ShootMissile()
 
 	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
 
-	ACE.DoContraptionLegalCheck(self)
+	ACE_DoContraptionLegalCheck(self)
 
 	self.NextReload = CT + self.ReloadTime
 
@@ -477,6 +477,14 @@ function ENT:ShootMissile()
 
 	self.Ready = false
 	self.NextFire = CT + self.FireDelay
+	if ACE.PointsInputChanged then
+		ACE.PointsInputChanged(self, "rack-missile-fired", {
+			Ammo = true,
+			Firepower = true,
+			ReadyRack = true,
+			Warning = true,
+		})
+	end
 end
 
 function ENT:Reload() --
@@ -524,6 +532,14 @@ function ENT:Reload() --
 		self.CurMissile = ValidCount + 1
 
 		Wire_TriggerOutput(self, "Shots Left", self.CurMissile)
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged(self, "rack-missile-reloaded", {
+				Ammo = true,
+				Firepower = true,
+				ReadyRack = true,
+				Warning = true,
+			})
+		end
 	else
 		self.NextReload = CT + 5
 
@@ -775,7 +791,7 @@ function ENT:LoadAmmo()
 	self:GetOverlayText()
 
 	self:Think()
-	if ACE.PointsInputChanged then
+	if IsValid(missile) and ACE.PointsInputChanged then
 		ACE.PointsInputChanged(self, "rack-preloaded", {
 			Ammo = true,
 			Firepower = true,

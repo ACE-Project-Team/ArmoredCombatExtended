@@ -40,12 +40,12 @@ def call_with_reason(text, function_name, reason):
 class InvalidationContractTests(unittest.TestCase):
     def assert_reasons(self, relative, reasons):
         text = source(relative)
-        self.assertIn("ACE_PointsInputChanged", text, relative)
+        self.assertIn("ACE.PointsInputChanged", text, relative)
         for reason in reasons:
             with self.subTest(source=relative, reason=reason):
                 self.assertTrue(
-                    call_with_reason(text, "ACE_PointsInputChanged", reason),
-                    f"{reason} is not an active ACE_PointsInputChanged reason",
+                    call_with_reason(text, "ACE.PointsInputChanged", reason),
+                    f"{reason} is not an active ACE.PointsInputChanged reason",
                 )
 
     def test_entity_producers_route_through_the_shared_input_api(self):
@@ -93,17 +93,17 @@ class InvalidationContractTests(unittest.TestCase):
                 self.assertIn(f'"{final_reason}"', text)
 
         gun_endpoint_calls = [
-            span for span in call_spans(gun, "ACE_PointsInputChanged") if "self, Target" in span
+            span for span in call_spans(gun, "ACE.PointsInputChanged") if "self, Target" in span
         ]
         rack_endpoint_calls = [
-            span for span in call_spans(rack, "ACE_PointsInputChanged") if "self, Target" in span
+            span for span in call_spans(rack, "ACE.PointsInputChanged") if "self, Target" in span
         ]
         self.assertEqual(len(gun_endpoint_calls), 4)
         self.assertEqual(len(rack_endpoint_calls), 2)
         self.assertIn("ReadyRack = true", rack)
-        self.assertIn("if missile and ACE_PointsInputChanged", rack)
-        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-fired"', rack)
-        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-reloaded"', rack)
+        self.assertIn("if missile and ACE.PointsInputChanged", rack)
+        self.assertIn('ACE.PointsInputChanged(self, "rack-missile-fired"', rack)
+        self.assertIn('ACE.PointsInputChanged(self, "rack-missile-reloaded"', rack)
 
         self.assertIn("self._ACEPointsSuppress = true", ammo)
         self.assertIn('"ammo-updated"', ammo)
@@ -132,10 +132,10 @@ class InvalidationContractTests(unittest.TestCase):
         ):
             with self.subTest(source=relative):
                 text = source(relative)
-                self.assertTrue(call_with_reason(text, "ACE_MarkArmorDirty", reason))
+                self.assertTrue(call_with_reason(text, "ACE.MarkArmorDirty", reason))
 
         primitive = source("lua/autorun/server/sv_ace_primitive_compat.lua")
-        self.assertIn("ACE_MarkArmorDirty", primitive)
+        self.assertIn("ACE.MarkArmorDirty", primitive)
         self.assertIn("ProperClippingPhysicsClipped", primitive)
         self.assertIn("ProperClippingPhysicsReset", primitive)
 
@@ -143,12 +143,12 @@ class InvalidationContractTests(unittest.TestCase):
         legality = source("lua/acf/server/sv_contraptionlegality.lua")
         pointshandling = source("lua/acf/server/sv_pointshandling.lua")
 
-        self.assertIn("function ACE_NotifyPointsInvalidated", legality)
+        self.assertIn("function ACE.NotifyPointsInvalidated", legality)
 
         self.assertIn("local POINTS_STATE_VERSION = 3", legality)
         self.assertIn("ACE.PointContraptions[con] = true", legality)
         self.assertIn("ACE_OnContraptionsPointsInvalidated", legality)
-        self.assertIn("ACE_NotifyContraptionPointsInvalidated", pointshandling)
+        self.assertIn("ACE.NotifyContraptionPointsInvalidated", pointshandling)
         self.assertIn("ACE_OnContraptionPointsInvalidated", pointshandling)
         self.assertIn("ACE_OnContraptionPointsRecalculated", pointshandling)
 

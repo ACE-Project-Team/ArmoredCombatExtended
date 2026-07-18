@@ -40,7 +40,7 @@ local function GetGunReloadTime(Gun, BulletData, RoFMul)
 		* FireRateModifier
 	local LowestReloadTime = MaxRof > 0 and 60 / MaxRof or DefaultReloadTime
 	local Loader = Gun:ChooseLoader()
-	local CanUseLoader = not ACE_table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
+	local CanUseLoader = not ACE.table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
 		and Gun.maxrof and Gun.LoaderCount > 0 and IsValid(Loader)
 
 	if CanUseLoader then

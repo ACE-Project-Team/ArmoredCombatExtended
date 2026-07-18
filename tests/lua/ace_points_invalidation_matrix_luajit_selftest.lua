@@ -25,17 +25,17 @@ function include(path)
 end
 
 function IsValid(ent) return isEntity(ent) end
-function ACE_IsEnt(ent) return isEntity(ent) end
+function ACE.IsEnt(ent) return isEntity(ent) end
 function isnumber(value) return type(value) == "number" end
-function ACE_GetContraptionFromEntity(ent) return ent.con end
-function ACE_GetWeaponAnchorContraption(ent) return ent.anchor end
-function ACE_GetOwnerName() return "matrix-owner" end
-function ACE_GetContraptionOwner() return nil end
-function ACE_GetPtsType() return nil end
-function ACE_GetEntPoints(ent) return ent.points or 0 end
-function ACE_GetArmorPoints(ent) return ent.armorPoints or 0 end
-function ACE_GetCrewSeatPointCost() return 0 end
-function ACE_GetGunFirepowerPointsFor() return 0 end
+function ACE.GetContraptionFromEntity(ent) return ent.con end
+function ACE.GetWeaponAnchorContraption(ent) return ent.anchor end
+function ACE.GetOwnerName() return "matrix-owner" end
+function ACE.GetContraptionOwner() return nil end
+function ACE.GetPtsType() return nil end
+function ACE.GetEntPoints(ent) return ent.points or 0 end
+function ACE.GetArmorPoints(ent) return ent.armorPoints or 0 end
+function ACE.GetCrewSeatPointCost() return 0 end
+function ACE.GetGunFirepowerPointsFor() return 0 end
 function Color() return {} end
 function chatMessageGlobal() end
 
@@ -70,7 +70,7 @@ function FindMetaTable(name)
 end
 
 local armorClears = {}
-function ACE_ClearArmorPointCache(ent)
+function ACE.ClearArmorPointCache(ent)
 	armorClears[ent] = (armorClears[ent] or 0) + 1
 	if ACE.ArmorPointCache and ent.index then ACE.ArmorPointCache[ent.index] = nil end
 end
@@ -84,7 +84,7 @@ local function entitiesOf(con)
 	return result
 end
 
-function ACE_GetContraptionEntities(con)
+function ACE.GetContraptionEntities(con)
 	return entitiesOf(con)
 end
 
@@ -107,8 +107,8 @@ local knownContraptions = {}
 
 local function newContraption(name)
 	local con = { name = name, ents = {}, totalMass = 0 }
-	ACE_EnsurePointsState(con)
-	ACE_EnsureContraptionPoints(con, nil, false)
+	ACE.EnsurePointsState(con)
+	ACE.EnsureContraptionPoints(con, nil, false)
 	knownContraptions[#knownContraptions + 1] = con
 	return con
 end
@@ -235,14 +235,14 @@ clearLogs()
 
 -- Direct notifier forms and every category combination.
 assertEvent("armor-only", function()
-	return ACE_NotifyPointsInvalidated(conA, "armor-only", { Armor = true, Warning = true })
+	return ACE.NotifyPointsInvalidated(conA, "armor-only", { Armor = true, Warning = true })
 end, { conA }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "armor-only")
 assert(not conA.ACEArmorDirty and not conA.ACENonArmorDirty,
 	"warning consumer did not finish the armor-only rebuild")
 local armorStateAfterArmorEvent = conA.ACEArmorCalculated
 
 assertEvent("nonarmor-only", function()
-	return ACE_NotifyPointsInvalidated(conA, "nonarmor-only", {
+	return ACE.NotifyPointsInvalidated(conA, "nonarmor-only", {
 		Ammo = true, Firepower = true, ReadyRack = true, Warning = true,
 	})
 end, { conA }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "nonarmor-only")
@@ -251,28 +251,28 @@ assert(not conA.ACEArmorDirty and not conA.ACENonArmorDirty
 	"warning consumer did not finish the non-armor rebuild")
 
 assertEvent("all-categories", function()
-	return ACE_NotifyPointsInvalidated({ conA, conA, conB }, "all-categories", {
+	return ACE.NotifyPointsInvalidated({ conA, conA, conB }, "all-categories", {
 		Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true,
 	})
 end, { conA, conB }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "all-categories")
 
 assertNoEvent("empty source list", function()
-	return ACE_NotifyPointsInvalidated({}, "empty-source", { Warning = true })
+	return ACE.NotifyPointsInvalidated({}, "empty-source", { Warning = true })
 end)
 
 local explicit = { valid = true, con = conA, _ACEPointsOwnerConRef = conC, anchor = conA }
 assertEvent("current-and-previous-owner", function()
-	return ACE_PointsInputChanged(explicit, "owner-moved")
+	return ACE.PointsInputChanged(explicit, "owner-moved")
 end, { conA, conC }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "owner-moved")
 
 assertEvent("explicit-contraption", function()
-	return ACE_NotifyPointsInvalidated(conA, "explicit-contraption", { Warning = true }, { conB })
+	return ACE.NotifyPointsInvalidated(conA, "explicit-contraption", { Warning = true }, { conB })
 end, { conA, conB }, { Armor = false, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "explicit-contraption", {
 	recalculations = 0,
 })
 
 assertEvent("warning-only", function()
-	return ACE_NotifyPointsInvalidated(conA, "warning-only", { Warning = true })
+	return ACE.NotifyPointsInvalidated(conA, "warning-only", { Warning = true })
 end, { conA }, { Armor = false, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "warning-only", {
 	recalculations = 0,
 })
@@ -291,7 +291,7 @@ for mask = 0, 31 do
 	}
 	local hasPointCategory = categories.Armor or categories.Ammo or categories.Firepower or categories.ReadyRack
 	assertEvent("category-mask-" .. mask, function()
-		return ACE_NotifyPointsInvalidated(conC, "category-mask-" .. mask, categories)
+		return ACE.NotifyPointsInvalidated(conC, "category-mask-" .. mask, categories)
 	end, { conC }, categories, "category-mask-" .. mask, {
 		recalculations = hasPointCategory and 1 or 0,
 	})
@@ -299,19 +299,19 @@ end
 
 local cacheEntity = newEntity(conA, "prop_physics")
 assertEvent("compatibility-dirty-wrapper", function()
-	return ACE_MarkContraptionPointsDirty(conA, cacheEntity, false, true, "wrapper")
+	return ACE.MarkContraptionPointsDirty(conA, cacheEntity, false, true, "wrapper")
 end, { conA }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "wrapper")
 
 local armorEntity = newEntity(conA, "prop_physics")
 assertEvent("armor-dirty-wrapper", function()
-	return ACE_MarkArmorDirty(conA, armorEntity, "armor-wrapper")
+	return ACE.MarkArmorDirty(conA, armorEntity, "armor-wrapper")
 end, { conA }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "armor-wrapper")
 assert(armorClears[armorEntity] == 1, "armor wrapper did not clear the entity cache")
 
 local orphan = { valid = true, index = 77 }
 ACE.ArmorPointCache = { [orphan.index] = 99 }
 assertNoEvent("orphan-armor-cache-clear", function()
-	return ACE_MarkArmorDirty(nil, orphan, "orphan-armor")
+	return ACE.MarkArmorDirty(nil, orphan, "orphan-armor")
 end)
 assert(ACE.ArmorPointCache[orphan.index] == nil, "orphan armor cache was not cleared")
 
@@ -319,7 +319,7 @@ assert(ACE.ArmorPointCache[orphan.index] == nil, "orphan armor cache was not cle
 local linkedWeaponB = newEntity(conB, "acf_gun")
 local ammo = newEntity(conA, "acf_ammo", { Master = { linkedWeaponB } })
 assertEvent("linked-crate-batch", function()
-	return ACE_NotifyCrateWeapons(ammo, "linked-crate")
+	return ACE.NotifyCrateWeapons(ammo, "linked-crate")
 end, { conA, conB }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "linked-crate")
 
 local removalParent = newContraption("ammo-removal-parent")
@@ -327,7 +327,7 @@ local removalChild = newContraption("ammo-removal-child")
 local removalGun = newEntity(conB, "acf_gun")
 local removalAmmo = newEntity(removalParent, "acf_ammo", { Master = { removalGun } })
 assertEvent("cross-contraption-ammo-removal", function()
-	return ACE_PointsInputChanged({ removalAmmo, removalGun }, "ammo-removed")
+	return ACE.PointsInputChanged({ removalAmmo, removalGun }, "ammo-removed")
 end, { removalParent, conB }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "ammo-removed")
 assertEvent("split-after-cross-contraption-ammo-removal", function()
 	return hookHandlers["cfw.contraption.split"].ACE_InheritPointWarning(conB, removalChild)
@@ -536,7 +536,7 @@ local legacy = {
 	ACEPointsStateVersion = 2,
 	ACEPointsGeneration = 12,
 }
-assert(ACE_EnsurePointsState(legacy), "version-2 contraption did not migrate")
+assert(ACE.EnsurePointsState(legacy), "version-2 contraption did not migrate")
 assert(legacy.ACEPointsStateVersion == ACE.PointsStateVersion,
 	"version-2 contraption did not receive the current state version")
 assert(legacy.ACEPointsGeneration == 0 and ACE.PointContraptions[legacy],
@@ -567,7 +567,7 @@ end)
 local stale = newContraption("stale")
 stale.ACECacheVersion = ACE.CacheVersion - 1
 assertEvent("cache-version-change", function()
-	return ACE_EnsureCacheVersion(stale)
+	return ACE.EnsureCacheVersion(stale)
 end, { stale }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "cache-version-changed")
 
 local resetA = newContraption("reset-a")
@@ -588,11 +588,11 @@ local reentrantRebuilds = 0
 hook.Add("ACE_OnContraptionsPointsInvalidated", "matrix-reentrant", function()
 	if reentrantRebuilds == 0 then
 		reentrantRebuilds = reentrantRebuilds + 1
-		ACE_EnsureContraptionPoints(reentrant, nil, false)
+		ACE.EnsureContraptionPoints(reentrant, nil, false)
 	end
 end)
 clearLogs()
-local reentrantEvent = ACE_NotifyPointsInvalidated(reentrant, "reentrant", {
+local reentrantEvent = ACE.NotifyPointsInvalidated(reentrant, "reentrant", {
 	Ammo = true, Firepower = true, ReadyRack = true, Warning = true,
 })
 assert(reentrantEvent and reentrantRebuilds == 1, "re-entrant invalidation hook did not run once")

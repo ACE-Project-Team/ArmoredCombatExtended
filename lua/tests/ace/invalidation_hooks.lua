@@ -4,10 +4,10 @@ return {
 		{
 			name = "loads the central invalidation and recalculation APIs",
 			func = function()
-				expect(ACE_NotifyPointsInvalidated).to.beA("function")
-				expect(ACE_PointsInputChanged).to.beA("function")
-				expect(ACE_NotifyContraptionPointsInvalidated).to.beA("function")
-				expect(ACE_EnsureContraptionPoints).to.beA("function")
+				expect(ACE.NotifyPointsInvalidated).to.beA("function")
+				expect(ACE.PointsInputChanged).to.beA("function")
+				expect(ACE.NotifyContraptionPointsInvalidated).to.beA("function")
+				expect(ACE.EnsureContraptionPoints).to.beA("function")
 			end,
 		},
 		{
@@ -36,8 +36,8 @@ return {
 			func = function()
 				local first = { ents = {}, totalMass = 0 }
 				local second = { ents = {}, totalMass = 0 }
-				ACE_EnsurePointsState(first)
-				ACE_EnsurePointsState(second)
+				ACE.EnsurePointsState(first)
+				ACE.EnsurePointsState(second)
 				local batches = 0
 				local compatibility = 0
 				local recalculations = 0
@@ -57,7 +57,7 @@ return {
 					recalculations = recalculations + 1
 				end)
 
-				local event = ACE_NotifyPointsInvalidated({ first, second }, "native-cross-link", {
+				local event = ACE.NotifyPointsInvalidated({ first, second }, "native-cross-link", {
 					Ammo = true,
 					Firepower = true,
 					ReadyRack = true,
@@ -81,8 +81,8 @@ return {
 			name = "deduplicates repeated endpoints before generation advance",
 			func = function()
 				local con = { ents = {}, totalMass = 0 }
-				ACE_EnsurePointsState(con)
-				local event = ACE_NotifyPointsInvalidated({ con, con, con }, "native-duplicate", {
+				ACE.EnsurePointsState(con)
+				local event = ACE.NotifyPointsInvalidated({ con, con, con }, "native-duplicate", {
 					Warning = true,
 				})
 

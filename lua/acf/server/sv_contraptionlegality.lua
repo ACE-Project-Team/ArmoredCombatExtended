@@ -354,7 +354,7 @@ do
 		return event
 	end
 
-	_G.ACE.NotifyPointsInvalidated = ACE.NotifyPointsInvalidated
+	_G.ACE_NotifyPointsInvalidated = ACE.NotifyPointsInvalidated
 
 	-- Initialize per-contraption points state.
 	function ACE.EnsurePointsState(con)
@@ -422,7 +422,7 @@ do
 				-- cfw.contraption.removed. Recover the cache state once before
 				-- preserving CFW's original error.
 				if removedEntity and not finalized then
-					ACE_NotifyPointsInvalidated(self, "contraption-defuse-aborted")
+					ACE.NotifyPointsInvalidated(self, "contraption-defuse-aborted")
 				end
 				error(result[2], 0)
 			end
@@ -788,6 +788,7 @@ concommand.Add("ace_cache_clear_all", function()
 	ACE_ClearAllCaches()
 end)
 
+
 -- Mark armor points dirty for callers that know only armor changed.
 function ACE.MarkArmorDirty(con, ent, reason)
 	if not con then
@@ -855,4 +856,3 @@ hook.Add("PlayerEnteredVehicle", "ACE_PointsVehicleUnfreezeInvalidation", functi
 		end
 	end
 end)
-

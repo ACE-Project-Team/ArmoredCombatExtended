@@ -202,4 +202,4 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 	end
 end
 
-_G.ACE.EnsureContraptionPoints = ACE.EnsureContraptionPoints
+_G.ACE_EnsureContraptionPoints = ACE.EnsureContraptionPoints

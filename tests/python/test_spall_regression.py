@@ -32,14 +32,19 @@ class Layer:
     normal_x: float
 
 
-def trace_fragment(initial_penetration: float, layers: list[Layer], direction_x: float) -> tuple[float, list[float]]:
+def trace_fragment(
+    initial_penetration: float,
+    layers: list[Layer],
+    direction_x: float,
+    use_surface_normal: bool = False,
+) -> tuple[float, list[float]]:
     """Trace one fragment while preserving its direction and private energy budget."""
 
     penetration = initial_penetration
     directions: list[float] = []
 
     for layer in layers:
-        directions.append(direction_x)
+        directions.append(layer.normal_x if use_surface_normal else direction_x)
         penetration = max(penetration - layer.penetration_cost, 0.0)
 
     return penetration, directions
@@ -91,6 +96,52 @@ class SpallOracleTests(unittest.TestCase):
         self.assertEqual(results[0][0], 80)
         self.assertEqual(results[1][0], 60)
         self.assertEqual(results[-1][0], 0)
+
+    def test_user_story_apfsds_front_armor_then_45mm_rubber(self):
+        layers = [Layer("120 mm APFSDS target plate", 18, -1), Layer("45 mm rubber", 9, -1)]
+
+        results = trace_fragments(100, layers, fragment_count=128, isolated_energy=True)
+
+        self.assertEqual(len(results), 128)
+        self.assertEqual({remaining for remaining, _ in results}, {73})
+        self.assertTrue(all(directions == [1, 1] for _, directions in results))
+
+    def test_user_story_rubber_sandwich_keeps_each_fragment_independent(self):
+        layers = [
+            Layer("front RHA", 12, -1),
+            Layer("20 mm rubber", 8, -1),
+            Layer("inner RHA", 12, -1),
+            Layer("25 mm rubber", 8, -1),
+        ]
+
+        results = trace_fragments(100, layers, fragment_count=128, isolated_energy=True)
+
+        self.assertEqual({remaining for remaining, _ in results}, {60})
+
+    def test_user_story_repeated_128_fragment_bursts_are_stable(self):
+        layers = [Layer("front RHA", 15, -1), Layer("rubber", 10, -1)]
+
+        for burst in range(10):
+            with self.subTest(burst=burst):
+                results = trace_fragments(100, layers, fragment_count=128, isolated_energy=True)
+                self.assertEqual({remaining for remaining, _ in results}, {75})
+
+    def test_user_story_empty_gap_does_not_consume_energy_or_change_direction(self):
+        layers = [Layer("front RHA", 10, -1), Layer("empty gap", 0, -1), Layer("rubber", 5, -1)]
+
+        remaining, directions = trace_fragment(100, layers, direction_x=1)
+
+        self.assertEqual(remaining, 85)
+        self.assertEqual(directions, [1, 1, 1])
+
+    def test_surface_normal_control_case_reproduces_historical_bounce(self):
+        layers = [Layer("armor exit", 0, -1)]
+
+        _, fixed_directions = trace_fragment(100, layers, direction_x=1)
+        _, historical_directions = trace_fragment(100, layers, direction_x=1, use_surface_normal=True)
+
+        self.assertEqual(fixed_directions, [1])
+        self.assertEqual(historical_directions, [-1])
 
     def test_layer_matrix_does_not_change_fragment_independence(self):
         materials = [

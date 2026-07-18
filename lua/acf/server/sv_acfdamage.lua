@@ -715,12 +715,12 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 				ACE.Spall[Index] = {}
 				ACE.Spall[Index].start  = SpallRes.HitPos
-				ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallRes.HitNormal + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				ACE.Spall[Index].endpos = SpallRes.HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 				ACE.Spall[Index].filter = Temp_Filter
 				ACE.Spall[Index].mins	= Vector(0,0,0)
 				ACE.Spall[Index].maxs	= Vector(0,0,0)
 
-				ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+				ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 				return
 			end
 
@@ -764,7 +764,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			local Debris = ACF_APKill( SpallRes.Entity , HitVec:GetNormalized() , SpallEnergy.Kinetic )
 			if IsValid(Debris) then
 				table.insert( ACE.Spall[Index].filter , Debris )
-				ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+				ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 			end
 		end
 
@@ -779,7 +779,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			ACE.Spall[Index] = {}
 			ACE.Spall[Index].start  = SpallRes.HitPos
-			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallRes.HitNormal + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			ACE.Spall[Index].endpos = SpallRes.HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 			ACE.Spall[Index].filter = Temp_Filter
 			ACE.Spall[Index].mins	= Vector(0,0,0)
 			ACE.Spall[Index].maxs	= Vector(0,0,0)
@@ -790,7 +790,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			-- Blue trace means spall trace that overpenned and killed something.
 
 			-- Retry
-			ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+			ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 			return
 		else
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )

@@ -10,7 +10,7 @@ Material.year		= 1955
 Material.massMod		= 0.2
 Material.curve		= 0.93
 
-Material.specialeffect  = 20 --Caliber to divide HEAT and spall caliber by when rubber catches the shells taking more of the energy. A caliber above this number results in a damage multiplier. ex 60mm/30 -> 2x
+Material.specialeffect  = 20 --Caliber to divide HEAT caliber by when rubber catches the shells taking more of the energy. A caliber above this number results in a damage multiplier. ex 60mm/30 -> 2x
 
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.

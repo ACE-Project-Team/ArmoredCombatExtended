@@ -45,6 +45,64 @@ ACF.HEFilter = {
 	ace_flares               = true
 }
 
+-- Return a stable, bounded spatial candidate snapshot without mutating the caller's filter.
+function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )
+	local Candidates = {}
+	local Seen = {}
+	local MaxCandidates = Limit or ACE.DamageQueryLimits.HECandidates
+	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
+	if MaxCandidates <= 0 then return Candidates end
+
+	local function IsWorse( Left, Right )
+		return Left.Distance > Right.Distance or (Left.Distance == Right.Distance and Left.Entity:EntIndex() > Right.Entity:EntIndex())
+	end
+
+	local function SiftUp( Index )
+		while Index > 1 do
+			local Parent = math.floor(Index / 2)
+			if not IsWorse(Candidates[Index], Candidates[Parent]) then break end
+			Candidates[Index], Candidates[Parent] = Candidates[Parent], Candidates[Index]
+			Index = Parent
+		end
+	end
+
+	local function SiftDown( Index )
+		while true do
+			local Child = Index * 2
+			if Child > #Candidates then return end
+			if Child + 1 <= #Candidates and IsWorse(Candidates[Child + 1], Candidates[Child]) then
+				Child = Child + 1
+			end
+			if not IsWorse(Candidates[Child], Candidates[Index]) then return end
+			Candidates[Index], Candidates[Child] = Candidates[Child], Candidates[Index]
+			Index = Child
+		end
+	end
+
+	for _, Entity in ipairs( ents.FindInSphere( Origin, Radius ) ) do
+		if IsValid(Entity) and not Seen[Entity] and (not Predicate or Predicate(Entity)) then
+			Seen[Entity] = true
+			ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
+			local Distance = Origin:DistToSqr(Entity:GetPos())
+
+			if #Candidates < MaxCandidates then
+				Candidates[#Candidates + 1] = { Entity = Entity, Distance = Distance }
+				SiftUp(#Candidates)
+			elseif Distance < Candidates[1].Distance or (Distance == Candidates[1].Distance and Entity:EntIndex() < Candidates[1].Entity:EntIndex()) then
+				Candidates[1] = { Entity = Entity, Distance = Distance }
+				SiftDown(1)
+			end
+		end
+	end
+	table.sort(Candidates, function(Left, Right)
+		return Left.Distance < Right.Distance or (Left.Distance == Right.Distance and Left.Entity:EntIndex() < Right.Entity:EntIndex())
+	end)
+
+	for Index, Candidate in ipairs(Candidates) do Candidates[Index] = Candidate.Entity end
+
+	return Candidates
+end
+
 -- Return a copy of cumulative damage-query counters for profiling or diagnostics.
 function ACF_GetDamageQueryStats()
 	return table.Copy(ACE.DamageQueryStats)
@@ -105,44 +163,13 @@ ACE.CritEnts = {
 
 --I don't want HE processing every ent that it has in range
 function ACF_HEFind( Hitpos, Radius )
-	local Targets = {}
-	local Limit = ACE.DamageQueryLimits.HECandidates
-	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
-	if Limit <= 0 then return Targets end
-
-	for _, Entity in ipairs(ents.FindInSphere(Hitpos, Radius)) do
-		if #Targets >= Limit then break end
-		if IsValid(Entity) and not ACF.HEFilter[Entity:GetClass()] and Entity:IsSolid() and not Entity.Exploding then
-			Targets[#Targets + 1] = Entity
-			ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
-		end
-	end
-
-	return Targets
-end
-
-function ACF_HEFindCritical(Hitpos, RadiusSq)
-	local Targets = {}
-	local Limit = ACE.DamageQueryLimits.HECandidates
-	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
-	if Limit <= 0 then return Targets end
-
-	for _, Entity in ipairs(ACE.critEnts) do
-		if #Targets >= Limit then break end
-		if IsValid(Entity) then
-			local Distance = Hitpos:DistToSqr(Entity:GetPos())
-			if Distance <= RadiusSq then
-				Targets[#Targets + 1] = Entity
-				ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
-			end
-		end
-	end
-
-	return Targets
+	return ACF_GetDamageCandidates(Hitpos, Radius, function(Entity)
+		return not ACF.HEFilter[Entity:GetClass()] and Entity:IsSolid() and not Entity.Exploding
+	end, ACE.DamageQueryLimits.HECandidates)
 end
 
 -- Calculate one HE target's deterministic blast and fragment inputs after LOS selection.
-function ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, BaseFragVel, Table, TotalArea, Radius, Target, Output)
+function ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, BaseFragVel, Table, TotalArea, Radius, Target)
 	local Distance = Table.Dist
 	local Feathering = (1 - math.min(1, Distance / Radius)) ^ ACF.HEFeatherExp
 	local FragmentFeathering = (1 - math.min(1, Distance / Radius / ACF.HEFragRadiusMul)) ^ ACF.HEFeatherExp
@@ -150,9 +177,7 @@ function ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, BaseFragVel, 
 	local AreaAdjusted = (Target.ACF.Area / ACF.Threshold) * Feathering
 	local FragmentAreaAdjusted = (Target.ACF.Area / ACF.Threshold) * FragmentFeathering
 	local PowerFraction = Power * AreaFraction
-	Output = Output or {}
-	Output.Blast = Output.Blast or {}
-	Output.Blast.Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted
+	local Blast = { Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted }
 	local FragmentHit = Fragments * AreaFraction
 	local FragmentVelocity = math.max(BaseFragVel - ((Distance / BaseFragVel) * BaseFragVel ^ 2 * FragWeight ^ 0.33 * ACF.HEFragDragFactor) / ACF.DragDiv, 0)
 	local FragmentKE = ACF_Kinetic(FragmentVelocity, FragWeight * FragmentHit, 1500)
@@ -161,13 +186,15 @@ function ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, BaseFragVel, 
 		FragmentHit = 1
 	end
 
-	Output.AreaAdjusted = AreaAdjusted
-	Output.FragmentAreaAdjusted = FragmentAreaAdjusted
-	Output.PowerFraction = PowerFraction
-	Output.FragmentHit = FragmentHit
-	Output.FragmentKE = FragmentKE
-	Output.NextFragmentVelocity = FragmentVelocity
-	return Output
+	return {
+		AreaAdjusted = AreaAdjusted,
+		FragmentAreaAdjusted = FragmentAreaAdjusted,
+		PowerFraction = PowerFraction,
+		Blast = Blast,
+		FragmentHit = FragmentHit,
+		FragmentKE = FragmentKE,
+		NextFragmentVelocity = FragmentVelocity,
+	}
 end
 
 --[[----------------------------------------------------------------------------
@@ -253,7 +280,9 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			Penetration = HEPen
 		}
 
-		local CriticalTargets = ACF_HEFindCritical(Hitpos, RadSq)
+		local CriticalTargets = ACF_GetDamageCandidates(Hitpos, math.sqrt(RadSq), function(Entity)
+			return ACE.critEntIndex[Entity]
+		end, ACE.DamageQueryLimits.HECandidates)
 
 		for _, ent in ipairs(CriticalTargets) do
 			local epos = ent:GetPos()
@@ -398,21 +427,17 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 		end
 
 		--Now that we have the props to damage, apply it here
-		local DamageData = {}
 		for _, Table in ipairs(Damage) do
 
 			local Tar              = Table.Ent
 			local TargetPos        = Tar:GetPos()
-			DamageData = ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, FragVel, Table, TotalArea, Radius, Tar, DamageData)
+			local DamageData = ACF_HECalculateTargetDamage(Power, Fragments, FragWeight, FragVel, Table, TotalArea, Radius, Tar)
 			local AreaAdjusted = DamageData.AreaAdjusted
 			local FRAreaAdjusted = DamageData.FragmentAreaAdjusted
 			local PowerFraction = DamageData.PowerFraction
 			local Blast = DamageData.Blast
 			local FragHit = DamageData.FragmentHit
 			local FragKE = DamageData.FragmentKE
-			if ACE.CritEnts[Tar:GetClass()] then
-				Blast = { Penetration = Blast.Penetration }
-			end
 
 			--HE tends to pick some props where simply will not apply damage. So lets ignore it.
 			if FRAreaAdjusted <= 0 then continue end
@@ -441,12 +466,11 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 						endpos = NewHitat + (NewHitat-NewHitpos):GetNormalized() * 100,
 						filter = ACF_CopyDamageFilter(OccFilter),
 					}
-					local RetryLOSBudget = { Limit = 2, Used = 0, StatKey = "HELOSTraces" }
-					if not ACF_ConsumeDamageQueryBudget(RetryLOSBudget) then return end
+					if not ACF_ConsumeDamageQueryBudget(LOSBudget) then return end
 					local Occ	= util.TraceLine( Occlusion )
 
 					if not Occ.Hit and NewHitpos ~= NewHitat then
-						if not ACF_ConsumeDamageQueryBudget(RetryLOSBudget) then return end
+						if not ACF_ConsumeDamageQueryBudget(LOSBudget) then return end
 						local NewHitat  = TargetPos
 						Occlusion.endpos	= NewHitat + (NewHitat-NewHitpos):GetNormalized() * 100
 						Occ = util.TraceLine( Occlusion )
@@ -1399,6 +1423,16 @@ do
 		return ACE.GetAmmoCookoffClass(roundType, isMissile)
 	end
 
+	-- Remove an explosive from the live registry without invalidating a query snapshot.
+	local function RemoveExplosiveCandidate(Entity)
+		for Index = #ACE.Explosives, 1, -1 do
+			if ACE.Explosives[Index] == Entity then
+				table.remove(ACE.Explosives, Index)
+				return
+			end
+		end
+	end
+
 	--converts what would be multiple simultaneous cache detonations into one large explosion
 	function ACF_ScaledExplosion( ent , remove )
 
@@ -1523,7 +1557,6 @@ do
 		local ExplosionCandidateCount = 0
 		local ExplosionSeen = {}
 		local ExplosionPending = {}
-		local RadiusSq = Radius ^ 2
 		local ExplosionLOSBudget = {
 			Limit = ACE.DamageQueryLimits.ExplosionLOSTraces,
 			Used = 0,
@@ -1536,20 +1569,19 @@ do
 			local CExplosives = {}
 
 			if RemainingCandidates > 0 then
-				ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
-				for _, Found in ipairs(ACE.Explosives) do
-					if #CExplosives >= RemainingCandidates then break end
-					if not IsValid(Found) or Found.Exploding or ExplosionSeen[Found] or Found:GetPos():DistToSqr(Pos) > RadiusSq then continue end
-					CExplosives[#CExplosives + 1] = Found
+				CExplosives = ACF_GetDamageCandidates(Pos, Radius, function(Entity)
+					return ACE.ExplosiveEnts[Entity:GetClass()] and not Entity.Exploding and not ExplosionSeen[Entity]
+				end, RemainingCandidates)
+
+				for _, Found in ipairs(CExplosives) do
 					ExplosionSeen[Found] = true
 					ExplosionCandidateCount = ExplosionCandidateCount + 1
-					ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
 					ACE.DamageQueryStats.ExplosionCandidates = ACE.DamageQueryStats.ExplosionCandidates + 1
 				end
 			end
 
 			for Found in pairs(ExplosionPending) do
-				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= RadiusSq then
+				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= Radius ^ 2 then
 					CExplosives[#CExplosives + 1] = Found
 				end
 			end
@@ -1568,7 +1600,7 @@ do
 					break
 				end
 				if not IsValid(Found) then continue end
-				if Found:GetPos():DistToSqr(Pos) > RadiusSq then continue end
+				if Found:GetPos():DistToSqr(Pos) > Radius ^ 2 then continue end
 				if not remove and ent == Found then
 					ExplosionPending[Found] = nil
 					continue
@@ -1715,7 +1747,7 @@ do
 						Found.Exploding     = true
 
 						table.insert( Filter,Found )
-						ACE.RemoveExplosive(Found)
+						RemoveExplosiveCandidate(Found)
 						Found:Remove()
 					else
 						ExplosionPending[Found] = true

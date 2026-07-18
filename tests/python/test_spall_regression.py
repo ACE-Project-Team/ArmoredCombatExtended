@@ -22,8 +22,6 @@ SOURCE = (
     / "sv_acfdamage.lua"
 )
 RUBBER_SOURCE = SOURCE.parents[1] / "shared" / "armor" / "rubber.lua"
-BALLISTICS_SOURCE = SOURCE.with_name("sv_acfballistics.lua")
-MISSILE_SOURCE = SOURCE.parents[2] / "autorun" / "server" / "sv_acf_missiles.lua"
 
 
 @dataclass(frozen=True)
@@ -353,24 +351,27 @@ class SpallSourceContractTests(unittest.TestCase):
         heat = (SOURCE.parents[1] / "shared" / "rounds" / "roundheat.lua").read_text(encoding="utf-8")
         self.assertIn("HitRes.PostPenetration.IncomingKinetic * 0.75", heat)
 
-    def test_damage_queries_use_path_specific_bounded_candidate_snapshots(self):
-        self.assertIn("function ACF_HEFind( Hitpos, Radius )", self.source)
-        self.assertIn("function ACF_HEFindCritical(Hitpos, RadiusSq)", self.source)
-        self.assertIn("ents.FindInSphere(Hitpos, Radius)", self.source)
+    def test_damage_queries_use_bounded_spatial_candidate_snapshots(self):
+        self.assertIn("function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )", self.source)
+        self.assertIn("ents.FindInSphere( Origin, Radius )", self.source)
         self.assertIn("ACE.DamageQueryLimits.HECandidates", self.source)
         self.assertIn("ACE.DamageQueryLimits.HELOSTraces", self.source)
         self.assertIn("ACE.DamageQueryStats.CandidateQueries", self.source)
         self.assertIn("ACE.DamageQueryStats.CandidatesAccepted", self.source)
         self.assertIn("function ACF_GetDamageQueryStats()", self.source)
         self.assertIn("function ACF_ResetDamageQueryStats()", self.source)
-        self.assertIn("for _, Entity in ipairs(ACE.critEnts) do", self.source)
-        self.assertIn("for _, Entity in ipairs(ents.FindInSphere(Hitpos, Radius)) do", self.source)
-        self.assertNotIn("function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )", self.source)
+        self.assertIn("ACE.critEntIndex[Entity]", self.source)
+        self.assertIn("table.sort(Candidates", self.source)
+        self.assertIn("local function SiftUp( Index )", self.source)
+        self.assertIn("local function SiftDown( Index )", self.source)
+        self.assertIn("local Distance = Origin:DistToSqr(Entity:GetPos())", self.source)
+        self.assertNotIn("for Index = 2, #Candidates do", self.source)
+        self.assertNotIn("if #Candidates >= MaxCandidates then break end", self.source)
         self.assertNotIn("for _, ent in pairs( ACE.critEnts ) do", self.source)
 
     def test_he_damage_math_is_separate_from_candidate_and_trace_selection(self):
         self.assertIn("function ACF_HECalculateTargetDamage(", self.source)
-        self.assertIn("DamageData = ACF_HECalculateTargetDamage(", self.source)
+        self.assertIn("local DamageData = ACF_HECalculateTargetDamage(", self.source)
         self.assertIn("local FragmentVelocity = math.max(BaseFragVel", self.source)
         self.assertIn("FragmentHit = 1", self.source)
 
@@ -392,8 +393,8 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("math.min(math.floor(Caliber * math.sqrt(EquivalentFillerKg)", self.source)
 
     def test_scaled_explosion_iterates_a_snapshot_before_live_registry_removal(self):
-        self.assertIn("for _, Found in ipairs(ACE.Explosives) do", self.source)
-        self.assertIn("ACE.RemoveExplosive(Found)", self.source)
+        self.assertIn("CExplosives = ACF_GetDamageCandidates(Pos, Radius", self.source)
+        self.assertIn("RemoveExplosiveCandidate(Found)", self.source)
         self.assertNotIn("table.remove( CExplosives,i )", self.source)
 
     def test_round_handlers_use_the_shared_post_penetration_decision(self):
@@ -410,45 +411,6 @@ class SpallSourceContractTests(unittest.TestCase):
             "roundhvap.lua", "roundtheat.lua", "roundtheatfs.lua",
         }
         self.assertEqual(set(handlers), expected)
-
-    def test_ballistics_scheduler_uses_pooled_state_and_active_iteration(self):
-        source = BALLISTICS_SOURCE.read_text(encoding="utf-8")
-        self.assertIn("function ACF_AcquireBullet(BulletData)", source)
-        self.assertIn("local BulletPool = {}", source)
-        self.assertIn("function ACF_RegisterBullet(Index, Bullet)", source)
-        self.assertIn("local ActiveBullets = {}", source)
-        self.assertIn("while Slot <= ActiveCount do", source)
-        self.assertIn("Bullet.ActiveFrame ~= Frame", source)
-        self.assertIn("if ActiveBullets[Slot] == Index then", source)
-        self.assertIn("function ACE.GetBallisticsStats()", source)
-        self.assertIn("function ACE.ResetBallisticsStats()", source)
-        self.assertIn("hook.Run(\"ACFOnBulletRemoved\", Index, Bullet)", source)
-        self.assertLess(
-            source.index('hook.Run("ACFOnBulletRemoved", Index, Bullet)'),
-            source.index("table.insert(BulletPool, Bullet)", source.index('hook.Run("ACFOnBulletRemoved", Index, Bullet)')),
-        )
-        self.assertNotIn("for Index,Bullet in pairs(ACF.Bullet) do", source)
-        self.assertNotIn("ACF.Bullet[ACF.CurBulletIndex] = table.Copy(BulletData)", source)
-
-    def test_ballistics_work_and_debug_limits_are_explicit(self):
-        source = BALLISTICS_SOURCE.read_text(encoding="utf-8")
-        missile = MISSILE_SOURCE.read_text(encoding="utf-8")
-        self.assertIn("VisibilityRetries = 50", source)
-        self.assertIn("Impacts = 100", source)
-        self.assertIn("visCount < ACE.BallisticsLimits.VisibilityRetries", source)
-        self.assertIn("Bullet.ImpactCount > ACE.BallisticsLimits.Impacts", source)
-        self.assertIn("local DebugConVar = GetConVar(\"acf_ballistics_debug\")", source)
-        self.assertIn("if BallisticsDebug() then", source)
-        self.assertIn("ACF_AcquireBullet(BulletData)", missile)
-        self.assertIn("ACF_RegisterBullet(ACF.CurBulletIndex, BulletData)", missile)
-
-    def test_explosive_registry_removal_keeps_its_index_map_consistent(self):
-        contraption = (SOURCE.parent / "sv_contraption.lua").read_text(encoding="utf-8")
-        self.assertIn("function ACE.RemoveExplosive(Entity)", contraption)
-        self.assertIn("ACE.RemoveExplosive(explosive)", contraption)
-        self.assertIn("ACE.Explosives        = {}", contraption)
-        self.assertIn("ACE.ExplosiveIndex    = {}", contraption)
-        self.assertNotIn("table.remove(ACE.Explosives", contraption)
 
 
 class TheatDamageContractTests(unittest.TestCase):

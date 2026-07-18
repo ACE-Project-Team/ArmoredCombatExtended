@@ -29,21 +29,23 @@ function ACFM_BulletLaunch(BulletData)
 		ACF.CurBulletIndex = 1
 	end
 
-	BulletData = ACF_AcquireBullet(BulletData)
-
 	--Those are BulletData settings that are global and shouldn't change round to round
-	BulletData.Gravity		= ACF.BallisticsGravity
-	BulletData.Accel		= ACF.BallisticsGravityVector
+	BulletData.Gravity		= GetConVar("sv_gravity"):GetInt() * -1
+	BulletData.Accel		= Vector(0,0,BulletData.Gravity)
 	BulletData.LastThink	= ACF.SysTime
 	BulletData.FlightTime	= 0
 	BulletData.TraceBackComp	= 0
 
 	BulletData.FuseLength	= type(BulletData.FuseLength) == "number" and BulletData.FuseLength or 0
 
-	table.insert(BulletData.Filter, BulletData.Gun)
+	if BulletData.Filter then
+		table.Add(BulletData.Filter, { BulletData.Gun } )
+	else
+		BulletData.Filter = { BulletData.Gun }
+	end
 
 	BulletData.Index		= ACF.CurBulletIndex
-	ACF_RegisterBullet(ACF.CurBulletIndex, BulletData)
+	ACF.Bullet[ACF.CurBulletIndex] = table.Copy(BulletData)	--Place the bullet at the current index pos
 	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
 
 end

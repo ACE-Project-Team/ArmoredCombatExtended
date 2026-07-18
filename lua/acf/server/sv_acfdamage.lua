@@ -1574,27 +1574,28 @@ do
 			local CExplosives = {}
 			local CandidateDistances = {}
 			local CandidateIndices = {}
+			local PendingCount = 0
+
+			for Found in pairs(ExplosionPending) do
+				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= RadiusSq then
+					PendingCount = PendingCount + 1
+				end
+			end
+
+			local CandidateLimit = math.max(RemainingCandidates, PendingCount)
+			for Found in pairs(ExplosionPending) do
+				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= RadiusSq then
+					local Distance = Found:GetPos():DistToSqr(Pos)
+					ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, CandidateLimit)
+				end
+			end
 
 			if RemainingCandidates > 0 then
 				ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
 				for _, Found in ipairs(ACE.Explosives) do
 					if not IsValid(Found) or Found.Exploding or ExplosionSeen[Found] or Found:GetPos():DistToSqr(Pos) > RadiusSq then continue end
 					local Distance = Found:GetPos():DistToSqr(Pos)
-					if ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, RemainingCandidates) then
-					end
-				end
-
-				for _, Found in ipairs(CExplosives) do
-					ExplosionSeen[Found] = true
-					ExplosionCandidateCount = ExplosionCandidateCount + 1
-					ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
-					ACE.DamageQueryStats.ExplosionCandidates = ACE.DamageQueryStats.ExplosionCandidates + 1
-				end
-			end
-
-			for Found in pairs(ExplosionPending) do
-				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= RadiusSq then
-					CExplosives[#CExplosives + 1] = Found
+					ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, CandidateLimit)
 				end
 			end
 

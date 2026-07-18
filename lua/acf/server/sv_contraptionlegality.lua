@@ -434,7 +434,17 @@ do
 
 	local function ACE_InitPts(con)
 		ACE_WrapCFWDefuse()
-		return ACE.EnsurePointsState(con)
+		local initialized = ACE.EnsurePointsState(con)
+		if initialized then
+			ACE.NotifyPointsInvalidated(con, "contraption-created", {
+				Armor = true,
+				Ammo = true,
+				Firepower = true,
+				ReadyRack = true,
+				Warning = true,
+			}, { con })
+		end
+		return initialized
 	end
 
 	-- Compatibility wrapper for callers that already resolved a contraption.

@@ -32,6 +32,25 @@ return {
 			end,
 		},
 		{
+			name = "emits one event for contraption creation",
+			func = function()
+				local con = { ents = {}, totalMass = 0 }
+				local events = 0
+				local hookName = "ACE_GLuaTest_Creation_" .. tostring(SysTime())
+
+				hook.Add("ACE_OnContraptionsPointsInvalidated", hookName, function(event)
+					events = events + 1
+					expect(event.Reason).to.equal("contraption-created")
+				end)
+
+				hook.GetTable()["cfw.contraption.created"].ACE_InitPoints(con)
+				expect(events).to.equal(1)
+				expect(con.ACEPointsGeneration).to.equal(1)
+
+				hook.Remove("ACE_OnContraptionsPointsInvalidated", hookName)
+			end,
+		},
+		{
 			name = "records one cross-contraption event with complete generations",
 			func = function()
 				local first = { ents = {}, totalMass = 0 }

@@ -335,9 +335,9 @@ end, { conB, removalChild }, { Armor = true, Ammo = true, Firepower = true, Read
 
 -- Creation, add/remove, split, merge, and final removal hook ordering.
 local created = { ents = {}, totalMass = 0 }
-assertNoEvent("contraption-created-initialization", function()
+assertEvent("contraption-created-initialization", function()
 	return hookHandlers["cfw.contraption.created"].ACE_InitPoints(created)
-end)
+end, { created }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-created")
 assert(created.ACEInitDone and created.ACEPointsGeneration == 0, "creation did not initialize cleanly")
 assert(ACE._ACEWrappedDefuse, "CFW Defuse wrapper was not installed after CFW became available")
 CFW.Classes.Contraption.Defuse(created)

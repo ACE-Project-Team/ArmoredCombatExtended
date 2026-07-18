@@ -696,6 +696,9 @@ end
 
 --Spall trace core. For HESH and normal spalling
 function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity )
+	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
+	-- while later fragments must start from the original energy.
+	SpallEnergy = table.Copy(SpallEnergy)
 
 	local Entity_Crit_Hit_Factor = 1.01
 

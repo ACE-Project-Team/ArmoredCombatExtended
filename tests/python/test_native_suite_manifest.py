@@ -21,6 +21,7 @@ class NativeSuiteManifestTests(unittest.TestCase):
         self.assertEqual(
             {
                 "000_discovery_canary.lua",
+                "armor_spall_corpus.lua",
                 "entity_registration.lua",
                 "invalidation_hooks.lua",
                 "registries.lua",

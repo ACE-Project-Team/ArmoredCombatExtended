@@ -351,6 +351,49 @@ class SpallSourceContractTests(unittest.TestCase):
         heat = (SOURCE.parents[1] / "shared" / "rounds" / "roundheat.lua").read_text(encoding="utf-8")
         self.assertIn("HitRes.PostPenetration.IncomingKinetic * 0.75", heat)
 
+    def test_damage_queries_use_bounded_spatial_candidate_snapshots(self):
+        self.assertIn("function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )", self.source)
+        self.assertIn("ents.FindInSphere( Origin, Radius )", self.source)
+        self.assertIn("ACE.DamageQueryLimits.HECandidates", self.source)
+        self.assertIn("ACE.DamageQueryLimits.HELOSTraces", self.source)
+        self.assertIn("ACE.DamageQueryStats.CandidateQueries", self.source)
+        self.assertIn("ACE.DamageQueryStats.CandidatesAccepted", self.source)
+        self.assertIn("function ACF_GetDamageQueryStats()", self.source)
+        self.assertIn("function ACF_ResetDamageQueryStats()", self.source)
+        self.assertIn("ACE.critEntIndex[Entity]", self.source)
+        self.assertIn("table.sort(Candidates", self.source)
+        self.assertIn("local Distance = Origin:DistToSqr(Entity:GetPos())", self.source)
+        self.assertNotIn("if #Candidates >= MaxCandidates then break end", self.source)
+        self.assertNotIn("for _, ent in pairs( ACE.critEnts ) do", self.source)
+
+    def test_he_damage_math_is_separate_from_candidate_and_trace_selection(self):
+        self.assertIn("function ACF_HECalculateTargetDamage(", self.source)
+        self.assertIn("local DamageData = ACF_HECalculateTargetDamage(", self.source)
+        self.assertIn("local FragmentVelocity = math.max(BaseFragVel", self.source)
+        self.assertIn("FragmentHit = 1", self.source)
+
+    def test_hesh_and_he_filters_are_copied_before_mutation(self):
+        self.assertIn("local OccFilter\t= ACF_CopyDamageFilter(NoOcc)", self.source)
+        self.assertIn("local EntsToHit\t= ACF_CopyDamageFilter(Filter)", self.source)
+        self.assertIn("local Temp_Filter = ACF_CopyDamageFilter(Filter)", self.source)
+        self.assertIn("function ACF_AddDamageFilter( Filter, Entity )", self.source)
+
+    def test_fragment_and_hesh_los_budgets_are_explicit(self):
+        self.assertIn("Fragments = 128", self.source)
+        self.assertIn("HESHIterations = 128", self.source)
+        self.assertIn("ExplosionLOSTraces = 512", self.source)
+        self.assertIn("FragmentsQueued = 0", self.source)
+        self.assertIn("ExplosionCandidates = 0", self.source)
+        self.assertIn('StatKey = "ExplosionLOSTraces"', self.source)
+        self.assertIn("function ACF_ConsumeDamageQueryBudget( Budget )", self.source)
+        self.assertIn("math.min(math.floor(Caliber * ACF.KEtoSpall", self.source)
+        self.assertIn("math.min(math.floor(Caliber * math.sqrt(EquivalentFillerKg)", self.source)
+
+    def test_scaled_explosion_iterates_a_snapshot_before_live_registry_removal(self):
+        self.assertIn("CExplosives = ACF_GetDamageCandidates(Pos, Radius", self.source)
+        self.assertIn("RemoveExplosiveCandidate(Found)", self.source)
+        self.assertNotIn("table.remove( CExplosives,i )", self.source)
+
     def test_round_handlers_use_the_shared_post_penetration_decision(self):
         rounds = list((SOURCE.parents[1] / "shared" / "rounds").glob("round*.lua"))
         handlers = []

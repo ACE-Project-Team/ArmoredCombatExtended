@@ -1572,12 +1572,8 @@ do
 		while Search do
 			local RemainingCandidates = ACE.DamageQueryLimits.ExplosionCandidates - ExplosionCandidateCount
 			local CExplosives = {}
-			local PendingExplosives = {}
-			local PendingDistances = {}
-			local PendingIndices = {}
-			local NewExplosives = {}
-			local NewDistances = {}
-			local NewIndices = {}
+			local CandidateDistances = {}
+			local CandidateIndices = {}
 			local PendingCount = 0
 
 			for Found in pairs(ExplosionPending) do
@@ -1586,10 +1582,11 @@ do
 				end
 			end
 
+			local CandidateLimit = math.max(RemainingCandidates, PendingCount)
 			for Found in pairs(ExplosionPending) do
 				if IsValid(Found) and not Found.Exploding and Found:GetPos():DistToSqr(Pos) <= RadiusSq then
 					local Distance = Found:GetPos():DistToSqr(Pos)
-					ACF_InsertNearestDamageCandidate(PendingExplosives, PendingDistances, PendingIndices, Found, Distance, PendingCount)
+					ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, CandidateLimit)
 				end
 			end
 
@@ -1598,27 +1595,7 @@ do
 				for _, Found in ipairs(ACE.Explosives) do
 					if not IsValid(Found) or Found.Exploding or ExplosionSeen[Found] or Found:GetPos():DistToSqr(Pos) > RadiusSq then continue end
 					local Distance = Found:GetPos():DistToSqr(Pos)
-					ACF_InsertNearestDamageCandidate(NewExplosives, NewDistances, NewIndices, Found, Distance, RemainingCandidates)
-				end
-			end
-
-			local PendingAt = 1
-			local NewAt = 1
-			while PendingAt <= #PendingExplosives or NewAt <= #NewExplosives do
-				local UsePending = NewAt > #NewExplosives
-				if not UsePending and PendingAt <= #PendingExplosives then
-					UsePending = PendingDistances[PendingAt] < NewDistances[NewAt]
-					if PendingDistances[PendingAt] == NewDistances[NewAt] then
-						UsePending = PendingIndices[PendingAt] <= NewIndices[NewAt]
-					end
-				end
-
-				if UsePending then
-					CExplosives[#CExplosives + 1] = PendingExplosives[PendingAt]
-					PendingAt = PendingAt + 1
-				else
-					CExplosives[#CExplosives + 1] = NewExplosives[NewAt]
-					NewAt = NewAt + 1
+					ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, CandidateLimit)
 				end
 			end
 

@@ -356,6 +356,7 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_damage_queries_use_path_specific_bounded_candidate_snapshots(self):
         self.assertIn("function ACF_HEFind( Hitpos, Radius )", self.source)
         self.assertIn("function ACF_HEFindCritical(Hitpos, RadiusSq)", self.source)
+        self.assertIn("function ACF_InsertNearestDamageCandidate(", self.source)
         self.assertIn("ents.FindInSphere(Hitpos, Radius)", self.source)
         self.assertIn("ACE.DamageQueryLimits.HECandidates", self.source)
         self.assertIn("ACE.DamageQueryLimits.HELOSTraces", self.source)
@@ -371,6 +372,7 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_he_damage_math_is_separate_from_candidate_and_trace_selection(self):
         self.assertIn("function ACF_HECalculateTargetDamage(", self.source)
         self.assertIn("DamageData = ACF_HECalculateTargetDamage(", self.source)
+        self.assertIn('local RetryLOSBudget = { Limit = ACE.DamageQueryLimits.HELOSTraces', self.source)
         self.assertIn("local FragmentVelocity = math.max(BaseFragVel", self.source)
         self.assertIn("FragmentHit = 1", self.source)
 

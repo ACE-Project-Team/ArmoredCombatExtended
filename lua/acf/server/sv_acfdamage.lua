@@ -104,53 +104,17 @@ ACE.CritEnts = {
 }
 
 --I don't want HE processing every ent that it has in range
-local function ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit)
-	local Count = #Targets
-	local EntityIndex = Entity:EntIndex()
-	if Count >= Limit then
-		local LastDistance = Distances[Count]
-		local LastIndex = EntIndices[Count]
-		if LastDistance < Distance or (LastDistance == Distance and LastIndex <= EntityIndex) then return false end
-	end
-
-	local InsertAt = math.min(Count + 1, Limit)
-	if Count >= Limit then
-		Targets[InsertAt] = Entity
-		Distances[InsertAt] = Distance
-		EntIndices[InsertAt] = EntityIndex
-	end
-
-	while InsertAt > 1 do
-		local Previous = InsertAt - 1
-		local PreviousDistance = Distances[Previous]
-		local PreviousIndex = EntIndices[Previous]
-		if PreviousDistance < Distance or (PreviousDistance == Distance and PreviousIndex <= EntityIndex) then break end
-		Targets[InsertAt] = Targets[Previous]
-		Distances[InsertAt] = PreviousDistance
-		EntIndices[InsertAt] = PreviousIndex
-		InsertAt = Previous
-	end
-
-	Targets[InsertAt] = Entity
-	Distances[InsertAt] = Distance
-	EntIndices[InsertAt] = EntityIndex
-	return true
-end
-
 function ACF_HEFind( Hitpos, Radius )
 	local Targets = {}
-	local Distances = {}
-	local EntIndices = {}
 	local Limit = ACE.DamageQueryLimits.HECandidates
 	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
 	if Limit <= 0 then return Targets end
 
 	for _, Entity in ipairs(ents.FindInSphere(Hitpos, Radius)) do
+		if #Targets >= Limit then break end
 		if IsValid(Entity) and not ACF.HEFilter[Entity:GetClass()] and Entity:IsSolid() and not Entity.Exploding then
-			local Distance = Hitpos:DistToSqr(Entity:GetPos())
-			if ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit) then
-				ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
-			end
+			Targets[#Targets + 1] = Entity
+			ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
 		end
 	end
 
@@ -159,19 +123,17 @@ end
 
 function ACF_HEFindCritical(Hitpos, RadiusSq)
 	local Targets = {}
-	local Distances = {}
-	local EntIndices = {}
 	local Limit = ACE.DamageQueryLimits.HECandidates
 	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
 	if Limit <= 0 then return Targets end
 
 	for _, Entity in ipairs(ACE.critEnts) do
+		if #Targets >= Limit then break end
 		if IsValid(Entity) then
 			local Distance = Hitpos:DistToSqr(Entity:GetPos())
 			if Distance <= RadiusSq then
-				if ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit) then
-					ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
-				end
+				Targets[#Targets + 1] = Entity
+				ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
 			end
 		end
 	end
@@ -277,7 +239,6 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 	local FRTargets	= ACF_HEFind( Hitpos, Radius * ACF.HEFragRadiusMul )		-- Will give tiny HE just a pinch of radius to help it hit the player
 	local LOSBudget = { Limit = ACE.DamageQueryLimits.HELOSTraces, Used = 0 }
-	local RetryLOSBudget = { Limit = ACE.DamageQueryLimits.HELOSTraces, Used = 0, StatKey = "HELOSTraces" }
 	DebugExplosion("HE:Targets", "Count", #FRTargets, "FragRadiusMul", ACF.HEFragRadiusMul)
 
 	--Generates a list of critical entities inside the blast radius
@@ -480,6 +441,7 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 						endpos = NewHitat + (NewHitat-NewHitpos):GetNormalized() * 100,
 						filter = ACF_CopyDamageFilter(OccFilter),
 					}
+					local RetryLOSBudget = { Limit = 2, Used = 0, StatKey = "HELOSTraces" }
 					if not ACF_ConsumeDamageQueryBudget(RetryLOSBudget) then return end
 					local Occ	= util.TraceLine( Occlusion )
 
@@ -1572,19 +1534,13 @@ do
 		while Search do
 			local RemainingCandidates = ACE.DamageQueryLimits.ExplosionCandidates - ExplosionCandidateCount
 			local CExplosives = {}
-			local CandidateDistances = {}
-			local CandidateIndices = {}
 
 			if RemainingCandidates > 0 then
 				ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
 				for _, Found in ipairs(ACE.Explosives) do
+					if #CExplosives >= RemainingCandidates then break end
 					if not IsValid(Found) or Found.Exploding or ExplosionSeen[Found] or Found:GetPos():DistToSqr(Pos) > RadiusSq then continue end
-					local Distance = Found:GetPos():DistToSqr(Pos)
-					if ACF_InsertNearestDamageCandidate(CExplosives, CandidateDistances, CandidateIndices, Found, Distance, RemainingCandidates) then
-					end
-				end
-
-				for _, Found in ipairs(CExplosives) do
+					CExplosives[#CExplosives + 1] = Found
 					ExplosionSeen[Found] = true
 					ExplosionCandidateCount = ExplosionCandidateCount + 1
 					ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1

@@ -19,7 +19,13 @@ class NativeSuiteManifestTests(unittest.TestCase):
     def test_native_suite_contains_multiple_groups(self):
         suites = {path.name for path in NATIVE_ROOT.glob("*.lua")}
         self.assertEqual(
-            {"000_discovery_canary.lua", "entity_registration.lua", "registries.lua", "spall_rubber.lua"},
+            {
+                "000_discovery_canary.lua",
+                "entity_registration.lua",
+                "invalidation_hooks.lua",
+                "registries.lua",
+                "spall_rubber.lua",
+            },
             suites,
         )
 

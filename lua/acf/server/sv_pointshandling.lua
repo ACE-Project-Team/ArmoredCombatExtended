@@ -18,17 +18,32 @@ end
 -- from this hook when they need the updated total immediately.
 -- ACE_OnContraptionPointsRecalculated(con, change) reports Revision, OldTotal, Total, OldByType,
 -- ByType, Armor, and NonArmor as detached snapshots after a rebuild.
-function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty)
+function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty, event)
 	if not con then return end
 
 	con.ACEPointsRevision = (con.ACEPointsRevision or 0) + 1
 
+	if not hook or not hook.Run then return end
+
 	hook.Run("ACE_OnContraptionPointsInvalidated", con, {
+		EventId = event and event.EventId or con.ACEPointsRevision,
 		Revision = con.ACEPointsRevision,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision,
+		CacheGeneration = con.ACECacheGeneration or con.ACEPointsGeneration or con.ACEPointsRevision,
 		Entity = ent,
 		Reason = reason or "entity-updated",
 		Armor = armorDirty and true or false,
 		NonArmor = nonArmorDirty and true or false,
+		Categories = event and event.Categories or nil,
+		AffectedContraptions = event and event.AffectedContraptions or { con },
+		CacheGenerations = {
+			Points = con.ACEPointsGeneration or con.ACEPointsRevision,
+			Armor = con.ACEArmorGeneration or 0,
+			Ammo = con.ACEAmmoGeneration or 0,
+			Firepower = con.ACEFirepowerGeneration or 0,
+			ReadyRack = con.ACEReadyRackGeneration or 0,
+			Warning = con.ACEWarningGeneration or 0,
+		},
 	})
 end
 
@@ -143,15 +158,16 @@ function ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	con.ACEPoints = (con.ACEPointsNonArmor or 0) + armorPts
 	con.ACEPointsDirty = con.ACEArmorDirty or con.ACENonArmorDirty or false
 
-	hook.Run("ACE_OnContraptionPointsRecalculated", con, {
+	if hook and hook.Run then hook.Run("ACE_OnContraptionPointsRecalculated", con, {
 		Revision = con.ACEPointsRevision or 0,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision or 0,
 		OldTotal = oldPoints,
 		Total = con.ACEPoints,
 		OldByType = oldTotals,
 		ByType = CopyPointTotals(totals),
 		Armor = rebuildArmor and true or false,
 		NonArmor = rebuildNonArmor and true or false,
-	})
+	}) end
 end
 
 -- Ensure point data is initialized and current.
@@ -175,6 +191,15 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 
 	ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
 	con._ACEPointsEnsuring = nil
+
+	-- Invalidation marks warning state dirty, but a cache-version invalidation can
+	-- arrive while this ensure is already rebuilding. Consume the warning state
+	-- only after the new totals are available.
+	if ACE.CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
+		con._ACEWarningChecking = true
+		ACE.CheckLegalCont(con)
+		con._ACEWarningChecking = nil
+	end
 end
 
-_G.ACE.EnsureContraptionPoints = ACE.EnsureContraptionPoints
+_G.ACE_EnsureContraptionPoints = ACE.EnsureContraptionPoints

@@ -381,7 +381,7 @@ do
 			end
 		}
 
-		function ACE_PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
+		function ACE.PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
 			Hit_Resolutions[Retry or "Hit"](Index, Bullet, FlightRes, Type)
 		end
 	end
@@ -485,7 +485,7 @@ do
 			end
 
 			--If we should do the same trace again, then do so
-			ACE_PerformHitResolution(Index, Bullet, FlightRes, Retry, "propimpact")
+			ACE.PerformHitResolution(Index, Bullet, FlightRes, Retry, "propimpact")
 
 		--bullet hit the world
 		elseif FlightRes.HitWorld then
@@ -498,7 +498,7 @@ do
 				local Retry = ACF_BulletWorldImpact( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 
 				--If we should do the same trace again, then do so
-				ACE_PerformHitResolution(Index, Bullet, FlightRes, Retry, "worldimpact")
+				ACE.PerformHitResolution(Index, Bullet, FlightRes, Retry, "worldimpact")
 
 			--hit skybox
 			else

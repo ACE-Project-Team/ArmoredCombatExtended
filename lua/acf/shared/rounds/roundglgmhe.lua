@@ -69,7 +69,7 @@ function Round.create( Gun, BulletData )
 	local BData = table.Copy( BulletData ) --Done so we don't accidentally write to the original crate bulletdata
 	BData.BulletData = nil
 
-	BData.Type = ACE_GetMissileWarheadType(BulletData.Type or "GLATGM-HE")
+	BData.Type = ACE.GetMissileWarheadType(BulletData.Type or "GLATGM-HE")
 	--BData.Id = 2	
 
 	BData.FakeCrate = ents.Create("acf_fakecrate2")
@@ -266,7 +266,7 @@ function Round.guicreate( Panel, Table )
 	acfmenupanel:CPanelText("BlastPenDisplay", "")  							--HE Fragmentation data (Name, Desc)
 	acfmenupanel:AmmoSlider("FillerVol",0,0,1000,3, "HE Filler", "")			--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	acfmenupanel:CPanelText("VelocityDisplay", "")  --Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
@@ -298,14 +298,14 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acfmenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g" .. "/ " .. (math.Round(Data.PropMass, 1)) .. " kg" )  --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g" .. "/ " .. (math.Round(Data.ProjMass, 1)) .. " kg")  --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:CPanelText("BlastPenDisplay", "Max Blast Penetration: " .. math.floor(Data.FillerMass * ACF.HEPower / ACF.HEBlastPenetration,1) .. " mm")
 	acfmenupanel:AmmoSlider("FillerVol",Data.FillerVol,Data.MinFillerVol,Data.MaxFillerVol,3, "HE Filler Volume", "HE Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g")	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)

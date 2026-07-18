@@ -136,7 +136,7 @@ end
 function Round.getDisplayData(Data)
 	local GUIData = {}
 	local Energy = ACF_Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
-	GUIData["MaxPen"] = ACE_CalcPenetration(Energy, Data["FlechettePenArea"])
+	GUIData["MaxPen"] = ACE.CalcPenetration(Energy, Data["FlechettePenArea"])
 	return GUIData
 end
 
@@ -278,14 +278,14 @@ function Round.guicreate( Panel, Table )
 
 	acfmenupanel:AmmoSelect( ACF.AmmoBlacklist["FL"] )
 
-	ACE_UpperCommonDataDisplay()
+	ACE.UpperCommonDataDisplay()
 
 	acfmenupanel:AmmoSlider("PropLength",0,0,1000,3, "Propellant Length", "")	--Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("Flechettes",2,3,128,0, "Flechettes", "")	--flechette count Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FlechetteSpread",10,5,60,1, "Flechette Spread", "")	--flechette spread Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 
-	ACE_CommonDataDisplay()
+	ACE.CommonDataDisplay()
 
 	Round.guiupdate( Panel, Table )
 
@@ -320,8 +320,8 @@ function Round.guiupdate( Panel )
 	acfmenupanel:AmmoSlider("Flechettes",Data.Flechettes,Data.MinFlechettes,Data.MaxFlechettes,0, "Flechettes", "Flechette Radius: " .. math.Round(Data["FlechetteRadius"] * 10,2) .. " mm")
 	acfmenupanel:AmmoSlider("FlechetteSpread",Data.FlechetteSpread,Data.MinSpread,Data.MaxSpread,1, "Flechette Spread", "")
 
-	ACE_UpperCommonDataDisplay( Data, PlayerData )
-	ACE_CommonDataDisplay( Data )
+	ACE.UpperCommonDataDisplay( Data, PlayerData )
+	ACE.CommonDataDisplay( Data )
 end
 
 list.Set( "APRoundTypes", "FL", Round )

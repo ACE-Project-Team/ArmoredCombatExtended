@@ -9,7 +9,7 @@ function SWEP:DoAmmoStatDisplay()
 	local sendInfo = string.format( "Smoke Grenade")
 		sendInfo = sendInfo .. string.format(", 10m radius")
 
-	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
 end
 
 function SWEP:Equip()

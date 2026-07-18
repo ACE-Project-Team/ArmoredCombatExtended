@@ -34,6 +34,23 @@ class LuaSourceHelperTests(unittest.TestCase):
             [("real", source.index('ACF_defineGun("real")'))],
         )
 
+    def test_named_calls_support_dotted_names(self):
+        source = """
+        -- ACE.DefineMine(\"fake-comment\")
+        local text = 'ACE.DefineMine(\\\"fake-string\\\")'
+        object.ACE.DefineMine(\"not-a-global-call\")
+        object . ACE.DefineMine(\"also-not-a-global-call\")
+        ACE . DefineMine(\"real\")
+        """
+
+        self.assertEqual(
+            ["real"],
+            [
+                identifier
+                for identifier, _, _ in iter_named_calls(source, "ACE.DefineMine")
+            ],
+        )
+
     def test_qualified_assignments_require_code_and_exact_name(self):
         source = """
         -- ACE.Value = \"comment\"

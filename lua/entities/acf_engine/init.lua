@@ -88,7 +88,7 @@ do
 		local Engine = ents.Create( "acf_engine" )
 		if not IsValid( Engine ) then return false end
 
-		if not ACE_CheckEngine( Id ) then
+		if not ACE.CheckEngine( Id ) then
 			Id = BackComp[Id] or "5.7-V8"
 		end
 
@@ -245,7 +245,7 @@ function ENT:Update( ArgsTable )
 	self:UpdateOverlayText()
 
 	ACF_Activate( self, 1 )
-	if ACE_PointsInputChanged then ACE_PointsInputChanged( self, "engine-updated" ) end
+	if ACE.PointsInputChanged then ACE.PointsInputChanged( self, "engine-updated" ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end
@@ -420,7 +420,7 @@ function ENT:TriggerInput( iname, value )
 				end
 
 			end
-			ACE_DoContraptionLegalCheck(self)
+			ACE.DoContraptionLegalCheck(self)
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
 			self.FlyRPM = 0
@@ -532,7 +532,7 @@ function ENT:Think()
 		self.NextUpdate = ACF.CurTime + 1
 	end
 
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 	Wire_TriggerOutput(self, "EngineHeat", self.Heat)
 
 	if ACF.CurTime > self.NextUpdate then
@@ -688,7 +688,7 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
-	ACE_DoContraptionLegalCheck(self)
+	ACE.DoContraptionLegalCheck(self)
 
 	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it
@@ -745,7 +745,7 @@ function ENT:CalcRPM()
 
 
 	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 
 	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
 	if HealthRatio < 0.995 then
@@ -940,7 +940,7 @@ do
 
 		local Rope = nil
 		if self:CPPIGetOwner():GetInfoNum( "ACF_MobilityRopeLinks", 1) == 1 then
-			Rope = ACE_CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
+			Rope = ACE.CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
 		end
 
 		local Link = {

@@ -129,7 +129,7 @@ function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not 
 		local Energy = ACF_Kinetic(Speed, ImpactMass, Bullet.LimitVel)
 
 		local Mat		= Target.ACF.Material or "RHA"
-		local MatData	= ACE_GetMaterialData( Mat )
+		local MatData	= ACE.GetMaterialData( Mat )
 
 		local Pen = Bullet.FillerMass / 300 * ACF.HEPower
 		if ( Pen * 1.25 ) > ( Target.ACF.Armour * (MatData.ArmorMul or 1) ) then
@@ -228,7 +228,7 @@ function Round.guicreate( Panel, Table )
 	acfmenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol",0,0,1000,3, "HE Filler", "")			--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	acfmenupanel:CPanelText("VelocityDisplay", "")	--Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("BlastDisplay", "")	--HE Blast data (Name, Desc)
@@ -261,13 +261,13 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acfmenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acfmenupanel:AmmoSlider("PropLength",Data.PropLength,Data.MinPropLength,Data.MaxTotalLength,3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g" )	--Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength",Data.ProjLength,Data.MinProjLength,Data.MaxTotalLength,3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g")	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol",Data.FillerVol,Data.MinFillerVol,Data.MaxFillerVol,3, "HE Filler Volume", "HE Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g")	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)

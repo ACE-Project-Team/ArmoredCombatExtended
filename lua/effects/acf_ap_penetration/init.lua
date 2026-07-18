@@ -89,7 +89,7 @@ function EFFECT:Init( data )
 	if self.Id and not RoundTypesIgnore[self.Id] and ((IsValid(TraceEntity) and not EntityFilter[TraceEntity:GetClass()]) or SurfaceTr.HitWorld) then
 
 		local Mat = SurfaceTr.MatType or 0
-		MatVal = ACE_GetMaterialName( Mat )
+		MatVal = ACE.GetMaterialName( Mat )
 		if SurfaceTr.HitNonWorld then --Overide with ACE prop material
 			local TEnt = SurfaceTr.Entity
 			if  TEnt:IsPlayer() or TEnt:IsNPC() then --Super disgusting. Get rid of this ASAP.
@@ -155,7 +155,7 @@ function EFFECT:Init( data )
 
 	end
 
-	ACE_SPenetration( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal, self.Mass )
+	ACE.SPenetration( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal, self.Mass )
 
 	local Energy = (self.Mass * (self.Velocity / 39.37) ^2) / 500000
 	local LocPly = LocalPlayer()

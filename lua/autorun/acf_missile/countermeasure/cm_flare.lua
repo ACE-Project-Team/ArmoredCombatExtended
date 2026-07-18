@@ -123,7 +123,7 @@ function this:TryAgainst(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	return ACFM_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
+	return ACE.Missile_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
 
 end
 
@@ -141,7 +141,7 @@ function this:ApplyToAll()
 
 	local ret = {}
 
-	local targets = ACFM_GetAllMissilesWhichCanSee(self.Flare.Pos)
+	local targets = ACE.Missile_GetAllMissilesWhichCanSee(self.Flare.Pos)
 
 	for _, missile in pairs(targets) do
 
@@ -161,7 +161,7 @@ end
 
 
 -- 'static' function to iterate over all flares in flight and return one which affects the guidance.
--- TODO: apply sub-1 chance to distract guidance in ACFM_GetAnyFlareInCone.
+-- TODO: apply sub-1 chance to distract guidance in ACE.Missile_GetAnyFlareInCone.
 function this.ApplyAll(missile, guidance)
 
 	local cone = guidance.ViewCone
@@ -171,7 +171,7 @@ function this.ApplyAll(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	local flares = ACFM_GetFlaresInCone(pos, dir, cone)
+	local flares = ACE.Missile_GetFlaresInCone(pos, dir, cone)
 
 	for _, flare in pairs(flares) do
 

@@ -96,47 +96,47 @@ local explosive_base = {
 -- add gui stuff to base classes if this is client
 -- more required stuff for the menu. Janky as fuck
 if CLIENT then
-	gun_base.guicreate           = function( _, Table ) ACFGunGUICreate( Table )		end or nil
+	gun_base.guicreate           = function( _, Table ) ACE.GunGUICreate( Table )		end or nil
 	gun_base.guiupdate           = function() return end
 
 	engine_base.guicreate        = function( _, tbl ) ACE.EngineGUI_Update( tbl )		end or nil
 
-	gearbox_base.guicreate       = function( _, tbl ) ACFGearboxGUICreate( tbl )		end or nil
+	gearbox_base.guicreate       = function( _, tbl ) ACE.GearboxGUICreate( tbl )		end or nil
 	gearbox_base.guiupdate       = function() return end
 
-	fueltank_base.guicreate      = function( _, tbl ) ACFFuelTankGUICreate( tbl )		end or nil
-	fueltank_base.guiupdate      = function( _, tbl ) ACFFuelTankGUIUpdate( tbl )		end or nil
+	fueltank_base.guicreate      = function( _, tbl ) ACE.FuelTankGUICreate( tbl )		end or nil
+	fueltank_base.guiupdate      = function( _, tbl ) ACE.FuelTankGUIUpdate( tbl )		end or nil
 
-	radar_base.guicreate         = function( _, Table ) ACFRadarGUICreate( Table )	end
+	radar_base.guicreate         = function( _, Table ) ACE.RadarGUICreate( Table )	end
 	radar_base.guiupdate         = function() return end
 
-	trackradar_base.guicreate    = function( _, Table ) ACFTrackRadarGUICreate( Table )  end or nil
+	trackradar_base.guicreate    = function( _, Table ) ACE.TrackRadarGUICreate( Table )  end or nil
 	trackradar_base.guiupdate    = function() return end
 
-	sonar_base.guicreate    = function( _, Table ) ACFSonarGUICreate( Table )  end or nil
+	sonar_base.guicreate    = function( _, Table ) ACE.SonarGUICreate( Table )  end or nil
 	sonar_base.guiupdate    = function() return end
 
-	irst_base.guicreate          = function( _, Table ) ACFIRSTGUICreate( Table )		end or nil
+	irst_base.guicreate          = function( _, Table ) ACE.IRSTGUICreate( Table )		end or nil
 	irst_base.guiupdate          = function() return end
 
-	vheat_source_base.guicreate  = function( _, Table ) ACEVHeatSourceGUICreate( Table )	end or nil
+	vheat_source_base.guicreate  = function( _, Table ) ACE.VHeatSourceGUICreate( Table )	end or nil
 	vheat_source_base.guiupdate  = function() return end
 
 	crewseat_base.guicreate  = function( _, Table ) ACECrewseatGUICreate( Table ) end or nil
 	crewseat_base.guiupdate  = function() return end
 
-	extras_base.guicreate    = function( _, Table ) ACEExtrasGUICreate( Table ) end or nil
+	extras_base.guicreate    = function( _, Table ) ACE.ExtrasGUICreate( Table ) end or nil
 	extras_base.guiupdate    = function() return end
 
-	explosive_base.guicreate = function( _, Table ) ACEExplosiveGUICreate( Table ) end or nil
-	explosive_base.guiupdate = function( _, Table ) ACEExplosiveGUIUpdate( Table ) end or nil
+	explosive_base.guicreate = function( _, Table ) ACE.ExplosiveGUICreate( Table ) end or nil
+	explosive_base.guiupdate = function( _, Table ) ACE.ExplosiveGUIUpdate( Table ) end or nil
 end
 
 -- some factory functions for defining ents
 -- Be patient. There are alot of functions here
 
 --Gun class definition
-function ACF_defineGunClass( id, data )
+function ACE.DefineGunClass( id, data )
 	if (data.year or 0) < ACF.Year then
 		data.id = id
 		GunClasses[ id ] = data
@@ -158,7 +158,7 @@ function ACE.DefineExtras( id, data )
 end
 
 -- Gun definition
-function ACF_defineGun( id, data )
+function ACE.DefineGun( id, data )
 	if (data.year or 0) < ACF.Year then
 		data.id = id
 		data.round.id = id
@@ -197,22 +197,22 @@ function ACE.DefineLegacyAmmoCrate( id, data )
 end
 
 -- Rack definition
-function ACF_DefineRack( id, data )
+function ACE.DefineRack( id, data )
 	data.id = id
 	table.Inherit( data, rack_base )
 	RackTable[ id ] = data
 end
 
 -- Rack class definition
-function ACF_DefineRackClass( id, data )
+function ACE.DefineRackClass( id, data )
 	data.id = id
 	RackClasses[ id ] = data
 end
 
 --Engine definition
-function ACF_DefineEngine( id, data )
+function ACE.DefineEngine( id, data )
 	if (data.year or 0) < ACF.Year then
-		local engineData = ACF_CalcEnginePerformanceData(data.torquecurve or ACF.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
+		local engineData = ACE.CalcEnginePerformanceData(data.torquecurve or ACF.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
 
 		data.peaktqrpm    = engineData.peakTqRPM
 		data.peakpower    = engineData.peakPower
@@ -229,7 +229,7 @@ function ACF_DefineEngine( id, data )
 end
 
 -- Gearbox definition
-function ACF_DefineGearbox( id, data )
+function ACE.DefineGearbox( id, data )
 	data.id = id
 	table.Inherit( data, gearbox_base )
 	GearboxTable[ id ] = data
@@ -237,7 +237,7 @@ function ACF_DefineGearbox( id, data )
 end
 
 -- fueltank definition
-function ACF_DefineFuelTank( id, data )
+function ACE.DefineFuelTank( id, data )
 	data.id = id
 	table.Inherit( data, fueltank_base )
 	FuelTankTable[ id ] = data
@@ -245,14 +245,14 @@ function ACF_DefineFuelTank( id, data )
 end
 
 -- fueltank size definition
-function ACF_DefineFuelTankSize( id, data )
+function ACE.DefineFuelTankSize( id, data )
 	data.id = id
 	table.Inherit( data, fueltank_base )
 	FuelTankSizeTable[ id ] = data
 end
 
 -- Radar definition
-function ACF_DefineRadar( id, data )
+function ACE.DefineRadar( id, data )
 	data.id = id
 	table.Inherit( data, radar_base )
 	Radars[ id ] = data
@@ -266,53 +266,53 @@ function ACE.DefineExplosive( id, data )
 end
 
 -- Radar Class definition
-function ACF_DefineRadarClass( id, data )
+function ACE.DefineRadarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 
 -- Tracking Radar definition
-function ACF_DefineTrackRadar( id, data )
+function ACE.DefineTrackRadar( id, data )
 	data.id = id
 	table.Inherit( data, trackradar_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar Class definition
-function ACF_DefineTrackRadarClass( id, data )
+function ACE.DefineTrackRadarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Sonar Array Class definition
-function ACF_DefineSonarClass( id, data )
+function ACE.DefineSonarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Sonar definition
-function ACF_DefineSonar( id, data )
+function ACE.DefineSonar( id, data )
 	data.id = id
 	table.Inherit( data, sonar_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar definition
-function ACF_DefineIRST( id, data )
+function ACE.DefineIRST( id, data )
 	data.id = id
 	table.Inherit( data, irst_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar Class definition
-function ACF_DefineIRSTClass( id, data )
+function ACE.DefineIRSTClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Virtual Heat Source definition
-function ACF_DefineVHeatSource( id, data )
+function ACE.DefineVHeatSource( id, data )
 	data.id = id
 	table.Inherit( data, vheat_source_base )
 	Tools[ id ] = data
@@ -353,7 +353,7 @@ local function GetAllInTableExcept(tbl, list)
 	return ret
 end
 
-function ACF_GetAllGuidanceNames()
+function ACE.GetAllGuidanceNames()
 
 	local ret = {}
 	for name, _ in pairs(ACF.Guidance) do
@@ -362,12 +362,12 @@ function ACF_GetAllGuidanceNames()
 	return ret
 end
 
-function ACF_GetAllGuidanceNamesExcept(list)
+function ACE.GetAllGuidanceNamesExcept(list)
 	return GetAllInTableExcept(ACF.Guidance, list)
 end
 
 -- Getters for fuse names, for use in missile definitions.
-function ACF_GetAllFuseNames()
+function ACE.GetAllFuseNames()
 
 	local ret = {}
 	for name, _ in pairs(ACF.Fuse) do
@@ -376,7 +376,7 @@ function ACF_GetAllFuseNames()
 	return ret
 end
 
-function ACF_GetAllFuseNamesExcept(list)
+function ACE.GetAllFuseNamesExcept(list)
 	return GetAllInTableExcept(ACF.Fuse, list)
 end
 

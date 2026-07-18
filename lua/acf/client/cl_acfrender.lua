@@ -1,7 +1,7 @@
 
 ---------------- ACE Damage Material rendering ----------------
 do
-	local ACF_HealthRenderList = {}
+	local ACE_HealthRenderList = {}
 
 	local Damaged = {
 		CreateMaterial("ACF_Damaged1", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged1"}),
@@ -10,13 +10,13 @@ do
 	}
 
 	hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", function()
-		if not ACF_HealthRenderList then return end
+		if not ACE_HealthRenderList then return end
 
 		cam.Start3D( EyePos(), EyeAngles() )
 
-			for k,ent in pairs( ACF_HealthRenderList ) do
+			for k,ent in pairs( ACE_HealthRenderList ) do
 				if not IsValid(ent) then
-					ACF_HealthRenderList[k] = nil
+					ACE_HealthRenderList[k] = nil
 					continue
 				end
 
@@ -41,7 +41,7 @@ do
 			local Health = net.ReadFloat()
 
 			if math.Round(MaxHealth) == math.Round(Health) then
-				ACF_HealthRenderList[Entity:EntIndex()] = nil
+				ACE_HealthRenderList[Entity:EntIndex()] = nil
 				return
 			end
 
@@ -57,7 +57,7 @@ do
 				Entity.ACF_Material = Damaged[3]
 			end
 
-			ACF_HealthRenderList[Entity:EntIndex()] = Entity
+			ACE_HealthRenderList[Entity:EntIndex()] = Entity
 
 		end
 	end)
@@ -66,7 +66,7 @@ end
 do
 	local function CanEmitLight(lightSize)
 
-		local minLightSize = GetConVar("acf_enable_lighting"):GetFloat()
+	local minLightSize = GetConVar("ace_enable_lighting"):GetFloat()
 
 		if minLightSize == 0 then return false end
 		if lightSize == 0 then return false end
@@ -75,7 +75,7 @@ do
 	end
 
 	--[[
-		ACF_RenderLight(idx, lightSize, colour, pos, duration)
+		ACE.RenderLight(idx, lightSize, colour, pos, duration)
 
 		- idx		: the index of this light. Use the entity index, or 0 for the world.
 		- lightSize	: sets the scale size factor of the light.
@@ -83,7 +83,7 @@ do
 		- pos 		: the position
 		- duration	: the duration, in seconds, that this light will stand before turning off.
 	]]
-	function ACF_RenderLight(idx, lightSize, colour, pos, duration)
+	function ACE.RenderLight(idx, lightSize, colour, pos, duration)
 		if not CanEmitLight(lightSize) then return end
 
 		local dlight = DynamicLight( idx )
@@ -104,4 +104,3 @@ do
 		end
 	end
 end
-

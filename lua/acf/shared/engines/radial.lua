@@ -1,7 +1,7 @@
 
 -- Radial engines
 
-ACF_DefineEngine( "3.8-R7", {
+ACE.DefineEngine( "3.8-R7", {
 	name = "3.8L R7 Petrol",
 	desc = "A tiny, old worn-out radial.",
 	model = "models/engines/radial7s.mdl",
@@ -16,7 +16,7 @@ ACF_DefineEngine( "3.8-R7", {
 	limitrpm = 4800,
 } )
 
-ACF_DefineEngine( "11.0-R7", {
+ACE.DefineEngine( "11.0-R7", {
 	name = "11.0 R7 Petrol",
 	desc = "Mid range radial, thirsty and smooth",
 	model = "models/engines/radial7m.mdl",
@@ -31,7 +31,7 @@ ACF_DefineEngine( "11.0-R7", {
 	limitrpm = 4400,
 } )
 
-ACF_DefineEngine( "24.0-R7", {
+ACE.DefineEngine( "24.0-R7", {
 	name = "24.0L R7 Petrol",
 	desc = "Massive American radial monster, destined for fighter aircraft and heavy tanks.",
 	model = "models/engines/radial7l.mdl",
@@ -47,7 +47,7 @@ ACF_DefineEngine( "24.0-R7", {
 } )
 
 
-ACF_DefineEngine( "8.0-R7", {
+ACE.DefineEngine( "8.0-R7", {
 	name = "8.0 R7 Diesel",
 	desc = "Military-grade radial engine, similar to a ZO 02A.  Heavy and with a narrow powerband, but efficient, and well-optimized to cruising.",
 	model = "models/engines/radial7m.mdl",

@@ -47,7 +47,7 @@ function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, no
 	})
 end
 
-local function ACE_CalcSubsystem(ents, subsystem)
+local function calcSubsystem(ents, subsystem)
 	local total = 0
 
 	for _, ent in ipairs(ents) do
@@ -98,7 +98,7 @@ function ACE.CalcNonArmorPoints(con, baseEnt)
 	}
 
 	for _, subsystem in ipairs(subsystems) do
-		totals[subsystem] = ACE_CalcSubsystem(ents, subsystem) or 0
+		totals[subsystem] = calcSubsystem(ents, subsystem) or 0
 	end
 
 	local nonArmor = (totals.Engines or 0)

@@ -1,6 +1,6 @@
 
 --define the class
-ACF_defineGunClass("UAR", {
+ACE.DefineGunClass("UAR", {
 	type			= "missile",
 	spread		= 0.2,
 	name			= "[ASR] - Unguided Aerial Rockets",
@@ -15,7 +15,7 @@ ACF_defineGunClass("UAR", {
 } )
 
 
-ACF_defineGun("SPG-9 ASR", { --id
+ACE.DefineGun("SPG-9 ASR", { --id
 
 	name             = "SPG-9 Rocket",
 	desc             = "A recoilless rocket launcher similar to an RPG or Grom.  The main charge ignites in the tube, while a rocket accelerates a small antitank grenade to the target, giving it a high initial velocity, smaller launch signature, and flatter trajectory than a conventional round but less accuracy.  A useful alternative to guided missiles, it is also quite capable as lightweight HE-slinging artillery for air-drop and expeditionary forces.",
@@ -82,7 +82,7 @@ ACF_defineGun("SPG-9 ASR", { --id
 	armdelay	= 0.15	-- minimum fuse arming delay, very short since we have a high muzzle velocity
 } )
 
-ACF_defineGun("RS82 ASR", { --id
+ACE.DefineGun("RS82 ASR", { --id
 
 	name             = "RS-82 Rocket",
 	desc             = "A small, unguided rocket, often used in multiple-launch artillery as well as for attacking pinpoint ground targets.  It has a small amount of propellant, limiting its range, but is compact and light.",
@@ -150,7 +150,7 @@ ACF_defineGun("RS82 ASR", { --id
 	armdelay	= 0.15	-- minimum fuse arming delay
 } )
 
-ACF_defineGun("HVAR ASR", { --id
+ACE.DefineGun("HVAR ASR", { --id
 
 	name             = "HVAR Rocket",
 	desc             = "A medium, unguided rocket. More bang than the RS82, at the cost of size and weight.",
@@ -217,7 +217,7 @@ ACF_defineGun("HVAR ASR", { --id
 	armdelay	= 0.15	-- minimum fuse arming delay
 } )
 
-ACF_defineGun("S-24 ASR", { --id
+ACE.DefineGun("S-24 ASR", { --id
 
 	name             = "S-24 Rocket",
 	desc             = "A big, unguided rocket. Mostly used by late cold war era attack planes and helicopters.",

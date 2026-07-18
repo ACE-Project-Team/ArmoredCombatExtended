@@ -77,7 +77,7 @@ function Round.create( Gun, BulletData )
 	BData.Crate = BData.FakeCrate:EntIndex()
 	--self:DeleteOnRemove(BData.FakeCrate)
 
-	GenerateMissile(MDat,BData.FakeCrate,BData)
+	ACE.GenerateMissile(MDat,BData.FakeCrate,BData)
 end
 
 -- Function to convert the player's slider data into the complete round data
@@ -93,15 +93,15 @@ function Round.convert( _, PlayerData )
 	PlayerData.TwoPiece	=  PlayerData.TwoPiece	or 0
 	PlayerData.Data5		= math.max(PlayerData.Data5 or 0, 0) --HEFiller
 
-	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	--Shell sturdiness calcs
 
 	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
 	Data.ProjMass		= math.max(GUIData.ProjVolume-PlayerData.Data5,0) * 7.9 / 1000 + math.min(PlayerData.Data5,GUIData.ProjVolume) * ACF.HEDensity / 1000
-	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
-	local Energy			= ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
-	local MaxVol			= ACF_RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
+	Data.MuzzleVel		= ACE.MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
+	local Energy			= ACE.Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
+	local MaxVol			= ACE.RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
 
 	GUIData.MinFillerVol	= 0
 	GUIData.MaxFillerVol	= math.min(GUIData.ProjVolume,MaxVol)
@@ -109,7 +109,7 @@ function Round.convert( _, PlayerData )
 	Data.FillerMass		= GUIData.FillerVol * ACF.HEDensity / 1000
 
 	Data.ProjMass		= math.max(GUIData.ProjVolume-GUIData.FillerVol,0) * 7.9 / 1000 + Data.FillerMass
-	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
+	Data.MuzzleVel		= ACE.MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 
 	--Random bullshit left
 	Data.ShovePower		= 0.1
@@ -182,10 +182,10 @@ end
 
 function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACF_Check( Target ) then
+	if ACE.Check( Target ) then
 		local Speed	= Bullet.Flight:Length() / ACF.VelScale
-		local Energy	= ACF_Kinetic( Speed , Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel )
-		local HitRes	= ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+		local Energy	= ACE.Kinetic( Speed , Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel )
+		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.Ricochet then
 			return "Ricochet"
@@ -200,8 +200,8 @@ function Round.worldimpact()
 end
 
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
-	ACF_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
-	ACF_RemoveBullet( Index )
+	ACE.HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
+	ACE.RemoveBullet( Index )
 end
 
 function Round.endeffect( _, Bullet )

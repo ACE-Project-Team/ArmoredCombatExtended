@@ -1,19 +1,19 @@
 
 ACF.BulletEffect = {}
 
-function ACF_ManageBulletEffects()
+function ACE.ManageBulletEffects()
 
 	if next(ACF.BulletEffect) then
 
 		for Index,Bullet in pairs(ACF.BulletEffect) do
-			ACF_SimBulletFlight( Bullet, Index )			--This is the bullet entry in the table, the omnipresent Index var refers to this
+			ACE.SimBulletFlight( Bullet, Index )			--This is the bullet entry in the table, the omnipresent Index var refers to this
 		end
 	end
 end
-hook.Remove( "Think", "ACF_ManageBulletEffects" )
-hook.Add("Think", "ACF_ManageBulletEffects", ACF_ManageBulletEffects)
+hook.Remove( "Think", "ACE.ManageBulletEffects" )
+hook.Add("Think", "ACE.ManageBulletEffects", ACE.ManageBulletEffects)
 
-function ACF_SimBulletFlight( Bullet, Index )
+function ACE.SimBulletFlight( Bullet, Index )
 
 	if not Bullet or not Index then return end
 

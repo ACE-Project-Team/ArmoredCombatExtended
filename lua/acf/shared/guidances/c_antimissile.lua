@@ -37,9 +37,9 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
-	self.HasIRCCM	= ACF_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.HasIRCCM	= ACE.GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
 end
 
 --TODO: still a bit messy, refactor this so we can check if a flare exits the viewcone too.
@@ -101,7 +101,7 @@ function this:GetWhitelistedEntsInCone(missile)
 	local missilePos = missile:GetPos()
 	local foundAnim = {}
 
-	for  scanEnt, _ in pairs(ACF_ActiveMissiles) do
+	for  scanEnt, _ in pairs(ACE.ActiveMissiles) do
 		-- skip any invalid entity
 		if not scanEnt:IsValid() then continue end
 

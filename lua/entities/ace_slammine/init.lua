@@ -38,7 +38,7 @@ function ENT:Boom()
 	local HEWeight = 0.25
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
 
-	ACF_HE(self:GetPos(), Vector(0, 0, 1), HEWeight, HEWeight * 0.5, self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
+	ACE.HE(self:GetPos(), Vector(0, 0, 1), HEWeight, HEWeight * 0.5, self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
 
 	local Flash = EffectData()
 		Flash:SetOrigin( self:GetPos() )

@@ -118,8 +118,8 @@ function PANEL:Init( )
 	HomeNode = TreePanel:AddNode( "ACE Main Menu" , MainMenuIcon ) --Main Menu folder
 	HomeNode:SetExpanded(true)
 	HomeNode.mytable = {}
-	HomeNode.mytable.guicreate = (function( _, Table ) ACFHomeGUICreate( Table ) end or nil)
-	HomeNode.mytable.guiupdate = (function( _, Table ) ACFHomeGUIUpdate( Table ) end or nil)
+	HomeNode.mytable.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
+	HomeNode.mytable.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
 
 	function HomeNode:DoClick()
 		acfmenupanel:UpdateDisplay(self.mytable)
@@ -362,7 +362,7 @@ function PANEL:Init( )
 			-- IMPORTANT: default to a valid crewseat so left-click spawns something even if user doesn't touch UI
 			type = "Crewseats",
 			id = "Crewseat_Driver",
-			guicreate = function(_, Table) ACFCrewMenuGUICreate(Table) end,
+			guicreate = function(_, Table) ACE.CrewMenuGUICreate(Table) end,
 			guiupdate = function() return end
 		}
 
@@ -401,8 +401,8 @@ function PANEL:Init( )
 	CLNod.mytable  = {}
 	SVNod.mytable  = {}
 
-	CLNod.mytable.guicreate = (function( _, Table ) ACFCLGUICreate( Table ) end or nil)
-	SVNod.mytable.guicreate = (function( _, Table ) ACFSVGUICreate( Table ) end or nil)
+	CLNod.mytable.guicreate = (function( _, Table ) ACE.CLGUICreate( Table ) end or nil)
+	SVNod.mytable.guicreate = (function( _, Table ) ACE.SVGUICreate( Table ) end or nil)
 
 	function CLNod:DoClick()
 		acfmenupanel:UpdateDisplay(self.mytable)
@@ -423,7 +423,7 @@ function PANEL:Init( )
 	local Contact =  TreePanel:AddNode( "Contact Us" , "icon16/feed.png" ) --Options folder
 	Contact.mytable = {}
 
-	Contact.mytable.guicreate = (function( _, Table ) ContactGUICreate( Table ) end or nil)
+	Contact.mytable.guicreate = (function( _, Table ) ACE.ContactGUICreate( Table ) end or nil)
 
 	function Contact:DoClick()
 		acfmenupanel:UpdateDisplay(self.mytable)
@@ -439,13 +439,13 @@ function PANEL:UpdateRoundCostPreview()
 
 	local DisplayTable = self.ActiveDisplayTable
 	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
-	if not ACF_GetRoundFromCVars or not ACE.Points_RoundFromBullet or not ACE.Points_BaseRoundCost then return end
+	if not ACE.GetRoundFromCVars or not ACE.Points_RoundFromBullet or not ACE.Points_BaseRoundCost then return end
 	if not IsValid(self.CustomDisplay) then return end
 
 	local RoundType = ACF.RoundTypes[DisplayTable.Type or ""]
 	if not RoundType or not isfunction(RoundType.convert) then return end
 
-	local RawData = ACF_GetRoundFromCVars()
+	local RawData = ACE.GetRoundFromCVars()
 	local Success, BulletData = pcall(RoundType.convert, self, RawData)
 	if not Success or not istable(BulletData) then return end
 	BulletData.Id = RawData.Id
@@ -539,7 +539,7 @@ end
 --[[=========================
 	ACE information folder content
 ]]--=========================
-function ACFHomeGUICreate()
+function ACE.HomeGUICreate()
 
 	if not acfmenupanel.CustomDisplay then return end
 
@@ -617,7 +617,7 @@ end
 --[[=========================
 	ACE information folder content updater
 ]]--=========================
-function ACFHomeGUIUpdate( Table )
+function ACE.HomeGUIUpdate( Table )
 
 	acfmenupanel:CPanelText("Changelog", acfmenupanel.Changelog[Table["rev"]])
 	acfmenupanel.CustomDisplay:PerformLayout()
@@ -657,7 +657,7 @@ end
 	Changelog.txt
 ]]--=========================
 
-function ACFChangelogHTTPCallBack(contents)
+function ACE.ChangelogHTTPCallBack(contents)
 	local Temp = string.Explode( "*", contents )
 
 	acfmenupanel.Changelog = {}  --changelog table
@@ -668,18 +668,18 @@ function ACFChangelogHTTPCallBack(contents)
 	table.SortByKey(acfmenupanel.Changelog,true)
 
 	local Table = {}
-	Table.guicreate = (function( _, Table ) ACFHomeGUICreate( Table ) end or nil)
-	Table.guiupdate = (function( _, Table ) ACFHomeGUIUpdate( Table ) end or nil)
+	Table.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
+	Table.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
 	acfmenupanel:UpdateDisplay( Table )
 
 end
 
-http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACFChangelogHTTPCallBack, function() end)
+http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACE.ChangelogHTTPCallBack, function() end)
 
 --[[=========================
 	Clientside folder content
 ]]--=========================
-function ACFCLGUICreate()
+function ACE.CLGUICreate()
 
 	local Client = acfmenupanel["CData"]["Options"]
 
@@ -701,10 +701,10 @@ function ACFCLGUICreate()
 	local Sounds = vgui.Create( "DForm" )
 	Sounds:SetName("Sounds")
 
-	Sounds:CheckBox("Allow Tinnitus Noise", "acf_tinnitus")
+	Sounds:CheckBox("Allow Tinnitus Noise", "ace_tinnitus")
 	Sounds:ControlHelp( "Allows the ear tinnitus effect to be applied when an explosive was detonated too close to your position, improving the inmersion during combat." )
 
-	Sounds:NumSlider( "Ambient overall sounds", "acf_sound_volume", 0, 100, 0 )
+	Sounds:NumSlider( "Ambient overall sounds", "ace_sound_volume", 0, 100, 0 )
 	Sounds:ControlHelp( "Adjusts the volume of ACE sounds like explosions, penetrations, ricochets, etc. Engines and some mechanic sounds are not affected yet." )
 
 	acfmenupanel.CustomDisplay:AddItem( Sounds )
@@ -712,10 +712,10 @@ function ACFCLGUICreate()
 	local Effects = vgui.Create( "DForm" )
 	Effects:SetName("Rendering")
 
-	Effects:CheckBox("Allow lighting rendering", "acf_enable_lighting")
+	Effects:CheckBox("Allow lighting rendering", "ace_enable_lighting")
 	Effects:ControlHelp( "Enables lighting for explosions, muzzle flashes and rocket motors, increasing the inmersion during combat, however, may impact heavily the performance and it's possible it doesn't render properly in certain map surfaces." )
 
-	Effects:CheckBox("Draw Mobility rope links", "ACF_MobilityRopeLinks")
+	Effects:CheckBox("Draw Mobility rope links", "ace_mobility_rope_links")
 	Effects:ControlHelp( "Allow you to see the links between engines and gearboxes (requires dupe restart)" )
 
 	acfmenupanel.CustomDisplay:AddItem( Effects )
@@ -745,7 +745,7 @@ end
 --[[=========================
 	Serverside folder content
 ]]--=========================
-function ACFSVGUICreate()	--Serverside folder content
+function ACE.SVGUICreate()	--Serverside folder content
 
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
@@ -772,16 +772,16 @@ function ACFSVGUICreate()	--Serverside folder content
 	local General = vgui.Create( "DForm" )
 	General:SetName("General")
 
-	General:CheckBox("Enable HE push", "acf_hepush")
+	General:CheckBox("Enable HE push", "ace_hepush")
 	General:ControlHelp( "Allow HE to push contraptions away" )
 
-	General:CheckBox("Enable Recoil force", "acf_recoilpush")
+	General:CheckBox("Enable Recoil force", "ace_recoilpush")
 	General:ControlHelp( "Gun's recoil will push the contraption back when firing" )
 
-	General:NumSlider( "Debris Life Time", "acf_debris_lifetime", 0, 60, 2 )
+	General:NumSlider( "Debris Life Time", "ace_debris_lifetime", 0, 60, 2 )
 	General:ControlHelp( "How many seconds debris will stand on the map before being deleted (0 means never)." )
 
-	General:NumSlider( "Child debris chance", "acf_debris_children", 0, 1, 2 )
+	General:NumSlider( "Child debris chance", "ace_debris_children", 0, 1, 2 )
 	General:ControlHelp( "Adjusts the chance of create debris when a contraption's gate have been destroyed" )
 
 	--General:NumSlider( "Year", "acf_year", 1900, 2021, 0 )
@@ -792,10 +792,10 @@ function ACFSVGUICreate()	--Serverside folder content
 	local Spall = vgui.Create( "DForm" )
 	Spall:SetName("Spalling")
 
-	Spall:CheckBox("Enable Spalling", "acf_spalling")
+	Spall:CheckBox("Enable Spalling", "ace_spalling")
 	Spall:ControlHelp( "Enable additional spalling to be created during penetrations. Disable this to have better performance." )
 
-	Spall:NumSlider( "Spalling Multipler", "acf_spalling_multipler", 1, 5, 0 )
+	Spall:NumSlider( "Spalling Multipler", "ace_spalling_multipler", 1, 5, 0 )
 	Spall:ControlHelp( "How much Spalling will be created during impacts? Applies for spalling created by impacts" )
 
 	acfmenupanel.CustomDisplay:AddItem( Spall )
@@ -803,10 +803,10 @@ function ACFSVGUICreate()	--Serverside folder content
 	local Scaled = vgui.Create( "DForm" )
 	Scaled:SetName("Cooking off")
 
-	Scaled:NumSlider( "Max HE per explosion", "acf_explosions_scaled_he_max", 50, 1000, 0 )
+	Scaled:NumSlider( "Max HE per explosion", "ace_explosions_scaled_he_max", 50, 1000, 0 )
 	Scaled:ControlHelp( "The maximum amount of HE weight to detonate at once." )
 
-	Scaled:NumSlider( "Max entities per explosion", "acf_explosions_scaled_ents_max", 1, 20, 0 )
+	Scaled:NumSlider( "Max entities per explosion", "ace_explosions_scaled_ents_max", 1, 20, 0 )
 	Scaled:ControlHelp( "The maximum amount of entities to detonate at once." )
 
 	acfmenupanel.CustomDisplay:AddItem( Scaled )
@@ -814,28 +814,28 @@ function ACFSVGUICreate()	--Serverside folder content
 	local Legal = vgui.Create( "DForm" )
 	Legal:SetName("Legality")
 
-	Legal:CheckBox("Enable Legality checks", "acf_legalcheck")
+	Legal:CheckBox("Enable Legality checks", "ace_legalcheck")
 	Legal:ControlHelp( "Enable the legality checks, which will punish with a lock time any stuff considered illegal." )
 
-	Legal:CheckBox( "Allow not solid", "acf_legal_ignore_solid" )
+	Legal:CheckBox( "Allow not solid", "ace_legal_ignore_solid" )
 	Legal:ControlHelp( "allow to use not solid" )
 
-	Legal:CheckBox( "Allow any model", "acf_legal_ignore_model" )
+	Legal:CheckBox( "Allow any model", "ace_legal_ignore_model" )
 	Legal:ControlHelp( "Allow ace ents to use any model" )
 
-	Legal:CheckBox( "Allow any mass", "acf_legal_ignore_mass" )
+	Legal:CheckBox( "Allow any mass", "ace_legal_ignore_mass" )
 	Legal:ControlHelp( "Allow ace ents to use any weight" )
 
-	Legal:CheckBox( "Allow any material", "acf_legal_ignore_material" )
+	Legal:CheckBox( "Allow any material", "ace_legal_ignore_material" )
 	Legal:ControlHelp( "Allow ace ents to use any material type" )
 
-	Legal:CheckBox( "Allow any inertia", "acf_legal_ignore_inertia" )
+	Legal:CheckBox( "Allow any inertia", "ace_legal_ignore_inertia" )
 	Legal:ControlHelp( "Allow ace ents to have any inertia in it" )
 
-	Legal:CheckBox("Allow makesphere", "acf_legal_ignore_makesphere")
+	Legal:CheckBox("Allow makesphere", "ace_legal_ignore_makesphere")
 	Legal:ControlHelp( "Allow ace ents to have makesphere" )
 
-	Legal:CheckBox( "Allow visclip", "acf_legal_ignore_visclip" )
+	Legal:CheckBox( "Allow visclip", "ace_legal_ignore_visclip" )
 	Legal:ControlHelp( "ace ents can have visclip at any case" )
 
 	acfmenupanel.CustomDisplay:AddItem( Legal )
@@ -845,7 +845,7 @@ end
 --[[=========================
 	Contact folder content
 ]]--=========================
-function ContactGUICreate()
+function ACE.ContactGUICreate()
 
 	acfmenupanel["CData"]["Contact"] = vgui.Create( "DLabel" )
 	acfmenupanel["CData"]["Contact"]:SetPos( 0, 0 )
@@ -1347,7 +1347,7 @@ end
 	- Role + Pose are selected here
 	- Spawning still uses the 3 existing entities (Driver/Gunner/Loader), so no builds/dupes break.
 ]]--=========================
-function ACFCrewMenuGUICreate(Table)
+function ACE.CrewMenuGUICreate(Table)
 	-- Enable scrolling for this page
 	if acfmenupanel.CustomDisplay and acfmenupanel.CustomDisplay.EnableVerticalScrollbar then
 		acfmenupanel.CustomDisplay:EnableVerticalScrollbar(true)
@@ -1542,7 +1542,7 @@ end
 --[[=========================
 	Extras GUI (Wind Sensor, G-Force Meter, etc.)
 ]]--=========================
-function ACEExtrasGUICreate(Table)
+function ACE.ExtrasGUICreate(Table)
 	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
 	if Table.model then
@@ -1586,7 +1586,7 @@ end
 
 	Scalable ACE entities (the explosive charge) share the same shape + L/W/H
 	size config; only the allowed shapes and the stats readout differ.
-	BuildScalableConfig draws the shared widgets, filters the shape list through
+	ACE.BuildScalableConfig draws the shared widgets, filters the shape list through
 	the definition's AllowedShapes/BlacklistShapes, keeps the chosen size in
 	acfmenupanel.ScalableCfg[class], writes acfmenu_data1 ("L:W:H") +
 	acfmenu_data2 (shape), and calls statsFn to render the panel.
@@ -1621,7 +1621,7 @@ do
 		return out
 	end
 
-	function BuildScalableConfig(Table, statsFn)
+	function ACE.BuildScalableConfig(Table, statsFn)
 		if not acfmenupanel.CustomDisplay then return end
 		local MainPanel = acfmenupanel.CustomDisplay
 		local cfg = getCfg(Table)
@@ -1710,8 +1710,8 @@ end
 -- Scalable charge: pick a shape and size; the filler is read from the resulting
 -- physical volume (same HE maths as shells). Pre-built model charges live in the
 -- Q spawnmenu instead.
-function ACEExplosiveGUICreate(Table)
-	BuildScalableConfig(Table, function(_cfg, vol)
+function ACE.ExplosiveGUICreate(Table)
+	ACE.BuildScalableConfig(Table, function(_cfg, vol)
 		local CM3 = 16.387
 		local f   = Table.FillerFraction or 0.65
 		local fillerMass = vol * CM3 * f * (ACF.HEDensity or 1.65) / 1000 * (ACF.ExplosiveHEMul or 0.12)
@@ -1726,7 +1726,7 @@ function ACEExplosiveGUICreate(Table)
 			.. "\nPoints: " .. points .. " (mounted ordnance)"
 	end)
 end
-function ACEExplosiveGUIUpdate() end
+function ACE.ExplosiveGUIUpdate() end
 
 if not ACF then ACF = {} end
 if not ACF.ChatMessageReceiver then
@@ -1735,4 +1735,3 @@ if not ACF.ChatMessageReceiver then
 		chat.AddText( net.ReadColor(), net.ReadString() )
 	end )
 end
-

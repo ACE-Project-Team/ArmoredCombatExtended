@@ -1,12 +1,12 @@
 
-ACF_DefineSonarClass("Sonar", {
+ACE.DefineSonarClass("Sonar", {
 	name = "Hull Sonar Array",
 	type = "Sonar",
 	desc = ACFTranslation.Sonar[1],
 } )
 
 --
-ACF_DefineSonar("Tiny-Sonar", {
+ACE.DefineSonar("Tiny-Sonar", {
 	name		= "Tiny Sonar Array",
 	ent			= "ace_sonar",
 	desc		= ACFTranslation.Sonar[5],
@@ -20,7 +20,7 @@ ACF_DefineSonar("Tiny-Sonar", {
 	acepoints = 250
 } )
 
-ACF_DefineSonar("Small-Sonar", {
+ACE.DefineSonar("Small-Sonar", {
 	name		= "Small Sonar Array",
 	ent			= "ace_sonar",
 	desc		= ACFTranslation.Sonar[2],
@@ -34,7 +34,7 @@ ACF_DefineSonar("Small-Sonar", {
 } )
 
 
-ACF_DefineSonar("Medium-Sonar", {
+ACE.DefineSonar("Medium-Sonar", {
 	name		= "Medium Sonar Array",
 	ent			= "ace_sonar",
 	desc		= ACFTranslation.Sonar[3],
@@ -48,7 +48,7 @@ ACF_DefineSonar("Medium-Sonar", {
 } )
 
 
-ACF_DefineSonar("Large-Sonar", {
+ACE.DefineSonar("Large-Sonar", {
 	name		= "Large Sonar Array",
 	ent			= "ace_sonar",
 	desc		= ACFTranslation.Sonar[4],

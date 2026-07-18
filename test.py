@@ -59,7 +59,7 @@ def parse_missile_file(filepath: Path):
     missiles = []
     content = filepath.read_text(encoding="utf-8")
 
-    gun_pattern = r'ACF_defineGun\s*\(\s*"([^"]+)"\s*,\s*\{(.*?)\n\}\s*\)'
+    gun_pattern = r'ACE\.DefineGun\s*\(\s*"([^"]+)"\s*,\s*\{(.*?)\n\}\s*\)'
 
     for match in re.finditer(gun_pattern, content, re.DOTALL):
         name = match.group(1)

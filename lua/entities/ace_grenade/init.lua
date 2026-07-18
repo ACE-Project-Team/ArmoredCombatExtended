@@ -48,7 +48,7 @@ function ENT:Think()
 
 		--print(Radius/39.37)
 
-		ACF_HE( self:GetPos() + Vector(0,0,8) , Vector(0,0,1) , HEWeight , HEWeight * 0.5 , self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
+		ACE.HE( self:GetPos() + Vector(0,0,8) , Vector(0,0,1) , HEWeight , HEWeight * 0.5 , self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
 
 
 		local Flash = EffectData()

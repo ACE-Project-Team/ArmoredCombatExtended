@@ -3,7 +3,7 @@
 	set up to provide a random, fairly low cost legality check that discourages trying to game legality checking
 	with a hard to predict check time and punishing lockout time
 	usage:
-	Ent.Legal, Ent.LegalIssues = ACF_CheckLegal(Ent, Model, MinMass, MinInertia, NeedsGateParent, CanVisclip )
+	Ent.Legal, Ent.LegalIssues = ACE.CheckLegal(Ent, Model, MinMass, MinInertia, NeedsGateParent, CanVisclip )
 	Ent.NextLegalCheck = ACF.LegalSettings:NextCheck(Ent.Legal)
 ]]
 
@@ -12,41 +12,41 @@ ACF = ACF or {}
 ACF.Legal = {}
 ACF.Legal.Ignore = {}
 
-ACF.Legal.IsActivated		= math.max(GetConVar("acf_legalcheck"):GetInt(), 0)
+ACF.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
-ACF.Legal.Ignore.Solid	= math.max(GetConVar("acf_legal_ignore_solid"):GetInt(), 0)
-ACF.Legal.Ignore.Model	= math.max(GetConVar("acf_legal_ignore_model"):GetInt(), 0)
-ACF.Legal.Ignore.Mass		= math.max(GetConVar("acf_legal_ignore_mass"):GetInt(), 0)
-ACF.Legal.Ignore.Material	= math.max(GetConVar("acf_legal_ignore_material"):GetInt(), 0)
-ACF.Legal.Ignore.Inertia	= math.max(GetConVar("acf_legal_ignore_inertia"):GetInt(), 0)
-ACF.Legal.Ignore.makesphere  = math.max(GetConVar("acf_legal_ignore_makesphere"):GetInt(), 0)
-ACF.Legal.Ignore.visclip	= math.max(GetConVar("acf_legal_ignore_visclip"):GetInt(), 0)
-ACF.Legal.Ignore.Parent	= math.max(GetConVar("acf_legal_ignore_parent"):GetInt(), 0)
+ACF.Legal.Ignore.Solid	= math.max(GetConVar("ace_legal_ignore_solid"):GetInt(), 0)
+ACF.Legal.Ignore.Model	= math.max(GetConVar("ace_legal_ignore_model"):GetInt(), 0)
+ACF.Legal.Ignore.Mass		= math.max(GetConVar("ace_legal_ignore_mass"):GetInt(), 0)
+ACF.Legal.Ignore.Material	= math.max(GetConVar("ace_legal_ignore_material"):GetInt(), 0)
+ACF.Legal.Ignore.Inertia	= math.max(GetConVar("ace_legal_ignore_inertia"):GetInt(), 0)
+ACF.Legal.Ignore.makesphere  = math.max(GetConVar("ace_legal_ignore_makesphere"):GetInt(), 0)
+ACF.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt(), 0)
+ACF.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
 
-function ACF_LegalityCallBack()
+function ACE.LegalityCallBack()
 
-	ACF.Legal.IsActivated		= math.max(GetConVar("acf_legalcheck"):GetInt(), 0)
+	ACF.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
-	ACF.Legal.Ignore.Solid	= math.max(GetConVar("acf_legal_ignore_solid"):GetInt(), 0)
-	ACF.Legal.Ignore.Model	= math.max(GetConVar("acf_legal_ignore_model"):GetInt(), 0)
-	ACF.Legal.Ignore.Mass		= math.max(GetConVar("acf_legal_ignore_mass"):GetInt(), 0)
-	ACF.Legal.Ignore.Material	= math.max(GetConVar("acf_legal_ignore_material"):GetInt(), 0)
-	ACF.Legal.Ignore.Inertia	= math.max(GetConVar("acf_legal_ignore_inertia"):GetInt(), 0)
-	ACF.Legal.Ignore.makesphere  = math.max(GetConVar("acf_legal_ignore_makesphere"):GetInt(), 0)
-	ACF.Legal.Ignore.visclip	= math.max(GetConVar("acf_legal_ignore_visclip"):GetInt(), 0)
-	ACF.Legal.Ignore.Parent	= math.max(GetConVar("acf_legal_ignore_parent"):GetInt(), 0)
+	ACF.Legal.Ignore.Solid	= math.max(GetConVar("ace_legal_ignore_solid"):GetInt(), 0)
+	ACF.Legal.Ignore.Model	= math.max(GetConVar("ace_legal_ignore_model"):GetInt(), 0)
+	ACF.Legal.Ignore.Mass		= math.max(GetConVar("ace_legal_ignore_mass"):GetInt(), 0)
+	ACF.Legal.Ignore.Material	= math.max(GetConVar("ace_legal_ignore_material"):GetInt(), 0)
+	ACF.Legal.Ignore.Inertia	= math.max(GetConVar("ace_legal_ignore_inertia"):GetInt(), 0)
+	ACF.Legal.Ignore.makesphere  = math.max(GetConVar("ace_legal_ignore_makesphere"):GetInt(), 0)
+	ACF.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt(), 0)
+	ACF.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
 
 end
 
-cvars.AddChangeCallback("acf_legalcheck",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_solid",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_model",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_mass",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_material",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_inertia",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_makesphere",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_visclip",ACF_LegalityCallBack)
-cvars.AddChangeCallback("acf_legal_ignore_parent",ACF_LegalityCallBack)
+cvars.AddChangeCallback("ace_legalcheck",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_solid",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_model",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_mass",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_material",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_inertia",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_makesphere",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_visclip",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_parent",ACE.LegalityCallBack)
 
 
 
@@ -78,13 +78,13 @@ do
 	}
 
 	--TODO: remove unused functions
-	function ACF_CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
+	function ACE.CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
 
 	local problems = {} --problems table definition
 	if ACF.Legal.IsActivated == 0 then return #problems == 0, table.concat(problems, ", ") end
 
 	-- check it exists
-	if not ACF_Check( Ent ) then return { Legal = false, Problems = {"Invalid Ent"} } end
+	if not ACE.Check( Ent ) then return { Legal = false, Problems = {"Invalid Ent"} } end
 
 	local physobj = Ent:GetPhysicsObject()
 

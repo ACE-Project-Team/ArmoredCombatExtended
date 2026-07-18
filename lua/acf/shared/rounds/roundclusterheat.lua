@@ -38,7 +38,7 @@ function Round.convert( _, PlayerData )
 	PlayerData.Data13		= math.max(PlayerData.Data13 or 0, 5) --ClusterMult
 	PlayerData.Data14		= math.max(PlayerData.Data14 or 2000, 500) --ExplodeDistance
 
-	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	local ConeThick		= Data.Caliber / 50
 	--local ConeLength		= 0
@@ -48,15 +48,15 @@ function Round.convert( _, PlayerData )
 	ConeLength, ConeArea, AirVol = Round.ConeCalc( PlayerData.Data6, Data.Caliber / 2, PlayerData.ProjLength )
 
 	Data.ProjMass		= math.max(GUIData.ProjVolume-PlayerData.Data5,0) * 7.9 / 1000 + math.min(PlayerData.Data5,GUIData.ProjVolume) * ACF.HEDensity / 1000 + ConeArea * ConeThick * 7.9 / 1000 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
-	Data.MuzzleVel		= ACF_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
+	Data.MuzzleVel		= ACE.MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 
-	local Energy = ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
+	local Energy = ACE.Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local MaxVol			= 0
 	--local MaxLength		= 0
 	--local MaxRadius		= 0
 
 
-	MaxVol, MaxLength, MaxRadius = ACF_RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
+	MaxVol, MaxLength, MaxRadius = ACE.RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
 
 	GUIData.ClusterMult = math.Clamp(PlayerData.Data13, 10, 100)
 	Data.ClusterMult = GUIData.ClusterMult
@@ -79,8 +79,8 @@ function Round.convert( _, PlayerData )
 	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity / 1450
 	Data.BoomFillerMass = Data.FillerMass / 3 --manually update function "pierceeffect" with the divisor
 	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 7.9 / 1000 + Data.FillerMass + ConeVol * 7.9 / 1000
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
-	--local Energy = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
+	Data.MuzzleVel = ACE.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
+	--local Energy = ACE.Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 
 	--Let's calculate the actual HEAT slug
 	Data.SlugMass		= ConeVol * 7.9 / 1000
@@ -181,10 +181,10 @@ end
 
 function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACF_Check( Target ) then
+	if ACE.Check( Target ) then
 		local Speed	= Bullet.Flight:Length() / ACF.VelScale
-		local Energy	= ACF_Kinetic( Speed , Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel )
-		local HitRes	= ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+		local Energy	= ACE.Kinetic( Speed , Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel )
+		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.Ricochet then
 			return "Ricochet"
@@ -272,7 +272,7 @@ do
 		GEnt.BulletDataC["CasingMass"] 	= GEnt.BulletDataC.ProjMass + GEnt.BulletDataC.FillerMass + (GEnt.BulletDataC.ConeVol * 1000 / 7.9)
 		GEnt.BulletDataC["BoomFillerMass"] = GEnt.BulletDataC.FillerMass
 
-		--local SlugEnergy = ACF_Kinetic( missile.BulletDataC.MuzzleVel * 39.37 + missile.BulletDataC.SlugMV * 39.37 , missile.BulletDataC.SlugMass, 999999 )
+		--local SlugEnergy = ACE.Kinetic( missile.BulletDataC.MuzzleVel * 39.37 + missile.BulletDataC.SlugMV * 39.37 , missile.BulletDataC.SlugMass, 999999 )
 		--local  MaxPen = (SlugEnergy.Penetration/missile.BulletDataC.SlugPenArea) * ACF.KEtoRHA
 		--print(MaxPen)
 
@@ -316,7 +316,7 @@ do
 
 	function Round.create( _, BulletData )
 
-		ACF_CreateBullet( BulletData )
+		ACE.CreateBullet( BulletData )
 
 		GenerateCluster(BulletData)
 
@@ -328,17 +328,17 @@ do
 
 		if tr.Hit and not (tr.HitSky or Bullet.SkyLvL) and Bullet.FlightTime > 0.5 then
 
-			ACF_BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
+			ACE.BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
 
 			--local ACF_HE_Math = Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass
-			--ACF_HE(ACF_HE_Math, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
-			ACF_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+			--ACE.HE(ACF_HE_Math, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+			ACE.HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
 			local GunEnt = Bullet.Gun
 			if IsValid(GunEnt) then
 				--print("Valid")
 				CreateCluster(Bullet,GunEnt.BulletData) --(bullet, bdata)
 			end
-			ACF_RemoveBullet( Index )
+			ACE.RemoveBullet( Index )
 
 
 		end
@@ -347,15 +347,15 @@ do
 	end
 
 	function Round.endflight( Index, Bullet)
-		ACF_BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
+		ACE.BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
 
-		ACF_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+		ACE.HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.FillerMass / 20, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
 		local GunEnt = Bullet.Gun
 		if IsValid(GunEnt) then
 			--print("Valid")
 			CreateCluster(Bullet,GunEnt.BulletData) --(bullet, bdata)
 		end
-		ACF_RemoveBullet( Index )
+		ACE.RemoveBullet( Index )
 	end
 
 end

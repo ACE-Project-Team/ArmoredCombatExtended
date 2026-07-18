@@ -244,7 +244,7 @@ local function IsReallyValid(trace, ply)
 
 	local class = trace.Entity:GetClass()
 	if not ACF.SoundToolSupport[class] then
-		ACF_SendNotify( ply, false, "#tool.acfsound.unsupported" )
+		ACE.SendNotify( ply, false, "#tool.acfsound.unsupported" )
 
 		return false
 	end

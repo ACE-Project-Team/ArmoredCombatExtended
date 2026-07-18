@@ -60,7 +60,7 @@ local function SetConeParameters( Radar )
 
 end
 
-function MakeACE_SearchRadar(Owner, Pos, Angle, Id)
+function ACE.MakeSearchRadar(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_acf_missileradar") then return false end
 
@@ -113,7 +113,7 @@ function MakeACE_SearchRadar(Owner, Pos, Angle, Id)
 
 end
 list.Set( "ACFCvars", "ace_searchradar", {"id"} )
-duplicator.RegisterEntityClass("ace_searchradar", MakeACE_SearchRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_searchradar", ACE.MakeSearchRadar, "Pos", "Angle", "Id" )
 
 function ENT:SetModelEasy(mdl)
 
@@ -275,7 +275,7 @@ function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
 		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
@@ -311,7 +311,7 @@ function ENT:Think()
 		GCTraceData.mins = Vector(-ConeClutterSize, -ConeClutterSize, -ConeClutterSize)
 		GCTraceData.maxs = Vector(ConeClutterSize, ConeClutterSize, ConeClutterSize)
 
-		local CounterMeasures = ACFM_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
+		local CounterMeasures = ACE.Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 		local CMCount = table.Count(CounterMeasures)
 
 		for Contraption in pairs(CFW.Contraptions) do

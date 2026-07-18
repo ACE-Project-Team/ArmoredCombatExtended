@@ -102,7 +102,7 @@ end
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACF.HEATMulFuel) or 1) --Heat penetrators deal bonus damage to fuel
-	local HitRes = ACF_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+	local HitRes = ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS")
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
@@ -117,7 +117,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 			self.Inflictor = Inflictor
 		end
 
-		ACF_ScaledExplosion( self , true )
+		ACE.ScaledExplosion( self , true )
 
 		return HitRes
 	end
@@ -135,7 +135,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 
 		timer.Simple(math.Rand(0.1, 1), function()
 			if IsValid(self) then
-				ACF_ScaledExplosion( self , true )
+				ACE.ScaledExplosion( self , true )
 			end
 		end )
 
@@ -159,7 +159,7 @@ do
 		return ACE.Scalable.ParseScale( ScaleId, { min = ACF.CrateMinimumSize, max = ACF.CrateMaximumSize } )
 	end
 
-	function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+	function ACE.MakeFuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 
 		if IsValid(Owner) and not Owner:CheckLimit("_acf_misc") then return false end
 
@@ -251,7 +251,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_fueltank", {"id", "data1", "data2", "data3"} )
-duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
+duplicator.RegisterEntityClass("acf_fueltank", ACE.MakeFuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
 
 
 local Wall = 0.03937 --wall thickness in inches (1mm)
@@ -435,7 +435,7 @@ function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 	end

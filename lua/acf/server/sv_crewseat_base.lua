@@ -6,7 +6,7 @@
 
 include("acf/shared/sh_crewseat_base.lua")
 
-local crewseatDebug = CreateConVar("acf_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
+local crewseatDebug = CreateConVar("ace_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
 
 -- Resolve a crewseat model type from dupe data or the current model path.
 function ACE.CrewseatResolveModelType(ent, info)
@@ -386,7 +386,7 @@ function ACE.CrewseatLegalCheck(ent)
 			ent.Model = currentModel
 		end
 
-		ent.Legal, ent.LegalIssues = ACF_CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
+		ent.Legal, ent.LegalIssues = ACE.CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
 
 		if ent.Legal and not (ACE.IsValidCrewseatModel and ACE.IsValidCrewseatModel(currentModel)) then
 			ent.Legal = false
@@ -411,7 +411,7 @@ end
 -- Shared damage function
 function ACE.CrewseatDamage(ent, Entity, Energy, FrArea, Inflictor)
 	ent.ACF.Armour = 3
-	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, 0, Inflictor)
+	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, 0, Inflictor)
 	return HitRes
 end
 
@@ -441,4 +441,3 @@ function ACE.FindReplacementLoader(ent, maxDistSqr)
 
 	return replaceEnt, closestDist
 end
-

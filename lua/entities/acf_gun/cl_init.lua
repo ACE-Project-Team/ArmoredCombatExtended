@@ -1,7 +1,7 @@
 
 include("shared.lua")
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local ACF_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
 killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACF.KillIconColor)
 
@@ -80,7 +80,7 @@ function ENT:Animate( _, ReloadTime, LoadOnly )
 
 end
 
-function ACFGunGUICreate( Table )
+function ACE.GunGUICreate( Table )
 
 	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 

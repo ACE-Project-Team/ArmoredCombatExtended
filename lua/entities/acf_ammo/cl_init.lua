@@ -29,7 +29,7 @@ local function BezPoint(perc, Table)
 	return vec
 end
 
-function ACF_DrawRefillAmmo( Table )
+function ACE.DrawRefillAmmo( Table )
 	for _, v in pairs(Table) do
 		local St, En = v.EntFrom:LocalToWorld(v.EntFrom:OBBCenter()), v.EntTo:LocalToWorld(v.EntTo:OBBCenter())
 		local Distance = (En - St):Length()
@@ -56,7 +56,7 @@ function ACF_DrawRefillAmmo( Table )
 	end
 end
 
-function ACF_TrimInvalidRefillEffects(effectsTbl)
+function ACE.TrimInvalidRefillEffects(effectsTbl)
 
 	local effect
 
@@ -70,7 +70,7 @@ function ACF_TrimInvalidRefillEffects(effectsTbl)
 
 end
 
-CreateClientConVar("ACF_AmmoInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_ammo_info_while_seated", 0, true, false)
 
 function ENT:Draw()
 
@@ -87,8 +87,8 @@ function ENT:Draw()
 	--self.BaseClass.Draw( self )
 
 	if self.RefillAmmoEffect then
-		ACF_TrimInvalidRefillEffects(self.RefillAmmoEffect)
-		ACF_DrawRefillAmmo( self.RefillAmmoEffect )
+		ACE.TrimInvalidRefillEffects(self.RefillAmmoEffect)
+		ACE.DrawRefillAmmo( self.RefillAmmoEffect )
 	end
 
 end

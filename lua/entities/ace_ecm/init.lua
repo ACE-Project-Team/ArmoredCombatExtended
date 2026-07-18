@@ -35,12 +35,12 @@ function ENT:Initialize()
 
 	WireLib.TriggerOutput( self, "JamCount", 0 )
 
-	--out radars jammed?
-	self:SetActive(false)
-
 	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
+
+	--out radars jammed?
+	self:SetActive(false)
 
 	self.CurrentlyJamming = 0
 	self.JamDirection = vector_origin
@@ -91,7 +91,7 @@ function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
 	end
@@ -109,7 +109,7 @@ function ENT:Think()
 
 		local found = table.Copy(ACE.radarEntities)
 
-		for MissileEnt, _ in pairs(ACF_ActiveMissiles) do
+		for MissileEnt, _ in pairs(ACE.ActiveMissiles) do
 			--print(MissileEnt)
 			table.insert( found, MissileEnt )
 		end

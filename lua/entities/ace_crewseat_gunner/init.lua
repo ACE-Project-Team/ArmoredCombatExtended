@@ -24,7 +24,7 @@ function ENT:Initialize()
 	self:UpdateWireOutputs()
 end
 
-function MakeACE_Crewseat_Gunner(Owner, Pos, Angle, Id, EntityData)
+function ACE.MakeCrewseatGunner(Owner, Pos, Angle, Id, EntityData)
 	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
@@ -61,7 +61,7 @@ function MakeACE_Crewseat_Gunner(Owner, Pos, Angle, Id, EntityData)
 end
 
 list.Set("ACFCvars", "ace_crewseat_gunner", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_crewseat_gunner", MakeACE_Crewseat_Gunner, "Pos", "Angle", "Id", "ModelType")
+duplicator.RegisterEntityClass("ace_crewseat_gunner", ACE.MakeCrewseatGunner, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
 	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1, accuracy = 1 }
@@ -183,7 +183,7 @@ function ENT:ConsumeCrewseats()
 
 	if IsValid(ReplaceEnt) then
 		self.Name = ReplaceEnt.Name
-		ACF_HEKill(ReplaceEnt, VectorRand(), 0)
+		ACE.HEKill(ReplaceEnt, VectorRand(), 0)
 
 		local ReplaceTime = 5 + math.sqrt(ClosestDist) / 39.37 * 1
 
@@ -193,7 +193,7 @@ function ENT:ConsumeCrewseats()
 			end
 		end)
 	else
-		ACF_HEKill(self, VectorRand(), 0)
+		ACE.HEKill(self, VectorRand(), 0)
 	end
 end
 

@@ -72,7 +72,7 @@ do
 
 			end
 
-			ACF_SimBulletFlight( Bullet, self.Index )
+			ACE.SimBulletFlight( Bullet, self.Index )
 			RemoveBulletEntry( self )
 
 		else
@@ -130,7 +130,7 @@ do
 			self:SetModel( BulletData.BulletModel )
 			self.Alive = true
 
-			ACF_SimBulletFlight( ACF.BulletEffect[self.Index], self.Index )
+			ACE.SimBulletFlight( ACF.BulletEffect[self.Index], self.Index )
 
 		end
 
@@ -383,5 +383,3 @@ function EFFECT:Render()
 	end
 
 end
-
-ACE_RemoveBulletClient = ACE.RemoveBulletClient

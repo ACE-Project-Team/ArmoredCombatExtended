@@ -485,7 +485,7 @@ end
 function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
 
 	--Disables protection if either CPPI is unexistent or has been disabled via convar.
-	local DP = GetConVar("acf_enable_dp"):GetInt()
+	local DP = GetConVar("ace_enable_dp"):GetInt()
 
 	if not CPPI or DP == 0 then return true end
 	if Entity.DamageOwner then return true end -- This value is normally used by entities meant to be destroyed by everyone.
@@ -509,7 +509,7 @@ function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
 
 	return this.DamagePermission(owner, Inflictor, Entity)
 end
-hook.Add("ACF_BulletDamage", "ACF_DamagePermissionCore", this.CanDamage)
+hook.Add("ACE_BulletDamage", "ACF_DamagePermissionCore", this.CanDamage)
 
 function this.thinkWrapper()
 

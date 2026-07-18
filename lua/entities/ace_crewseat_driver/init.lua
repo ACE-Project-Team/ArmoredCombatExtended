@@ -23,7 +23,7 @@ function ENT:Initialize()
 	self:UpdateWireOutputs()
 end
 
-function MakeACE_Crewseat_Driver(Owner, Pos, Angle, Id, EntityData)
+function ACE.MakeCrewseatDriver(Owner, Pos, Angle, Id, EntityData)
 	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
@@ -60,7 +60,7 @@ function MakeACE_Crewseat_Driver(Owner, Pos, Angle, Id, EntityData)
 end
 
 list.Set("ACFCvars", "ace_crewseat_driver", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_crewseat_driver", MakeACE_Crewseat_Driver, "Pos", "Angle", "Id", "ModelType")
+duplicator.RegisterEntityClass("ace_crewseat_driver", ACE.MakeCrewseatDriver, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
 	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1 }
@@ -190,7 +190,7 @@ function ENT:ConsumeCrewseats()
 		if IsValid(ReplaceEnt) then
 			ReplaceSeat = true
 			self.Name = ReplaceEnt.Name
-			ACF_HEKill( ReplaceEnt, VectorRand(), 0)
+			ACE.HEKill( ReplaceEnt, VectorRand(), 0)
 		end
 	end
 
@@ -201,7 +201,7 @@ function ENT:ConsumeCrewseats()
 			if IsValid(self) then self:ResetLinks() end
 		end)
 	else
-		ACF_HEKill( self, VectorRand(), 0)
+		ACE.HEKill( self, VectorRand(), 0)
 	end
 
 	return ReplaceSeat

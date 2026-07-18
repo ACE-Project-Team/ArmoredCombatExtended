@@ -46,7 +46,7 @@ function Round.create( Gun, BulletData )
 			Inaccuracy			= VectorRand() / 360 * ((Gun.Inaccuracy or 0) + BulletData["FlechetteSpread"])
 			FlechetteData["Flight"] = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData["MuzzleVel"] * 39.37 + Gun:GetVelocity()
 
-			ACF_CreateBullet( FlechetteData )
+			ACE.CreateBullet( FlechetteData )
 		end
 	else
 		local BaseInaccuracy	= math.tan(math.rad(Gun:GetInaccuracy()))
@@ -58,7 +58,7 @@ function Round.create( Gun, BulletData )
 			BaseSpread			= BaseInaccuracy * (math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4))) * (Gun:GetUp() * (2 * math.random() - 1) + Gun:GetRight() * (2 * math.random() - 1)):GetNormalized()
 			AddSpread			= AddInaccuracy * (math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4))) * (Gun:GetUp() * (2 * math.random() - 1) + Gun:GetRight() * (2 * math.random() - 1)):GetNormalized()
 			FlechetteData["Flight"] = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData["MuzzleVel"] * 39.37 + Gun:GetVelocity()
-			ACF_CreateBullet( FlechetteData )
+			ACE.CreateBullet( FlechetteData )
 		end
 	end
 
@@ -81,7 +81,7 @@ function Round.convert( _, PlayerData )
 	PlayerData["Data6"]		= PlayerData["Data6"]	or 0	-- flechette spread
 
 
-	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	--local GunClass = ACF.Weapons["Guns"][Data["Id"] or PlayerData["Id"]]["gunclass"]
 
@@ -116,7 +116,7 @@ function Round.convert( _, PlayerData )
 	Data["LimitVel"]			= 500									--Most efficient penetration speed in m/s
 	Data["KETransfert"]		= 0.1								--Kinetic energy transfert to the target for movement purposes
 	Data["Ricochet"]			= 50										--Base ricochet angle
-	Data["MuzzleVel"]		= ACF_MuzzleVelocity( Data["PropMass"], Data["ProjMass"], Data["Caliber"] )
+	Data["MuzzleVel"]		= ACE.MuzzleVelocity( Data["PropMass"], Data["ProjMass"], Data["Caliber"] )
 
 	Data["BoomPower"]		= Data["PropMass"]
 
@@ -135,7 +135,7 @@ end
 
 function Round.getDisplayData(Data)
 	local GUIData = {}
-	local Energy = ACF_Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
+	local Energy = ACE.Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
 	GUIData["MaxPen"] = ACE.CalcPenetration(Energy, Data["FlechettePenArea"])
 	return GUIData
 end
@@ -187,11 +187,11 @@ end
 
 function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACF_Check( Target ) then
+	if ACE.Check( Target ) then
 
 		local Speed	= Bullet["Flight"]:Length() / ACF.VelScale
-		local Energy	= ACF_Kinetic( Speed , Bullet["ProjMass"], Bullet["LimitVel"] )
-		local HitRes	= ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+		local Energy	= ACE.Kinetic( Speed , Bullet["ProjMass"], Bullet["LimitVel"] )
+		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.PostPenetration.Continue then
 
@@ -214,8 +214,8 @@ end
 
 function Round.worldimpact( _, Bullet, HitPos, HitNormal )
 
-	local Energy = ACF_Kinetic( Bullet.Flight:Length() / ACF.VelScale, Bullet.ProjMass, Bullet.LimitVel )
-	local HitRes = ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
+	local Energy = ACE.Kinetic( Bullet.Flight:Length() / ACF.VelScale, Bullet.ProjMass, Bullet.LimitVel )
+	local HitRes = ACE.PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 
 	if HitRes.Penetrated then
 
@@ -231,7 +231,7 @@ end
 
 function Round.endflight( Index )
 
-	ACF_RemoveBullet( Index )
+	ACE.RemoveBullet( Index )
 
 end
 

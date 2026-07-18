@@ -1,4 +1,4 @@
-ACF_defineGunClass("ATGM", {
+ACE.DefineGunClass("ATGM", {
 	type			= "missile",
 	spread			= 1,
 	name			= "[ATGM] - Anti-Tank Guided Missile",
@@ -15,7 +15,7 @@ ACF_defineGunClass("ATGM", {
 } )
 
 -- The BGM-71E, a wire guided missile with medium anti-tank effectiveness.
-ACF_defineGun("BGM-71E ASM", {								-- id
+ACE.DefineGun("BGM-71E ASM", {								-- id
 	name			= "BGM-71E Missile",
 	desc			= "The BGM-71E missile is a lightweight, wire guided anti-tank munition. It can be used in both air-to-surface and surface-to-surface combat, making it a decent alternative for ground vehicles.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 181 m/s\nMax Kinetic Pen: 602 mm",
 	model			= "models/missiles/bgm_71e.mdl",
@@ -87,7 +87,7 @@ ACF_defineGun("BGM-71E ASM", {								-- id
 	armdelay	= 0.15										-- minimum fuse arming delay
 } )
 
-ACF_defineGun("9M113 ATGM", {									-- id
+ACE.DefineGun("9M113 ATGM", {									-- id
 	name			= "9M113 Konkurs Missile",
 	desc			= "The tube-launched Konkurs is a solid ATGM all around. With a decent speed, maneuverability, and warhead.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 108 m/s\nMax Kinetic Pen: 409 mm",
 	model			= "models/missiles/9m113.mdl",
@@ -155,7 +155,7 @@ ACF_defineGun("9M113 ATGM", {									-- id
 	armdelay	= 0.15										-- minimum fuse arming delay
 } )
 
-ACF_defineGun("9M133 ASM", {									-- id
+ACE.DefineGun("9M133 ASM", {									-- id
 	name			= "9M133 Kornet Missile",
 	desc			= "The Kornet is a modern antitank missile, with good range and a very powerful warhead, but somewhat limited maneuverability.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 153 m/s\nMax Kinetic Pen: 802 mm",
 	model			= "models/kali/weapons/kornet/parts/9m133 kornet missile.mdl",
@@ -227,7 +227,7 @@ ACF_defineGun("9M133 ASM", {									-- id
 } )
 
 -- The AT-3, a short-range wire-guided missile with better anti-tank effectiveness than the BGM-71E but much slower.
-ACF_defineGun("AT-3 ASM", { --id
+ACE.DefineGun("AT-3 ASM", { --id
 	name			= "AT-3 Sagger Missile",
 	desc			= "The AT-3 missile (9M14P1) is a short-range wire-guided anti-tank munition. While powerful and lightweight its speed will make you die of old age before you hit the target.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 52 m/s\nMax Kinetic Pen: 430 mm",
 	model			= "models/missiles/at3.mdl",
@@ -302,7 +302,7 @@ ACF_defineGun("AT-3 ASM", { --id
 	armdelay	= 0.15										-- minimum fuse arming delay
 } )
 
-ACF_defineGun("AT-2 ASM", { --id
+ACE.DefineGun("AT-2 ASM", { --id
 	name			= "AT-2 Fleyta Missile",
 	desc			= "The AT-2 Missile (9M17P) is a light and highly agile anti-tank missile, the big brother of the Sagger. While the warhead isn't as modernized to the extent of the AT-3 the agility and speed greatly make up for it\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 86 m/s\nMax Kinetic Pen: 438 mm",
 	model			= "models/missiles/at2.mdl",
@@ -373,7 +373,7 @@ ACF_defineGun("AT-2 ASM", { --id
 	armdelay	= 0.15									-- minimum fuse arming delay
 } )
 
-ACF_defineGun("FGM-148 ASM", {
+ACE.DefineGun("FGM-148 ASM", {
 	name			= "FGM-148 Javelin Missile",
 	desc			= "A powerful medium-range multi-purpose Missile, being extremely agile, its able to be used vs low altitude aircraft and for attacking top of tanks. But its somewhat slow.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 125 m/s\nMax Kinetic Pen: 621 mm",
 	model			= "models/mcace/Jevelinemissile.mdl",		-- model to spawn on menu
@@ -444,7 +444,7 @@ ACF_defineGun("FGM-148 ASM", {
 } )
 
 
-ACF_defineGun("Spike-LR ASM", {
+ACE.DefineGun("Spike-LR ASM", {
 	name			= "Spike LR Missile",
 	desc			= "A powerful multi-purpose Missile, being fast and agile but maneuverable enough to hit aircraft or tanks in top attack.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 141 m/s\nMax Kinetic Pen: 667 mm",
 	model			= "models/missiles/spikelr2.mdl",		-- model to spawn on menu
@@ -520,7 +520,7 @@ ACF_defineGun("Spike-LR ASM", {
 
 } )
 
-ACF_defineGun("Kh-39 LMUR", {
+ACE.DefineGun("Kh-39 LMUR", {
 	name			= "Kh-39 LMUR Missile",
 	desc			= "Description here please.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 141 m/s\nMax Kinetic Pen: 667 mm",
 	model			= "models/missiles/unfolded_lmur.mdl",		-- model to spawn on menu
@@ -598,7 +598,7 @@ ACF_defineGun("Kh-39 LMUR", {
 
 } )
 -- The 9M120 Ataka, a laser guided missile with high anti-tank effectiveness.
-ACF_defineGun("Ataka ASM", { --id
+ACE.DefineGun("Ataka ASM", { --id
 	name			= "9M120 Ataka Missile",
 	desc			= "The 9M120 Ataka is a high-speed anti tank missile used by soviet helicopters and ground vehicles.  It has very limited maneuverability but excellent range and speed, and can be armed with HE and HEAT warheads.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 288 m/s\nMax Kinetic Pen: 814 mm",
 	model			= "models/missiles/9m120.mdl",
@@ -670,7 +670,7 @@ ACF_defineGun("Ataka ASM", { --id
 } )
 
 -- The AGM-114, a laser guided missile with high anti-tank effectiveness.
-ACF_defineGun("AGM-114 ASM", {						--id
+ACE.DefineGun("AGM-114 ASM", {						--id
 	name 			= "AGM-114 Hellfire Missile",
 	desc 			= "The AGM-114 Hellfire is an air-to-surface missile first developed for anti-armor use, but later models were developed for precision strikes against other target types. Bringer of Hell.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 232 m/s\nMax Kinetic Pen: 607 mm",
 	model 			= "models/missiles/agm_114.mdl",
@@ -745,7 +745,7 @@ ACF_defineGun("AGM-114 ASM", {						--id
 } )
 
 -- The 9M120 Ataka, a laser guided missile with high anti-tank effectiveness.
-ACF_defineGun("Vikhr ASM", { --id
+ACE.DefineGun("Vikhr ASM", { --id
 	name			= "9K121 Vikhr Missile",
 	desc			= "The 9K121 Vikhr is a long range anti tank missile used by soviet helicopters. Slower in comparison to the Ataka, this missile is more maneuverable. Can utilize proxy fuses.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 748 m/s\nMax Kinetic Pen: 721 mm",
 	model			= "models/missiles/9m127.mdl",
@@ -813,7 +813,7 @@ ACF_defineGun("Vikhr ASM", { --id
 } )
 
 
-ACF_defineGun("MGM-166", { --id
+ACE.DefineGun("MGM-166", { --id
 	name			= "MGM-166 LOSAT",
 	desc			= "You ever just wake up one day and want to pen 2 meters of armor? Couldn't be me. Stupidly fast and unyieldy. But if it hits have mercy. Getting hit is a significant emotional event\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 548 m/s\nMax Kinetic Pen: YES!!\n\n\nI should also mention, NO the ammo is not bugged. I had to do some antics to prevent tanks from getting sent to space when hit.",
 	model			= "models/missiles/losat.mdl",
@@ -881,7 +881,7 @@ ACF_defineGun("MGM-166", { --id
 	armdelay	= 0.15										-- minimum fuse arming delay
 } )
 
-ACF_defineGun("MIM-146", {										-- id
+ACE.DefineGun("MIM-146", {										-- id
 	name             = "MIM-146 ADATS",
 	desc             = "Wicked surface to air missile doubling as an anti tank missile. For torturing tanks when you have nothing else to shoot at. \n\nInertial Guidance: False\nECCM: No\nDatalink: Yes\nTop Speed: 178 m/s",
 	model            = "models/missiles/mim146.mdl",

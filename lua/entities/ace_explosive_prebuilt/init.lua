@@ -74,8 +74,6 @@ function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	return Charge
 end
 
-ACE_MakePrebuiltExplosive = ACE.MakePrebuiltExplosive
-
 -- Shared by every variant's SpawnFunction (sandbox Q-menu). GMod passes the
 -- concrete class name as the third argument, which is exactly the variant we
 -- want to spawn.
@@ -95,7 +93,7 @@ function ENT:Detonate()
 	local owner  = self.DamageOwner
 	if not IsValid(owner) then owner = self:CPPIGetOwner() end
 
-	ACF_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
+	ACE.HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
 	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
@@ -138,7 +136,7 @@ function ENT:ACF_Activate(Recalc)
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
-	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
+	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 
 	if IsValid(Inflictor) and Inflictor:IsPlayer() then self.DamageOwner = Inflictor end

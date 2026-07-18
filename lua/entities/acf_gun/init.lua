@@ -196,7 +196,7 @@ do
 		HMG = true
 	}
 
-	function MakeACF_Gun(Owner, Pos, Angle, Id)
+	function ACE.MakeGun(Owner, Pos, Angle, Id)
 
 		local Gun = ents.Create("acf_gun")
 		if not IsValid(Gun) then return false end
@@ -338,7 +338,7 @@ do
 
 		Owner:AddCleanup("acfmenu", Gun)
 
-		ACF_Activate(Gun, 0)
+		ACE.Activate(Gun, 0)
 
 		return Gun
 
@@ -346,7 +346,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_gun", {"id"} )
-duplicator.RegisterEntityClass("acf_gun", MakeACF_Gun, "Pos", "Angle", "Id")
+duplicator.RegisterEntityClass("acf_gun", ACE.MakeGun, "Pos", "Angle", "Id")
 
 function ENT:UpdateOverlayText()
 
@@ -680,14 +680,14 @@ function ENT:Heat_Function()
 		--local Mass = phys:GetMass()
 
 		--[[
-		HitRes = ACF_Damage(self, {
+		HitRes = ACE.Damage(self, {
 			Kinetic = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1)),
 			Momentum = 0,
 			Penetration = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1))
 		}, 2, 0, self:CPPIGetOwner())
 
 		if HitRes.Kill then
-			ACF_HEKill( self, VectorRand() , 0)
+			ACE.HEKill( self, VectorRand() , 0)
 		end
 		]]--
 
@@ -743,14 +743,14 @@ function ENT:Think()
 	if ACF.CurTime > self.NextLegalCheck then
 
 		-- check gun is legal
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
 		-- check the seat is legal
 		local seat = IsValid(self.User) and self.User:GetVehicle() or nil
 
 		if IsValid(seat) then
-			local legal, issues = ACF_CheckLegal(seat, nil, nil, nil, nil, false)
+			local legal, issues = ACE.CheckLegal(seat, nil, nil, nil, nil, false)
 			if not legal then
 				self.Legal = false
 				self.LegalIssues = self.LegalIssues .. "\nSeat not legal: " .. issues
@@ -780,7 +780,7 @@ function ENT:Think()
 		for _, Crate in pairs(self.AmmoLink) do
 			if IsValid( Crate ) and Crate.Load and Crate.Legal then
 
-				if IsInRetDist( self, Crate, AmmoLinkDistBase * self.LinkRangeMul ) then
+			if IsInRetDist( self, Crate, AmmoLinkDistBase * self.LinkRangeMul ) then
 					Ammo = Ammo + (Crate.Ammo or 0)
 				else
 					BreakGunLink( self, Crate )
@@ -845,7 +845,7 @@ function ENT:Think()
 		--local MuzzlePos		= self:LocalToWorld(self.Muzzle)
 		--local MuzzlePos		= self:GetForward() * self.Muzzle.x + self:GetRight()  * self.Muzzle.y + self:GetUp() * self.Muzzle.z
 		--local MuzzlePos		= self:GetPos()
-		ACF_KEShove(self, self:GetPos() , Dir , self.KERecoil * self.CurrentRecoil )
+		ACE.KEShove(self, self:GetPos() , Dir , self.KERecoil * self.CurrentRecoil )
 
 		self.CurrentRecoil = math.max(self.CurrentRecoil - self.DeltaTime / 0.5,0) --Divided by time to dissipate recoil. Currently 0.5
 		--self.CurrentRecoil = 0
@@ -956,7 +956,7 @@ do
 			--self.OTWarnings
 			if not HasWarned then
 				--print("No")
-				chatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACF.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
+				ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACF.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
 				self.OTWarnings.WarnedGunner = true
 			end
 			return
@@ -996,7 +996,7 @@ do
 				self:MuzzleEffect( MuzzlePos, MuzzleVec )
 
 				local GPos = self:GetPos()
-				local TestVel = self:WorldToLocal(ACF_GetPhysicalParent(self):GetVelocity() + GPos)
+				local TestVel = self:WorldToLocal(ACE.GetPhysicalParent(self):GetVelocity() + GPos)
 
 				--Traceback component
 				TestVel = self:LocalToWorld(Vector(math.max(TestVel.x,-0.1),TestVel.y,TestVel.z)) - GPos
@@ -1088,7 +1088,7 @@ function ENT:LoadAmmo( AddTime, Reload )
 		Wire_TriggerOutput(self, "Muzzle Weight", math.floor(self.BulletData.ProjMass * 1000) )
 		Wire_TriggerOutput(self, "Muzzle Velocity", math.floor(self.BulletData.MuzzleVel * ACF.VelScale) )
 
-		self.KERecoil = (self.BulletData.PropMass * 39.37) * (GetConVar("acf_recoilpush"):GetFloat() or 1) * 375
+		self.KERecoil = (self.BulletData.PropMass * 39.37) * (GetConVar("ace_recoilpush"):GetFloat() or 1) * 375
 
 		self.NextFire = curTime + self.ReloadTime
 		local reloadTime = self.ReloadTime

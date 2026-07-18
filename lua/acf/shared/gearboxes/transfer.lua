@@ -7,7 +7,7 @@ local Gear2LW = 80
 
 -- Inline
 
-ACF_DefineGearbox( "2Gear-L-S", {
+ACE.DefineGearbox( "2Gear-L-S", {
 	name = "Transfer case, Inline, Small",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_s.mdl",
@@ -26,7 +26,7 @@ ACF_DefineGearbox( "2Gear-L-S", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-L-S-NC", {
+ACE.DefineGearbox( "2Gear-L-S-NC", {
 	name = "(+)Transfer case, Inline, Small, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_s.mdl",
@@ -45,7 +45,7 @@ ACF_DefineGearbox( "2Gear-L-S-NC", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-L-M", {
+ACE.DefineGearbox( "2Gear-L-M", {
 	name = "Transfer case, Inline, Medium",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_m.mdl",
@@ -64,7 +64,7 @@ ACF_DefineGearbox( "2Gear-L-M", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-L-M-NC", {
+ACE.DefineGearbox( "2Gear-L-M-NC", {
 	name = "(+)Transfer case, Inline, Medium, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_m.mdl",
@@ -83,7 +83,7 @@ ACF_DefineGearbox( "2Gear-L-M-NC", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-L-L", {
+ACE.DefineGearbox( "2Gear-L-L", {
 	name = "Transfer case, Inline, Large",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_l.mdl",
@@ -102,7 +102,7 @@ ACF_DefineGearbox( "2Gear-L-L", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-L-L-NC", {
+ACE.DefineGearbox( "2Gear-L-L-NC", {
 	name = "(+)Transfer case, Inline, Large, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/linear_l.mdl",
@@ -123,7 +123,7 @@ ACF_DefineGearbox( "2Gear-L-L-NC", {
 
 -- Transaxial
 
-ACF_DefineGearbox( "2Gear-T-S", {
+ACE.DefineGearbox( "2Gear-T-S", {
 	name = "Transfer case, Small",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_s.mdl",
@@ -142,7 +142,7 @@ ACF_DefineGearbox( "2Gear-T-S", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-T-S-NC", {
+ACE.DefineGearbox( "2Gear-T-S-NC", {
 	name = "(+)Transfer case, Small, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_s.mdl",
@@ -161,7 +161,7 @@ ACF_DefineGearbox( "2Gear-T-S-NC", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-T-M", {
+ACE.DefineGearbox( "2Gear-T-M", {
 	name = "Transfer case, Medium",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_m.mdl",
@@ -180,7 +180,7 @@ ACF_DefineGearbox( "2Gear-T-M", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-T-M-NC", {
+ACE.DefineGearbox( "2Gear-T-M-NC", {
 	name = "(+)Transfer case, Medium, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_m.mdl",
@@ -199,7 +199,7 @@ ACF_DefineGearbox( "2Gear-T-M-NC", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-T-L", {
+ACE.DefineGearbox( "2Gear-T-L", {
 	name = "Transfer case, Large",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_l.mdl",
@@ -218,7 +218,7 @@ ACF_DefineGearbox( "2Gear-T-L", {
 	}
 } )
 
-ACF_DefineGearbox( "2Gear-T-L-NC", {
+ACE.DefineGearbox( "2Gear-T-L-NC", {
 	name = "(+)Transfer case, Large, Single Clutch",
 	desc = "2 speed gearbox, useful for low/high range and tank turning",
 	model = "models/engines/transaxial_l.mdl",

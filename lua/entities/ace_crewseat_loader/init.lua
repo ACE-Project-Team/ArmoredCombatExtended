@@ -26,7 +26,7 @@ function ENT:Initialize()
 	self:UpdateWireOutputs()
 end
 
-function MakeACE_Crewseat_Loader(Owner, Pos, Angle, Id, EntityData)
+function ACE.MakeCrewseatLoader(Owner, Pos, Angle, Id, EntityData)
 	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
@@ -67,7 +67,7 @@ function MakeACE_Crewseat_Loader(Owner, Pos, Angle, Id, EntityData)
 end
 
 list.Set("ACFCvars", "ace_crewseat_loader", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_crewseat_loader", MakeACE_Crewseat_Loader, "Pos", "Angle", "Id", "ModelType")
+duplicator.RegisterEntityClass("ace_crewseat_loader", ACE.MakeCrewseatLoader, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
 	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1, stamina = 1 }
@@ -205,7 +205,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
 
 	if HitRes.Kill or HitRes.Overkill > 1 then
 		ACE.CrewseatDeathSound(self)
-		ACF_HEKill(self, VectorRand(), 0)
+		ACE.HEKill(self, VectorRand(), 0)
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
 

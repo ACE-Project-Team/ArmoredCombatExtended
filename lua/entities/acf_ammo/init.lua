@@ -236,7 +236,7 @@ do
 	function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 		local Mul	= (( HEATtbl[Type] and ACF.HEATMulAmmo ) or 1) --Heat penetrators deal bonus damage to ammo
-		local HitRes	= ACF_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+		local HitRes	= ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
@@ -314,7 +314,7 @@ do
 		return Scale
 	end
 
-	function MakeACF_Ammo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data14, Data15)
+	function ACE.MakeAmmo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data14, Data15)
 
 		if not Owner:CheckLimit("_acf_ammo") then return false end
 
@@ -428,7 +428,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_ammo", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "data14", "data15"} )
-duplicator.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Pos", "Angle", "Id", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10" , "RoundData11", "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
+duplicator.RegisterEntityClass("acf_ammo", ACE.MakeAmmo, "Pos", "Angle", "Id", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10" , "RoundData11", "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
 
 
 function ENT:Update( ArgsTable )
@@ -798,7 +798,7 @@ function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 
@@ -880,7 +880,7 @@ function ENT:Think()
 								if not IsValid(self) then return end
 								self.CookoffScale = 0.4
 								self.CookoffExplosionPos = self.CookoffExplosionPos or self:LocalToWorld(self:OBBCenter())
-								ACF_ScaledExplosion( self, true )
+								ACE.ScaledExplosion( self, true )
 								self.CookoffExplosionPos = nil
 							end)
 						end
@@ -895,7 +895,7 @@ function ENT:Think()
 						local isMG = IsMachineGunAmmo( self )
 
 						self:EmitSound( "acf_other/explosions/cookoff/cookOff" .. math.random(1,4) .. ".mp3", 250, math.max(140 - self.BulletData.PropMass * 35,35)  )
-						self.BulletCookSpeed	= self.BulletCookSpeed or ACF_MuzzleVelocity( self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber )
+						self.BulletCookSpeed	= self.BulletCookSpeed or ACE.MuzzleVelocity( self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber )
 
 						self.BulletData.Tracer = 1
 						self.RoundData10 = 1
@@ -954,7 +954,7 @@ function ENT:Think()
 
 							if HEWeight > 0 and RunHE then
 								local MiniWeight = HEWeight * 0.2
-								ACF_HE( self.BulletData.Pos , vector_origin , MiniWeight , MiniWeight , self.Inflictor , self, self, 0.5 )
+								ACE.HE( self.BulletData.Pos , vector_origin , MiniWeight , MiniWeight , self.Inflictor , self, self, 0.5 )
 								local radius = math.Clamp(self.BulletData.RoundVolume ^ 0.4 * 0.8, 0.8, 10)
 								timer.Simple(0.001, function()
 									SpawnMiniHEFlash(self, self.BulletData.Pos, radius)

@@ -54,7 +54,7 @@ do
 
 	end
 
-	function MakeACF_Gearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+	function ACE.MakeGearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 
 		if not Owner:CheckLimit("_acf_misc") then return false end
 
@@ -201,12 +201,12 @@ do
 		Gearbox:SetNWString( "WireName", GearboxData.name )
 		Gearbox:UpdateOverlayText()
 
-		ACF_Activate( Gearbox, 0 )
+		ACE.Activate( Gearbox, 0 )
 
 		return Gearbox
 	end
 	list.Set( "ACFCvars", "acf_gearbox", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "data14", "data15"} )
-	duplicator.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0" )
+	duplicator.RegisterEntityClass("acf_gearbox", ACE.MakeGearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0" )
 
 end
 
@@ -331,7 +331,7 @@ function ENT:Update( ArgsTable )
 	self:SetNWString( "WireName", GearboxData.name )
 	self:UpdateOverlayText()
 
-	ACF_Activate( self, 1 )
+	ACE.Activate( self, 1 )
 
 	return true, "Gearbox updated successfully!"
 end
@@ -424,11 +424,11 @@ end
 function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 
-		if self.Legal and self.Parentable then self.RootParent = ACF_GetPhysicalParent(self) end
+		if self.Legal and self.Parentable then self.RootParent = ACE.GetPhysicalParent(self) end
 	end
 
 	local Time = CurTime()
@@ -521,7 +521,7 @@ function ENT:Calc( InputRPM, InputInertia )
 	end
 
 	if self.Auto and self.Drive == 1 and self.InGear then
-		local Base = ACF_GetPhysicalParent( self )
+		local Base = ACE.GetPhysicalParent( self )
 		local PhysObj = Base:GetPhysicsObject()
 		local vel = PhysObj:GetVelocity():Length()
 		if vel > (self.ShiftPoints[self.Gear] * self.ShiftScale) and not (self.Gear == self.Gears) and not self.Hold then
@@ -789,7 +789,7 @@ function ENT:Link( Target )
 	local OutPosWorld = self:LocalToWorld( OutPos )
 
 	local Rope = nil
-	if self:CPPIGetOwner():GetInfoNum( "ACF_MobilityRopeLinks", 1) == 1 then
+	if self:CPPIGetOwner():GetInfoNum( "ace_mobility_rope_links", 1) == 1 then
 		Rope = ACE.CreateLinkRope( OutPosWorld, self, OutPos, Target, InPos )
 	end
 

@@ -208,171 +208,171 @@ ACE.DustMaterialColor = {
 if SERVER then
 
     --Sbox Limits
-    CreateConVar("sbox_max_acf_gun", 32)                    -- Gun limit
-    CreateConVar("sbox_max_acf_rapidgun", 6)                -- Guns like RACs, MGs, and ACs
-    CreateConVar("sbox_max_acf_largegun", 4)                -- Guns with a caliber above 100mm
-    CreateConVar("sbox_max_acf_smokelauncher", 40)            -- smoke launcher limit
-    CreateConVar("sbox_max_acf_ammo", 100)                    -- ammo limit
-    CreateConVar("sbox_max_acf_misc", 100)                    -- misc ents limit
-    CreateConVar("sbox_max_acf_rack", 24)                    -- Racks limit
+    CreateConVar("sbox_max_ace_gun", 32)                    -- Gun limit
+    CreateConVar("sbox_max_ace_rapidgun", 6)                -- Guns like RACs, MGs, and ACs
+    CreateConVar("sbox_max_ace_largegun", 4)                -- Guns with a caliber above 100mm
+    CreateConVar("sbox_max_ace_smokelauncher", 40)            -- smoke launcher limit
+    CreateConVar("sbox_max_ace_ammo", 100)                    -- ammo limit
+    CreateConVar("sbox_max_ace_misc", 100)                    -- misc ents limit
+    CreateConVar("sbox_max_ace_rack", 24)                    -- Racks limit
     CreateConVar("sbox_max_ace_crewseat", 100)
     CreateConVar("sbox_max_ace_explosive", 20)             -- scalable + prebuilt explosive charge limit
-    CreateConVar("acf_mines_max", 50)                        -- The mine limit
-    CreateConVar("acf_meshvalue", 1)
+    CreateConVar("ace_mines_max", 50)                        -- The mine limit
+    CreateConVar("ace_meshvalue", 1)
 
-    CreateConVar("acf_restrictinfo", 1)                -- 0=any, 1=owned
-    cvars.RemoveChangeCallback("acf_restrictinfo", "ACF_CVarChangeCallback")
-    cvars.AddChangeCallback("acf_restrictinfo", function(_, _, new)
+    CreateConVar("ace_restrictinfo", 1)                -- 0=any, 1=owned
+    cvars.RemoveChangeCallback("ace_restrictinfo", "ACE.CVarChangeCallback")
+    cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
         ACF.RestrictInfo = tobool(new)
-    end, "ACF_CVarChangeCallback")
+    end, "ACE.CVarChangeCallback")
 
     -- Toggles for vehicle legality restrictions
-    CreateConVar( "acf_legality_enginesrequirefuel", 1 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_enginesrequirefuel", 1 , FCVAR_ARCHIVE)
 
-    CreateConVar( "acf_legality_largeenginesneeddriver", 1 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legality_largeenginethreshold", 100 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_largeenginesneeddriver", 1 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_largeenginethreshold", 100 , FCVAR_ARCHIVE)
 
-    CreateConVar( "acf_legality_largegunsneedgunner", 1 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legality_largegunthreshold", 40 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_largegunsneedgunner", 1 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_largegunthreshold", 40 , FCVAR_ARCHIVE)
 
     -- Cvars for legality checking
-    CreateConVar( "acf_legalcheck", 1 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_model", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_solid", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_mass", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_material", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_inertia", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_makesphere", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_visclip", 0 , FCVAR_ARCHIVE)
-    CreateConVar( "acf_legal_ignore_parent", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legalcheck", 1 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_model", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_solid", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_mass", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_material", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_inertia", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_makesphere", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_visclip", 0 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legal_ignore_parent", 0 , FCVAR_ARCHIVE)
 
     -- Prop Protection system
-    CreateConVar( "acf_enable_dp", 0 , FCVAR_ARCHIVE )    -- Enable the inbuilt damage protection system.
+    CreateConVar( "ace_enable_dp", 0 , FCVAR_ARCHIVE )    -- Enable the inbuilt damage protection system.
 
     -- Cvars for recoil/he push
-    CreateConVar("acf_kepush", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_hepush", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_kepush", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_hepush", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_recoilpush", 1, FCVAR_ARCHIVE)
 
     -- New healthmod/armormod/ammomod cvars
-    CreateConVar("acf_healthmod", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_armormod", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_ammomod", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_gunfire", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_healthmod", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_armormod", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_ammomod", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_gunfire", 1, FCVAR_ARCHIVE)
 
     -- Debris
-    CreateConVar("acf_debris_lifetime", 30, FCVAR_ARCHIVE)
-    CreateConVar("acf_debris_children", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_debris_lifetime", 30, FCVAR_ARCHIVE)
+    CreateConVar("ace_debris_children", 1, FCVAR_ARCHIVE)
 
     -- Spalling
-    CreateConVar("acf_spalling", 1, FCVAR_ARCHIVE)
-    CreateConVar("acf_spalling_multipler", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_spalling", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_spalling_multipler", 1, FCVAR_ARCHIVE)
 
     -- Scaled Explosions
-    CreateConVar("acf_explosions_scaled_he_max", 100, FCVAR_ARCHIVE)
-    CreateConVar("acf_explosions_scaled_ents_max", 5, FCVAR_ARCHIVE)
+    CreateConVar("ace_explosions_scaled_he_max", 100, FCVAR_ARCHIVE)
+    CreateConVar("ace_explosions_scaled_ents_max", 5, FCVAR_ARCHIVE)
 
     --Smoke
-    CreateConVar("acf_wind", 600, FCVAR_ARCHIVE)
+    CreateConVar("ace_wind", 600, FCVAR_ARCHIVE)
 
     --Uses non-torqueing recoil if there are problems
-    CreateConVar("acf_legacyrecoil", 0, FCVAR_ARCHIVE)
+    CreateConVar("ace_legacyrecoil", 0, FCVAR_ARCHIVE)
 
-    function ACF_CVarChangeCallback(CVar, _, New)
+    function ACE.CVarChangeCallback(CVar, _, New)
 
-        if CVar == "acf_healthmod" then
+        if CVar == "ace_healthmod" then
             ACF.Threshold = 264.7 / math.max(New, 0.01)
-        elseif CVar == "acf_armormod" then
+        elseif CVar == "ace_armormod" then
             ACF.ArmorMod = 1 * math.max(New, 0)
-        elseif CVar == "acf_ammomod" then
+        elseif CVar == "ace_ammomod" then
             ACF.AmmoMod = 1 * math.max(New, 0.01)
-        elseif CVar == "acf_spalling" then
+        elseif CVar == "ace_spalling" then
             ACF.Spalling = math.floor(math.Clamp(New, 0, 1))
-        elseif CVar == "acf_spalling_multipler" then
+        elseif CVar == "ace_spalling_multipler" then
             ACF.SpallMult = math.Clamp(New, 1, 5)
-        elseif CVar == "acf_gunfire" then
+        elseif CVar == "ace_gunfire" then
             ACF.GunfireEnabled = tobool( New )
-        elseif CVar == "acf_debris_lifetime" then
+        elseif CVar == "ace_debris_lifetime" then
             ACF.DebrisLifeTime = math.max( New,0)
-        elseif CVar == "acf_debris_children" then
+        elseif CVar == "ace_debris_children" then
             ACF.DebrisChance = math.Clamp(New,0,1)
-        elseif CVar == "acf_explosions_scaled_he_max" then
+        elseif CVar == "ace_explosions_scaled_he_max" then
             ACF.ScaledHEMax = math.max(New,50)
-        elseif CVar == "acf_explosions_scaled_ents_max" then
+        elseif CVar == "ace_explosions_scaled_ents_max" then
             ACF.ScaledEntsMax = math.max(New,1)
-        elseif CVar == "acf_legacyrecoil" then
+        elseif CVar == "ace_legacyrecoil" then
             ACF.UseLegacyRecoil = math.floor(math.Clamp(New, 0, 1))
-        elseif CVar == "acf_legality_enginesrequirefuel" then
+        elseif CVar == "ace_legality_enginesrequirefuel" then
             ACF.EnginesRequireFuel = math.ceil(math.Clamp(New, 0, 1))
-        elseif CVar == "acf_legality_largeenginesneeddriver" then
+        elseif CVar == "ace_legality_largeenginesneeddriver" then
             ACF.LargeEnginesRequireDrivers = math.ceil(math.Clamp(New, 0, 1))
-        elseif CVar == "acf_legality_largeenginethreshold" then
+        elseif CVar == "ace_legality_largeenginethreshold" then
             ACF.LargeEngineThreshold = math.ceil(math.Clamp(New, 0, 10000))
-        elseif CVar == "acf_legality_largegunsneedgunner" then
+        elseif CVar == "ace_legality_largegunsneedgunner" then
             ACF.LargeGunsRequireGunners = math.ceil(math.Clamp(New, 0, 1))
-        elseif CVar == "acf_legality_largegunthreshold" then
+        elseif CVar == "ace_legality_largegunthreshold" then
             ACF.LargeGunsThreshold = math.ceil(math.Clamp(New, 0, 10000))
-        elseif CVar == "acf_enable_dp" then
+        elseif CVar == "ace_enable_dp" then
             if ACE.SendDPStatus then
                 ACE.SendDPStatus()
             end
         end
     end
 
-cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_ammomod", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_spalling", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_spalling_multipler", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_debris_lifetime", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_debris_children", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_explosions_scaled_he_max", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_explosions_scaled_ents_max", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legacyrecoil", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legality_enginesrequirefuel", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legality_largeenginesneeddriver", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legality_largeenginethreshold", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legality_largegunsneedgunner", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_legality_largegunthreshold", ACF_CVarChangeCallback)
-cvars.AddChangeCallback("acf_enable_dp", ACF_CVarChangeCallback)
+cvars.AddChangeCallback("ace_healthmod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_armormod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_ammomod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling_multipler", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_gunfire", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_lifetime", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_children", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_he_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_ents_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legacyrecoil", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_enginesrequirefuel", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_enable_dp", ACE.CVarChangeCallback)
 
 -- Apply archived/server convars at startup so values persist across restarts and reconnects.
 local startupSync = {
-    "acf_healthmod",
-    "acf_armormod",
-    "acf_ammomod",
-    "acf_spalling",
-    "acf_spalling_multipler",
-    "acf_gunfire",
-    "acf_debris_lifetime",
-    "acf_debris_children",
-    "acf_explosions_scaled_he_max",
-    "acf_explosions_scaled_ents_max",
-    "acf_legacyrecoil",
-    "acf_legality_enginesrequirefuel",
-    "acf_legality_largeenginesneeddriver",
-    "acf_legality_largeenginethreshold",
-    "acf_legality_largegunsneedgunner",
-    "acf_legality_largegunthreshold",
-    "acf_enable_dp"
+    "ace_healthmod",
+    "ace_armormod",
+    "ace_ammomod",
+    "ace_spalling",
+    "ace_spalling_multipler",
+    "ace_gunfire",
+    "ace_debris_lifetime",
+    "ace_debris_children",
+    "ace_explosions_scaled_he_max",
+    "ace_explosions_scaled_ents_max",
+    "ace_legacyrecoil",
+    "ace_legality_enginesrequirefuel",
+    "ace_legality_largeenginesneeddriver",
+    "ace_legality_largeenginethreshold",
+    "ace_legality_largegunsneedgunner",
+    "ace_legality_largegunthreshold",
+    "ace_enable_dp"
 }
 
 for _, name in ipairs(startupSync) do
     local convar = GetConVar(name)
     if convar then
-        ACF_CVarChangeCallback(name, nil, convar:GetString())
+        ACE.CVarChangeCallback(name, nil, convar:GetString())
     end
 end
 
 elseif CLIENT then
 ---------------------------------- Clientside Convars ----------------------------------
 
-    CreateClientConVar( "acf_enable_lighting", 1, true ) --Should missiles emit light while their motors are burning?  Looks nice but hits framerate. Set to 1 to enable, set to 0 to disable, set to another number to set minimum light-size.
-    CreateClientConVar( "acf_sens_irons", 0.5, true, false, "Reduce mouse sensitivity by this amount when zoomed in with iron sights on ACE SWEPs.", 0.01, 1)
-    CreateClientConVar( "acf_sens_scopes", 0.2, true, false, "Reduce mouse sensitivity by this amount when zoomed in with scopes on ACE SWEPs.", 0.01, 1)
-    CreateClientConVar( "acf_tinnitus", 1, true, false, "Allows the ear tinnitus effect to be applied when an explosive was detonated too close to your position, improving the inmersion during combat.", 0, 1 )
-    CreateClientConVar( "acf_sound_volume", 100, true, false, "Adjusts the volume of explosions and gunshots.", 0, 100 )
+    CreateClientConVar( "ace_enable_lighting", 1, true ) --Should missiles emit light while their motors are burning?  Looks nice but hits framerate. Set to 1 to enable, set to 0 to disable, set to another number to set minimum light-size.
+    CreateClientConVar( "ace_sens_irons", 0.5, true, false, "Reduce mouse sensitivity by this amount when zoomed in with iron sights on ACE SWEPs.", 0.01, 1)
+    CreateClientConVar( "ace_sens_scopes", 0.2, true, false, "Reduce mouse sensitivity by this amount when zoomed in with scopes on ACE SWEPs.", 0.01, 1)
+    CreateClientConVar( "ace_tinnitus", 1, true, false, "Allows the ear tinnitus effect to be applied when an explosive was detonated too close to your position, improving the inmersion during combat.", 0, 1 )
+    CreateClientConVar( "ace_sound_volume", 100, true, false, "Adjusts the volume of explosions and gunshots.", 0, 100 )
 
 end
 
@@ -434,7 +434,7 @@ elseif CLIENT then
     include("acf/client/cl_acfpermission.lua")
     include("acf/client/gui/cl_acfsetpermission.lua")
 
-    CreateClientConVar("ACF_MobilityRopeLinks", "1", true, true)
+    CreateClientConVar("ace_mobility_rope_links", "1", true, true)
 
 end
 
@@ -490,7 +490,7 @@ game.AddDecal("GunShot1", "decals/METAL/shot5")
 -- Add the ACF tool category
 if CLIENT then
 
-    ACF.CustomToolCategory = CreateClientConVar( "acf_tool_category", 0, true, false );
+    ACF.CustomToolCategory = CreateClientConVar( "ace_tool_category", 0, true, false );
 
     if ACF.CustomToolCategory:GetBool() then
 
@@ -524,7 +524,7 @@ if SERVER then
 
     function ACE.SendDPStatus()
 
-        local Cvar = GetConVar("acf_enable_dp"):GetInt()
+        local Cvar = GetConVar("ace_enable_dp"):GetInt()
         local bool = tobool(Cvar)
 
         net.Start("ACE_DPStatus")
@@ -533,7 +533,7 @@ if SERVER then
 
     end
 
-    function ACF_SendNotify( ply, success, msg )
+    function ACE.SendNotify( ply, success, msg )
         net.Start( "ACF_Notify" )
         net.WriteBit( success )
         net.WriteString( msg or "" )
@@ -541,13 +541,13 @@ if SERVER then
     end
 else
 
-    local function ACF_Notify()
+    local function notify()
         local Type = NOTIFY_ERROR
         if tobool( net.ReadBit() ) then Type = NOTIFY_GENERIC end
 
         GAMEMODE:AddNotify( net.ReadString(), Type, 7 )
     end
-    net.Receive( "ACF_Notify", ACF_Notify )
+    net.Receive( "ACF_Notify", notify )
 end
 
 do
@@ -582,7 +582,7 @@ else
     ACF.Wind = Vector()
     timer.Create("ACE_Wind", reset_timer, 0, function()
         local smokeDir = Vector(math.Rand(-1, 1), math.Rand(-1, 1), 0):GetNormalized()
-        ACF.Wind = (math.random() ^ curveFactor) * smokeDir * GetConVar("acf_wind"):GetFloat()
+        ACF.Wind = (math.random() ^ curveFactor) * smokeDir * GetConVar("ace_wind"):GetFloat()
         net.Start("ACE_Wind")
             net.WriteFloat(ACF.Wind.x)
             net.WriteFloat(ACF.Wind.y)

@@ -14,16 +14,16 @@ end
 
 
 
-function ACFM_ModifyRoundDisplayFuncs()
+function ACE.Missile_ModifyRoundDisplayFuncs()
 
 	local roundTypes = ACF.RoundTypes
 
-	if not ACFM_RoundDisplayFuncs then
+	if not ACE.Missile_RoundDisplayFuncs then
 
-		ACFM_RoundDisplayFuncs = {}
+		ACE.Missile_RoundDisplayFuncs = {}
 
 		for k, v in pairs(roundTypes) do
-			ACFM_RoundDisplayFuncs[k] = v.getDisplayData
+			ACE.Missile_RoundDisplayFuncs[k] = v.getDisplayData
 		end
 
 	end
@@ -31,7 +31,7 @@ function ACFM_ModifyRoundDisplayFuncs()
 
 	for k, v in pairs(roundTypes) do
 
-		local oldDisplayData = ACFM_RoundDisplayFuncs[k]
+		local oldDisplayData = ACE.Missile_RoundDisplayFuncs[k]
 
 		if oldDisplayData then
 			v.getDisplayData = function(data)
@@ -47,9 +47,9 @@ function ACFM_ModifyRoundDisplayFuncs()
 				local slugMV2 = data.SlugMV2
 				local PenArea = data.PenArea
 
-				local PenMul = ACF_GetGunValue(data.Id, "penmul") or 1.2
-				local VelMul = ACF_GetGunValue(data.Id, "velmul") or 3
-				local CalMul = ACF_GetGunValue(data.Id, "calmul") or 1
+				local PenMul = ACE.GetGunValue(data.Id, "penmul") or 1.2
+				local VelMul = ACE.GetGunValue(data.Id, "velmul") or 3
+				local CalMul = ACE.GetGunValue(data.Id, "calmul") or 1
 
 				data.MuzzleVel = (MuzzleVel or 0) * VelMul
 				data.SlugMV = (slugMV or 0) * PenMul
@@ -88,16 +88,16 @@ end
 
 
 
-function ACFM_ModifyCrateTextFuncs()
+function ACE.Missile_ModifyCrateTextFuncs()
 
 	local roundTypes = ACF.RoundTypes
 
-	if not ACFM_CrateTextFuncs then
+	if not ACE.Missile_CrateTextFuncs then
 
-		ACFM_CrateTextFuncs = {}
+		ACE.Missile_CrateTextFuncs = {}
 
 		for k, v in pairs(roundTypes) do
-			ACFM_CrateTextFuncs[k] = v.cratetxt
+			ACE.Missile_CrateTextFuncs[k] = v.cratetxt
 		end
 
 	end
@@ -105,7 +105,7 @@ function ACFM_ModifyCrateTextFuncs()
 
 	for k, v in pairs(roundTypes) do
 
-		local oldCratetxt = ACFM_CrateTextFuncs[k]
+		local oldCratetxt = ACE.Missile_CrateTextFuncs[k]
 
 		if oldCratetxt then
 			v.cratetxt = function(data, crate)
@@ -124,7 +124,7 @@ function ACFM_ModifyCrateTextFuncs()
 				local fuse	= IsValid(crate) and crate.RoundData8 or data.Data8
 
 				if guidance then
-					guidance = ACFM_CreateConfigurable(guidance, ACF.Guidance, data, "guidance")
+					guidance = ACE.Missile_CreateConfigurable(guidance, ACF.Guidance, data, "guidance")
 					if guidance and guidance.Name ~= "Dumb" then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = guidance.Name
@@ -135,7 +135,7 @@ function ACFM_ModifyCrateTextFuncs()
 				end
 
 				if fuse then
-					fuse = ACFM_CreateConfigurable(fuse, ACF.Fuse, data, "fuses")
+					fuse = ACE.Missile_CreateConfigurable(fuse, ACF.Fuse, data, "fuses")
 					if fuse then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = fuse.Name
@@ -157,12 +157,12 @@ end
 
 
 
-function ACFM_ModifyRoundBaseGunpowder()
+function ACE.Missile_ModifyRoundBaseGunpowder()
 
-	local oldGunpowder = ACFM_ModifiedRoundBaseGunpowder and oldGunpowder or ACF_RoundBaseGunpowder
+	local oldGunpowder = ACE.Missile_ModifiedRoundBaseGunpowder and oldGunpowder or ACE.RoundBaseGunpowder
 
 
-	ACF_RoundBaseGunpowder = function(PlayerData, Data, ServerData, GUIData)
+	ACE.RoundBaseGunpowder = function(PlayerData, Data, ServerData, GUIData)
 
 		PlayerData, Data, ServerData, GUIData = oldGunpowder(PlayerData, Data, ServerData, GUIData)
 
@@ -173,15 +173,15 @@ function ACFM_ModifyRoundBaseGunpowder()
 	end
 
 
-	ACFM_ModifiedRoundBaseGunpowder = true
+	ACE.Missile_ModifiedRoundBaseGunpowder = true
 
 end
 
 
 
-timer.Simple(1, ACFM_ModifyRoundBaseGunpowder)
-timer.Simple(1, ACFM_ModifyRoundDisplayFuncs)
-timer.Simple(1, ACFM_ModifyCrateTextFuncs)
+timer.Simple(1, ACE.Missile_ModifyRoundBaseGunpowder)
+timer.Simple(1, ACE.Missile_ModifyRoundDisplayFuncs)
+timer.Simple(1, ACE.Missile_ModifyCrateTextFuncs)
 
 
 

@@ -1,7 +1,7 @@
 
 include("shared.lua")
 
-CreateClientConVar("ACF_GearboxInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_gearbox_info_while_seated", 0, true, false)
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
@@ -19,7 +19,7 @@ function ENT:Draw()
 
 end
 
-function ACFGearboxGUICreate( Table )
+function ACE.GearboxGUICreate( Table )
 
 	if not acfmenupanel.Serialize then
 		acfmenupanel.Serialize = function( tbl, factor )
@@ -74,22 +74,22 @@ function ACFGearboxGUICreate( Table )
 	end
 
 	if Table.cvt then
-		ACF_GearsSlider(2, acfmenupanel.GearboxData[Table.id].GearTable[2], Table.id)
-		ACF_GearsSlider(3, acfmenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
-		ACF_GearsSlider(4, acfmenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
-		ACF_GearsSlider(10, acfmenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
+		ACE.GearsSlider(2, acfmenupanel.GearboxData[Table.id].GearTable[2], Table.id)
+		ACE.GearsSlider(3, acfmenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
+		ACE.GearsSlider(4, acfmenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
+		ACE.GearsSlider(10, acfmenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
 		RunConsoleCommand( "acfmenu_data1", 0.01 )
 	else
 		for ID,Value in pairs(acfmenupanel.GearboxData[Table.id].GearTable) do
 			if ID > 0 and not (Table.auto and ID == 8) then
-				ACF_GearsSlider(ID, Value, Table.id)
+				ACE.GearsSlider(ID, Value, Table.id)
 				if Table.auto then
-					ACF_ShiftPoint(ID, acfmenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
+					ACE.ShiftPoint(ID, acfmenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
 				end
 			elseif Table.auto and (ID == -2 or ID == 8) then
-				ACF_GearsSlider(8, Value, Table.id, "Reverse")
+				ACE.GearsSlider(8, Value, Table.id, "Reverse")
 			elseif ID == -1 then
-				ACF_GearsSlider(10, Value, Table.id, "Final Drive")
+				ACE.GearsSlider(10, Value, Table.id, "Final Drive")
 			end
 		end
 	end
@@ -205,7 +205,7 @@ function ACFGearboxGUICreate( Table )
 	maxtorque = Table.maxtq
 end
 
-function ACF_GearsSlider(Gear, Value, ID, Desc, CVT)
+function ACE.GearsSlider(Gear, Value, ID, Desc, CVT)
 
 	if Gear and not acfmenupanel.CData[Gear] then
 
@@ -229,7 +229,7 @@ function ACF_GearsSlider(Gear, Value, ID, Desc, CVT)
 
 end
 
-function ACF_ShiftPoint(Gear, Value, ID, Desc)
+function ACE.ShiftPoint(Gear, Value, ID, Desc)
 	local Index = Gear + 10
 	if Gear and not acfmenupanel.CData[Index] then
 		acfmenupanel.CData[Index] = vgui.Create( "DPanel" )

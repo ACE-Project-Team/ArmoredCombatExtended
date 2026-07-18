@@ -2,7 +2,7 @@
 
 include("shared.lua")
 
-CreateClientConVar("ACF_EngineInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_engine_info_while_seated", 0, true, false)
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
@@ -72,5 +72,3 @@ function ACE.EngineGUI_Update( Table )
 	acfmenupanel.CustomDisplay:PerformLayout()
 
 end
-
-ACE_EngineGUI_Update = ACE.EngineGUI_Update

@@ -293,7 +293,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACF_GetGunValue(self.BulletData, "effectbooster")
+							local effect = self.BoostEffect or ACE.GetGunValue(self.BulletData, "effectbooster")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -343,7 +343,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACF_GetGunValue(self.BulletData, "effect")
+							local effect = self.BoostEffect or ACE.GetGunValue(self.BulletData, "effect")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -612,7 +612,7 @@ function ENT:ConfigureLaunch()
 	self.MissilePosition = self:GetPos()
 
 	local CT = CurTime()
-	ACF_ActiveMissiles[self] = true
+	ACE.ActiveMissiles[self] = true
 	self.Fuse:Configure(self, self.Guidance)
 	self.TimeOfLaunch = CT
 
@@ -622,7 +622,7 @@ function ENT:Detonate()
 	if self.Exploded then return end
 
 	self.Exploded = true
-	ACF_ActiveMissiles[self] = nil
+	ACE.ActiveMissiles[self] = nil
 
 	local HEWeight = self.Bulletdata2.BoomFillerMass or self.Bulletdata2.FillerMass or 0
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
@@ -680,7 +680,7 @@ function ENT:Detonate()
 end
 
 function ENT:OnRemove()
-	ACF_ActiveMissiles[self] = nil
+	ACE.ActiveMissiles[self] = nil
 
 	if self.MotorSound then
 	self:StopSound(self.MotorSound)
@@ -705,8 +705,8 @@ do
 	function ENT:ACF_OnDamage( Ent, Energy, FrArea, _, Inflictor, _, Type )	--This function needs to return HitRes
 
 		local Mul	= (( HEtbl[Type] and 0.1 ) or 1) --HE penetrators better penetrate the armor of missiles
-		local HitRes	= ACF_PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
-		--local Activated = ACF_Check( Ent )
+		local HitRes	= ACE.PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
+		--local Activated = ACE.Check( Ent )
 		--local CanDo = hook.Run("ACF_BulletDamage", Activated, Ent, Energy, FrArea, 0, Inflictor )
 
 		local CanDo = hook.Run("ACF_BulletDamage", _, Ent, _, _, _, Inflictor, _, _ )

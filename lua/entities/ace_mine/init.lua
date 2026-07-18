@@ -110,7 +110,7 @@ do
 		local Radius = ACE.CalculateHERadius( HEWeight )
 		local ExplosionOrigin = self:LocalToWorld(Vector(0,0,5))
 
-		ACF_HE( ExplosionOrigin, Vector(0,0,1), HEWeight, FragMass, self.DamageOwner, self, self) --0.5 is standard antipersonal mine
+		ACE.HE( ExplosionOrigin, Vector(0,0,1), HEWeight, FragMass, self.DamageOwner, self, self) --0.5 is standard antipersonal mine
 
 		local Flash = EffectData()
 			Flash:SetOrigin( ExplosionOrigin )
@@ -141,28 +141,28 @@ end
 do
 
 	-- Initialize the necessary data to cache the mine counter per player.
-	function InitializePlayerMineCounter( ply )
+	function ACE.InitializePlayerMineCounter( ply )
 		ACE.MineOwners = ACE.MineOwners or {}
 		ACE.MineOwners[ply] = {}
 	end
-	hook.Add( "PlayerInitialSpawn", "ACE_InitPlayerMineCounter", InitializePlayerMineCounter )
+	hook.Add( "PlayerInitialSpawn", "ACE_InitPlayerMineCounter", ACE.InitializePlayerMineCounter )
 
 	-- We dont need mines to stay on the map if the owner leaves.
-	function DeleteDisconnectPlayerMines( ply )
+	function ACE.DeleteDisconnectPlayerMines( ply )
 		if not ACE.MineOwners[ply] then return end
 		for _, mine in ipairs(ACE.MineOwners[ply]) do
 			mine:Remove()
 		end
 	end
-	hook.Add( "PlayerDisconnected", "Playerleave", DeleteDisconnectPlayerMines )
+	hook.Add( "PlayerDisconnected", "Playerleave", ACE.DeleteDisconnectPlayerMines )
 
 end
 
 ----------------------------------- Mine Global Spawn function -----------------------------------
 do
 	local function CheckMineLimit( Owner )
-		local limit = #ACE.MineOwners[Owner] < GetConVar("acf_mines_max"):GetInt()
-		--print(#ACE.MineOwners[Owner], GetConVar("acf_mines_max"):GetInt(), limit)
+		local limit = #ACE.MineOwners[Owner] < GetConVar("ace_mines_max"):GetInt()
+		--print(#ACE.MineOwners[Owner], GetConVar("ace_mines_max"):GetInt(), limit)
 		return limit
 	end
 
@@ -241,5 +241,3 @@ do
 		end
 	end
 end
-
-ACE_CreateMine = ACE.CreateMine

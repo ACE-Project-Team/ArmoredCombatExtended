@@ -10,7 +10,7 @@ function EFFECT:Init( data )
 	if not IsValid(Gun) then return end
 
 	if not Gun.Parent then
-		Gun.Parent = ACF_GetPhysicalParent(Gun) or Gun
+		Gun.Parent = ACE.GetPhysicalParent(Gun) or Gun
 	--	print(Gun.Parent)
 	end
 
@@ -43,7 +43,7 @@ function EFFECT:Init( data )
 		end
 	end
 
-	if not IsValidSound( Sound ) then
+	if not ACE.IsValidSound( Sound ) then
 		Sound = ClassData.sound
 	end
 
@@ -75,7 +75,7 @@ function EFFECT:Init( data )
 
 			-- Any ground detection system was ported inside of this. CHECK BELOW.
 			self:Shockwave( MuzzleEffect )
-			ACF_RenderLight(Gun:EntIndex(), Caliber * 75, Color(255, 128, 48), Muzzle.Pos + self.DirVec * (Caliber / 5))
+			ACE.RenderLight(Gun:EntIndex(), Caliber * 75, Color(255, 128, 48), Muzzle.Pos + self.DirVec * (Caliber / 5))
 		end
 
 		local LocPly = LocalPlayer()

@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_acf_vheat_source", 3)
+CreateConVar("sbox_max_ace_vheat_source", 3)
 
 DEFINE_BASECLASS( "base_wire_entity" )
 
@@ -52,7 +52,7 @@ function ENT:ACF_Activate( _ )
 	self.ACF.Type		= "Prop"
 end
 
-function MakeACE_VHeat_Source(Owner, Pos, Angle, Id)
+function ACE.MakeVHeatSource(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_vheat_source") then return false end
 
 	Id = Id or "VHeatSrc"
@@ -84,7 +84,7 @@ function MakeACE_VHeat_Source(Owner, Pos, Angle, Id)
 end
 
 list.Set( "ACFCvars", "ace_vheat_source", {"id"} )
-duplicator.RegisterEntityClass("ace_vheat_source", MakeACE_VHeat_Source, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_vheat_source", ACE.MakeVHeatSource, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )

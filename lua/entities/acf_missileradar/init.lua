@@ -5,7 +5,7 @@ AddCSLuaFile( "shared.lua" )
 include("shared.lua")
 include("radar_types_support.lua")
 
-CreateConVar("sbox_max_acf_missileradar", 6)
+CreateConVar("sbox_max_ace_missileradar", 6)
 
 DEFINE_BASECLASS( "base_wire_entity" )
 
@@ -131,7 +131,7 @@ end
 
 
 
-function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
+function ACE.MakeMissileRadar(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_acf_missileradar") then return false end
 
@@ -176,7 +176,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 
 end
 list.Set( "ACFCvars", "acf_missileradar", {"id"} )
-duplicator.RegisterEntityClass("acf_missileradar", MakeACF_MissileRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("acf_missileradar", ACE.MakeMissileRadar, "Pos", "Angle", "Id" )
 
 function ENT:CreateRadar(ACFName, ConeDegs)
 
@@ -226,7 +226,7 @@ function ENT:Think()
 
 	if ACF.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
 		local shouldBeActive = ACF.GetDefaultActiveInputState(self)

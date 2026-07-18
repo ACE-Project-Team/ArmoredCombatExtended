@@ -10,7 +10,7 @@ include("acf/shared/sh_ace_manufacturing.lua")
 local floor, Clamp = math.floor, math.Clamp
 
 -- returns last parent in chain, which has physics
-function ACF_GetPhysicalParent( obj )
+function ACE.GetPhysicalParent( obj )
 	if not IsValid(obj) then return nil end
 
 	--check for fresh cached parent
@@ -33,7 +33,7 @@ end
 
 --Calculates a position along a catmull-rom spline (as defined on https://www.mvps.org/directx/articles/catmull/)
 --This is used for calculating engine torque curves
-function ACF_CalcCurve(Points, Pos)
+function ACE.CalcCurve(Points, Pos)
 	local Count = #Points
 
 	if Count < 3 then return 0 end
@@ -58,7 +58,7 @@ function ACF_CalcCurve(Points, Pos)
 end
 
 --Calculates the performance characteristics of an engine, given a torque curve, max torque (in nm), idle, and redline rpm
-function ACF_CalcEnginePerformanceData(curve, maxTq, idle, redline)
+function ACE.CalcEnginePerformanceData(curve, maxTq, idle, redline)
 	local peakTq = 0
 	local peakTqRPM
 	local peakPower = 0
@@ -69,7 +69,7 @@ function ACF_CalcEnginePerformanceData(curve, maxTq, idle, redline)
 	for i = 0, res do
 		local rpm = i / res * redline
 		local perc = math.Remap(rpm, idle, redline, 0, 1)
-		local curTq = ACF_CalcCurve(curve, perc)
+		local curTq = ACE.CalcCurve(curve, perc)
 		local power = maxTq * curTq * rpm / 9548.8
 
 		powerTable[i] = power
@@ -174,13 +174,13 @@ function ACE.GetMaterialName( Mat )
 end
 
 -- changes here will be automatically reflected in the armor properties tool
-function ACF_CalcArmor( Area, Ductility, Mass )
+function ACE.CalcArmor( Area, Ductility, Mass )
 
 	return ( Mass * 1000 / Area / 0.78 ) / ( 1 + Ductility ) ^ 0.5 * ACF.ArmorMod
 
 end
 
-function ACF_MuzzleVelocity( Propellant, Mass )
+function ACE.MuzzleVelocity( Propellant, Mass )
 
 	local PEnergy	= ACF.PBase * ((1 + Propellant) ^ ACF.PScale-1)
 	local Speed	= ((PEnergy * 2000 / Mass) ^ ACF.MVScale)
@@ -189,7 +189,7 @@ function ACF_MuzzleVelocity( Propellant, Mass )
 	return Final
 end
 
-function ACF_Kinetic( Speed , Mass, LimitVel )
+function ACE.Kinetic( Speed , Mass, LimitVel )
 
 	LimitVel = LimitVel or 99999
 	Speed = Speed / 39.37
@@ -236,7 +236,7 @@ do
 	}
 
 	-- Global Ratio Setting Function
-	function ACF_CalcMassRatio( obj, pwr )
+	function ACE.CalcMassRatio( obj, pwr )
 		if not IsValid(obj) then return end
 		local Mass		= 0
 		local PhysMass	= 0
@@ -246,16 +246,16 @@ do
 		local PercentMat	= {}
 
 		-- find the physical parent highest up the chain
-		local Parent = ACF_GetPhysicalParent(obj)
+		local Parent = ACE.GetPhysicalParent(obj)
 
 		-- get the shit that is physically attached to the vehicle
-		local PhysEnts = ACF_GetAllPhysicalConstraints( Parent )
+		local PhysEnts = ACE.GetAllPhysicalConstraints( Parent )
 
 		-- add any parented but not constrained props you sneaky bastards
 		local AllEnts = table.Copy( PhysEnts )
 		for _, v in pairs( AllEnts ) do
 
-			table.Merge( AllEnts, ACF_GetAllChildren( v ) )
+			table.Merge( AllEnts, ACE.GetAllChildren( v ) )
 
 		end
 
@@ -341,7 +341,7 @@ do
 end
 
 --Checks if theres new versions for ACE
-function ACF_UpdateChecking( )
+function ACE.UpdateChecking( )
 	http.Fetch("https://raw.githubusercontent.com/ACE-Project-Team/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
 
 		--maybe not the best way to get git but well......
@@ -480,7 +480,7 @@ do
 end
 
 timer.Simple(1, function()
-	ACF_UpdateChecking()
+	ACE.UpdateChecking()
 end )
 
 
@@ -636,7 +636,7 @@ else
 end
 
 --[[ IDK if this will take some usage
-function ACE_Msg( type, txt )
+function ACE.Msg( type, txt )
 
 	if not isstring(type) then
 		ErrorNoHaltWithStack(( "bad argument #1 to 'type' (string expected, got " .. type( type ) .. ")" ))
@@ -887,8 +887,8 @@ function ACE.GetArmorPoints(ent)
 	local primitiveArmorPending = ent.IsPrimitive and (
 		ent.ACE_PrimitiveRestoreSavedArmor or ent.ACE_PrimitiveArmorPending
 	)
-	if ACF_Check and not primitiveArmorPending then
-		ACF_Check(ent)
+	if ACE.Check and not primitiveArmorPending then
+		ACE.Check(ent)
 	end
 
 	local cacheKey = ent:EntIndex()
@@ -1100,16 +1100,16 @@ function ACE.GetRackConfiguredReloadTime(rack, bdata)
 
 	local reload
 	if istable(bdata) then
-		reload = ACF_GetRackValue(bdata, "reloadspeed") or ACF_GetGunValue(bdata.Id, "reloadspeed")
+		reload = ACE.GetRackValue(bdata, "reloadspeed") or ACE.GetGunValue(bdata.Id, "reloadspeed")
 	end
-	if reload == nil then reload = ACF_GetRackValue(rack.Id, "magreload") end
+	if reload == nil then reload = ACE.GetRackValue(rack.Id, "magreload") end
 
 	reload = tonumber(reload) or 1
 	return reload > 0 and reload or 1
 	end
 
 -- Resolve the complete linked gun configuration with the highest final rate x round score.
-local function ACE_ResolveGunPricingCandidate(gun)
+local function resolveGunPricingCandidate(gun)
 	if not ACE.IsEnt(gun) then return end
 
 	local best
@@ -1138,7 +1138,7 @@ end
 	end
 
 -- Resolve the complete rack configuration with the highest final rate x round score.
-local function ACE_ResolveRackPricingCandidate(rack)
+local function resolveRackPricingCandidate(rack)
 	if not ACE.IsEnt(rack) then return end
 
 	local best
@@ -1165,15 +1165,15 @@ local function ACE_ResolveRackPricingCandidate(rack)
 	return best
 end
 
-local function ACE_ResolveWeaponPricingInputs(ent)
+local function resolveWeaponPricingInputs(ent)
 	if not ACE.IsEnt(ent) then return end
 
 	local class = ent:GetClass()
 	if class ~= "acf_gun" and class ~= "acf_rack" then return end
 
 	local candidate = class == "acf_gun"
-		and ACE_ResolveGunPricingCandidate(ent)
-		or ACE_ResolveRackPricingCandidate(ent)
+		and resolveGunPricingCandidate(ent)
+		or resolveRackPricingCandidate(ent)
 	local round = candidate and candidate.Round
 	local rate = candidate and candidate.Rate or 0
 	local threat = round and ACE.Points_Gate(ACE.Points_GatePen(round)) or 0
@@ -1211,7 +1211,7 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 end
 
 function ACE.GetGunFirepowerPointsFor(ent, _)
-	local readout = ACE_ResolveWeaponPricingInputs(ent)
+	local readout = resolveWeaponPricingInputs(ent)
 	return readout and readout.Points or 0
 end
 
@@ -1220,7 +1220,7 @@ function ACE.GetGunFirepowerPoints(ent)
 end
 
 function ACE.GetGunFirepowerReadout(ent, _)
-	return ACE_ResolveWeaponPricingInputs(ent)
+	return resolveWeaponPricingInputs(ent)
 end
 
 function ACE.GetGunFirepowerPricingLine(readout, menuFormat)
@@ -1458,5 +1458,4 @@ function ACE.GetEntPoints(ent)
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
 	return (tonumber(ent.ACEPoints) or 0) * scale
 end
-
 

@@ -9,7 +9,7 @@ function EFFECT:Init( data )
 		local Sound        = Radar:GetNWString( "Sound", "" )
 		local SoundPitch   = Radar:GetNWInt( "SoundPitch", 100 )
 
-		if not IsValidSound( Sound ) then
+		if not ACE.IsValidSound( Sound ) then
 			Sound = ACFM.DefaultRadarSound
 		end
 

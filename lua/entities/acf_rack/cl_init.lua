@@ -4,7 +4,7 @@ include ("shared.lua")
 
 ENT.RenderGroup		= RENDERGROUP_OPAQUE
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local ACF_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
 function ENT:Initialize()
 

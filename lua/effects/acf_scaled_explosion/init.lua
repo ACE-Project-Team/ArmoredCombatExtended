@@ -3,7 +3,7 @@ Initializes the effect. The data is a table of data
 which was passed from the server.
 ---------------------------------------------------------]]
 
-local EffectDebugCvar = CreateClientConVar("acf_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
+local EffectDebugCvar = CreateClientConVar("ace_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
 local function DebugEffect(tag)
 	if EffectDebugCvar:GetBool() then
 		print(("[ACE Effect] %s"):format(tag))
@@ -83,13 +83,13 @@ function EFFECT:Init( data )
 	--Main explosion
 	if self.Radius < 7 then
 		self:ExplosionSmall()
-		ACF_RenderLight( 0, self.Radius * 700, Color(255, 90, 15), self.Origin, 0.2) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 700, Color(255, 90, 15), self.Origin, 0.2) -- idx 0: world
 	elseif self.Radius < 15 then
 		self:ExplosionMedium()
-		ACF_RenderLight( 0, self.Radius * 1600, Color(255, 90, 15), self.Origin, 0.5) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 1600, Color(255, 90, 15), self.Origin, 0.5) -- idx 0: world
 	else
 		self:ExplosionMedium()
-		ACF_RenderLight( 0, self.Radius * 1800, Color(255, 90, 15), self.Origin, 1) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 1800, Color(255, 90, 15), self.Origin, 1) -- idx 0: world
 	end
 
 	ACE.SBlast( self.Origin, self.Radius, self.HitWater, Ground.HitWorld )

@@ -15,7 +15,7 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Inline
 
-ACF_DefineGearbox( "8Gear-L-S", {
+ACE.DefineGearbox( "8Gear-L-S", {
 	name = "8-Speed, Inline, Small",
 	desc = "A small and light 8 speed gearbox.",
 	model = "models/engines/linear_s.mdl",
@@ -38,7 +38,7 @@ ACF_DefineGearbox( "8Gear-L-S", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-L-M", {
+ACE.DefineGearbox( "8Gear-L-M", {
 	name = "8-Speed, Inline, Medium",
 	desc = "A medium duty 8 speed gearbox .. ",
 	model = "models/engines/linear_m.mdl",
@@ -61,7 +61,7 @@ ACF_DefineGearbox( "8Gear-L-M", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-L-L", {
+ACE.DefineGearbox( "8Gear-L-L", {
 	name = "8-Speed, Inline, Large",
 	desc = "Heavy duty 8 speed gearbox, however rather heavy.",
 	model = "models/engines/linear_l.mdl",
@@ -86,7 +86,7 @@ ACF_DefineGearbox( "8Gear-L-L", {
 
 -- Inline Dual Clutch
 
-ACF_DefineGearbox( "8Gear-LD-S", {
+ACE.DefineGearbox( "8Gear-LD-S", {
 	name = "8-Speed, Inline, Small, Dual Clutch",
 	desc = "A small and light 8 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_s.mdl",
@@ -110,7 +110,7 @@ ACF_DefineGearbox( "8Gear-LD-S", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-LD-M", {
+ACE.DefineGearbox( "8Gear-LD-M", {
 	name = "8-Speed, Inline, Medium, Dual Clutch",
 	desc = "A a medium duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_m.mdl",
@@ -134,7 +134,7 @@ ACF_DefineGearbox( "8Gear-LD-M", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-LD-L", {
+ACE.DefineGearbox( "8Gear-LD-L", {
 	name = "8-Speed, Inline, Large, Dual Clutch",
 	desc = "Heavy duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_l.mdl",
@@ -160,7 +160,7 @@ ACF_DefineGearbox( "8Gear-LD-L", {
 
 -- Transaxial
 
-ACF_DefineGearbox( "8Gear-T-S", {
+ACE.DefineGearbox( "8Gear-T-S", {
 	name = "8-Speed, Transaxial, Small",
 	desc = "A small and light 8 speed gearbox .. ",
 	model = "models/engines/transaxial_s.mdl",
@@ -183,7 +183,7 @@ ACF_DefineGearbox( "8Gear-T-S", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-T-M", {
+ACE.DefineGearbox( "8Gear-T-M", {
 	name = "8-Speed, Transaxial, Medium",
 	desc = "A medium duty 8 speed gearbox .. ",
 	model = "models/engines/transaxial_m.mdl",
@@ -206,7 +206,7 @@ ACF_DefineGearbox( "8Gear-T-M", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-T-L", {
+ACE.DefineGearbox( "8Gear-T-L", {
 	name = "8-Speed, Transaxial, Large",
 	desc = "Heavy duty 8 speed gearbox, however rather heavy.",
 	model = "models/engines/transaxial_l.mdl",
@@ -231,7 +231,7 @@ ACF_DefineGearbox( "8Gear-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACF_DefineGearbox( "8Gear-TD-S", {
+ACE.DefineGearbox( "8Gear-TD-S", {
 	name = "8-Speed, Transaxial, Small, Dual Clutch",
 	desc = "A small and light 8 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_s.mdl",
@@ -255,7 +255,7 @@ ACF_DefineGearbox( "8Gear-TD-S", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-TD-M", {
+ACE.DefineGearbox( "8Gear-TD-M", {
 	name = "8-Speed, Transaxial, Medium, Dual Clutch",
 	desc = "A a medium duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_m.mdl",
@@ -279,7 +279,7 @@ ACF_DefineGearbox( "8Gear-TD-M", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-TD-L", {
+ACE.DefineGearbox( "8Gear-TD-L", {
 	name = "8-Speed, Transaxial, Large, Dual Clutch",
 	desc = "Heavy duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_l.mdl",
@@ -305,7 +305,7 @@ ACF_DefineGearbox( "8Gear-TD-L", {
 
 -- Straight-through gearboxes
 
-ACF_DefineGearbox( "8Gear-ST-S", {
+ACE.DefineGearbox( "8Gear-ST-S", {
 	name = "8-Speed, Straight, Small",
 	desc = "A small and light 8 speed straight-through gearbox.",
 	model = "models/engines/t5small.mdl",
@@ -328,7 +328,7 @@ ACF_DefineGearbox( "8Gear-ST-S", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-ST-M", {
+ACE.DefineGearbox( "8Gear-ST-M", {
 	name = "8-Speed, Straight, Medium",
 	desc = "A medium 8 speed straight-through gearbox.",
 	model = "models/engines/t5med.mdl",
@@ -351,7 +351,7 @@ ACF_DefineGearbox( "8Gear-ST-M", {
 	}
 } )
 
-ACF_DefineGearbox( "8Gear-ST-L", {
+ACE.DefineGearbox( "8Gear-ST-L", {
 	name = "8-Speed, Straight, Large",
 	desc = "A large 8 speed straight-through gearbox.",
 	model = "models/engines/t5large.mdl",

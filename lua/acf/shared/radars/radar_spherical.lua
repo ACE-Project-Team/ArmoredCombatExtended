@@ -1,5 +1,5 @@
 
-ACF_DefineRadarClass("OMNI-AM", {
+ACE.DefineRadarClass("OMNI-AM", {
 	name = "Spherical Anti-missile Radar",
 	type = "Anti-missile",
 	desc = ACFTranslation.Radar[5],
@@ -8,7 +8,7 @@ ACF_DefineRadarClass("OMNI-AM", {
 
 
 
-ACF_DefineRadar("SmallOMNI-AM", {
+ACE.DefineRadar("SmallOMNI-AM", {
 	name		= "Small Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACFTranslation.Radar[6],
@@ -20,7 +20,7 @@ ACF_DefineRadar("SmallOMNI-AM", {
 } )
 
 
-ACF_DefineRadar("MediumOMNI-AM", {
+ACE.DefineRadar("MediumOMNI-AM", {
 	name		= "Medium Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACFTranslation.Radar[7],
@@ -32,7 +32,7 @@ ACF_DefineRadar("MediumOMNI-AM", {
 } )
 
 
-ACF_DefineRadar("LargeOMNI-AM", {
+ACE.DefineRadar("LargeOMNI-AM", {
 	name		= "Large Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACFTranslation.Radar[8],

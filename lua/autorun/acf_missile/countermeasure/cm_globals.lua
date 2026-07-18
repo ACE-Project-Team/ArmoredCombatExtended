@@ -1,21 +1,21 @@
 
 
-ACFM_Flares = {}
+ACE.Missile_Flares = {}
 
-ACFM_FlareUID = 0
-
-
+ACE.Missile_FlareUID = 0
 
 
-function ACFM_RegisterFlare(bdata)
 
-	local test = ACFM_Flares[bdata.Index] or {}
+
+function ACE.Missile_RegisterFlare(bdata)
+
+	local test = ACE.Missile_Flares[bdata.Index] or {}
 	if table.IsEmpty( test ) then return false end
 
-	bdata.FlareUID = ACFM_FlareUID
-	ACFM_Flares[bdata.Index] = ACFM_FlareUID
+	bdata.FlareUID = ACE.Missile_FlareUID
+	ACE.Missile_Flares[bdata.Index] = ACE.Missile_FlareUID
 
-	ACFM_FlareUID = ACFM_FlareUID + 1
+	ACE.Missile_FlareUID = ACE.Missile_FlareUID + 1
 
 
 	local flareObj = ACF.Countermeasure.Flare()
@@ -24,14 +24,14 @@ function ACFM_RegisterFlare(bdata)
 	bdata.FlareObj = flareObj
 
 
-	ACFM_OnFlareSpawn(bdata)
+	ACE.Missile_OnFlareSpawn(bdata)
 
 end
 
 
 
 
-function ACFM_UnregisterFlare(bdata)
+function ACE.Missile_UnregisterFlare(bdata)
 
 	local flareObj = bdata.FlareObj
 
@@ -39,14 +39,14 @@ function ACFM_UnregisterFlare(bdata)
 		flareObj.Flare = nil
 	end
 
-	ACFM_Flares[bdata.Index] = nil
+	ACE.Missile_Flares[bdata.Index] = nil
 
 end
 
 
 
 
-function ACFM_OnFlareSpawn(bdata)
+function ACE.Missile_OnFlareSpawn(bdata)
 
 	local flareObj = bdata.FlareObj
 
@@ -61,7 +61,7 @@ end
 
 
 
-function ACFM_GetFlaresInCone(pos, dir, degs)
+function ACE.Missile_GetFlaresInCone(pos, dir, degs)
 
 	local ret = {}
 
@@ -70,7 +70,7 @@ function ACFM_GetFlaresInCone(pos, dir, degs)
 
 		if not flare:IsValid() then continue end
 
-		if ACFM_ConeContainsPos(pos, dir, degs, flare:GetPos()) then
+		if ACE.Missile_ConeContainsPos(pos, dir, degs, flare:GetPos()) then
 			ret[index] = flare
 			index = index + 1
 		end
@@ -84,12 +84,12 @@ end
 
 
 
-function ACFM_GetMissilesInCone(radar, dir, degs)
+function ACE.Missile_GetMissilesInCone(radar, dir, degs)
 
 	local ret = {}
 	local pos = radar:LocalToWorld(radar:OBBCenter())
 
-	for missile in pairs(ACF_ActiveMissiles) do
+	for missile in pairs(ACE.ActiveMissiles) do
 
 		if not IsValid(missile) then continue end
 
@@ -105,9 +105,9 @@ function ACFM_GetMissilesInCone(radar, dir, degs)
 		local traceResult = util.TraceLine(traceData)
 
 		--debugoverlay.Line(pos, traceResult.HitPos, 0.25, Color(255, 0, 0), true) -- radar to missile
-		--debugoverlay.Box(pos, Vector(-5, -5, -5), Vector(5, 5, 5), 0.25, Color(0, 255, 0, 150)) -- radar pos 
+		--debugoverlay.Box(pos, Vector(-5, -5, -5), Vector(5, 5, 5), 0.25, Color(0, 255, 0, 150)) -- radar pos
 
-		if traceResult.Fraction == 1 and ACFM_ConeContainsPos(pos, dir, degs, missilePos) then
+		if traceResult.Fraction == 1 and ACE.Missile_ConeContainsPos(pos, dir, degs, missilePos) then
 			ret[#ret + 1] = missile
 		end
 
@@ -120,14 +120,14 @@ end
 
 
 
-function ACFM_GetMissilesInSphere(radar, radius)
+function ACE.Missile_GetMissilesInSphere(radar, radius)
 
 	local ret = {}
 	local pos = radar:LocalToWorld(radar:OBBCenter())
 
 	local radSqr = radius * radius
 
-	for missile in pairs(ACF_ActiveMissiles) do
+	for missile in pairs(ACE.ActiveMissiles) do
 
 		if not IsValid(missile) then continue end
 
@@ -145,7 +145,7 @@ function ACFM_GetMissilesInSphere(radar, radius)
 			local traceResult = util.TraceLine(traceData)
 
 			--debugoverlay.Line(pos, traceResult.HitPos, 0.25, Color(255, 0, 0), true) -- radar to missile
-			--debugoverlay.Box(pos, Vector(-5, -5, -5), Vector(5, 5, 5), 0.25, Color(0, 255, 0, 150)) -- radar pos 
+			--debugoverlay.Box(pos, Vector(-5, -5, -5), Vector(5, 5, 5), 0.25, Color(0, 255, 0, 150)) -- radar pos
 
 			if traceResult.Fraction == 1 then
 				ret[#ret + 1] = missile
@@ -163,11 +163,11 @@ end
 
 -- Tests flare distraction effect upon all undistracted missiles, but does not perform the effect itself.  Returns a list of potentially affected missiles.
 -- argument is the bullet in the acf bullet table which represents the flare - not the cm_flare object!
-function ACFM_GetAllMissilesWhichCanSee(pos)
+function ACE.Missile_GetAllMissilesWhichCanSee(pos)
 
 	local ret = {}
 
-	for missile, _ in pairs(ACF_ActiveMissiles) do
+	for missile, _ in pairs(ACE.ActiveMissiles) do
 
 		local guidance = missile.Guidance
 
@@ -175,7 +175,7 @@ function ACFM_GetAllMissilesWhichCanSee(pos)
 			continue
 		end
 
-		if ACFM_ConeContainsPos(missile:GetPos(), missile:GetForward(), guidance.ViewCone, pos) then
+		if ACE.Missile_ConeContainsPos(missile:GetPos(), missile:GetForward(), guidance.ViewCone, pos) then
 			ret[#ret + 1] = missile
 		end
 
@@ -188,7 +188,7 @@ end
 
 
 
-function ACFM_ConeContainsPos(conePos, coneDir, degs, pos)
+function ACE.Missile_ConeContainsPos(conePos, coneDir, degs, pos)
 
 	local minDot = math.cos( math.rad(degs) )
 
@@ -203,7 +203,7 @@ end
 
 
 
-function ACFM_ApplyCountermeasures(missile, guidance)
+function ACE.Missile_ApplyCountermeasures(missile, guidance)
 
 	if guidance.Override then return end
 
@@ -213,7 +213,7 @@ function ACFM_ApplyCountermeasures(missile, guidance)
 			continue
 		end
 
-		if ACFM_ApplyCountermeasure(missile, guidance, measure) then
+		if ACE.Missile_ApplyCountermeasure(missile, guidance, measure) then
 			break
 		end
 
@@ -224,7 +224,7 @@ end
 
 
 
-function ACFM_ApplySpawnCountermeasures(missile, guidance)
+function ACE.Missile_ApplySpawnCountermeasures(missile, guidance)
 
 	if guidance.Override then return end
 
@@ -234,7 +234,7 @@ function ACFM_ApplySpawnCountermeasures(missile, guidance)
 			continue
 		end
 
-		if ACFM_ApplyCountermeasure(missile, guidance, measure) then
+		if ACE.Missile_ApplyCountermeasure(missile, guidance, measure) then
 			break
 		end
 
@@ -245,7 +245,7 @@ end
 
 
 
-function ACFM_ApplyCountermeasure(missile, guidance, measure)
+function ACE.Missile_ApplyCountermeasure(missile, guidance, measure)
 
 	if not measure.AppliesTo[guidance.Name] then
 		return false
@@ -259,4 +259,3 @@ function ACFM_ApplyCountermeasure(missile, guidance, measure)
 	end
 
 end
-

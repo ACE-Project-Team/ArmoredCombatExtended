@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local ACF_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
 function ENT:Draw()
 	local lply = LocalPlayer()
@@ -10,7 +10,7 @@ function ENT:Draw()
 	Wire_Render(self)
 end
 
-function ACFSonarGUICreate( Table )
+function ACE.SonarGUICreate( Table )
 	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
 	local RadarMenu = acfmenupanel.CData.DisplayModel

@@ -1,5 +1,5 @@
 --define the class
-ACF_defineGunClass("SAM", {
+ACE.DefineGunClass("SAM", {
 	type           = "missile",  -- i know i know
 	spread         = 1,
 	name           = "[SAM] - Surface-To-Air Missile",
@@ -15,7 +15,7 @@ ACF_defineGunClass("SAM", {
 } )
 
 -- The FIM-92, a lightweight, medium-speed short-range anti-air missile.
-ACF_defineGun("FIM-92 SAM", {								-- id
+ACE.DefineGun("FIM-92 SAM", {								-- id
 	name             = "FIM-92 Missile",
 	desc             = "The FIM-92 Stinger is a lightweight and versatile close-range air defense missile.\nWith a seek cone of 15 degrees and a sharply limited range that makes it useless versus high-flying targets, it is best to aim before firing and choose shots carefully.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 226 m/s",
 	model            = "models/missiles/fim_92.mdl",
@@ -88,7 +88,7 @@ ACF_defineGun("FIM-92 SAM", {								-- id
 } )
 
 -- The Mistral missile is a faster short range missile with greater range than fim92 but less agility
-ACF_defineGun("Mistral SAM", {								-- id
+ACE.DefineGun("Mistral SAM", {								-- id
 	name             = "Mistral Missile",
 	desc             = "A very fast short range missile, faster and less agile than FIM-92. Mostly for Anti-Aircraft and Anti-Missile operations.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 292 m/s",
 	model            = "models/missiles/fim_92_folded.mdl",
@@ -160,7 +160,7 @@ ACF_defineGun("Mistral SAM", {								-- id
 } )
 
 
-ACF_defineGun("TY-90 AAM", {								-- id
+ACE.DefineGun("TY-90 AAM", {								-- id
 	name             = "TY-90 Anti Air Missile",
 	desc             = "A short range missile with exceptional agility. Cruises at a moderate speed compared to the other short range SAMs.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 242 m/s",
 	model            = "models/missiles/ty90.mdl",
@@ -236,7 +236,7 @@ ACF_defineGun("TY-90 AAM", {								-- id
 } )
 
 -- The 9M31 Strela-1, a bulky, slow medium-range anti-air missile.
-ACF_defineGun("Strela-1 SAM", {								-- id
+ACE.DefineGun("Strela-1 SAM", {								-- id
 	name             = "9M31 Strela-1",
 	desc             = "The 9M31 Strela-1 is a medium-range homing SAM with a much bigger payload than the FIM-92. Bulky. It is best suited to ground vehicles or stationary units. Beware the narrow seeker. This helps with flares but makes acquisition harder.\n\nInertial Guidance: No\nECCM: Reduction\nDatalink: No\nTop Speed: 179 m/s",
 	model            = "models/missiles/9m31.mdl",
@@ -307,7 +307,7 @@ ACF_defineGun("Strela-1 SAM", {								-- id
 	ghosttime          = 0.5									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("VT-1 SAM", {										-- id
+ACE.DefineGun("VT-1 SAM", {										-- id
 	name             = "VT-1 Missile",
 	desc             = "Powerful command guided SAM. Great range, good agility, and a powerful warhead. \n\nInertial Guidance: False\nECCM: Reduction\nDatalink: Yes\nTop Speed: 183 m/s",
 	model            = "models/missiles/arend/vt1.mdl",
@@ -380,7 +380,7 @@ ACF_defineGun("VT-1 SAM", {										-- id
 } )
 
 --Tunguska Missile
-ACF_defineGun("9M311 SAM", {										-- id
+ACE.DefineGun("9M311 SAM", {										-- id
 	name             = "9M311 Tunguska",
 	desc             = "The 9M311 missile is SAM meant to minimize traveltime. While lacking the agility and energy retention to hit maneuvering planes, this missile excels against helicopters due to the short traveltime. \n\nInertial Guidance: No\nECCM: Reduction\nDatalink: Yes\nTop Speed: 365 m/s",
 	model            = "models/missiles/arend/9m311_unfolded.mdl",
@@ -457,7 +457,7 @@ ACF_defineGun("9M311 SAM", {										-- id
 
 
 --TOR Missile. This is going to be fun.
-ACF_defineGun("9M331 SAM", {								-- id
+ACE.DefineGun("9M331 SAM", {								-- id
 	name             = "9M331 TOR",
 	desc             = "The TOR Missile. Medium range SAM. This vertically Launched medium range missile is fast reacting making it good for missile intercepts, agile, and deadly. The missile is first kicked out of the tube, spun towards the target, then launched. \n\nInertial Guidance: Yes\nECCM: Reduction\nDatalink: Yes\nTop Speed: 251 m/s",
 	model            = "models/missiles/arend/9m331_unfolded.mdl",
@@ -533,7 +533,7 @@ ACF_defineGun("9M331 SAM", {								-- id
 
 --AIM-54 phoenix. Being faster and bigger than AIM-120, can deliver a single big blast against the target, however, this 300kgs piece of aerial destruction has a serious trouble
 --with its seek cone and is suggested to AIM before launching.
-ACF_defineGun("9M38M1 SAM", {							-- id
+ACE.DefineGun("9M38M1 SAM", {							-- id
 	name             = "9M38M1 BUK",
 	desc             = "Diabolically sized missile meant to bring about the end of aviation. Has a nasty amount of ECCM, an absurd warhead, and enough range to travel across some countries. Takes a bit to get up to speed but is remarkably difficult to defeat. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 273 m/s",
 	model            = "models/macc/9m38m1.mdl",
@@ -607,7 +607,7 @@ ACF_defineGun("9M38M1 SAM", {							-- id
 } )
 
 
-ACF_defineGun("5V55 SAM", {							-- id
+ACE.DefineGun("5V55 SAM", {							-- id
 	name             = "5V55 S-300 SAM",
 	desc             = "Ultimate Long range SAM. Extreme range, Maneuverable, and F A S T. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 273 m/s",
 	model            = "models/missiles/5v55.mdl",
@@ -682,7 +682,7 @@ ACF_defineGun("5V55 SAM", {							-- id
 } )
 
 
-ACF_defineGun("StarstreakHVM", {										-- id
+ACE.DefineGun("StarstreakHVM", {										-- id
 	name             = "Starstreak HVM",
 	desc             = "Lightweight and extremely fast darts. While lacking much of the explosive power of other missiles these missiles make up in absolute speed and moderate kinetic abilities. \n\nInertial Guidance: No\nECCM: No\nDatalink: Yes\nTop Speed: 575 m/s\nMax Kinetic Pen: 409mm W/ APHE",
 	model            = "models/missiles/hvm_folded.mdl",

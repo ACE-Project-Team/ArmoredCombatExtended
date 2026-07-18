@@ -59,7 +59,6 @@ if CLIENT then
 
 end
 
-ACE_CalcVehicleView = ACE.CalcVehicleView
 
 -- Workaround to issue: https://github.com/Facepunch/garrysmod-issues/issues/4142. Brought from ACF3
 local Hull = util.TraceHull

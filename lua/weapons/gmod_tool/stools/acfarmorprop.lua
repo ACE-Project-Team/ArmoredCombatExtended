@@ -36,7 +36,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
+	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
 	local health		= ( Area + Area * Ductility ) / ACF.Threshold
 
 	return mass, armor, health
@@ -84,7 +84,7 @@ function TOOL:LeftClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
+	if not ACE.Check( ent ) then return false end
 
 	local ply		= self:GetOwner()
 
@@ -110,7 +110,7 @@ function TOOL:RightClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
+	if not ACE.Check( ent ) then return false end
 
 	local ply = self:GetOwner()
 
@@ -127,7 +127,7 @@ end
 
 do
 	-- Allow read-only armor inspection even when CanTool would block edits.
-	ACE_OldHookCall = ACE_OldHookCall or hook.Call
+	ACE.OldHookCall = ACE.OldHookCall or hook.Call
 
 	-- Armor tool hook override for safe reloads.
 	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
@@ -135,7 +135,7 @@ do
 			return true
 		end
 
-		return ACE_OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
+		return ACE.OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
 	end
 end
 
@@ -158,7 +158,7 @@ function TOOL:Reload( trace )
 
 	local ply = self:GetOwner()
 	local fullReadout = ply:KeyDown(IN_SPEED)
-	local data		= ACF_CalcMassRatio(ent, true) or {}
+	local data		= ACE.CalcMassRatio(ent, true) or {}
 
 	local total		= tonumber(ent.acftotal) or 0
 	local phystotal	= tonumber(ent.acfphystotal) or 0
@@ -270,12 +270,12 @@ local PointClassToType = {
 	ace_wind_sensor = "Electronics"
 }
 
-local function ACE_FormatPoints(points)
+local function formatPoints(points)
 	return string.format("%.1fpts", math.Round(tonumber(points) or 0, 1))
 end
 
 -- Use compact millions while preserving exact thousands below $1M.
-local function ACE_FormatMoney(dollars)
+local function formatMoney(dollars)
 	dollars = tonumber(dollars) or 0
 	if dollars >= 1e6 then
 		return string.format("$%.1fM", dollars / 1e6)
@@ -291,7 +291,7 @@ local CostLabelByCategory = {
 }
 
 -- Resolve point category for a class.
-local function ACE_GetPointsCategory(ent)
+local function getPointsCategory(ent)
 	if not IsValid(ent) then return nil end
 
 	local cls = ent:GetClass()
@@ -300,7 +300,7 @@ local function ACE_GetPointsCategory(ent)
 	return PointClassToType[cls]
 end
 
-local function ACE_GetPopupPoints(ent)
+local function getPopupPoints(ent)
 	if not IsValid(ent) then return 0, "Entity Cost", "" end
 
 	local cls = ent:GetClass()
@@ -325,7 +325,7 @@ local function ACE_GetPopupPoints(ent)
 			local pricing = ACE.GetGunFirepowerPricingLine and ACE.GetGunFirepowerPricingLine(readout, true)
 			if pricing then lines[#lines + 1] = pricing end
 			if readout.MinimumApplied then
-				lines[#lines + 1] = "Weapon Minimum Applied: " .. ACE_FormatPoints(readout.Points)
+				lines[#lines + 1] = "Weapon Minimum Applied: " .. formatPoints(readout.Points)
 			end
 			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
 			if floorLine then lines[#lines + 1] = floorLine end
@@ -345,7 +345,7 @@ local function ACE_GetPopupPoints(ent)
 			end
 		end
 	else
-		local category = ACE_GetPointsCategory(ent)
+		local category = getPointsCategory(ent)
 		if category == "Crew" and ACE.GetCrewSeatPointCost then
 			componentPoints = ACE.GetCrewSeatPointCost(ent)
 		else
@@ -357,15 +357,15 @@ local function ACE_GetPopupPoints(ent)
 	end
 
 	if armorPoints > 0 and componentPoints > 0 then
-		table.insert(lines, 1, (componentLabel or "Component Cost") .. ": " .. ACE_FormatPoints(componentPoints))
-		table.insert(lines, 1, "Armor Cost: " .. ACE_FormatPoints(armorPoints))
+		table.insert(lines, 1, (componentLabel or "Component Cost") .. ": " .. formatPoints(componentPoints))
+		table.insert(lines, 1, "Armor Cost: " .. formatPoints(armorPoints))
 	end
 
 	-- Manufacturing values are computed on read and are not part of combat points.
 	if ACE.Manu_EntCost then
 		local mfgCost = ACE.Manu_EntCost(ent)
 		if mfgCost and mfgCost > 0 then
-			lines[#lines + 1] = "Mfg. Cost: " .. ACE_FormatMoney(mfgCost)
+			lines[#lines + 1] = "Mfg. Cost: " .. formatMoney(mfgCost)
 		end
 	end
 	local total = armorPoints + componentPoints
@@ -398,11 +398,11 @@ function TOOL:Think()
 	local ent = trace.Entity
 	if ent == self.AimEntity then return end
 
-	if ACF_Check( ent ) then
+	if ACE.Check( ent ) then
 
 		local Mat = ent.ACF.Material or "RHA"
 		local MatData = ACE.GetMaterialData( Mat )
-		local AcePts, pointsLabel, pointBreakdown, componentCost = ACE_GetPopupPoints(ent)
+		local AcePts, pointsLabel, pointBreakdown, componentCost = getPopupPoints(ent)
 
 		if not MatData then return end
 
@@ -443,7 +443,7 @@ if CLIENT then
 	local getPhrase = language.GetPhrase
 
 	-- Use the server pricing weights; unknown materials fall back to live material data.
-	local function ACE_GetArmorPointPreview(armor, health, mat, matData)
+	local function getArmorPointPreview(armor, health, mat, matData)
 		if not ACE.Points_EffectiveMm or not ACE.Points_ArmorProp then return 0 end
 
 		local effKE, effCHEM
@@ -788,11 +788,11 @@ if CLIENT then
 		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
 		mass = math.min( mass, 50000 )
 		-- Preserve non-armor component cost when previewing an armor change.
-		local afterCost = ACE_GetArmorPointPreview(armor, health, mat, MatData) + nonArmorCost
+		local afterCost = getArmorPointPreview(armor, health, mat, MatData) + nonArmorCost
 
 		local pointLine = ""
 		if acepointcost > 0 then
-			pointLine = string.format("%s: %s\n", pointLabel, ACE_FormatPoints(acepointcost))
+			pointLine = string.format("%s: %s\n", pointLabel, formatPoints(acepointcost))
 		end
 		-- Point-free entities may still have manufacturing lines.
 		if pointBreakdown ~= "" then
@@ -808,7 +808,7 @@ if CLIENT then
 			math.Round(armor, 2),
 			math.Round(health, 2),
 			MatData.sname,
-			ACE_FormatPoints(afterCost),
+			formatPoints(afterCost),
 			pointLine
 		)
 
@@ -860,7 +860,6 @@ if CLIENT then
 
 	end
 end
-
 
 
 

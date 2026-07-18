@@ -1,7 +1,7 @@
 
 include("shared.lua")
 
-CreateClientConVar("ACF_FuelInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_fuel_info_while_seated", 0, true, false)
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
@@ -41,7 +41,7 @@ do
 
 		   local Id = X .. ":" .. Y .. ":" .. Z
 
-		   ACFFuelTankGUIUpdate( Table )
+		   ACE.FuelTankGUIUpdate( Table )
 		   acfmenupanel.FuelTankData["Id"] = Id
 		   RunConsoleCommand( "acfmenu_data1", Id )
 
@@ -49,7 +49,7 @@ do
 
 	 end
 
-	function ACFFuelTankGUICreate( Table )
+	function ACE.FuelTankGUICreate( Table )
 		if not acfmenupanel.CustomDisplay then return end
 
 		local MainPanel = acfmenupanel.CustomDisplay
@@ -91,7 +91,7 @@ do
 			FuelTypeComboList.OnSelect = function( _, _, data )
 				RunConsoleCommand( "acfmenu_data2", data )
 				acfmenupanel.FuelTankData.FuelID = data
-				ACFFuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 			end
 
 			FuelTypeComboList:SetText(acfmenupanel.FuelTankData.FuelID)
@@ -163,7 +163,7 @@ do
 			ShapeComboList.OnSelect = function( _, _, data )
 				acfmenupanel.FuelPanelConfig["Crate_Shape"] = data
 				RunConsoleCommand( "acfmenu_data3", data )
-				ACFFuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 			end
 
 			RunConsoleCommand( "acfmenu_data3", acfmenupanel.FuelPanelConfig["Crate_Shape"] )
@@ -234,7 +234,7 @@ do
 				if val then
 					acfmenupanel.FuelTankData.Id =  acfmenupanel.FuelTankData.IdLegacy
 					RunConsoleCommand( "acfmenu_data1", acfmenupanel.FuelTankData.Id )
-					ACFFuelTankGUIUpdate( Table )
+					ACE.FuelTankGUIUpdate( Table )
 				else
 					CreateIdForCrate()
 				end
@@ -253,7 +253,7 @@ do
 				acfmenupanel.FuelTankData.Id = data
 				acfmenupanel.FuelTankData.IdLegacy = data
 				RunConsoleCommand( "acfmenu_data1", data )
-				ACFFuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 
 				if acfmenupanel.CData.DisplayModel then
 
@@ -284,13 +284,13 @@ do
 
 		----------- The rest below -----------
 
-		ACFFuelTankGUIUpdate( Table )
+		ACE.FuelTankGUIUpdate( Table )
 
 		MainPanel:PerformLayout()
 
 	end
 
-	function ACFFuelTankGUIUpdate( _ )
+	function ACE.FuelTankGUIUpdate( _ )
 
 		if not acfmenupanel.CustomDisplay then return end
 

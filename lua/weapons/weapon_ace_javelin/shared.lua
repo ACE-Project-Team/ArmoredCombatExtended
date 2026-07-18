@@ -183,7 +183,7 @@ function SWEP:InitBulletData()
 	--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 	self.BulletData.DragCoef = (self.BulletData.FrArea / 10000) / self.BulletData.ProjMass
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACF_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACF.PenAreaMod
@@ -192,11 +192,11 @@ function SWEP:InitBulletData()
 	self.BulletData.Ricochet = 999
 	self.BulletData.Flight = Vector(0, 0, 0)
 	self.BulletData.BoomPower = self.BulletData.PropMass + self.BulletData.FillerMass
-	--		local SlugEnergy = ACF_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-	local SlugEnergy = ACF_Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
+	--		local SlugEnergy = ACE.Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
+	local SlugEnergy = ACE.Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACF.KEtoRHA
 	--		print("SlugPen: " .. self.BulletData.MaxPen)
-	local SlugEnergy = ACF_Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
+	local SlugEnergy = ACE.Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea2) * ACF.KEtoRHA
 	--		print("SlugPen2: " .. self.BulletData.MaxPen)
 	--For Fake Crate
@@ -446,7 +446,7 @@ function SWEP:PrimaryAttack()
 		BData.Crate = BData.FakeCrate:EntIndex()
 		--self:DeleteOnRemove(BData.FakeCrate)
 
-		local MisEnt = GenerateMissile(MDat,BData.FakeCrate,BData)
+		local MisEnt = ACE.GenerateMissile(MDat,BData.FakeCrate,BData)
 		MisEnt.TargetPos = self.TarEnt:GetPos()
 
 		self:EmitSound(self.Primary.Sound)
@@ -483,8 +483,8 @@ function SWEP:Think()
 
 		if IsValid(lasttarget) then
 
-			local RootCTarget	= ACF_GetPhysicalParent( CurTarget )
-			local RootLastTarget = ACF_GetPhysicalParent( lasttarget ) --looking for the physical entity of the last target.
+			local RootCTarget	= ACE.GetPhysicalParent( CurTarget )
+			local RootLastTarget = ACE.GetPhysicalParent( lasttarget ) --looking for the physical entity of the last target.
 
 			if IsValid(RootCTarget) and IsValid(RootLastTarget) then
 

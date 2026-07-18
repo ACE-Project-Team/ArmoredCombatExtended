@@ -72,7 +72,7 @@ function ENT:Initialize()
 
 end
 
-function MakeACE_IRST(Owner, Pos, Angle, Id)
+function ACE.MakeIRST(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_acf_missileradar") then return false end
 
@@ -115,7 +115,7 @@ function MakeACE_IRST(Owner, Pos, Angle, Id)
 	return false
 end
 list.Set( "ACFCvars", "ace_irst", {"id"} )
-duplicator.RegisterEntityClass("ace_irst", MakeACE_IRST, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_irst", ACE.MakeIRST, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )
@@ -419,7 +419,7 @@ function ENT:Think()
 	-- Legal check system
 	if ACF.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
 		local shouldBeActive = ACF.GetDefaultActiveInputState(self)

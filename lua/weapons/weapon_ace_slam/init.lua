@@ -11,7 +11,7 @@ function SWEP:DoAmmoStatDisplay()
 	local bdata = self.BulletData
 
 	local sendInfo = "SLAM" .. string.format(", %.1fm blast", bdata.BoomFillerMass ^ 0.33 * 8)
-	local Energy = ACF_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
+	local Energy = ACE.Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
 	local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACF.KEtoRHA
 	sendInfo = sendInfo .. string.format(", %.1fmm pen", MaxPen)
 

@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local ACF_ToolInfoWhileSeated = CreateClientConVar("ACF_ToolInfoWhileSeated", 0, true, false)
+local ACF_ToolInfoWhileSeated = CreateClientConVar("ace_tool_info_while_seated", 0, true, false)
 
 function ENT:Initialize()
     self.BaseClass.Initialize(self)
@@ -14,7 +14,7 @@ function ENT:Draw()
     Wire_Render(self)
 end
 
-function ACEVHeatSourceGUICreate(Table)
+function ACE.VHeatSourceGUICreate(Table)
     acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
     acfmenupanel:CPanelText("GunDesc", Table.desc)
     acfmenupanel.CustomDisplay:PerformLayout()

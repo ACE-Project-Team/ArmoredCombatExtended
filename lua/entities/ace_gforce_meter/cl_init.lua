@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local ACF_InfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local ACF_InfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
 function ENT:Draw()
 	local lply = LocalPlayer()

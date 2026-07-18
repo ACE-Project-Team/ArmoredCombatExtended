@@ -49,11 +49,11 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
-	self.SeekCone = ACF_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
+	self.SeekCone = ACE.GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
 	self.SeekCone = self.SeekCone * 3
-	self.GCMultiplier	= ACF_GetGunValue(missile.BulletData, "groundclutterfactor") or this.GCMultiplier
+	self.GCMultiplier	= ACE.GetGunValue(missile.BulletData, "groundclutterfactor") or this.GCMultiplier
 end
 
 --TODO: still a bit messy, refactor this so we can check if a flare exits the viewcone too.

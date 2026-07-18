@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local ACF_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
 function ENT:Initialize()
 	self.BaseClass.Initialize(self)
@@ -19,7 +19,7 @@ function ENT:Draw()
 	end
 end
 
-function ACFTrackRadarGUICreate( Table )
+function ACE.TrackRadarGUICreate( Table )
 	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
 	local RadarMenu = acfmenupanel.CData.DisplayModel
@@ -40,5 +40,4 @@ function ACFTrackRadarGUICreate( Table )
 
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
-
 

@@ -7,7 +7,7 @@ do
 	local MaxValue = math.max
 	local PI = math.pi
 
-	function ACF_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	function ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 		local GunData = ACF.Weapons["Guns"][PlayerData["Id"]]
 		local BulletMax = GunData["round"]
@@ -61,7 +61,7 @@ do
 		return PlayerData, Data, ServerData, GUIData
 	end
 
-	function ACF_RoundShellCapacity( Momentum, FrArea, Caliber, ProjLength )
+	function ACE.RoundShellCapacity( Momentum, FrArea, Caliber, ProjLength )
 
 		local MinWall = 0.2 + ((Momentum / FrArea) ^ 0.7) / 50 --The minimal shell wall thickness required to survive firing at the current energy level
 		local Length = math.max(ProjLength - MinWall, 0)
@@ -71,7 +71,7 @@ do
 		return  Volume, Length, Radius --Returning the cavity volume and the minimum wall thickness
 	end
 
-	function ACF_RicoProbability( Rico, Speed )
+	function ACE.RicoProbability( Rico, Speed )
 
 		local RicoAngle = math.Round(math.min(Rico -  (( (Speed-800) / 39.37 ) / 5),89))
 
@@ -86,12 +86,12 @@ do
 	--Formula from https://mathscinotes.wordpress.com/2013/10/03/parameter-determination-for-pejsa-velocity-model/
 	--not terribly accurate for acf, particularly small caliber (7.62mm off by 120 m/s at 800m), but is good enough for quick indicator
 	--range in m, vel is m/s
-	function ACF_PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
+	function ACE.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
 		local V0 = MuzzleVel * 39.37 * ACF.VelScale -- initial velocity
 		local D0 = DragCoef * V0 ^ 2 / ACF.DragDiv -- initial drag
 		local K1 = (D0 / (V0 ^ (3 / 2))) ^ -1 -- estimated drag coefficient
 		local Vel = math.max(math.sqrt(V0) - ((Range * 39.37) / (2 * K1)), 0) ^ 2
-		local Pen = ACE.CalcPenetration(ACF_Kinetic(Vel, ProjMass, LimitVel), PenArea)
+		local Pen = ACE.CalcPenetration(ACE.Kinetic(Vel, ProjMass, LimitVel), PenArea)
 
 		return Vel * 0.0254, Pen
 	end
@@ -220,7 +220,7 @@ do
 
 		for i = 1, 4 do
 			Range.Distance[i] = (2 ^ (i - 1)) * 100
-			Range.Vel[i], Range.Pen[i] = ACF_PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range.Distance[i])
+			Range.Vel[i], Range.Pen[i] = ACE.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range.Distance[i])
 
 			final_text[i] = "At " .. Range.Distance[i] .. "m pen: " .. Floor(Range.Pen[i]) .. "mm @ " .. Floor(Range.Vel[i]) .. "m\\s\n"
 		end
@@ -279,7 +279,7 @@ do
 				acfmenupanel:AmmoCheckbox("Tracer", "Enable Tracer: " .. (Floor(Data.Tracer * 5) / 10) .. "cm\n", "", Trtip) --Tracer checkbox (Name, Title, Desc)
 				acfmenupanel:AmmoCheckbox("TwoPiece", "Enable Two Piece Storage", "", TPtip )
 
-				local None, Mean, Max = ACF_RicoProbability(Data.Ricochet, Data.MuzzleVel * ACF.VelScale)
+				local None, Mean, Max = ACE.RicoProbability(Data.Ricochet, Data.MuzzleVel * ACF.VelScale)
 				acfmenupanel:CPanelText("RicoDisplay", "0% chance of ricochet at: " .. None .. "°\n50% chance of ricochet at: " .. Mean .. "°\n100% chance of ricochet at: " .. Max .. "°")
 
 				ACE.AmmoRangeStats( Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel )
@@ -304,7 +304,7 @@ do
 	--=====================[ DEPRECATED FUNCTION ]=====================--
 
 	--This function is not used by ACE anymore, but i´ll keep it just for those acf2 custom ammos dont break
-	function ACF_CalcCrateStats()
+	function ACE.CalcCrateStats()
 		return 0, 0, 0
 	end
 

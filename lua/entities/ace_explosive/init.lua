@@ -29,8 +29,6 @@ function ACE.GetExplosiveMasses(volCuIn, fillerFraction)
 	return fillerMass, fragMass, math.max(physMass, 1)
 end
 
-ACE_GetExplosiveMasses = ACE.GetExplosiveMasses
-
 function ENT:Initialize()
 	self.Detonated     = false
 	self.Legal         = true
@@ -51,7 +49,7 @@ function ENT:Initialize()
 	Wire_TriggerOutput(self, "Entity", self)
 end
 
-function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
+function ACE.MakeExplosive(Owner, Pos, Angle, Id, Data1, Data2)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_explosive") then return false end
 
 	local def = ACF.Weapons.Explosives[Id]
@@ -93,7 +91,7 @@ function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
 end
 
 list.Set("ACFCvars", "ace_explosive", {"id", "data1", "data2"})
-duplicator.RegisterEntityClass("ace_explosive", MakeACE_Explosive, "Pos", "Angle", "Id", "SizeId", "Shape")
+duplicator.RegisterEntityClass("ace_explosive", ACE.MakeExplosive, "Pos", "Angle", "Id", "SizeId", "Shape")
 
 function ENT:Detonate()
 	if self.Detonated then return end
@@ -104,7 +102,7 @@ function ENT:Detonate()
 	if not IsValid(owner) then owner = self:CPPIGetOwner() end
 
 	-- Identical to how HE rounds deal their blast.
-	ACF_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
+	ACE.HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
 	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
@@ -151,7 +149,7 @@ end
 -- hard the hit was and how damaged the charge already is, so you don't have to
 -- grind its HP all the way to zero - a couple of solid hits will do it.
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
-	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
+	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 
 	if IsValid(Inflictor) and Inflictor:IsPlayer() then self.DamageOwner = Inflictor end

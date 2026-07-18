@@ -1,5 +1,5 @@
 
-function ACFMissiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
+function ACE.Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
 
 	local slider = vgui.Create( "DNumSlider" )
 		slider.Label:SetText(config.DisplayName or "")
@@ -18,7 +18,7 @@ function ACFMissiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
 		end
 
 		slider.OnValueChanged = function()
-			ACFMissiles_SetCommand(combo, controlGroup, conCmd)
+			ACE.Missiles_SetCommand(combo, controlGroup, conCmd)
 		end
 
 		controlGroup[#controlGroup + 1] = slider
@@ -29,7 +29,7 @@ end
 
 
 
-function ACFMissiles_SetCommand(combo, controlGroup, conCmd)
+function ACE.Missiles_SetCommand(combo, controlGroup, conCmd)
 
 	if not controlGroup then
 		local name = combo:GetValue()
@@ -55,19 +55,19 @@ end
 
 
 
-ACFMissiles_ConfigurationFactory =
+ACE.Missiles_ConfigurationFactory =
 {
 	number =	function(config, controlGroup, combo, conCmd, gundata)
 					--print(config.MinConfig, gundata.armdelay, config.Min, gundata[config.MinConfig], gundata.id)
 					local min = config.MinConfig and gundata.armdelay or config.Min
-					return ACFMissiles_MenuSlider(config, controlGroup, combo, conCmd, min, config.Max)
+					return ACE.Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, config.Max)
 				end
 }
 
 
 
 
-function ACFMissiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, gundata)
+function ACE.Missiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, gundata)
 
 	local panel = existingPanel or vgui.Create("DScrollPanel")
 
@@ -83,7 +83,7 @@ function ACFMissiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, 
 	local height = 0
 
 	for _, config in pairs(tbl.Configurable) do
-		local control = ACFMissiles_ConfigurationFactory[config.Type](config, controlGroup, combo, conCmd, gundata)
+		local control = ACE.Missiles_ConfigurationFactory[config.Type](config, controlGroup, combo, conCmd, gundata)
 		control:SetPos(6, height)
 
 		panel:Add(control)
@@ -102,6 +102,6 @@ function ACFMissiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, 
 end
 
 
-function ACFMissiles_RemoveMenuConfiguration()
-	ErrorNoHalt("TODO: ACFMissiles_RemoveMenuConfiguration")
+function ACE.Missiles_RemoveMenuConfiguration()
+	ErrorNoHalt("TODO: ACE.Missiles_RemoveMenuConfiguration")
 end

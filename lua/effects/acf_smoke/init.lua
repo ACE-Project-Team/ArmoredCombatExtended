@@ -3,7 +3,7 @@ Initializes the effect. The data is a table of data
 which was passed from the server.
 -----------------------------------------------------------]]
 
-local EffectDebugCvar = CreateClientConVar("acf_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
+local EffectDebugCvar = CreateClientConVar("ace_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
 local function DebugEffect(tag)
     if EffectDebugCvar:GetBool() then
         print(("[ACE Effect] %s"):format(tag))

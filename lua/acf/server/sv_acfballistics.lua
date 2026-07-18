@@ -18,6 +18,7 @@ end)
 local BulletPool = {}
 local ActiveBullets = {}
 local ActiveCount = 0
+local CurrentBallisticsFrame = 0
 
 ACE.BallisticsLimits = ACE.BallisticsLimits or {
 	VisibilityRetries = 50,
@@ -133,6 +134,7 @@ function ACF_CreateBullet( BulletData )
 	table.insert(BulletData.Filter, BulletData.Gun)
 
 	BulletData.Index		= ACF.CurBulletIndex
+	BulletData.ActiveFrame = CurrentBallisticsFrame
 	ACF_RegisterBullet(ACF.CurBulletIndex, BulletData)
 	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
 	ACF_CalcBulletFlight( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex] )
@@ -148,6 +150,7 @@ end
 function ACF_ManageBullets()
 
 	ACE.BallisticsStats.Frames = ACE.BallisticsStats.Frames + 1
+	CurrentBallisticsFrame = ACE.BallisticsStats.Frames
 	if ActiveCount == 0 then return end
 	if ActiveCount > ACE.BallisticsStats.ActivePeak then ACE.BallisticsStats.ActivePeak = ActiveCount end
 

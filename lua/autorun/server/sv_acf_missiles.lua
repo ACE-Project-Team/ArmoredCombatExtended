@@ -43,6 +43,7 @@ function ACFM_BulletLaunch(BulletData)
 	table.insert(BulletData.Filter, BulletData.Gun)
 
 	BulletData.Index		= ACF.CurBulletIndex
+	BulletData.ActiveFrame = ACE.BallisticsStats.Frames
 	ACF_RegisterBullet(ACF.CurBulletIndex, BulletData)
 	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
 

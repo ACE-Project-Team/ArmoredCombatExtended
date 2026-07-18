@@ -268,10 +268,10 @@ function Round.propimpact( Index, Bullet, Target, HitNormal, HitPos, Bone )
 			local Energy = ACF_Kinetic( Speed , Bullet.ProjMass, 999999 )
 			local HitRes = ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
-			if HitRes.Overkill > 0 then
+			if HitRes.PostPenetration.Continue then
 				table.insert( Bullet.Filter , Target )					--"Penetrate" (Ingoring the prop for the retry trace)
-				ACF_Spall( HitPos , Bullet.Flight , Bullet.Filter , Energy.Kinetic * HitRes.Loss , Bullet.Caliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
-				Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(Energy.Kinetic * (1 - HitRes.Loss) * ((Bullet.NotFirstPen and ACF.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
+				ACF_Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic , Bullet.Caliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
+				Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(HitRes.PostPenetration.RemainingKinetic * ((Bullet.NotFirstPen and ACF.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
 
 				return "Penetrated"
 			else

@@ -14,6 +14,7 @@ local function withSpallTraceStubs(callback)
 		ACFCheck = _G.ACF_Check,
 		ACFCheckClips = _G.ACF_CheckClips,
 		ACFDamage = _G.ACF_Damage,
+		ACFAPKill = _G.ACF_APKill,
 		ACFHitAngle = _G.ACF_GetHitAngle,
 		GetMaterialData = ACE.GetMaterialData,
 		VectorRand = _G.VectorRand,
@@ -29,6 +30,7 @@ local function withSpallTraceStubs(callback)
 	_G.ACF_Check = original.ACFCheck
 	_G.ACF_CheckClips = original.ACFCheckClips
 	_G.ACF_Damage = original.ACFDamage
+	_G.ACF_APKill = original.ACFAPKill
 	_G.ACF_GetHitAngle = original.ACFHitAngle
 	ACE.GetMaterialData = original.GetMaterialData
 	_G.VectorRand = original.VectorRand
@@ -69,7 +71,7 @@ return {
 			end,
 		},
 		{
-			name = "carries one fragment's remaining energy through a recursive layer",
+			name = "carries one killed fragment's remaining energy through a recursive layer",
 			func = function()
 				local front = makeEntity("front")
 				local rear = makeEntity("rear")
@@ -89,6 +91,7 @@ return {
 					_G.ACF_Check = function() return true end
 					_G.ACF_CheckClips = function() return false end
 					_G.ACF_GetHitAngle = function() return 0 end
+					_G.ACF_APKill = function() return nil end
 					_G.VectorRand = function() return Vector(0, 0, 0) end
 					ACE.GetMaterialData = function() return { spallresist = 1 } end
 					util.Decal = function() end
@@ -111,7 +114,7 @@ return {
 						seen[#seen + 1] = { entity = entity, penetration = energy.Penetration, kinetic = energy.Kinetic }
 
 						if entity == front then
-							return { Overkill = 10, Loss = 0.25, Kill = false }
+							return { Overkill = 10, Loss = 0.25, Kill = true }
 						end
 
 						return { Overkill = 0, Loss = 1, Kill = false }
@@ -128,6 +131,49 @@ return {
 				expect(seen[1].kinetic).to.equal(80)
 				expect(seen[2].penetration).to.equal(75)
 				expect(seen[2].kinetic).to.equal(60)
+			end,
+		},
+		{
+			name = "selected ricochet remains terminal at the ricochet cap",
+			func = function()
+				local original = {
+					Damage = _G.ACF_Damage,
+					HitAngle = _G.ACF_GetHitAngle,
+					KEShove = _G.ACF_KEShove,
+					GetConVar = _G.GetConVar,
+					Rand = math.Rand,
+				}
+
+				local ok, err = pcall(function()
+					_G.ACF_Damage = function() return { Loss = 0.8, Overkill = 1, Kill = false } end
+					_G.ACF_GetHitAngle = function() return 89 end
+					_G.ACF_KEShove = function() end
+					_G.GetConVar = function() return { GetFloat = function() return 1 end } end
+					math.Rand = function() return 0.5 end
+
+					local result = ACF_RoundImpact({
+						Ricochets = 5,
+						Caliber = 1,
+						Ricochet = 55,
+						Flight = Vector(1, 0, 0),
+						PenArea = 1,
+						Type = "APFSDS",
+						ShovePower = 1,
+					}, 800, { Penetration = 100, Kinetic = 80 }, { ACF = { Armour = 100 } }, nil, nil)
+
+					expect(result.RicochetSelected).to.equal(true)
+					expect(result.Ricochet).to.equal(false)
+					expect(result.PostPenetration.RemainingKinetic).to.aboutEqual(16)
+					expect(result.PostPenetration.SpentKinetic).to.aboutEqual(64)
+				end)
+
+				_G.ACF_Damage = original.Damage
+				_G.ACF_GetHitAngle = original.HitAngle
+				_G.ACF_KEShove = original.KEShove
+				_G.GetConVar = original.GetConVar
+				math.Rand = original.Rand
+
+				if not ok then error(err, 0) end
 			end,
 		},
 	},

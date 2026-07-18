@@ -274,9 +274,9 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertGreaterEqual(self.body.count("SpallEnergy.Penetration ="), 2)
 
     def test_resolver_loss_is_applied_once_before_the_single_retry(self):
-        self.assertEqual(self.body.count("local Remaining = math.Clamp"), 1)
-        self.assertEqual(self.body.count("SpallEnergy.Kinetic = SpallEnergy.Kinetic * Remaining"), 1)
-        self.assertEqual(self.body.count("SpallEnergy.Penetration = SpallEnergy.Penetration * Remaining"), 1)
+        self.assertEqual(self.body.count("local PostPenetration = ACF_GetPostPenetration"), 1)
+        self.assertEqual(self.body.count("SpallEnergy.Kinetic = PostPenetration.RemainingKinetic"), 1)
+        self.assertEqual(self.body.count("SpallEnergy.Penetration = PostPenetration.RemainingPenetration"), 1)
         self.assertEqual(self.body.count("-- Retry"), 1)
 
     def test_kill_path_does_not_spawn_a_second_retry(self):
@@ -285,6 +285,14 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIsNotNone(kill_block)
         self.assertNotIn("ACF_SpallTrace", kill_block.group("body"))
         self.assertIn("Debris = ACF_APKill", kill_block.group("body"))
+
+    def test_killed_plate_can_continue_when_residual_energy_remains(self):
+        self.assertIn("local PostPenetration = ACF_GetPostPenetration", self.body)
+        self.assertIn("PostPenetration.Continue", self.body)
+
+    def test_killed_plate_still_stops_when_resolver_consumes_all_energy(self):
+        continuation = re.search(r"if PostPenetration\.Continue then", self.body)
+        self.assertIsNotNone(continuation)
 
     def test_rubber_uses_default_spall_resolution_with_material_effectiveness(self):
         self.assertIn("Material.spallresist = 0.15", self.rubber_source)
@@ -302,6 +310,80 @@ class SpallSourceContractTests(unittest.TestCase):
         callers = re.findall(r"ACF_SpallTrace\(HitVec, Index", self.source)
 
         self.assertGreaterEqual(len(callers), 2)
+
+    def test_post_penetration_contract_is_shared_by_round_impact(self):
+        self.assertIn("function ACF_GetPostPenetration( HitRes, Energy )", self.source)
+        self.assertIn("HitRes.PostPenetration = ACF_GetPostPenetration( HitRes, Energy )", self.source)
+
+    def test_ricochet_is_finalized_before_killing_the_target(self):
+        ricochet = self.source.index("HitRes.Ricochet = true")
+        kill = self.source.index("local Debris = ACF_APKill", ricochet)
+        self.assertLess(ricochet, kill)
+
+    def test_ricochet_keeps_incoming_energy_for_the_shared_contract(self):
+        ricochet = re.search(
+            r"if ricoProb < math\.Rand\(0,1\).*?\n\tend\n\n\t-- Record the selected outcome",
+            self.source,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(ricochet)
+        self.assertNotIn("Energy.Kinetic =", ricochet.group(0))
+        self.assertIn("HitRes.Loss\t= 1 - Ricochet", ricochet.group(0))
+
+    def test_selected_ricochet_is_not_reclassified_by_target_validity_or_cap(self):
+        selected = re.search(
+            r"-- Record the selected outcome.*?if Ricochet > 0 and Bullet\.Ricochets < 5",
+            self.source,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(selected)
+        self.assertIn("HitRes.RicochetSelected = true", selected.group(0))
+
+    def test_killing_ricochet_uses_shared_remaining_kinetic(self):
+        kill = re.search(
+            r"if HitRes\.Kill and IsValid\(Target\) then\s+local KillPower = HitRes\.RicochetSelected and HitRes\.PostPenetration\.RemainingKinetic or Energy\.Kinetic\s+local Debris = ACF_APKill",
+            self.source,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(kill)
+
+    def test_heat_spall_uses_shared_spent_energy_with_its_existing_multiplier(self):
+        heat = (SOURCE.parents[1] / "shared" / "rounds" / "roundheat.lua").read_text(encoding="utf-8")
+        self.assertIn("HitRes.PostPenetration.IncomingKinetic * 0.75", heat)
+
+    def test_round_handlers_use_the_shared_post_penetration_decision(self):
+        rounds = list((SOURCE.parents[1] / "shared" / "rounds").glob("round*.lua"))
+        handlers = []
+        for path in rounds:
+            source = path.read_text(encoding="utf-8")
+            if "ACF_RoundImpact" in source and "if HitRes.PostPenetration.Continue then" in source:
+                handlers.append(path.name)
+
+        expected = {
+            "roundap.lua", "roundapds.lua", "roundapfsds.lua", "roundaphe.lua",
+            "roundfl.lua", "roundglgm.lua", "roundheat.lua", "roundheatfs.lua",
+            "roundhvap.lua", "roundtheat.lua", "roundtheatfs.lua",
+        }
+        self.assertEqual(set(handlers), expected)
+
+
+class TheatDamageContractTests(unittest.TestCase):
+    SOURCE = (
+        Path(__file__).resolve().parents[2]
+        / "lua"
+        / "acf"
+        / "server"
+        / "sv_acfdamage.lua"
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.source = cls.SOURCE.read_text(encoding="utf-8")
+
+    def test_tandem_impact_normal_has_a_safe_fallback(self):
+        self.assertIn("function ACF_GetHitAngle( HitNormal , HitVector )", self.source)
+        self.assertIn("HitNormal:LengthSqr() < 0.0001", self.source)
+        self.assertIn("return 0", self.source)
 
 
 if __name__ == "__main__":

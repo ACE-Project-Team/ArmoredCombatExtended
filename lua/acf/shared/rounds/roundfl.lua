@@ -193,11 +193,11 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 		local Energy	= ACF_Kinetic( Speed , Bullet["ProjMass"], Bullet["LimitVel"] )
 		local HitRes	= ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
-		if HitRes.Overkill > 0 then
+		if HitRes.PostPenetration.Continue then
 
 			table.insert( Bullet["Filter"] , Target )				--"Penetrate" (Ingoring the prop for the retry trace)
 
-			Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1-HitRes.Loss) * 2000 / Bullet["ProjMass"]) ^ 0.5 * 39.37
+			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * 2000 / Bullet["ProjMass"]) ^ 0.5 * 39.37
 
 			return "Penetrated"
 		elseif HitRes.Ricochet then

@@ -396,7 +396,8 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_scaled_explosion_iterates_a_snapshot_before_live_registry_removal(self):
         self.assertIn("for _, Found in ipairs(ACE.Explosives) do", self.source)
         self.assertIn("ACE.RemoveExplosive(Found)", self.source)
-        self.assertIn("local CandidateLimit = math.max(RemainingCandidates, PendingCount)", self.source)
+        self.assertIn("ACF_InsertNearestDamageCandidate(PendingExplosives", self.source)
+        self.assertIn("ACF_InsertNearestDamageCandidate(NewExplosives", self.source)
         self.assertNotIn("CExplosives[#CExplosives + 1] = Found", self.source)
         self.assertNotIn("table.remove( CExplosives,i )", self.source)
 

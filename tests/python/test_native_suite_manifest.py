@@ -18,17 +18,32 @@ class NativeSuiteManifestTests(unittest.TestCase):
 
     def test_native_suite_contains_multiple_groups(self):
         suites = {path.name for path in NATIVE_ROOT.glob("*.lua")}
+<<<<<<< HEAD
         required = {
             "000_discovery_canary.lua",
             "armor_spall_corpus.lua",
             "ballistics_scheduler.lua",
+            "dupe_spawn.lua",
             "entity_registration.lua",
             "general_use_contracts.lua",
             "invalidation_hooks.lua",
+            "points_model.lua",
             "registries.lua",
             "spall_rubber.lua",
         }
         self.assertTrue(required <= suites)
+=======
+        self.assertEqual(
+            {
+                "000_discovery_canary.lua",
+                "dupe_spawn.lua",
+                "entity_registration.lua",
+                "points_model.lua",
+                "registries.lua",
+            },
+            suites,
+        )
+>>>>>>> 434ce4ea (Test ACE point model and dupe spawning)
 
     def test_native_job_has_an_external_discovery_guard(self):
         guard = GUARD.read_text(encoding="utf-8")

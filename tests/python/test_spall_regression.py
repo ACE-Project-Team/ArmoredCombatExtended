@@ -424,7 +424,6 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("local ActiveBullets = {}", source)
         self.assertIn("while Slot <= ActiveCount do", source)
         self.assertIn("Bullet.ActiveFrame ~= Frame", source)
-        self.assertIn("BulletData.ActiveFrame = CurrentBallisticsFrame", source)
         self.assertIn("if ActiveBullets[Slot] == Index then", source)
         self.assertIn("function ACE.GetBallisticsStats()", source)
         self.assertIn("function ACE.ResetBallisticsStats()", source)

@@ -335,6 +335,7 @@ end, { conB, removalChild }, { Armor = true, Ammo = true, Firepower = true, Read
 
 -- Creation, add/remove, split, merge, and final removal hook ordering.
 local created = { ents = {}, totalMass = 0 }
+knownContraptions[#knownContraptions + 1] = created
 assertEvent("contraption-created-initialization", function()
 	return hookHandlers["cfw.contraption.created"].ACE_InitPoints(created)
 end, { created }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-created")
@@ -343,7 +344,6 @@ assert(ACE._ACEWrappedDefuse, "CFW Defuse wrapper was not installed after CFW be
 CFW.Classes.Contraption.Defuse(created)
 assert(created._defuseCalled and not created._ACEPointsDefusing,
 	"CFW Defuse wrapper did not preserve and clear lifecycle state")
-knownContraptions[#knownContraptions + 1] = created
 
 local added = newEntity(created, "prop_physics")
 assertEvent("entity-added", function()

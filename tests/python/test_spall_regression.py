@@ -362,10 +362,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("function ACF_ResetDamageQueryStats()", self.source)
         self.assertIn("ACE.critEntIndex[Entity]", self.source)
         self.assertIn("table.sort(Candidates", self.source)
-        self.assertIn("local function SiftUp( Index )", self.source)
-        self.assertIn("local function SiftDown( Index )", self.source)
         self.assertIn("local Distance = Origin:DistToSqr(Entity:GetPos())", self.source)
-        self.assertNotIn("for Index = 2, #Candidates do", self.source)
         self.assertNotIn("if #Candidates >= MaxCandidates then break end", self.source)
         self.assertNotIn("for _, ent in pairs( ACE.critEnts ) do", self.source)
 

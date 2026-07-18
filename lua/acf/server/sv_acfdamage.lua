@@ -51,33 +51,6 @@ function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )
 	local Seen = {}
 	local MaxCandidates = Limit or ACE.DamageQueryLimits.HECandidates
 	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
-	if MaxCandidates <= 0 then return Candidates end
-
-	local function IsWorse( Left, Right )
-		return Left.Distance > Right.Distance or (Left.Distance == Right.Distance and Left.Entity:EntIndex() > Right.Entity:EntIndex())
-	end
-
-	local function SiftUp( Index )
-		while Index > 1 do
-			local Parent = math.floor(Index / 2)
-			if not IsWorse(Candidates[Index], Candidates[Parent]) then break end
-			Candidates[Index], Candidates[Parent] = Candidates[Parent], Candidates[Index]
-			Index = Parent
-		end
-	end
-
-	local function SiftDown( Index )
-		while true do
-			local Child = Index * 2
-			if Child > #Candidates then return end
-			if Child + 1 <= #Candidates and IsWorse(Candidates[Child + 1], Candidates[Child]) then
-				Child = Child + 1
-			end
-			if not IsWorse(Candidates[Child], Candidates[Index]) then return end
-			Candidates[Index], Candidates[Child] = Candidates[Child], Candidates[Index]
-			Index = Child
-		end
-	end
 
 	for _, Entity in ipairs( ents.FindInSphere( Origin, Radius ) ) do
 		if IsValid(Entity) and not Seen[Entity] and (not Predicate or Predicate(Entity)) then
@@ -87,10 +60,20 @@ function ACF_GetDamageCandidates( Origin, Radius, Predicate, Limit )
 
 			if #Candidates < MaxCandidates then
 				Candidates[#Candidates + 1] = { Entity = Entity, Distance = Distance }
-				SiftUp(#Candidates)
-			elseif Distance < Candidates[1].Distance or (Distance == Candidates[1].Distance and Entity:EntIndex() < Candidates[1].Entity:EntIndex()) then
-				Candidates[1] = { Entity = Entity, Distance = Distance }
-				SiftDown(1)
+			else
+				local Worst = 1
+				for Index = 2, #Candidates do
+					local Current = Candidates[Index]
+					local WorstCandidate = Candidates[Worst]
+					if Current.Distance > WorstCandidate.Distance or (Current.Distance == WorstCandidate.Distance and Current.Entity:EntIndex() > WorstCandidate.Entity:EntIndex()) then
+						Worst = Index
+					end
+				end
+
+				local WorstCandidate = Candidates[Worst]
+				if Distance < WorstCandidate.Distance or (Distance == WorstCandidate.Distance and Entity:EntIndex() < WorstCandidate.Entity:EntIndex()) then
+					Candidates[Worst] = { Entity = Entity, Distance = Distance }
+				end
 			end
 		end
 	end

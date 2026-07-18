@@ -615,7 +615,7 @@ local legacyACEFunctions = {
     "HeatFromRadar", "InDist", "InfraredHeatFromProp", "InitializeCrewseat", "IsAmmoMissileType", "IsEnt", "IsGLATGMAmmoType", "IsMissileEntity",
     "IsStandingPose", "IsValidCrewseatModel", "IsWireEntity", "LOSMultiTrace", "MakePrebuiltExplosive", "Manu_ArmorCost", "Manu_ContraptionCost", "Manu_CrewCost",
     "Manu_ElectronicsCost", "Manu_EngineCost", "Manu_EntCost", "Manu_GunCost", "Manu_RackCost", "Manu_RefillCost", "Manu_RoundCost", "MarkArmorDirty",
-    "MarkContraptionPointsDirty", "NetworkMPEffects", "NetworkSPEffects", "NotifyContraptionPointsInvalidated", "NotifyCrateWeapons", "PerformHitResolution", "PointsInputChanged",
+    "MarkContraptionPointsDirty", "NetworkMPEffects", "NetworkSPEffects", "NotifyContraptionPointsInvalidated", "NotifyPointsInvalidated", "NotifyCrateWeapons", "PerformHitResolution", "PointsInputChanged",
     "Points_ArmorProp", "Points_BaseRoundCost", "Points_ChargeCost", "Points_ChargeEntCost", "Points_CrewCost", "Points_EffectiveMm", "Points_EngineCost", "Points_Gate",
     "Points_GatePen", "Points_GuidanceMul", "Points_GunCost", "Points_GunSustainedRps", "Points_IntrinsicValueMul", "Points_IsBetterCandidate", "Points_LethalityPen", "Points_MaterialEff",
     "Points_PostPenMult", "Points_PostPenParts", "Points_PropArmor", "Points_RackCost", "Points_RackCostFromRate", "Points_RackRate", "Points_RateFloor", "Points_RoundFromBullet",

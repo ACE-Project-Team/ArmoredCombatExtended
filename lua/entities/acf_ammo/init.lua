@@ -437,10 +437,16 @@ function ENT:Update( ArgsTable )
 	-- and pos and angle of the tool trace inserted at the start
 
 	local msg = "Ammo crate updated successfully!"
+	local pointSources = { self }
+	for _, Gun in pairs(self.Master or {}) do
+		if IsValid(Gun) then pointSources[#pointSources + 1] = Gun end
+	end
 
 	if ArgsTable[6] == "Refill" then -- Argtable[6] is the round type. If it's refill it shouldn't be loaded into guns, so we refuse to change to it
 		return false, "Refill ammo type is only avaliable for new crates!"
 	end
+
+	self._ACEPointsSuppress = true
 
 	if ArgsTable[5] ~= self.RoundId then -- Argtable[5] is the weapon ID the new ammo loads into
 		for _, Gun in pairs( self.Master ) do
@@ -459,6 +465,7 @@ function ENT:Update( ArgsTable )
 			end
 		end
 	end
+	self._ACEPointsSuppress = nil
 
 	local AmmoPercent = self.Ammo / math.max(self.Capacity,1)
 
@@ -469,14 +476,7 @@ function ENT:Update( ArgsTable )
 	self.LastMass = 1 -- force update of mass
 	self:UpdateMass()
 
-	if ACE.PointsInputChanged then
-		ACE.PointsInputChanged( self, "ammo-updated" )
-		-- Linked guns may sit in a different contraption; their firepower prices
-		-- this crate's round, so their side must go stale-proof too.
-		for _, Gun in pairs( self.Master or {} ) do
-			if IsValid( Gun ) then ACE.PointsInputChanged( Gun, "linked-ammo-updated" ) end
-		end
-	end
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-updated") end
 
 	return true, msg
 
@@ -1065,7 +1065,11 @@ end
 function ENT:OnRemove()
 
 	-- Preserve linked weapons before CFW's removal hook can receive an invalid crate.
-	if ACE.NotifyCrateWeapons then ACE.NotifyCrateWeapons(self, "ammo-removed") end
+	local pointSources = { self }
+	for _, Gun in pairs(self.Master or {}) do
+		if IsValid(Gun) then pointSources[#pointSources + 1] = Gun end
+	end
+	self._ACEPointsSuppress = true
 
 	for Key in pairs(self.Master) do
 		if self.Master[Key] and self.Master[Key]:IsValid() then
@@ -1073,6 +1077,8 @@ function ENT:OnRemove()
 			self.Ammo = 0
 		end
 	end
+	self._ACEPointsSuppress = nil
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
 	for k,v in pairs(ACF.AmmoCrates) do
 		if v == self then
 			table.remove(ACF.AmmoCrates,k)

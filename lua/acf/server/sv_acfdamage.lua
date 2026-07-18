@@ -702,7 +702,12 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 	local Entity_Crit_Hit_Factor = 1.01
 
-	local SpallRes = util.TraceLine(ACE.Spall[Index])
+	local SpallTrace = ACE.Spall[Index]
+	local SpallDirection = HitVec:GetNormalized()
+	if SpallTrace and SpallTrace.start and SpallTrace.endpos then
+		SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()
+	end
+	local SpallRes = util.TraceLine(SpallTrace)
 
 	-- Check if spalling hit something
 	if SpallRes.Hit and ACF_Check( SpallRes.Entity ) then
@@ -718,19 +723,19 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 				ACE.Spall[Index] = {}
 				ACE.Spall[Index].start  = SpallRes.HitPos
-				ACE.Spall[Index].endpos = SpallRes.HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 				ACE.Spall[Index].filter = Temp_Filter
 				ACE.Spall[Index].mins	= Vector(0,0,0)
 				ACE.Spall[Index].maxs	= Vector(0,0,0)
 
-				ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+				ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 				return
 			end
 
 		end
 
 		-- Get the spalling hitAngle
-		local Angle		= ACF_GetHitAngle( SpallRes.HitNormal , HitVec )
+		local Angle		= ACF_GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
 
 		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
@@ -766,7 +771,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- continuation filter below so this impact cannot spawn a second retry.
 		local Debris
 		if HitRes.Kill then
-			Debris = ACF_APKill( SpallRes.Entity , HitVec:GetNormalized() , SpallEnergy.Kinetic )
+			Debris = ACF_APKill( SpallRes.Entity , SpallDirection , SpallEnergy.Kinetic )
 		end
 
 		-- Applies a decal
@@ -787,7 +792,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			ACE.Spall[Index] = {}
 			ACE.Spall[Index].start  = SpallRes.HitPos
-			ACE.Spall[Index].endpos = SpallRes.HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 			ACE.Spall[Index].filter = Temp_Filter
 			ACE.Spall[Index].mins	= Vector(0,0,0)
 			ACE.Spall[Index].maxs	= Vector(0,0,0)
@@ -796,7 +801,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
-			ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+			ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 			return
 		else
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )

@@ -255,15 +255,19 @@ class SpallSourceContractTests(unittest.TestCase):
         )
 
         self.assertEqual(len(end_positions), 2)
-        self.assertTrue(all("HitVec:GetNormalized()" in expression for expression in end_positions))
+        self.assertTrue(all("SpallDirection" in expression for expression in end_positions))
         self.assertTrue(all("SpallRes.HitNormal" not in expression for expression in end_positions))
 
     def test_all_recursive_retries_preserve_incoming_direction(self):
         recursive_calls = re.findall(r"ACF_SpallTrace\((.*?)\)", self.body)
 
         self.assertEqual(len(recursive_calls), 2)
-        self.assertTrue(all(re.match(r"\s*HitVec\s*,", call) for call in recursive_calls))
+        self.assertTrue(all(re.match(r"\s*SpallDirection\s*,", call) for call in recursive_calls))
         self.assertNotIn("ACF_SpallTrace( SpallRes.HitPos", self.body)
+
+    def test_fragment_direction_comes_from_current_trace_with_legacy_fallback(self):
+        self.assertIn("local SpallDirection = HitVec:GetNormalized()", self.body)
+        self.assertIn("SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()", self.body)
 
     def test_trace_has_no_shared_penetration_assignment_before_copy(self):
         self.assertEqual(self.body.count("SpallEnergy = table.Copy(SpallEnergy)"), 1)

@@ -14,7 +14,6 @@ ACE.contraptionEnts   = {} --table which will have all registered ents
 
 
 ACE.critEnts          = {} --List of all critical entities in ACE. Used for HE penetration calculations.
-ACE.critEntIndex      = {} --Spatial-query membership for critical entities.
 
 ACE.contraptionEnts   = {} --table which will have all registered ents
 ACE.radarEntities     = {} --for tracking radar usage
@@ -114,7 +113,6 @@ hook.Add("OnEntityCreated", "ACE_EntRegister", function(Ent)
 		-- check if ent class is in whitelist
 		if CritEnts[Eclass] then
 			table.insert(ACE.critEnts, Ent)
-			ACE.critEntIndex[Ent] = true
 			--print("Adding - Count: " .. #ACE.critEnts)
 		end
 
@@ -168,7 +166,6 @@ hook.Add("EntityRemoved", "ACE_EntRemoval", function(Ent)
 
 	-- check if ent class is in whitelist
 	if CritEnts[Eclass] then
-		ACE.critEntIndex[Ent] = nil
 
 		for i, critent in ipairs(ACE.critEnts) do
 			if IsValid(critent) and critent == Ent then

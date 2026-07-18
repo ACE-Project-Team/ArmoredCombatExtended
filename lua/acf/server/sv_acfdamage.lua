@@ -762,23 +762,28 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- Applies the damage to the impacted entity
 		local HitRes = ACF_Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall") --Angle replaced with 0 for inconsistent spall
 
-		-- If it's able to destroy it, kill it and filter it
+		-- If it's able to destroy it, kill it. Any debris is added to the single
+		-- continuation filter below so this impact cannot spawn a second retry.
+		local Debris
 		if HitRes.Kill then
-			local Debris = ACF_APKill( SpallRes.Entity , HitVec:GetNormalized() , SpallEnergy.Kinetic )
-			if IsValid(Debris) then
-				table.insert( ACE.Spall[Index].filter , Debris )
-				ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
-			end
+			Debris = ACF_APKill( SpallRes.Entity , HitVec:GetNormalized() , SpallEnergy.Kinetic )
 		end
 
 		-- Applies a decal
 		util.Decal("GunShot1",SpallRes.StartPos, SpallRes.HitPos, ACE.Spall[Index].filter )
 
-		-- The entity was penetrated --Disabled since penetration values are not real
-		if HitRes.Overkill > 0 then
+		-- Continue once with the standard armor resolver's remaining-energy fraction.
+		-- This is fragment-local because SpallEnergy was copied at function entry.
+		local Remaining = math.Clamp(1 - (HitRes.Loss or 1), 0, 1)
+		if HitRes.Overkill > 0 and Remaining > 0 then
+			SpallEnergy.Penetration = SpallEnergy.Penetration * Remaining
+			SpallEnergy.Kinetic = SpallEnergy.Kinetic * Remaining
 
 			local Temp_Filter = table.Copy(ACE.Spall[Index].filter)
 			table.insert( Temp_Filter , SpallRes.Entity )
+			if IsValid(Debris) then
+				table.insert( Temp_Filter , Debris )
+			end
 
 			ACE.Spall[Index] = {}
 			ACE.Spall[Index].start  = SpallRes.HitPos
@@ -787,10 +792,8 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			ACE.Spall[Index].mins	= Vector(0,0,0)
 			ACE.Spall[Index].maxs	= Vector(0,0,0)
 
-			SpallRes = util.TraceLine(ACE.Spall[Index])
-
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
-			-- Blue trace means spall trace that overpenned and killed something.
+			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
 			ACF_SpallTrace( HitVec , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )

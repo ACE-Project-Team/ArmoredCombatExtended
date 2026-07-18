@@ -21,6 +21,7 @@ SOURCE = (
     / "server"
     / "sv_acfdamage.lua"
 )
+RUBBER_SOURCE = SOURCE.parents[1] / "shared" / "armor" / "rubber.lua"
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,28 @@ def trace_fragments(
             shared_penetration = result[0]
 
     return results
+
+
+def apply_resolver_loss(penetration: float, kinetic: float, loss: float) -> tuple[float, float]:
+    """Apply ACE's HitRes.Loss contract once to one fragment's private energy."""
+
+    remaining = min(max(1.0 - loss, 0.0), 1.0)
+    return penetration * remaining, kinetic * remaining
+
+
+def rubber_spall_cost(thickness: float) -> float:
+    """Model the material's spall RHAe input before the standard resolver."""
+
+    return thickness**0.93 * 0.15
+
+
+def trace_rubber_layers(initial_penetration: float, thicknesses: list[float]) -> float:
+    """Deterministic strong-penetration path through ordinary rubber spall armor."""
+
+    penetration = initial_penetration
+    for thickness in thicknesses:
+        penetration = max(penetration - rubber_spall_cost(thickness), 0.0)
+    return penetration
 
 
 class SpallOracleTests(unittest.TestCase):
@@ -171,6 +194,39 @@ class SpallOracleTests(unittest.TestCase):
 
         self.assertEqual({remaining for remaining, _ in results}, {0})
 
+    def test_resolver_loss_reduces_both_energy_fields_once(self):
+        penetration, kinetic = apply_resolver_loss(100, 80, 0.25)
+
+        self.assertEqual((penetration, kinetic), (75, 60))
+
+    def test_resolver_loss_is_not_applied_twice_for_one_impact(self):
+        penetration, kinetic = apply_resolver_loss(100, 80, 0.25)
+
+        self.assertEqual((penetration, kinetic), (75, 60))
+        self.assertNotEqual(penetration, 56.25)
+        self.assertNotEqual(kinetic, 45)
+
+    def test_rubber_spall_is_thickness_scaled_and_not_a_flat_kill_switch(self):
+        fifteen = trace_rubber_layers(20, [15])
+        forty_five = trace_rubber_layers(20, [45])
+
+        self.assertGreater(fifteen, 0)
+        self.assertGreater(forty_five, 0)
+        self.assertLess(forty_five, fifteen)
+
+    def test_layered_rubber_consumes_the_same_fragment_budget_sequentially(self):
+        one_layer = trace_rubber_layers(20, [45])
+        two_layers = trace_rubber_layers(20, [45, 45])
+
+        self.assertGreater(one_layer, 0)
+        self.assertGreater(two_layers, 0)
+        self.assertLess(two_layers, one_layer)
+
+    def test_rubber_does_not_revert_to_the_old_spall_special_resilience(self):
+        self.assertAlmostEqual(rubber_spall_cost(15), 1.861, places=2)
+        self.assertAlmostEqual(rubber_spall_cost(45), 5.173, places=2)
+        self.assertGreater(trace_rubber_layers(20, [15]), 18)
+
 
 class SpallSourceContractTests(unittest.TestCase):
     @classmethod
@@ -184,6 +240,7 @@ class SpallSourceContractTests(unittest.TestCase):
         if not match:
             raise AssertionError("ACF_SpallTrace body could not be located")
         cls.body = match.group("body")
+        cls.rubber_source = RUBBER_SOURCE.read_text(encoding="utf-8")
 
     def test_trace_owns_a_copy_before_mutating_penetration(self):
         copy_pos = self.body.index("SpallEnergy = table.Copy(SpallEnergy)")
@@ -204,13 +261,38 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_all_recursive_retries_preserve_incoming_direction(self):
         recursive_calls = re.findall(r"ACF_SpallTrace\((.*?)\)", self.body)
 
-        self.assertEqual(len(recursive_calls), 3)
+        self.assertEqual(len(recursive_calls), 2)
         self.assertTrue(all(re.match(r"\s*HitVec\s*,", call) for call in recursive_calls))
         self.assertNotIn("ACF_SpallTrace( SpallRes.HitPos", self.body)
 
     def test_trace_has_no_shared_penetration_assignment_before_copy(self):
         self.assertEqual(self.body.count("SpallEnergy = table.Copy(SpallEnergy)"), 1)
         self.assertGreaterEqual(self.body.count("SpallEnergy.Penetration ="), 2)
+
+    def test_resolver_loss_is_applied_once_before_the_single_retry(self):
+        self.assertEqual(self.body.count("local Remaining = math.Clamp"), 1)
+        self.assertEqual(self.body.count("SpallEnergy.Kinetic = SpallEnergy.Kinetic * Remaining"), 1)
+        self.assertEqual(self.body.count("SpallEnergy.Penetration = SpallEnergy.Penetration * Remaining"), 1)
+        self.assertEqual(self.body.count("-- Retry"), 1)
+
+    def test_kill_path_does_not_spawn_a_second_retry(self):
+        kill_block = re.search(r"if HitRes\.Kill then(?P<body>.*?)end\n\n\t\t-- Applies a decal", self.body, re.DOTALL)
+
+        self.assertIsNotNone(kill_block)
+        self.assertNotIn("ACF_SpallTrace", kill_block.group("body"))
+        self.assertIn("Debris = ACF_APKill", kill_block.group("body"))
+
+    def test_rubber_uses_default_spall_resolution_with_material_effectiveness(self):
+        self.assertIn("Material.spallresist = 0.15", self.rubber_source)
+        self.assertIn('if Type == "Spall" then\n\t\t\teffectiveness = Material.spallresist', self.rubber_source)
+        valid_types = re.search(r"local validTypes = \{(?P<body>.*?)\n\t\t\}", self.rubber_source, re.DOTALL)
+
+        self.assertIsNotNone(valid_types)
+        self.assertNotIn('["Spall"]', valid_types.group("body"))
+        self.assertNotIn("specialresiliance = Material.spallresist", self.rubber_source)
+
+    def test_rubber_preserves_non_spall_overmatch_behavior(self):
+        self.assertIn("local breachCaliber = Type == \"Spall\" and caliber or caliber * 10", self.rubber_source)
 
     def test_original_fragment_callers_remain_compatible(self):
         callers = re.findall(r"ACF_SpallTrace\(HitVec, Index", self.source)

@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "artifact_root": "data/ace_test_artifacts",
+  "scenarios": [
+    {
+      "id": "entity_spawn_activate_link_remove",
+      "family": "registered_entities",
+      "realm": "native",
+      "timeout_seconds": 20,
+      "ci": true,
+      "artifacts": ["entities.json"],
+      "expected_events": ["spawn", "activate", "link", "remove"]
+    },
+    {
+      "id": "round_behavior_matrix",
+      "family": "rounds",
+      "realm": "native+luajit",
+      "timeout_seconds": 20,
+      "ci": true,
+      "artifacts": ["rounds.json"],
+      "expected_events": ["create", "impact", "terminate"]
+    },
+    {
+      "id": "material_armor_matrix",
+      "family": "materials_armor",
+      "realm": "native",
+      "timeout_seconds": 15,
+      "ci": true,
+      "artifacts": ["materials.json"],
+      "expected_events": ["classify", "resolve"]
+    },
+    {
+      "id": "tank_duel_ap",
+      "family": "tank_duel",
+      "realm": "headless",
+      "timeout_seconds": 30,
+      "ci": false,
+      "artifacts": ["tank_duel_ap.json", "errors.txt"],
+      "expected_events": ["fire", "impact", "damage", "terminate"]
+    },
+    {
+      "id": "tank_duel_heat",
+      "family": "tank_duel",
+      "realm": "headless",
+      "timeout_seconds": 30,
+      "ci": false,
+      "artifacts": ["tank_duel_heat.json", "errors.txt"],
+      "expected_events": ["fire", "impact", "jet", "terminate"]
+    },
+    {
+      "id": "spall_trace_layered_clipped_adversarial",
+      "family": "spall_layered",
+      "realm": "native",
+      "timeout_seconds": 20,
+      "ci": true,
+      "artifacts": ["spall_depth.json"],
+      "expected_events": ["trace", "continuation", "termination_reason"]
+    },
+    {
+      "id": "heat_jet_continuity",
+      "family": "heat",
+      "realm": "headless",
+      "timeout_seconds": 20,
+      "ci": false,
+      "artifacts": ["heat.json", "errors.txt"],
+      "expected_events": ["impact", "jet", "termination_reason"]
+    },
+    {
+      "id": "spall_propagation_matrix",
+      "family": "spall_layered",
+      "realm": "native",
+      "timeout_seconds": 20,
+      "ci": true,
+      "artifacts": ["spall.json"],
+      "expected_events": ["trace", "damage", "termination_reason"]
+    },
+    {
+      "id": "engine_fuel_crew_matrix",
+      "family": "propulsion_fuel_crew",
+      "realm": "native",
+      "timeout_seconds": 20,
+      "ci": true,
+      "artifacts": ["propulsion.json"],
+      "expected_events": ["initialize", "update", "cleanup"]
+    },
+    {
+      "id": "gun_ammo_rack_reload_cookoff_repair",
+      "family": "weapon_lifecycle",
+      "realm": "headless",
+      "timeout_seconds": 45,
+      "ci": false,
+      "artifacts": ["weapon_lifecycle.json", "errors.txt"],
+      "expected_events": ["link", "reload", "cookoff", "repair"]
+    },
+    {
+      "id": "contraption_spawn_split_merge_remove",
+      "family": "contraption_lifecycle",
+      "realm": "headless",
+      "timeout_seconds": 45,
+      "ci": false,
+      "artifacts": ["lifecycle.json", "errors.txt"],
+      "expected_events": ["spawn", "split", "merge", "remove"]
+    },
+    {
+      "id": "sensor_missile_guidance_smoke",
+      "family": "sensors_missiles",
+      "realm": "native",
+      "timeout_seconds": 25,
+      "ci": true,
+      "artifacts": ["sensors_missiles.json"],
+      "expected_events": ["sensor_scan", "missile_launch", "guidance", "cleanup"]
+    },
+    {
+      "id": "advdupe_minimal_roundtrip",
+      "family": "dupes",
+      "realm": "headless",
+      "timeout_seconds": 45,
+      "ci": false,
+      "artifacts": ["dupe.json", "errors.txt"],
+      "expected_events": ["paste", "link_restore", "cleanup"]
+    },
+    {
+      "id": "network_serialization_contracts",
+      "family": "network_serialization",
+      "realm": "python+luajit",
+      "timeout_seconds": 10,
+      "ci": true,
+      "artifacts": ["network_serialization.json"],
+      "expected_events": ["schema", "roundtrip"]
+    },
+    {
+      "id": "readout_contract_matrix",
+      "family": "readouts",
+      "realm": "luajit+native",
+      "timeout_seconds": 15,
+      "ci": true,
+      "artifacts": ["readouts.json"],
+      "expected_events": ["state", "readout"]
+    },
+    {
+      "id": "unexpected_error_capture",
+      "family": "runtime_errors",
+      "realm": "headless",
+      "timeout_seconds": 10,
+      "ci": true,
+      "artifacts": ["errors.txt"],
+      "expected_events": ["boot", "done"]
+    },
+    {
+      "id": "representative_fire_rate_smoke",
+      "family": "performance",
+      "realm": "headless",
+      "timeout_seconds": 60,
+      "ci": false,
+      "artifacts": ["perf.json"],
+      "expected_events": ["start", "sample", "done"]
+    }
+  ]
+}

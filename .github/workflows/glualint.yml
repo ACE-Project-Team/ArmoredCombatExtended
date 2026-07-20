@@ -41,6 +41,21 @@ jobs:
       - name: Run Python tests
         run: python -m unittest discover -s tests/python -p 'test_*.py' -v
 
+      - name: Emit static safety warnings
+        run: python tests/run_static_safety.py --report static_safety_report.json
+
+      - name: Validate headless scenario contracts
+        run: python tests/run_headless_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci --dry-run
+
+      - name: Validate performance scenario contracts
+        run: python tests/run_perf_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci-smoke
+
+      - name: Upload static safety report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: static-safety-report
+          path: static_safety_report.json
+
       - name: Install LuaJIT
         run: sudo apt-get update && sudo apt-get install --yes luajit
 

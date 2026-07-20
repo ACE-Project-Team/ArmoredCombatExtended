@@ -80,7 +80,7 @@ function Round.getDisplayData(Data)
 	local Energy		= ACF_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local FragMass	= Data.ProjMass - Data.FillerMass
 
-	GUIData.MaxPen	= ACE_CalcPenetration(Energy, Data.PenArea)
+	GUIData.MaxPen	= ACE.CalcPenetration(Energy, Data.PenArea)
 	GUIData.BlastRadius = Data.FillerMass ^ 0.33 * 8
 	GUIData.Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag),2)
 	GUIData.FragMass	= FragMass / GUIData.Fragments
@@ -132,7 +132,7 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 		local Energy	= ACF_Kinetic( Speed , Bullet.ProjMass, Bullet.LimitVel )
 		local HitRes	= ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
-		if HitRes.Overkill > 0 then
+		if HitRes.PostPenetration.Continue then
 
 			if Bullet.HasPenned == false then
 
@@ -144,8 +144,8 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
 			table.insert( Bullet.Filter , Target )				--"Penetrate" (Ingoring the prop for the retry trace)
 
-			ACF_Spall( HitPos , Bullet.Flight , Bullet.Filter , Energy.Kinetic * HitRes.Loss , Bullet.Caliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
-			Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1-HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
+			ACF_Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic , Bullet.Caliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
+			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
 
 			return "Penetrated"
 		elseif HitRes.Ricochet then
@@ -219,7 +219,7 @@ function Round.guicreate( Panel, Table )
 
 	acfmenupanel:AmmoSelect( ACF.AmmoBlacklist.APHE )
 
-	ACE_UpperCommonDataDisplay()
+	ACE.UpperCommonDataDisplay()
 
 	acfmenupanel:AmmoSlider("PropLength",0,0,1000,3, "Propellant Length", "")	--Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
@@ -270,8 +270,8 @@ function Round.guiupdate( Panel )
 	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m")	--Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
 
-	ACE_UpperCommonDataDisplay( Data, PlayerData )
-	ACE_CommonDataDisplay( Data )
+	ACE.UpperCommonDataDisplay( Data, PlayerData )
+	ACE.CommonDataDisplay( Data )
 
 end
 

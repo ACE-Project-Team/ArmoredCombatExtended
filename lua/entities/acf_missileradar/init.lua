@@ -242,7 +242,7 @@ function ENT:Think()
 		self.LastStatusUpdate = curTime
 	end
 
-	self.Heat = ACE_HeatFromRadar(self, self.ThinkDelay)
+	self.Heat = ACE.HeatFromRadar(self, self.ThinkDelay)
 	WireLib.TriggerOutput(self, "Heat", self.Heat)
 	self:GetOverlayText()
 
@@ -307,7 +307,7 @@ function ENT:ScanForMissiles()
 		count = count + 1
 
 		-- Sort the missiles by distance from the radar
-		local insertionIndex = ACE_GetBinaryInsertIndex(distArray, distanceSqr)
+		local insertionIndex = ACE.GetBinaryInsertIndex(distArray, distanceSqr)
 		tableInsert(distArray, insertionIndex, distanceSqr)
 		tableInsert(entArray, insertionIndex, missile)
 		tableInsert(posArray, insertionIndex, missile.CurPos) --Replaced with non-cached value as to not lag behind.

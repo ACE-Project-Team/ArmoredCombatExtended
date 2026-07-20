@@ -82,6 +82,7 @@ def read_quoted_string(source: str, start: int):
 def iter_named_calls(source: str, function_name: str):
     """Yield ``(first_string_argument, name_offset, after_argument)`` calls."""
 
+    function_parts = function_name.split(".")
     index = 0
     while index < len(source):
         if source[index].isspace():
@@ -98,9 +99,28 @@ def iter_named_calls(source: str, function_name: str):
 
         token = match.group(0)
         index = match.end()
-        if token != function_name:
+        if token != function_parts[0]:
             continue
-        if match.start() > 0 and source[match.start() - 1] == ".":
+        previous = match.start() - 1
+        while previous >= 0 and source[previous] in " \t":
+            previous -= 1
+        if previous >= 0 and source[previous] == ".":
+            continue
+
+        matched = True
+        for part in function_parts[1:]:
+            index = skip_space_and_comments(source, index)
+            if index >= len(source) or source[index] != ".":
+                matched = False
+                break
+            index = skip_space_and_comments(source, index + 1)
+            part_match = IDENTIFIER.match(source, index)
+            if not part_match or part_match.group(0) != part:
+                matched = False
+                break
+            index = part_match.end()
+
+        if not matched:
             continue
 
         call_index = skip_space_and_comments(source, index)

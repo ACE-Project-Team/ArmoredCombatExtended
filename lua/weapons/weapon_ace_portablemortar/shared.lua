@@ -546,13 +546,13 @@ function SWEP:PrimaryAttack()
 		end
 
 		if game.SinglePlayer() then
-			ACE_NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
+			ACE.NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
 		else
 			--Client is called here. So lets go as usual.
 			local sounds = ACE.GSounds.GunFire[self.Primary.Sound]
 			if next(sounds) then
 				if SERVER then
-					ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
+					ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
 				else
 					self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 				end

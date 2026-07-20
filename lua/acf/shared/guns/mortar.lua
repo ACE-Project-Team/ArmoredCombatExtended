@@ -149,7 +149,7 @@ ACF_defineGun("380mmM", {
 } )
 
 do
-	ACE_DefineMuzzleFlash("MO", {
+	ACE.DefineMuzzleFlash("MO", {
 
 		muzzlefunc = function( Effect )
 			if not Effect.Emitter then return end

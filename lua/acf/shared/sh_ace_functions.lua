@@ -112,7 +112,7 @@ function ACF_CalcEnginePerformanceData(curve, maxTq, idle, redline)
 end
 
 -- A cheap way to check if the distance between 2 points is within a target distance.
-function ACE_InDist( Pos1, Pos2, Distance )
+function ACE.InDist( Pos1, Pos2, Distance )
 	return (Pos2 - Pos1):LengthSqr() < Distance ^ 2
 end
 
@@ -136,7 +136,7 @@ end
 	-- 87 WOOD
 	-- 89 GLASS
 
-function ACE_GetMaterialName( Mat )
+function ACE.GetMaterialName( Mat )
 	--concrete
 	local GroundMat = "Concrete"
 
@@ -205,7 +205,7 @@ function ACF_Kinetic( Speed , Mass, LimitVel )
 end
 
 -- Convert kinetic penetration energy and projectile area to RHA penetration in mm.
-function ACE_CalcPenetration(Energy, PenArea, PenMul)
+function ACE.CalcPenetration(Energy, PenArea, PenMul)
 	local EnergyPen = istable(Energy) and tonumber(Energy.Penetration) or tonumber(Energy)
 	local Area = tonumber(PenArea)
 
@@ -411,11 +411,11 @@ do
 
 				notification.AddLegacy( "Dupe files were reloaded!", NOTIFY_GENERIC, 7)
 				file.Delete("acf/ace_dupespawn.txt")
-				ACE_Dupes_Refresh()
+				ACE.Dupes_Refresh()
 			end
 		end )
 
-		function ACE_Dupes_Refresh()
+		function ACE.Dupes_Refresh()
 
 			local files = file.Find("scripts/vehicles/acedupe_*.txt", "GAME")
 
@@ -473,7 +473,7 @@ do
 				return
 			end
 
-			ACE_Dupes_Refresh()
+			ACE.Dupes_Refresh()
 		end)
 
 	end
@@ -498,13 +498,13 @@ do
 	}
 
 	--Dedicated function to get the material due to old numeric ids must be passed to the new string indexing now. Could change in a future.
-	function ACE_GetMaterialData( Mat )
+	function ACE.GetMaterialData( Mat )
 
-		if not ACE_CheckMaterial( Mat ) then
+		if not ACE.CheckMaterial( Mat ) then
 
 			Mat = not isstring(Mat) and ACE.BackCompMat[Mat] or "RHA"
 
-			if not ACE_CheckMaterial( Mat ) then
+			if not ACE.CheckMaterial( Mat ) then
 				print("[ACE|ERROR]- No Armor material data found! Have the armor folder been renamed or removed? Unexpected results could occur!")
 				return nil
 			end
@@ -517,7 +517,7 @@ do
 end
 
 --TODO: Use a universal function
-function ACE_CheckMaterial( MatId )
+function ACE.CheckMaterial( MatId )
 
 	local matdata = ACE.ArmorTypes[ MatId ]
 
@@ -527,7 +527,7 @@ function ACE_CheckMaterial( MatId )
 
 end
 
-function ACE_CheckRound( id )
+function ACE.CheckRound( id )
 
 	local rounddata = ACF.RoundTypes[ id ]
 
@@ -536,7 +536,7 @@ function ACE_CheckRound( id )
 	return true
 end
 
-function ACE_CheckGun( gunid )
+function ACE.CheckGun( gunid )
 
 	local gundata = ACF.Weapons.Guns[ gunid ]
 
@@ -545,7 +545,7 @@ function ACE_CheckGun( gunid )
 	return true
 end
 
-function ACE_CheckRack( rackid )
+function ACE.CheckRack( rackid )
 
 	local rackdata = ACF.Weapons.Racks[ rackid ]
 
@@ -554,7 +554,7 @@ function ACE_CheckRack( rackid )
 	return true
 end
 
-function ACE_CheckAmmo( ammoid )
+function ACE.CheckAmmo( ammoid )
 
 	local Ammodata = ACF.Weapons.Ammo[ ammoid ]
 
@@ -563,7 +563,7 @@ function ACE_CheckAmmo( ammoid )
 	return true
 end
 
-function ACE_CheckEngine( engineid )
+function ACE.CheckEngine( engineid )
 
 	local enginedata = ACF.Weapons.Engines[ engineid ]
 
@@ -572,7 +572,7 @@ function ACE_CheckEngine( engineid )
 	return true
 end
 
-function ACE_CheckGearbox( gearid )
+function ACE.CheckGearbox( gearid )
 
 	local geardata = ACF.Weapons.Gearboxes[ gearid ]
 
@@ -581,7 +581,7 @@ function ACE_CheckGearbox( gearid )
 	return true
 end
 
-function ACE_CheckFuelTank( fueltankid )
+function ACE.CheckFuelTank( fueltankid )
 
 	local fueltankid = ACF.Weapons.FuelTanksSize[ fueltankid ]
 
@@ -591,14 +591,14 @@ function ACE_CheckFuelTank( fueltankid )
 end
 
 if SERVER then
-	function ACE_SendMsg(ply, ...)
+	function ACE.SendMsg(ply, ...)
 		net.Start("ACE_SendMessage")
 		net.WriteBool(false)
 		net.WriteTable({...})
 		net.Send(ply)
 	end
 
-	function ACE_SendNotification(ply, hint, duration)
+	function ACE.SendNotification(ply, hint, duration)
 		net.Start("ACE_SendMessage")
 		net.WriteBool(true)
 		net.WriteString(hint)
@@ -606,7 +606,7 @@ if SERVER then
 		net.Send(ply)
 	end
 
-	function ACE_BroadcastMsg(...)
+	function ACE.BroadcastMsg(...)
 		net.Start("ACE_SendMessage")
 		net.WriteBool(false)
 		net.WriteTable({...})
@@ -666,7 +666,7 @@ end
 ]]
 
 -- Helper function to check if a value exists in a table
-function ACE_table_contains(table, element)
+function ACE.table_contains(table, element)
 	for _, value in pairs(table) do
 		if value == element then
 			return true
@@ -717,7 +717,7 @@ if SERVER then
 	--- Gets a unique ID for a contraption object
 	---@param Contraption any
 	---@return number ID The contraption's unique ID
-	function ACE_GetContraptionIndex(Contraption)
+	function ACE.GetContraptionIndex(Contraption)
 		if Indexes[Contraption] then return Indexes[Contraption] end
 
 		if next(Unused) then
@@ -736,7 +736,7 @@ if SERVER then
 		return EntID
 	end
 
-	function ACE_ClearContraptionIndex(Contraption)
+	function ACE.ClearContraptionIndex(Contraption)
 		local Index = Indexes[Contraption]
 
 		if Index then
@@ -745,14 +745,14 @@ if SERVER then
 		end
 	end
 
-	hook.Add("cfw.contraption.removed", "ACE_IndexTracking_ContraptionRemoved", ACE_ClearContraptionIndex)
-	hook.Add("cfw.contraption.merged", "ACE_IndexTracking_ContraptionMerged", ACE_ClearContraptionIndex)
+	hook.Add("cfw.contraption.removed", "ACE_IndexTracking_ContraptionRemoved", ACE.ClearContraptionIndex)
+	hook.Add("cfw.contraption.merged", "ACE_IndexTracking_ContraptionMerged", ACE.ClearContraptionIndex)
 
 	--- Efficiently find the index to insert a value into a sorted table
 	---@param Tbl table
 	---@param Value number
 	---@return number Index The index to insert the value at
-	function ACE_GetBinaryInsertIndex(Tbl, Value)
+	function ACE.GetBinaryInsertIndex(Tbl, Value)
 		local Start = 1
 		local Finish = #Tbl
 
@@ -782,26 +782,26 @@ end
 -- ============================================================
 
 -- Build a consistent description for ACE convars.
-function ACE_ConVarHelp(desc)
+function ACE.ConVarHelp(desc)
 	return "ACE - " .. desc
 end
 
 -- Helper: short IsValid wrapper for entities.
-function ACE_IsEnt(ent)
+function ACE.IsEnt(ent)
 	return IsValid(ent)
 end
 
 -- Check whether an entity is a Wiremod class.
-function ACE_IsWireEntity(ent)
-	if not ACE_IsEnt(ent) then return false end
+function ACE.IsWireEntity(ent)
+	if not ACE.IsEnt(ent) then return false end
 	local cls = ent:GetClass()
 	if not isstring(cls) then return false end
 	return cls:sub(1, 10) == "gmod_wire_"
 end
 
 -- Check whether an entity is a missile entity.
-function ACE_IsMissileEntity(ent)
-	if not ACE_IsEnt(ent) then return false end
+function ACE.IsMissileEntity(ent)
+	if not ACE.IsEnt(ent) then return false end
 	local cls = ent:GetClass()
 	return cls == "ace_missile" or cls == "acf_missile"
 end
@@ -825,7 +825,7 @@ ACE.ClassToType = ACE.ClassToType or {
 	acf_ammo = "Ignore",   -- Ammo is free: crates contribute zero points.
 	-- Scalable explosives / bombs: MOUNTED ordnance costs points, stored ammo stays free. A
 	-- charge bolted to an airframe is independently droppable, so it prices as one rack tube of
-	-- itself (ACE_Points_ChargeEntCost, off its filler mass) rather than being free.
+	-- itself (ACE.Points_ChargeEntCost, off its filler mass) rather than being free.
 	ace_explosive = "Firepower",
 	ace_explosive_prebuilt = "Firepower",
 	ace_bomb_satchel = "Firepower",
@@ -861,22 +861,22 @@ ACE.PointSubsystems = ACE.PointSubsystems or {
 }
 
 -- Resolve point category for an entity class.
-function ACE_GetPtsType(className)
+function ACE.GetPtsType(className)
 	if ACE.ArmorClasses[className] then return "Armor" end
 	return ACE.ClassToType[className] or "Ignore"
 end
 
-function ACE_GetSurvivabilityIndex(ent)
-	if not ACE_IsEnt(ent) then return 0 end
+function ACE.GetSurvivabilityIndex(ent)
+	if not ACE.IsEnt(ent) then return 0 end
 
-	local effMm, maxHealth = ACE_Points_PropArmor(ent)
+	local effMm, maxHealth = ACE.Points_PropArmor(ent)
 	if not effMm or not maxHealth then return 0 end
 
-	return math.max(ACE_Points_ArmorProp(effMm, maxHealth), 0)
+	return math.max(ACE.Points_ArmorProp(effMm, maxHealth), 0)
 end
 
-function ACE_GetArmorPoints(ent)
-	if not ACE_IsEnt(ent) then return 0 end
+function ACE.GetArmorPoints(ent)
+	if not ACE.IsEnt(ent) then return 0 end
 
 	local previousACF = ent.ACF
 	local previousMaxArmour = previousACF and previousACF.MaxArmour
@@ -906,31 +906,31 @@ function ACE_GetArmorPoints(ent)
 		return ACE.ArmorPointCache[cacheKey]
 	end
 
-	local points = ACE_GetSurvivabilityIndex(ent)
+	local points = ACE.GetSurvivabilityIndex(ent)
 	ACE.ArmorPointCache[cacheKey] = points
 
 	return points
 end
 
-function ACE_GetCrewSeatPointCost(ent)
-	local isLoader = ACE_IsEnt(ent) and ent:GetClass() == "ace_crewseat_loader"
-	return ACE_Points_CrewCost(isLoader)
+function ACE.GetCrewSeatPointCost(ent)
+	local isLoader = ACE.IsEnt(ent) and ent:GetClass() == "ace_crewseat_loader"
+	return ACE.Points_CrewCost(isLoader)
 end
 
-function ACE_ClearArmorPointCache(ent)
-	if not ACE_IsEnt(ent) then return end
+function ACE.ClearArmorPointCache(ent)
+	if not ACE.IsEnt(ent) then return end
 	if ACE.ArmorPointCache then
 		ACE.ArmorPointCache[ent:EntIndex()] = nil
 	end
 end
 
 hook.Add("EntityRemoved", "ACE_ClearArmorPointCache", function(ent)
-	ACE_ClearArmorPointCache(ent)
+	ACE.ClearArmorPointCache(ent)
 end)
 
 
 -- Extract configurable class name from "Name:arg=val" serialized strings.
-function ACE_GetConfigurableName(value, fallback)
+function ACE.GetConfigurableName(value, fallback)
 	if type(value) ~= "string" or value == "" then return fallback end
 
 	local name = string.match(value, "^[^:]+")
@@ -940,7 +940,7 @@ function ACE_GetConfigurableName(value, fallback)
 end
 
 -- Resolve the gun class string for ammo bullet data.
-function ACE_GetAmmoGunClass(bdata)
+function ACE.GetAmmoGunClass(bdata)
 	if not bdata then return nil end
 
 	local gunClass = bdata.GunClass
@@ -951,13 +951,13 @@ function ACE_GetAmmoGunClass(bdata)
 end
 
 -- Determine whether an ammo type is a GLATGM family type.
-function ACE_IsGLATGMAmmoType(ammoType)
+function ACE.IsGLATGMAmmoType(ammoType)
 	return ammoType == "GLATGM" or ammoType == "GLATGM-HE"
 end
 
 -- Resolve the most authoritative ammo type for an entity/bullet pair.
-function ACE_ResolveAmmoType(ent, bdata)
-	if ACE_IsEnt(ent) then
+function ACE.ResolveAmmoType(ent, bdata)
+	if ACE.IsEnt(ent) then
 		local entType = ent.RoundType
 		if isstring(entType) and entType ~= "" then return entType end
 
@@ -976,20 +976,20 @@ function ACE_ResolveAmmoType(ent, bdata)
 end
 
 -- Resolve missile warhead behavior from ammo type.
-function ACE_GetMissileWarheadType(ammoType)
+function ACE.GetMissileWarheadType(ammoType)
 	if ammoType == "GLATGM" then return "HEAT" end
 	if ammoType == "GLATGM-HE" then return "HE" end
 	return ammoType
 end
 
 -- Resolve explosion class used by ammo cookoff logic.
-function ACE_GetAmmoCookoffClass(_, isMissile)
+function ACE.GetAmmoCookoffClass(_, isMissile)
 	if isMissile then return "MISSILE" end
 	return "AMMO"
 end
 
 -- Resolve blast filler used by ammo cookoff logic.
-function ACE_GetAmmoCookoffBlastMass(_, bdata)
+function ACE.GetAmmoCookoffBlastMass(_, bdata)
 	if not bdata then return 0 end
 
 	local boom = tonumber(bdata.BoomFillerMass)
@@ -1002,7 +1002,7 @@ function ACE_GetAmmoCookoffBlastMass(_, bdata)
 end
 
 -- Resolve how many rounds are assumed to sympathetically detonate.
-function ACE_GetAmmoCookoffAmmoCount(_, ammoCount, isMissile)
+function ACE.GetAmmoCookoffAmmoCount(_, ammoCount, isMissile)
 	local count = tonumber(ammoCount) or 0
 	if count <= 0 then return 0 end
 
@@ -1014,14 +1014,14 @@ function ACE_GetAmmoCookoffAmmoCount(_, ammoCount, isMissile)
 end
 
 -- Resolve propellant contribution multiplier by cookoff class.
-function ACE_GetAmmoCookoffPropScale(cookClass)
+function ACE.GetAmmoCookoffPropScale(cookClass)
 	if cookClass == "HEAT" then return 0 end
 	if cookClass == "MISSILE" then return 0.08 end
 	return 1
 end
 
 -- Resolve storage scaling by cookoff class.
-function ACE_GetAmmoCookoffStorageScale(cookClass, ammoScale, missileScale)
+function ACE.GetAmmoCookoffStorageScale(cookClass, ammoScale, missileScale)
 	local defaultAmmoScale = tonumber(ammoScale) or 0.55
 	local defaultMissileScale = tonumber(missileScale) or 0.35
 
@@ -1030,11 +1030,11 @@ function ACE_GetAmmoCookoffStorageScale(cookClass, ammoScale, missileScale)
 end
 
 -- Determine whether bullet data should be treated as missile ammo.
-function ACE_IsAmmoMissileType(bdata)
+function ACE.IsAmmoMissileType(bdata)
 	if not bdata then return false end
-	if ACE_IsGLATGMAmmoType(bdata.Type) then return true end
+	if ACE.IsGLATGMAmmoType(bdata.Type) then return true end
 
-	local gunClass = ACE_GetAmmoGunClass(bdata)
+	local gunClass = ACE.GetAmmoGunClass(bdata)
 	if not gunClass then return false end
 
 	local classes = ACF and ACF.Classes and ACF.Classes.GunClass
@@ -1044,8 +1044,8 @@ function ACE_IsAmmoMissileType(bdata)
 end
 
 -- Compute a gun's sustained RPS for one explicit ammo configuration.
-function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
-	if not ACE_IsEnt(ent) or ent:GetClass() ~= "acf_gun" then return 0 end
+function ACE.GetGunConfiguredRps(ent, rofLimit, bdata, crate)
+	if not ACE.IsEnt(ent) or ent:GetClass() ~= "acf_gun" then return 0 end
 
 	bdata = bdata or {}
 
@@ -1068,7 +1068,7 @@ function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 
 	local fireRateModifier = (tonumber(ent.RoFmod) or 1) * (tonumber(ent.PGRoFmod) or 1)
 
-	if ACE_IsEnt(crate) and crate.RoFMul then
+	if ACE.IsEnt(crate) and crate.RoFMul then
 		fireRateModifier = fireRateModifier * (crate.RoFMul + 1)
 	end
 
@@ -1095,8 +1095,8 @@ function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 end
 
 -- Resolve the reload time attached to a rack ammo candidate, never its live tube state.
-function ACE_GetRackConfiguredReloadTime(rack, bdata)
-	if not ACE_IsEnt(rack) or rack:GetClass() ~= "acf_rack" then return 1 end
+function ACE.GetRackConfiguredReloadTime(rack, bdata)
+	if not ACE.IsEnt(rack) or rack:GetClass() ~= "acf_rack" then return 1 end
 
 	local reload
 	if istable(bdata) then
@@ -1110,28 +1110,28 @@ function ACE_GetRackConfiguredReloadTime(rack, bdata)
 
 -- Resolve the complete linked gun configuration with the highest final rate x round score.
 local function ACE_ResolveGunPricingCandidate(gun)
-	if not ACE_IsEnt(gun) then return end
+	if not ACE.IsEnt(gun) then return end
 
 	local best
 	local function consider(bdata, crate)
-		local round = ACE_Points_RoundFromBullet(bdata)
+		local round = ACE.Points_RoundFromBullet(bdata)
 		if not round then return end
 
-		local rate = ACE_Points_GunSustainedRps(gun, bdata, crate)
-		local roundScore = ACE_Points_RoundScore(round)
+		local rate = ACE.Points_GunSustainedRps(gun, bdata, crate)
+		local roundScore = ACE.Points_RoundScore(round)
 		local candidate = {
 			Round = round,
 			Rate = rate,
 			RoundScore = roundScore,
 			FinalScore = rate * roundScore,
-			SourceIndex = ACE_IsEnt(crate) and crate:EntIndex() or math.huge,
+			SourceIndex = ACE.IsEnt(crate) and crate:EntIndex() or math.huge,
 		}
 
-		if ACE_Points_IsBetterCandidate(candidate, best) then best = candidate end
+		if ACE.Points_IsBetterCandidate(candidate, best) then best = candidate end
 	end
 
 	for _, crate in pairs(gun.AmmoLink or {}) do
-		if ACE_IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
+		if ACE.IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
 end
 
 	return best
@@ -1139,16 +1139,16 @@ end
 
 -- Resolve the complete rack configuration with the highest final rate x round score.
 local function ACE_ResolveRackPricingCandidate(rack)
-	if not ACE_IsEnt(rack) then return end
+	if not ACE.IsEnt(rack) then return end
 
 	local best
 	for _, crate in pairs(rack.AmmoLink or {}) do
-		if ACE_IsEnt(crate) and istable(crate.BulletData) then
-			local round = ACE_Points_RoundFromBullet(crate.BulletData)
+		if ACE.IsEnt(crate) and istable(crate.BulletData) then
+			local round = ACE.Points_RoundFromBullet(crate.BulletData)
 			if round then
-				local reload = ACE_GetRackConfiguredReloadTime(rack, crate.BulletData)
-				local rate = ACE_Points_RackRate(reload, rack.MaxMissile)
-				local roundScore = ACE_Points_RoundScore(round)
+				local reload = ACE.GetRackConfiguredReloadTime(rack, crate.BulletData)
+				local rate = ACE.Points_RackRate(reload, rack.MaxMissile)
+				local roundScore = ACE.Points_RoundScore(round)
 				local candidate = {
 					Round = round,
 					Rate = rate,
@@ -1157,7 +1157,7 @@ local function ACE_ResolveRackPricingCandidate(rack)
 					SourceIndex = crate:EntIndex(),
 				}
 
-				if ACE_Points_IsBetterCandidate(candidate, best) then best = candidate end
+				if ACE.Points_IsBetterCandidate(candidate, best) then best = candidate end
 			end
 		end
 	end
@@ -1166,7 +1166,7 @@ local function ACE_ResolveRackPricingCandidate(rack)
 end
 
 local function ACE_ResolveWeaponPricingInputs(ent)
-	if not ACE_IsEnt(ent) then return end
+	if not ACE.IsEnt(ent) then return end
 
 	local class = ent:GetClass()
 	if class ~= "acf_gun" and class ~= "acf_rack" then return end
@@ -1176,16 +1176,16 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 		or ACE_ResolveRackPricingCandidate(ent)
 	local round = candidate and candidate.Round
 	local rate = candidate and candidate.Rate or 0
-	local threat = round and ACE_Points_Gate(ACE_Points_GatePen(round)) or 0
-	local baseRoundCost = round and ACE_Points_BaseRoundCost(round) or 0
+	local threat = round and ACE.Points_Gate(ACE.Points_GatePen(round)) or 0
+	local baseRoundCost = round and ACE.Points_BaseRoundCost(round) or 0
 	local roundScore = threat * baseRoundCost
 	local points = class == "acf_gun"
-		and ACE_Points_GunCost(rate, baseRoundCost, threat)
-		or ACE_Points_RackCostFromRate(rate, roundScore)
+		and ACE.Points_GunCost(rate, baseRoundCost, threat)
+		or ACE.Points_RackCostFromRate(rate, roundScore)
 	local model = ACE.PointsModel or {}
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
 	local rawPoints = rate * roundScore * firepowerScale
-	local rateFloor = ACE_Points_RateFloor and ACE_Points_RateFloor() or 0
+	local rateFloor = ACE.Points_RateFloor and ACE.Points_RateFloor() or 0
 	-- Compare against the FLOORED rate's raw product, not the true rate's -- otherwise every
 	-- floor-affected weapon falsely reads as having hit the flat weapon minimum instead.
 	local flooredRate = (rateFloor > 0) and math.max(rate, rateFloor) or rate
@@ -1210,20 +1210,20 @@ local function ACE_ResolveWeaponPricingInputs(ent)
 	}
 end
 
-function ACE_GetGunFirepowerPointsFor(ent, _)
+function ACE.GetGunFirepowerPointsFor(ent, _)
 	local readout = ACE_ResolveWeaponPricingInputs(ent)
 	return readout and readout.Points or 0
 end
 
-function ACE_GetGunFirepowerPoints(ent)
-	return ACE_GetGunFirepowerPointsFor(ent, nil)
+function ACE.GetGunFirepowerPoints(ent)
+	return ACE.GetGunFirepowerPointsFor(ent, nil)
 end
 
-function ACE_GetGunFirepowerReadout(ent, _)
+function ACE.GetGunFirepowerReadout(ent, _)
 	return ACE_ResolveWeaponPricingInputs(ent)
 end
 
-function ACE_GetGunFirepowerPricingLine(readout, menuFormat)
+function ACE.GetGunFirepowerPricingLine(readout, menuFormat)
 	if not istable(readout) then return end
 	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
 
@@ -1245,7 +1245,7 @@ end
 
 -- Tells a player when their weapon priced off the delivery-rate floor instead of its true,
 -- slower rate -- distinct from the flat weapon minimum, and can fire well above it.
-function ACE_GetRateFloorLine(readout, menuFormat)
+function ACE.GetRateFloorLine(readout, menuFormat)
 	if not istable(readout) or not readout.RateFloorApplied then return end
 
 	if not menuFormat then
@@ -1259,15 +1259,15 @@ function ACE_GetRateFloorLine(readout, menuFormat)
 end
 
 -- Formats the lethality factors used by the points model.
-function ACE_GetRoundLethalityLine(round, menuFormat)
+function ACE.GetRoundLethalityLine(round, menuFormat)
 	if not istable(round) then return nil end
 
-	local base, hole, blast = ACE_Points_PostPenParts(round)
+	local base, hole, blast = ACE.Points_PostPenParts(round)
 	local dmg = base + hole + blast
 	if dmg <= 0 then return string.format("%s utility round", round.Type or "Unspecified") end
 
 	local rawPen = tonumber(round.maxPen) or 0
-	local pen = ACE_Points_LethalityPen(round)
+	local pen = ACE.Points_LethalityPen(round)
 	local penLabel = (pen > rawPen + 0.5) and "mm HE-equiv" or "mm pen"
 
 	local line
@@ -1279,11 +1279,11 @@ function ACE_GetRoundLethalityLine(round, menuFormat)
 			round.Type or "Round", math.Round(pen), penLabel, dmg, base, hole, blast)
 	end
 
-	local guid = ACE_Points_GuidanceMul(round)
+	local guid = ACE.Points_GuidanceMul(round)
 	if guid ~= 1.0 then
 		line = line .. string.format(" x %.1f guidance", guid)
 	end
-	local intrinsicValue = ACE_Points_IntrinsicValueMul(round)
+	local intrinsicValue = ACE.Points_IntrinsicValueMul(round)
 	if intrinsicValue ~= 1.0 then
 		line = line .. string.format(" x %.1f HE utility", intrinsicValue)
 	end
@@ -1292,13 +1292,13 @@ function ACE_GetRoundLethalityLine(round, menuFormat)
 end
 
 -- Extract HE filler mass from bullet data.
-function ACE_GetAmmoBlastMass(bdata)
+function ACE.GetAmmoBlastMass(bdata)
 	if not bdata then return 0 end
 	return tonumber(bdata.BoomFillerMass) or tonumber(bdata.FillerMass) or 0
 end
 
 -- Resolve maximum penetration from bullet data.
-function ACE_GetAmmoMaxPen(bdata)
+function ACE.GetAmmoMaxPen(bdata)
 	if not bdata then return 0 end
 
 	local maxPen = tonumber(bdata.MaxPen) or 0
@@ -1328,15 +1328,15 @@ end
 -- Link anchor of a weapon with no CFW contraption of its own: the valid linked crate with the
 -- lowest EntIndex that has a contraption. Exactly one contraption adopts (and bills) such a
 -- weapon, independently of the order in which crates were linked.
-function ACE_GetWeaponAnchorContraption(weapon)
-	if not ACE_IsEnt(weapon) then return end
+function ACE.GetWeaponAnchorContraption(weapon)
+	if not ACE.IsEnt(weapon) then return end
 
 	local anchor
 	local anchorIndex
 
 	for _, crate in pairs(weapon.AmmoLink or {}) do
-		if ACE_IsEnt(crate) then
-			local con = ACE_GetContraptionFromEntity(crate)
+		if ACE.IsEnt(crate) then
+			local con = ACE.GetContraptionFromEntity(crate)
 			if con then
 				local crateIndex = crate:EntIndex()
 				if not anchorIndex or crateIndex < anchorIndex then
@@ -1357,12 +1357,12 @@ end
 -- (its own turret + the hull holding its crates) must bill to exactly one contraption, not both.
 -- Do NOT walk the AmmoLink/Master graph outward to gather members -- that reaches such a weapon
 -- from both fragments and prices it in each, inflating Firepower and Engine totals.
-function ACE_GetContraptionEntities(con, fallbackEnt)
+function ACE.GetContraptionEntities(con, fallbackEnt)
 	local ents = {}
 	local visited = {}
 
 	local function add(ent)
-		if not ACE_IsEnt(ent) then return end
+		if not ACE.IsEnt(ent) then return end
 		if visited[ent] then return end
 
 		visited[ent] = true
@@ -1379,9 +1379,9 @@ function ACE_GetContraptionEntities(con, fallbackEnt)
 			local cur = ents[i]
 			if cur:GetClass() == "acf_ammo" and istable(cur.Master) then
 				for _, weapon in pairs(cur.Master) do
-					if ACE_IsEnt(weapon) and not visited[weapon]
-						and not ACE_GetContraptionFromEntity(weapon)
-						and ACE_GetWeaponAnchorContraption(weapon) == con then
+					if ACE.IsEnt(weapon) and not visited[weapon]
+						and not ACE.GetContraptionFromEntity(weapon)
+						and ACE.GetWeaponAnchorContraption(weapon) == con then
 						add(weapon)
 					end
 				end
@@ -1389,7 +1389,7 @@ function ACE_GetContraptionEntities(con, fallbackEnt)
 		end
 	end
 
-	if #ents == 0 and ACE_IsEnt(fallbackEnt) then
+	if #ents == 0 and ACE.IsEnt(fallbackEnt) then
 		add(fallbackEnt)
 	end
 
@@ -1405,31 +1405,31 @@ end
 -- ============================================================
 
 -- Resolve a contraption wrapper for an entity.
-function ACE_GetContraptionFromEntity(ent)
-	if not ACE_IsEnt(ent) or not ent.CFW_GetContraption then return end
+function ACE.GetContraptionFromEntity(ent)
+	if not ACE.IsEnt(ent) or not ent.CFW_GetContraption then return end
 	local con = ent:CFW_GetContraption()
 	if not con or not con.ents or table.IsEmpty(con.ents) then return end
 	return con
 end
 
 -- Resolve contraption owner for messages.
-function ACE_GetContraptionOwner(con)
+function ACE.GetContraptionOwner(con)
 	if not con then return nil end
 	local base = con.GetACEBaseplate and con:GetACEBaseplate()
-	if not ACE_IsEnt(base) or not base.CPPIGetOwner then return nil end
+	if not ACE.IsEnt(base) or not base.CPPIGetOwner then return nil end
 	local owner = base:CPPIGetOwner()
-	return ACE_IsEnt(owner) and owner or nil
+	return ACE.IsEnt(owner) and owner or nil
 end
 
 -- Safely format an owner name.
-function ACE_GetOwnerName(owner)
-	return ACE_IsEnt(owner) and owner:Nick() or "Unknown"
+function ACE.GetOwnerName(owner)
+	return ACE.IsEnt(owner) and owner:Nick() or "Unknown"
 end
 
 -- Armor and firepower are priced by their dedicated passes; ammo is free. Remaining
 -- component ACEPoints values are treated as electronics tiers and scaled with the model.
-function ACE_GetEntPoints(ent)
-	if not ACE_IsEnt(ent) then return 0 end
+function ACE.GetEntPoints(ent)
+	if not ACE.IsEnt(ent) then return 0 end
 
 	local class = ent:GetClass()
 	if (ACE.ArmorClasses and ACE.ArmorClasses[class])
@@ -1441,18 +1441,18 @@ function ACE_GetEntPoints(ent)
 	end
 
 	if class == "acf_engine" then
-		return ACE_Points_EngineCost((tonumber(ent.peakkw) or 0) / 0.7457, ent.FuelType)
+		return ACE.Points_EngineCost((tonumber(ent.peakkw) or 0) / 0.7457, ent.FuelType)
 	end
 
 	if class == "ace_crewseat_gunner" or class == "ace_crewseat_loader"
 		or class == "ace_crewseat_driver" then
-		return ACE_GetCrewSeatPointCost(ent)
+		return ACE.GetCrewSeatPointCost(ent)
 	end
 
 	if class == "ace_explosive" or class == "ace_explosive_prebuilt"
 		or class == "ace_bomb_satchel" or class == "ace_bomb_aerial"
 		or class == "ace_bomb_barrel" then
-		return ACE_Points_ChargeEntCost(ent)
+		return ACE.Points_ChargeEntCost(ent)
 	end
 
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1

@@ -1,4 +1,4 @@
-ACE_DefineExtras("WindSensor", {
+ACE.DefineExtras("WindSensor", {
 	name = "Wind Sensor",
 	ent = "ace_wind_sensor",
 	category = "Misc",
@@ -8,7 +8,7 @@ ACE_DefineExtras("WindSensor", {
 	acepoints = 0,
 })
 
-ACE_DefineExtras("GForceMeter", {
+ACE.DefineExtras("GForceMeter", {
 	name = "G-Force Meter",
 	ent = "ace_gforce_meter",
 	category = "Misc",

@@ -285,7 +285,7 @@ hook.Add("EntityRemoved", "ACE_EntRemoval", function(Ent)
 end)
 
 -- Optimization resource, this will try to clean the main table just to reduce Ent count
-function ACE_refreshdata(Data)
+function ACE.refreshdata(Data)
 	--Not really perfect, but better than nothing. Cframepls
 	if istable(Data) and not table.IsEmpty(Data) then
 		local Entities = Data[1].CreatedEntities --wtf wire
@@ -321,7 +321,7 @@ function ACE_refreshdata(Data)
 	--print('Total Ents registered count: ' .. table.Count( ACE.contraptionEnts ))
 end
 
-timer.Create( "PeriodicCleanup", 3, 0, ACE_refreshdata )
+timer.Create( "PeriodicCleanup", 3, 0, ACE.refreshdata )
 
 hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 	local dupe = istable(dupeInfo) and dupeInfo[1]
@@ -343,5 +343,5 @@ hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 		end
 	end
 
-	ACE_refreshdata(dupeInfo)
+	ACE.refreshdata(dupeInfo)
 end)

@@ -64,7 +64,7 @@ do
 end
 
 do
-	ACE_DefineMuzzleFlash("RAC", {
+	ACE.DefineMuzzleFlash("RAC", {
 
 		muzzlefunc = function( Effect )
 			if not Effect.Emitter then return end

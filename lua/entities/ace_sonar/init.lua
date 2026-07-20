@@ -472,7 +472,7 @@ function ENT:activeSonar()
 	----------------------------------------
 
 	local SelfContraption = self.SelfContraption
-	local MyID = ACE_GetContraptionIndex(SelfContraption) or -1
+	local MyID = ACE.GetContraptionIndex(SelfContraption) or -1
 
 
 	local CacheTime = ACF.CurTime + 5 --Time in seconds to remove a sonar ping
@@ -590,7 +590,7 @@ function ENT:activeSonar()
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE_GetContraptionIndex(Contraption)
+				local ID = ACE.GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 
@@ -713,7 +713,7 @@ function ENT:passiveSonar() --Subject to rework
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE_GetContraptionIndex(Contraption)
+				local ID = ACE.GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 				local WashOutErrorMul = 1 + self.WashOut * 4
@@ -934,7 +934,7 @@ function ENT:UpdateSonarTracks() --Step the track forward by velocity? Or let pl
 			--print("SonoDist: " .. math.Round(Dist / 39.37,2))
 			debugoverlay.Cross(OutputPosition,35,self.PulseDuration,Color( 183, 0, 255), true)
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, OutputDistance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, OutputDistance)
 			tableInsert(SonoBearings, InsertionIndex, Bearing)
 			tableInsert(SonoDepths, InsertionIndex, Depth)
 			tableInsert(SonoDistances, InsertionIndex, Dist)

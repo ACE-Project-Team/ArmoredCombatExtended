@@ -3,7 +3,7 @@ ACE = ACE or {}
 
 include("acf/shared/sh_ace_functions.lua")
 
-local IsEnt = ACE_IsEnt
+local IsEnt = ACE.IsEnt
 
 local function CopyPointTotals(totals)
 	local result = {}
@@ -14,21 +14,36 @@ end
 -- Public point lifecycle hooks:
 -- ACE_OnContraptionPointsInvalidated(con, change) reports every known pricing-input mutation,
 -- even when the cache is already dirty or the resulting point delta is zero. change contains
--- Revision, Entity, Reason, Armor, and NonArmor. Consumers can call ACE_EnsureContraptionPoints
+-- Revision, Entity, Reason, Armor, and NonArmor. Consumers can call ACE.EnsureContraptionPoints
 -- from this hook when they need the updated total immediately.
 -- ACE_OnContraptionPointsRecalculated(con, change) reports Revision, OldTotal, Total, OldByType,
 -- ByType, Armor, and NonArmor as detached snapshots after a rebuild.
-function ACE_NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty)
+function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty, event)
 	if not con then return end
 
 	con.ACEPointsRevision = (con.ACEPointsRevision or 0) + 1
 
+	if not hook or not hook.Run then return end
+
 	hook.Run("ACE_OnContraptionPointsInvalidated", con, {
+		EventId = event and event.EventId or con.ACEPointsRevision,
 		Revision = con.ACEPointsRevision,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision,
+		CacheGeneration = con.ACECacheGeneration or con.ACEPointsGeneration or con.ACEPointsRevision,
 		Entity = ent,
 		Reason = reason or "entity-updated",
 		Armor = armorDirty and true or false,
 		NonArmor = nonArmorDirty and true or false,
+		Categories = event and event.Categories or nil,
+		AffectedContraptions = event and event.AffectedContraptions or { con },
+		CacheGenerations = {
+			Points = con.ACEPointsGeneration or con.ACEPointsRevision,
+			Armor = con.ACEArmorGeneration or 0,
+			Ammo = con.ACEAmmoGeneration or 0,
+			Firepower = con.ACEFirepowerGeneration or 0,
+			ReadyRack = con.ACEReadyRackGeneration or 0,
+			Warning = con.ACEWarningGeneration or 0,
+		},
 	})
 end
 
@@ -38,15 +53,15 @@ local function ACE_CalcSubsystem(ents, subsystem)
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
 			local cls = ent:GetClass()
-			if ACE_GetPtsType(cls) == subsystem then
+			if ACE.GetPtsType(cls) == subsystem then
 				local pts
 				if subsystem == "Crew" then
-					pts = ACE_GetCrewSeatPointCost(ent)
+					pts = ACE.GetCrewSeatPointCost(ent)
 				elseif subsystem == "Firepower" and (cls == "acf_gun" or cls == "acf_rack") then
 					-- Never collapse by class or round ID: identical weapons bill independently.
-					pts = ACE_GetGunFirepowerPointsFor(ent, ents)
+					pts = ACE.GetGunFirepowerPointsFor(ent, ents)
 				else
-					pts = ACE_GetEntPoints(ent)
+					pts = ACE.GetEntPoints(ent)
 				end
 
 				if pts ~= 0 then
@@ -66,14 +81,14 @@ end
 -- Calculate non-armor points and readout details. Ammo is free (crates contribute nothing),
 -- so the categories are Engines, Firepower (guns AND racks), Crew and Electronics. The
 -- contraption entity list is resolved ONCE and shared across guns.
-function ACE_CalcNonArmorPoints(con, baseEnt)
+function ACE.CalcNonArmorPoints(con, baseEnt)
 	if not con then
 		return 0, { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }
 	end
 
 	local totals = { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }
 
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
 	local subsystems = ACE.PointSubsystems or {
 		"Engines",
@@ -94,13 +109,13 @@ function ACE_CalcNonArmorPoints(con, baseEnt)
 	return nonArmor, totals
 end
 
-function ACE_CalcContraptionArmorPoints(con, baseEnt)
+function ACE.CalcContraptionArmorPoints(con, baseEnt)
 	local total = 0
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
-			local pts = ACE_GetArmorPoints(ent)
+			local pts = ACE.GetArmorPoints(ent)
 			if pts > 0 then
 				total = total + pts
 			end
@@ -111,7 +126,7 @@ function ACE_CalcContraptionArmorPoints(con, baseEnt)
 end
 
 -- Rebuild requested point totals for a contraption from entity state.
-function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+function ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
 	if not con then return end
 
 	local oldPoints = con.ACEPoints or 0
@@ -122,7 +137,7 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	local totals = con.ACEPointsPerType or {}
 
 	if rebuildNonArmor then
-		local nonArmor, nonArmorTotals = ACE_CalcNonArmorPoints(con, base)
+		local nonArmor, nonArmorTotals = ACE.CalcNonArmorPoints(con, base)
 		totals = nonArmorTotals or {}
 
 		con.ACEPointsNonArmor = nonArmor or 0
@@ -130,7 +145,7 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	end
 
 	if rebuildArmor then
-		local armorPts = ACE_CalcContraptionArmorPoints(con, base)
+		local armorPts = ACE.CalcContraptionArmorPoints(con, base)
 
 		con.ACEArmorPoints = armorPts
 		con.ACEArmorDirty = false
@@ -143,26 +158,27 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	con.ACEPoints = (con.ACEPointsNonArmor or 0) + armorPts
 	con.ACEPointsDirty = con.ACEArmorDirty or con.ACENonArmorDirty or false
 
-	hook.Run("ACE_OnContraptionPointsRecalculated", con, {
+	if hook and hook.Run then hook.Run("ACE_OnContraptionPointsRecalculated", con, {
 		Revision = con.ACEPointsRevision or 0,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision or 0,
 		OldTotal = oldPoints,
 		Total = con.ACEPoints,
 		OldByType = oldTotals,
 		ByType = CopyPointTotals(totals),
 		Armor = rebuildArmor and true or false,
 		NonArmor = rebuildNonArmor and true or false,
-	})
+	}) end
 end
 
 -- Ensure point data is initialized and current.
-function ACE_EnsureContraptionPoints(con, baseEnt, force)
+function ACE.EnsureContraptionPoints(con, baseEnt, force)
 	if not con then return end
 	if con._ACEPointsEnsuring then return end
 
 	con._ACEPointsEnsuring = true
-	if ACE_EnsurePointsState then ACE_EnsurePointsState(con) end
+	if ACE.EnsurePointsState then ACE.EnsurePointsState(con) end
 
-	local cacheStale = ACE_EnsureCacheVersion and ACE_EnsureCacheVersion(con) or false
+	local cacheStale = ACE.EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
 	local needsInit = not con.ACEArmorCalculated
 	if not force and not needsInit and not con.ACEPointsDirty and not con.ACEArmorDirty
 		and not con.ACENonArmorDirty and not cacheStale then
@@ -173,8 +189,17 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	local rebuildArmor = force or needsInit or con.ACEArmorDirty or cacheStale
 	local rebuildNonArmor = force or con.ACENonArmorDirty or cacheStale or not con.ACEPointsPerType
 
-	ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+	ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
 	con._ACEPointsEnsuring = nil
+
+	-- Invalidation marks warning state dirty, but a cache-version invalidation can
+	-- arrive while this ensure is already rebuilding. Consume the warning state
+	-- only after the new totals are available.
+	if ACE.CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
+		con._ACEWarningChecking = true
+		ACE.CheckLegalCont(con)
+		con._ACEWarningChecking = nil
+	end
 end
 
-_G.ACE_EnsureContraptionPoints = ACE_EnsureContraptionPoints
+_G.ACE_EnsureContraptionPoints = ACE.EnsureContraptionPoints

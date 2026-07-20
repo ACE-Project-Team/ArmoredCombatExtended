@@ -331,7 +331,7 @@ do
 			Ammo:Spawn()
 
 			-- If the crate is not valid in the system, but it could be in the LegacyAmmoTable o be scalable.
-			if not ACE_CheckAmmo( Id ) then
+			if not ACE.CheckAmmo( Id ) then
 
 				local Scale
 
@@ -377,7 +377,7 @@ do
 			end
 
 			-- If the crate is legacy, but still valid in the system
-			if ACE_CheckAmmo( Id ) then
+			if ACE.CheckAmmo( Id ) then
 
 				local AmmoData = AmmoTable[Id]
 
@@ -437,10 +437,16 @@ function ENT:Update( ArgsTable )
 	-- and pos and angle of the tool trace inserted at the start
 
 	local msg = "Ammo crate updated successfully!"
+	local pointSources = { self }
+	for _, Gun in pairs(self.Master or {}) do
+		if IsValid(Gun) then pointSources[#pointSources + 1] = Gun end
+	end
 
 	if ArgsTable[6] == "Refill" then -- Argtable[6] is the round type. If it's refill it shouldn't be loaded into guns, so we refuse to change to it
 		return false, "Refill ammo type is only avaliable for new crates!"
 	end
+
+	self._ACEPointsSuppress = true
 
 	if ArgsTable[5] ~= self.RoundId then -- Argtable[5] is the weapon ID the new ammo loads into
 		for _, Gun in pairs( self.Master ) do
@@ -459,6 +465,7 @@ function ENT:Update( ArgsTable )
 			end
 		end
 	end
+	self._ACEPointsSuppress = nil
 
 	local AmmoPercent = self.Ammo / math.max(self.Capacity,1)
 
@@ -469,14 +476,7 @@ function ENT:Update( ArgsTable )
 	self.LastMass = 1 -- force update of mass
 	self:UpdateMass()
 
-	if ACE_PointsInputChanged then
-		ACE_PointsInputChanged( self, "ammo-updated" )
-		-- Linked guns may sit in a different contraption; their firepower prices
-		-- this crate's round, so their side must go stale-proof too.
-		for _, Gun in pairs( self.Master or {} ) do
-			if IsValid( Gun ) then ACE_PointsInputChanged( Gun, "linked-ammo-updated" ) end
-		end
-	end
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-updated") end
 
 	return true, msg
 
@@ -511,12 +511,12 @@ function ENT:UpdateOverlayText()
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
 		end
 
-		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost then
-			local round = ACE_Points_RoundFromBullet( self.BulletData )
+		if ACE.Points_RoundFromBullet and ACE.Points_BaseRoundCost then
+			local round = ACE.Points_RoundFromBullet( self.BulletData )
 			if round then
-				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine( round )
+				local roundLine = ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine( round )
 				if roundLine then text = text .. "\nLethality: " .. roundLine end
-				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE_Points_BaseRoundCost(round)))
+				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE.Points_BaseRoundCost(round)))
 				text = text .. "\nCrate Inventory Points: 0"
 			end
 		end
@@ -572,10 +572,10 @@ do
 
 	function ENT:CreateAmmo(_, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10 , Data11 , Data12 , Data13 , Data14 , Data15)
 
-		if not ACE_CheckGun( Data1 ) then
+		if not ACE.CheckGun( Data1 ) then
 			Data1 = BackComp[Data1] or "100mmC"
 		end
-		if not ACE_CheckRound( Data2 ) then
+		if not ACE.CheckRound( Data2 ) then
 			Data2 = AmmoComp[ Data2 ] or "AP"
 		end
 
@@ -944,10 +944,10 @@ function ENT:Think()
 							end )
 
 							local MiniRoundType = self.BulletData.Type
-							local MiniClass = ACE_GetAmmoCookoffClass(MiniRoundType, IsMissile)
-							local HE = ACE_GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
+							local MiniClass = ACE.GetAmmoCookoffClass(MiniRoundType, IsMissile)
+							local HE = ACE.GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
 							local Propel = self.BulletData.PropMass or 0
-							local PropScale = ACE_GetAmmoCookoffPropScale(MiniClass)
+							local PropScale = ACE.GetAmmoCookoffPropScale(MiniClass)
 							local HEWeight = ((HE + Propel * PropScale * ACF.APAmmoDetonateFactor * (ACF.PBase / ACF.HEPower)) * ACF.BoomMult)
 							local RunHE = self.CookoffHEToggle
 							self.CookoffHEToggle = not self.CookoffHEToggle
@@ -1065,7 +1065,11 @@ end
 function ENT:OnRemove()
 
 	-- Preserve linked weapons before CFW's removal hook can receive an invalid crate.
-	if ACE_NotifyCrateWeapons then ACE_NotifyCrateWeapons(self, "ammo-removed") end
+	local pointSources = { self }
+	for _, Gun in pairs(self.Master or {}) do
+		if IsValid(Gun) then pointSources[#pointSources + 1] = Gun end
+	end
+	self._ACEPointsSuppress = true
 
 	for Key in pairs(self.Master) do
 		if self.Master[Key] and self.Master[Key]:IsValid() then
@@ -1073,6 +1077,8 @@ function ENT:OnRemove()
 			self.Ammo = 0
 		end
 	end
+	self._ACEPointsSuppress = nil
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
 	for k,v in pairs(ACF.AmmoCrates) do
 		if v == self then
 			table.remove(ACF.AmmoCrates,k)

@@ -6,7 +6,7 @@
 -- Pre-built, model-based charges (satchel / aerial bomb / barrel) live in the
 -- spawn (Q) menu under "ACE - Explosives" instead - those are fixed-size props.
 
-ACE_DefineExplosive("ACE Explosive Charge", {
+ACE.DefineExplosive("ACE Explosive Charge", {
 	name = "Explosive Charge",
 	ent  = "ace_explosive",
 	category = "Explosives",

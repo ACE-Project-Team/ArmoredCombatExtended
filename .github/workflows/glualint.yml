@@ -41,6 +41,12 @@ jobs:
       - name: Run Python tests
         run: python -m unittest discover -s tests/python -p 'test_*.py' -v
 
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install --yes luajit
+
+      - name: Run LuaJIT tests
+        run: python tests/run_luajit_tests.py .
+
   GLuaTest:
     name: Native GMod server tests
     uses: CFC-Servers/GLuaTest/.github/workflows/run_tests.yml@735e52d20c69d14c9a2a8d42f3d6428d1af0936b # main, 2026-07-17

@@ -1,4 +1,4 @@
-ACE_DefineMine( "ATL", {
+ACE.DefineMine( "ATL", {
 
     name           = "Conventional Anti-Tank Landmine",
     model          = "models/maxofs2d/button_02.mdl",

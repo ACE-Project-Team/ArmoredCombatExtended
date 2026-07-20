@@ -49,7 +49,7 @@ function EFFECT:Init( data )
 
 	if Propellant > 0 then
 
-		ACE_SGunFire( Gun, Sound, SoundPitch, Propellant )
+		ACE.SGunFire( Gun, Sound, SoundPitch, Propellant )
 
 		local Muzzle = Gun:GetAttachment( Gun:LookupAttachment(Attachment)) or { Pos = Gun:GetPos(), Ang = Gun:GetAngles() }
 
@@ -127,7 +127,7 @@ function EFFECT:Shockwave( MuzzleType )
 	local Ground = util.TraceLine( GroundTr )
 
 	local MatType = Ground.MatType or 0
-	local Materialvalue = ACE_GetMaterialName( MatType )
+	local Materialvalue = ACE.GetMaterialName( MatType )
 	local DustColors = table.Copy(ACE.DustMaterialColor)
 
 	-- The explosion was detonated above a prop

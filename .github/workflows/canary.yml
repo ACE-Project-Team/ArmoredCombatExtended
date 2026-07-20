@@ -2,8 +2,6 @@ name: Canary deployment to Workshop
 
 on:
   workflow_dispatch:
-  push:
-    branches: [dev]
 
 concurrency:
   group: workshop-upload

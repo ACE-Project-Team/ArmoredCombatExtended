@@ -83,17 +83,17 @@ ACE.CrewseatPoseModifiers = {
 }
 
 -- Helper function to check if pose is standing
-function ACE_IsStandingPose(modelType)
+function ACE.IsStandingPose(modelType)
 	return ACE.CrewseatStandingModels[modelType] or false
 end
 
 -- Helper function to get pose modifiers
-function ACE_GetPoseModifiers(ent)
+function ACE.GetPoseModifiers(ent)
 	if not IsValid(ent) then return nil end
 
 	local class = ent:GetClass()
 	local modelType = ent.ModelType or "Sitting"
-	local isStanding = ACE_IsStandingPose(modelType)
+	local isStanding = ACE.IsStandingPose(modelType)
 	local poseKey = isStanding and "standing" or "sitting"
 
 	local classModifiers = ACE.CrewseatPoseModifiers[class]
@@ -103,7 +103,7 @@ function ACE_GetPoseModifiers(ent)
 end
 
 -- Check if a model is a valid crewseat model
-function ACE_IsValidCrewseatModel(modelPath)
+function ACE.IsValidCrewseatModel(modelPath)
 	if not modelPath then return false end
 	return ACE.CrewseatModelLookup[modelPath] ~= nil
 end

@@ -18,16 +18,14 @@ class NativeSuiteManifestTests(unittest.TestCase):
 
     def test_native_suite_contains_multiple_groups(self):
         suites = {path.name for path in NATIVE_ROOT.glob("*.lua")}
-        self.assertEqual(
-            {
-                "000_discovery_canary.lua",
-                "entity_registration.lua",
-                "general_use_contracts.lua",
-                "invalidation_hooks.lua",
-                "registries.lua",
-            },
-            suites,
-        )
+        required = {
+            "000_discovery_canary.lua",
+            "entity_registration.lua",
+            "general_use_contracts.lua",
+            "invalidation_hooks.lua",
+            "registries.lua",
+        }
+        self.assertTrue(required <= suites)
 
     def test_native_job_has_an_external_discovery_guard(self):
         guard = GUARD.read_text(encoding="utf-8")

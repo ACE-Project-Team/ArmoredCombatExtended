@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from ace_static.annotations import findings_to_report, github_annotation
+from ace_static.allowlist import apply_allowlist
 from ace_static.scanner import RULE_IDS, scan_file, scan_repo
 
 
@@ -76,6 +77,10 @@ class StaticSafetyContractTests(unittest.TestCase):
 
         self.assertTrue(annotation.startswith("::warning file="))
         self.assertIn(f"title={findings[0].rule_id}", annotation)
+
+    def test_empty_allowlist_is_applied_without_hiding_findings(self):
+        findings = scan_repo(REPO)
+        self.assertEqual(len(findings), len(apply_allowlist(findings, ALLOWLIST)))
 
 
 if __name__ == "__main__":

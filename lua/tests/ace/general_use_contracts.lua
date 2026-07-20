@@ -1,6 +1,6 @@
-local function assertRegistryEntries(registry, names)
+local function assertRegistryEntries(expectValue, registry, names)
 	for _, name in ipairs(names) do
-		expect(registry[name]).to.exist()
+		expectValue(registry[name]).to.exist()
 	end
 end
 
@@ -10,7 +10,7 @@ return {
 		{
 			name = "covers player-facing round families",
 			func = function()
-				assertRegistryEntries(ACF.RoundTypes, {
+				assertRegistryEntries(expect, ACF.RoundTypes, {
 					"AP", "APFSDS", "HE", "HEAT", "HESH", "THEAT",
 				})
 
@@ -28,7 +28,7 @@ return {
 		{
 			name = "covers armor materials used by layered vehicle builds",
 			func = function()
-				assertRegistryEntries(ACE.ArmorTypes, {
+				assertRegistryEntries(expect, ACE.ArmorTypes, {
 					"RHA", "DU", "Rub", "Texto", "Cer", "Alum",
 				})
 

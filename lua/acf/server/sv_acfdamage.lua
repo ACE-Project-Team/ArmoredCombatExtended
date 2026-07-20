@@ -1,7 +1,8 @@
 -- This file is meant for the advanced damage functions used by the Armored Combat Framework
-ACE.Spall		= {}
+ACE.SpallTraces	= ACE.SpallTraces or {}
 ACE.CurSpallIndex = 0
 ACE.SpallMax	= 250
+ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
 
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
@@ -488,12 +489,12 @@ function ACF_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 			-- Normal Trace creation
 			local Index = ACE.CurSpallIndex
 
-			ACE.Spall[Index] = {}
-			ACE.Spall[Index].start  = HitPos
-			ACE.Spall[Index].endpos = HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVel / 8, 600 ) --Spall endtrace. Used to determine spread and the spall trace length. Only adjust the value in the max to determine the minimum distance spall will travel. 600 should be fine.
-			ACE.Spall[Index].filter = table.Copy(Filter)
-			ACE.Spall[Index].mins	= Vector(0,0,0)
-			ACE.Spall[Index].maxs	= Vector(0,0,0)
+			ACE.SpallTraces[Index] = {}
+			ACE.SpallTraces[Index].start  = HitPos
+			ACE.SpallTraces[Index].endpos = HitPos + ( HitVec:GetNormalized() + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVel / 8, 600 ) --Spall endtrace. Used to determine spread and the spall trace length. Only adjust the value in the max to determine the minimum distance spall will travel. 600 should be fine.
+			ACE.SpallTraces[Index].filter = table.Copy(Filter)
+			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
+			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
 			ACF_SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
 
@@ -695,10 +696,10 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 			-- Normal Trace creation
 			local Index = ACE.CurSpallIndex
 
-			ACE.Spall[Index]			= {}
-			ACE.Spall[Index].start	= HitPos
-			ACE.Spall[Index].endpos	= HitPos + ((fNormal * 2500 + HitVec):GetNormalized() + VectorRand() / 3):GetNormalized() * math.max( SpallVel / 8, 600) --I got bored of spall not going across the tank
-			ACE.Spall[Index].filter	= table.Copy(Temp_Filter)
+			ACE.SpallTraces[Index]			= {}
+			ACE.SpallTraces[Index].start	= HitPos
+			ACE.SpallTraces[Index].endpos	= HitPos + ((fNormal * 2500 + HitVec):GetNormalized() + VectorRand() / 3):GetNormalized() * math.max( SpallVel / 8, 600) --I got bored of spall not going across the tank
+			ACE.SpallTraces[Index].filter	= table.Copy(Temp_Filter)
 
 			ACF_SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
 
@@ -711,25 +712,76 @@ function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 	end
 end
 
+local function SetSpallTermination(Index, Reason)
+	local SpallTrace = ACE.SpallTraces[Index]
 
+	if SpallTrace then
+		SpallTrace.TerminationReason = Reason
+	end
+end
+
+local function GetSpallVisitKey(Entity, HitPos)
+	local EntityKey = tostring(Entity)
+
+	if Entity and Entity.EntIndex then
+		EntityKey = tostring(Entity:EntIndex())
+	end
+
+	if not HitPos then return EntityKey end
+
+	return EntityKey .. ":" .. math.Round(HitPos.x or 0) .. ":" .. math.Round(HitPos.y or 0) .. ":" .. math.Round(HitPos.z or 0)
+end
+
+local function CanContinueSpallTrace(Index, SpallRes, State)
+	State = State or { Depth = 0, Visited = {} }
+	State.Depth = State.Depth + 1
+
+	if State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
+		SetSpallTermination(Index, "depth_budget")
+		return false, State
+	end
+
+	local VisitKey = GetSpallVisitKey(SpallRes.Entity, SpallRes.HitPos)
+
+	if State.Visited[VisitKey] then
+		SetSpallTermination(Index, "repeated_visit")
+		return false, State
+	end
+
+	State.Visited[VisitKey] = true
+
+	return true, State
+end
 
 --Spall trace core. For HESH and normal spalling
-function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity )
+function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
 	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
 	-- while later fragments must start from the original energy.
 	SpallEnergy = table.Copy(SpallEnergy)
 
 	local Entity_Crit_Hit_Factor = 1.01
 
-	local SpallTrace = ACE.Spall[Index]
+	local SpallTrace = ACE.SpallTraces[Index]
+	if not SpallTrace then
+		SetSpallTermination(Index, "missing_trace")
+		return
+	end
+
 	local SpallDirection = HitVec:GetNormalized()
 	if SpallTrace and SpallTrace.start and SpallTrace.endpos then
 		SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()
 	end
 	local SpallRes = util.TraceLine(SpallTrace)
+	if not SpallRes then
+		SetSpallTermination(Index, "missing_trace_result")
+		return
+	end
 
 	-- Check if spalling hit something
 	if SpallRes.Hit and ACF_Check( SpallRes.Entity ) then
+		local CanContinue
+		CanContinue, State = CanContinueSpallTrace(Index, SpallRes, State)
+		if not CanContinue then return end
 
 		do
 
@@ -737,17 +789,17 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			if IsValid(phys) and ACF_CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
 
-				local Temp_Filter = table.Copy(ACE.Spall[Index].filter)
+				local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
 				table.insert( Temp_Filter , SpallRes.Entity )
 
-				ACE.Spall[Index] = {}
-				ACE.Spall[Index].start  = SpallRes.HitPos
-				ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-				ACE.Spall[Index].filter = Temp_Filter
-				ACE.Spall[Index].mins	= Vector(0,0,0)
-				ACE.Spall[Index].maxs	= Vector(0,0,0)
+				ACE.SpallTraces[Index] = {}
+				ACE.SpallTraces[Index].start  = SpallRes.HitPos
+				ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				ACE.SpallTraces[Index].filter = Temp_Filter
+				ACE.SpallTraces[Index].mins	= Vector(0,0,0)
+				ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
-				ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+				ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 				return
 			end
 
@@ -794,7 +846,7 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		end
 
 		-- Applies a decal
-		util.Decal("GunShot1",SpallRes.StartPos, SpallRes.HitPos, ACE.Spall[Index].filter )
+		util.Decal("GunShot1",SpallRes.StartPos, SpallRes.HitPos, ACE.SpallTraces[Index].filter )
 
 		-- Continue once with the standard armor resolver's remaining-energy fraction.
 		-- This is fragment-local because SpallEnergy was copied at function entry.
@@ -803,31 +855,33 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			SpallEnergy.Penetration = PostPenetration.RemainingPenetration
 			SpallEnergy.Kinetic = PostPenetration.RemainingKinetic
 
-			local Temp_Filter = table.Copy(ACE.Spall[Index].filter)
+			local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
 			table.insert( Temp_Filter , SpallRes.Entity )
 			if IsValid(Debris) then
 				table.insert( Temp_Filter , Debris )
 			end
 
-			ACE.Spall[Index] = {}
-			ACE.Spall[Index].start  = SpallRes.HitPos
-			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-			ACE.Spall[Index].filter = Temp_Filter
-			ACE.Spall[Index].mins	= Vector(0,0,0)
-			ACE.Spall[Index].maxs	= Vector(0,0,0)
+			ACE.SpallTraces[Index] = {}
+			ACE.SpallTraces[Index].start  = SpallRes.HitPos
+			ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			ACE.SpallTraces[Index].filter = Temp_Filter
+			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
+			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
 			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
-			ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+			ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 			return
 		else
+			SetSpallTermination(Index, "no_penetration")
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
 			-- Red trace means spall trace that did hit something.
 		end
 
 	else
+		SetSpallTermination(Index, SpallRes.Hit and "invalid_entity" or "exhausted_valid_layers")
 		debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,255,0), true )
 		-- Green trace means spall trace that doesn't hit something.
 	end

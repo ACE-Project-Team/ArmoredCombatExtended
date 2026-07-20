@@ -20,7 +20,8 @@ local function withSpallTraceStubs(callback)
 		VectorRand = _G.VectorRand,
 		Line = debugoverlay.Line,
 		CritEnts = ACE.CritEnts,
-		Spall = ACE.Spall[1],
+		SpallTrace = ACE.SpallTraces[1],
+		SpallTraceMaxDepth = ACE.SpallTraceMaxDepth,
 	}
 
 	local ok, err = pcall(callback)
@@ -36,7 +37,8 @@ local function withSpallTraceStubs(callback)
 	_G.VectorRand = original.VectorRand
 	debugoverlay.Line = original.Line
 	ACE.CritEnts = original.CritEnts
-	ACE.Spall[1] = original.Spall
+	ACE.SpallTraces[1] = original.SpallTrace
+	ACE.SpallTraceMaxDepth = original.SpallTraceMaxDepth
 
 	if not ok then error(err, 0) end
 end
@@ -80,7 +82,7 @@ return {
 
 				withSpallTraceStubs(function()
 					ACE.CritEnts = {}
-					ACE.Spall[1] = {
+					ACE.SpallTraces[1] = {
 						start = Vector(0, 0, 0),
 						endpos = Vector(0, 100, 0),
 						filter = {},
@@ -131,6 +133,132 @@ return {
 				expect(seen[1].kinetic).to.equal(80)
 				expect(seen[2].penetration).to.equal(75)
 				expect(seen[2].kinetic).to.equal(60)
+			end,
+		},
+		{
+			name = "terminates recursive spall when the same layer is visited again",
+			func = function()
+				local plate = makeEntity("cycle")
+				local traces = 0
+
+				withSpallTraceStubs(function()
+					ACE.SpallTraces[1] = {
+						start = Vector(0, 0, 0),
+						endpos = Vector(0, 100, 0),
+						filter = {},
+						mins = Vector(0, 0, 0),
+						maxs = Vector(0, 0, 0),
+					}
+
+					_G.ACF_Check = function() return true end
+					_G.ACF_CheckClips = function() return false end
+					_G.ACF_GetHitAngle = function() return 0 end
+					_G.ACF_APKill = function() return nil end
+					_G.VectorRand = function() return Vector(0, 0, 0) end
+					ACE.GetMaterialData = function() return { spallresist = 1 } end
+					util.Decal = function() end
+					debugoverlay.Line = function() end
+					util.TraceLine = function()
+						traces = traces + 1
+
+						return {
+							Hit = true,
+							Entity = plate,
+							HitNormal = Vector(-1, 0, 0),
+							StartPos = Vector(0, 0, 0),
+							HitPos = Vector(10, 0, 0),
+						}
+					end
+					_G.ACF_Damage = function()
+						return { Overkill = 10, Loss = 0.25, Kill = false }
+					end
+
+					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					expect(ACE.SpallTraces[1].TerminationReason).to.equal("repeated_visit")
+				end)
+
+				expect(traces).to.equal(2)
+			end,
+		},
+		{
+			name = "terminates recursive spall at the explicit depth budget",
+			func = function()
+				local traces = 0
+
+				withSpallTraceStubs(function()
+					ACE.SpallTraceMaxDepth = 3
+					ACE.SpallTraces[1] = {
+						start = Vector(0, 0, 0),
+						endpos = Vector(0, 100, 0),
+						filter = {},
+						mins = Vector(0, 0, 0),
+						maxs = Vector(0, 0, 0),
+					}
+
+					_G.ACF_Check = function() return true end
+					_G.ACF_CheckClips = function() return false end
+					_G.ACF_GetHitAngle = function() return 0 end
+					_G.ACF_APKill = function() return nil end
+					_G.VectorRand = function() return Vector(0, 0, 0) end
+					ACE.GetMaterialData = function() return { spallresist = 1 } end
+					util.Decal = function() end
+					debugoverlay.Line = function() end
+					util.TraceLine = function()
+						traces = traces + 1
+						local plate = makeEntity("layer-" .. traces)
+
+						return {
+							Hit = true,
+							Entity = plate,
+							HitNormal = Vector(-1, 0, 0),
+							StartPos = Vector(traces - 1, 0, 0),
+							HitPos = Vector(traces, 0, 0),
+						}
+					end
+					_G.ACF_Damage = function()
+						return { Overkill = 10, Loss = 0.01, Kill = false }
+					end
+
+					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					expect(ACE.SpallTraces[1].TerminationReason).to.equal("depth_budget")
+				end)
+
+				expect(traces).to.equal(4)
+			end,
+		},
+		{
+			name = "records invalid entity termination without applying damage",
+			func = function()
+				local damaged = false
+
+				withSpallTraceStubs(function()
+					ACE.SpallTraces[1] = {
+						start = Vector(0, 0, 0),
+						endpos = Vector(0, 100, 0),
+						filter = {},
+						mins = Vector(0, 0, 0),
+						maxs = Vector(0, 0, 0),
+					}
+
+					_G.ACF_Check = function() return false end
+					util.TraceLine = function()
+						return {
+							Hit = true,
+							Entity = makeEntity("invalid"),
+							StartPos = Vector(0, 0, 0),
+							HitPos = Vector(10, 0, 0),
+						}
+					end
+					_G.ACF_Damage = function()
+						damaged = true
+					end
+					debugoverlay.Line = function() end
+
+					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					expect(ACE.SpallTraces[1].TerminationReason).to.equal("invalid_entity")
+				end)
+
+				expect(damaged).to.equal(false)
 			end,
 		},
 		{

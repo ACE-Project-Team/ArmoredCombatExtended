@@ -248,9 +248,36 @@ class SpallSourceContractTests(unittest.TestCase):
 
         self.assertLess(copy_pos, mutation_pos)
 
+    def test_spall_scratch_storage_does_not_use_public_function_namespace(self):
+        self.assertIn("ACE.SpallTraces\t= ACE.SpallTraces or {}", self.source)
+        self.assertNotIn("ACE.Spall[Index]", self.body)
+
+    def test_spall_trace_depth_budget_is_tied_to_existing_spall_cap(self):
+        self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax", self.source)
+        self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
+
+    def test_spall_trace_records_explicit_termination_reasons(self):
+        for reason in (
+            '"depth_budget"',
+            '"repeated_visit"',
+            '"missing_trace"',
+            '"missing_trace_result"',
+            '"no_penetration"',
+            '"invalid_entity"',
+            '"exhausted_valid_layers"',
+        ):
+            with self.subTest(reason=reason):
+                self.assertIn(reason, self.source)
+
+    def test_spall_trace_repeated_visit_guard_runs_before_damage(self):
+        guard = self.body.index("CanContinue, State = CanContinueSpallTrace")
+        damage = self.body.index("local HitRes = ACF_Damage")
+
+        self.assertLess(guard, damage)
+
     def test_both_continuation_paths_use_incoming_direction(self):
         end_positions = re.findall(
-            r"ACE\.Spall\[Index\]\.endpos\s*=\s*(.+)",
+            r"ACE\.SpallTraces\[Index\]\.endpos\s*=\s*(.+)",
             self.body,
         )
 

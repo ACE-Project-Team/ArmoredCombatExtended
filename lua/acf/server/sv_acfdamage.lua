@@ -103,6 +103,49 @@ ACE.CritEnts = {
 	gmod_wire_gate             = true
 }
 
+local function ACF_SiftDownDamageCandidate(Targets, Distances, EntIndices, At, Count)
+	local Entity = Targets[At]
+	local Distance = Distances[At]
+	local EntityIndex = EntIndices[At]
+
+	while true do
+		local Child = At * 2
+		if Child > Count then break end
+
+		local Right = Child + 1
+		if Right <= Count then
+			local LeftDistance = Distances[Child]
+			local RightDistance = Distances[Right]
+			local LeftIndex = EntIndices[Child]
+			local RightIndex = EntIndices[Right]
+			if RightDistance > LeftDistance or (RightDistance == LeftDistance and RightIndex > LeftIndex) then
+				Child = Right
+			end
+		end
+
+		local ChildDistance = Distances[Child]
+		local ChildIndex = EntIndices[Child]
+		if Distance > ChildDistance or (Distance == ChildDistance and EntityIndex >= ChildIndex) then break end
+
+		Targets[At] = Targets[Child]
+		Distances[At] = ChildDistance
+		EntIndices[At] = ChildIndex
+		At = Child
+	end
+
+	Targets[At] = Entity
+	Distances[At] = Distance
+	EntIndices[At] = EntityIndex
+end
+
+local function ACF_BuildDamageCandidateHeap(Targets, Distances, EntIndices)
+	local Count = #Targets
+	for At = math.floor(Count / 2), 1, -1 do
+		ACF_SiftDownDamageCandidate(Targets, Distances, EntIndices, At, Count)
+	end
+	Distances.HeapReady = true
+end
+
 --I don't want HE processing every ent that it has in range
 local function ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit)
 	if Limit <= 0 then return false end
@@ -110,68 +153,31 @@ local function ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, 
 	local Count = #Targets
 	local EntityIndex = Entity:EntIndex()
 
-	if Count >= Limit then
-		local RootDistance = Distances[1]
-		local RootIndex = EntIndices[1]
-		if RootDistance < Distance or (RootDistance == Distance and RootIndex <= EntityIndex) then return false end
-
-		local At = 1
-		Targets[At] = Entity
-		Distances[At] = Distance
-		EntIndices[At] = EntityIndex
-
-		while true do
-			local Child = At * 2
-			if Child > Count then break end
-
-			local Right = Child + 1
-			if Right <= Count then
-				local LeftDistance = Distances[Child]
-				local RightDistance = Distances[Right]
-				local LeftIndex = EntIndices[Child]
-				local RightIndex = EntIndices[Right]
-				if RightDistance > LeftDistance or (RightDistance == LeftDistance and RightIndex > LeftIndex) then
-					Child = Right
-				end
-			end
-
-			local ChildDistance = Distances[Child]
-			local ChildIndex = EntIndices[Child]
-			if Distance > ChildDistance or (Distance == ChildDistance and EntityIndex >= ChildIndex) then break end
-
-			Targets[At] = Targets[Child]
-			Distances[At] = ChildDistance
-			EntIndices[At] = ChildIndex
-			At = Child
-		end
-
-		Targets[At] = Entity
-		Distances[At] = Distance
-		EntIndices[At] = EntityIndex
-		return true
-	else
-		local At = Count + 1
-		while At > 1 do
-			local Parent = math.floor(At / 2)
-			local ParentDistance = Distances[Parent]
-			local ParentIndex = EntIndices[Parent]
-			if ParentDistance > Distance or (ParentDistance == Distance and ParentIndex >= EntityIndex) then break end
-
-			Targets[At] = Targets[Parent]
-			Distances[At] = ParentDistance
-			EntIndices[At] = ParentIndex
-			At = Parent
-		end
-
-		Targets[At] = Entity
-		Distances[At] = Distance
-		EntIndices[At] = EntityIndex
+	if Count < Limit then
+		Count = Count + 1
+		Targets[Count] = Entity
+		Distances[Count] = Distance
+		EntIndices[Count] = EntityIndex
 		return true
 	end
+
+	if not Distances.HeapReady then ACF_BuildDamageCandidateHeap(Targets, Distances, EntIndices) end
+
+	local RootDistance = Distances[1]
+	local RootIndex = EntIndices[1]
+	if RootDistance < Distance or (RootDistance == Distance and RootIndex <= EntityIndex) then return false end
+
+	Targets[1] = Entity
+	Distances[1] = Distance
+	EntIndices[1] = EntityIndex
+	ACF_SiftDownDamageCandidate(Targets, Distances, EntIndices, 1, Count)
+	return true
 end
 
 local function ACF_SortDamageCandidates(Targets, Distances, EntIndices)
 	local Count = #Targets
+	if Count <= 1 then return end
+	if not Distances.HeapReady then return end
 
 	while Count > 1 do
 		Targets[1], Targets[Count] = Targets[Count], Targets[1]
@@ -215,18 +221,33 @@ function ACF_HEFind( Hitpos, Radius )
 	local Distances = {}
 	local EntIndices = {}
 	local Limit = ACE.DamageQueryLimits.HECandidates
+	local Accepted = 0
 	ACE.DamageQueryStats.CandidateQueries = ACE.DamageQueryStats.CandidateQueries + 1
 	if Limit <= 0 then return Targets end
 
 	for _, Entity in ipairs(ents.FindInSphere(Hitpos, Radius)) do
-		if IsValid(Entity) and not ACF.HEFilter[Entity:GetClass()] and Entity:IsSolid() and not Entity.Exploding then
-			local Distance = Hitpos:DistToSqr(Entity:GetPos())
-			if ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit) then
-				ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + 1
+		if not ACF.HEFilter[Entity:GetClass()] and Entity:IsSolid() and not Entity.Exploding then
+			if #Targets < Limit and not Distances.HeapReady then
+				Targets[#Targets + 1] = Entity
+				Accepted = Accepted + 1
+			else
+				if not Distances.HeapReady then
+					for Index, Target in ipairs(Targets) do
+						Distances[Index] = Hitpos:DistToSqr(Target:GetPos())
+						EntIndices[Index] = Target:EntIndex()
+					end
+					ACF_BuildDamageCandidateHeap(Targets, Distances, EntIndices)
+				end
+
+				local Distance = Hitpos:DistToSqr(Entity:GetPos())
+				if ACF_InsertNearestDamageCandidate(Targets, Distances, EntIndices, Entity, Distance, Limit) then
+					Accepted = Accepted + 1
+				end
 			end
 		end
 	end
 
+	ACE.DamageQueryStats.CandidatesAccepted = ACE.DamageQueryStats.CandidatesAccepted + Accepted
 	ACF_SortDamageCandidates(Targets, Distances, EntIndices)
 	return Targets
 end

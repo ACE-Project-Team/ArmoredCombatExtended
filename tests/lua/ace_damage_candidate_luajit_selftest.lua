@@ -2,7 +2,7 @@ local root = assert(arg[1], "usage: ace_damage_candidate_luajit_selftest.lua <AC
 root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 local source = assert(io.open(root .. "/lua/acf/server/sv_acfdamage.lua", "r")):read("*a")
-local start = assert(source:find("local function ACF_InsertNearestDamageCandidate"))
+local start = assert(source:find("local function ACF_SiftDownDamageCandidate"))
 local finish = assert(source:find("function ACF_HEFind", start))
 local chunk = assert(loadstring(source:sub(start, finish - 1) .. "\nreturn ACF_InsertNearestDamageCandidate, ACF_SortDamageCandidates"))
 local insert, sort = chunk()

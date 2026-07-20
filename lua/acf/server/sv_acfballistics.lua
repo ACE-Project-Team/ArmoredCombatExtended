@@ -9,12 +9,12 @@ local Gravity = -GetConVar("sv_gravity"):GetInt()
 local GravityVector = Vector(0, 0, Gravity)
 ACF.BallisticsGravity = Gravity
 ACF.BallisticsGravityVector = GravityVector
-cvars.AddChangeCallback("sv_gravity", "ACE_BallisticsGravity", function(_, _, Value)
+cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	Gravity = -tonumber(Value)
 	GravityVector = Vector(0, 0, Gravity)
 	ACF.BallisticsGravity = Gravity
 	ACF.BallisticsGravityVector = GravityVector
-end)
+end, "ACE_BallisticsGravity")
 local ActiveBullets = {}
 local ActiveCount = 0
 local CurrentBallisticsFrame = 0

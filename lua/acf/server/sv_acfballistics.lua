@@ -17,10 +17,10 @@ cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 end, "ACE_BallisticsGravity")
 local ActiveBullets = {}
 local ActiveCount = 0
-local CurrentBallisticsFrame = 0
+local CurrentBallisticsFrame = ACE.BallisticsFrame or 0
 local ManagingBullets = false
 local CurrentActiveSlot = 0
-ACE.BallisticsFrame = ACE.BallisticsFrame or 0
+ACE.BallisticsFrame = CurrentBallisticsFrame
 
 ACE.BallisticsLimits = ACE.BallisticsLimits or {
 	VisibilityRetries = 50,
@@ -66,6 +66,21 @@ function ACF_RegisterBullet(Index, Bullet)
 	ActiveBullets[ActiveCount] = Index
 	Bullet.ActiveSlot = ActiveCount
 	ACF.Bullet[Index] = Bullet
+end
+
+local function RebuildActiveBulletRegistry()
+	for Key in pairs(ActiveBullets) do
+		ActiveBullets[Key] = nil
+	end
+	ActiveCount = 0
+
+	for Index, Bullet in pairs(ACF.Bullet) do
+		if Bullet then
+			ActiveCount = ActiveCount + 1
+			ActiveBullets[ActiveCount] = Index
+			Bullet.ActiveSlot = ActiveCount
+		end
+	end
 end
 
 local function UnregisterBullet(Bullet)
@@ -187,6 +202,8 @@ function ACF_RemoveBullet( Index )
 
 	hook.Run("ACFOnBulletRemoved", Index, Bullet)
 end
+
+RebuildActiveBulletRegistry()
 
 --[[------------------------------------------------------------------------------------------------
 	checks the visclips of an entity, to determine if round should pass through or not.

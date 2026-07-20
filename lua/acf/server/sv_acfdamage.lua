@@ -2,7 +2,9 @@
 ACE.SpallTraces	= ACE.SpallTraces or {}
 ACE.CurSpallIndex = 0
 ACE.SpallMax	= 250
-ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
+-- Layered vehicle armor should terminate well below the GLua call-stack danger zone.
+ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or 32
+ACE.HESHTraceMaxIterations = ACE.HESHTraceMaxIterations or 1000
 
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
@@ -514,7 +516,7 @@ function ACF_PropShockwave( HitPos, HitVec, Filter, Caliber )
 	--General
 	local FindEnd	= true			--marked for initial loop
 	local iteration	= 0				--since while has not index
-	local EntsToHit	= Filter	--Used for the second tracer, where it tells what ents must hit
+	local EntsToHit	= table.Copy(Filter)	--Used for the second tracer, where it tells what ents must hit
 	--HitPos
 	local HitFronts	= {}				--Any tracefronts hitpos will be stored here
 	local HitBacks	= {}				--Any traceback hitpos will be stored here
@@ -541,8 +543,11 @@ function ACF_PropShockwave( HitPos, HitVec, Filter, Caliber )
 	while FindEnd do
 		iteration = iteration + 1
 		--print('iteration #' .. iteration)
-		--In case of total failure, this loop is limited to 1000 iterations, don't make me increase it even more.
-		if iteration >= 1000 then FindEnd = false end
+		-- In case of total failure, this loop has an explicit work budget.
+		if iteration > ACE.HESHTraceMaxIterations then
+			FindEnd = false
+			break
+		end
 		--================-TRACEFRONT-==================-
 		local tracefront = util.TraceHull( TrFront )
 		--insert the hitpos here
@@ -629,7 +634,7 @@ end
 --Handles HESH spalling
 function ACF_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
 
-	local Temp_Filter = Filter
+	local Temp_Filter = table.Copy(Filter)
 	local _, Armour, PEnts, fNormal = ACF_PropShockwave( HitPos, -HitVec, Filter, Caliber )
 	table.Add( Temp_Filter , PEnts )
 
@@ -736,7 +741,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 	State = State or { Depth = 0, Visited = {} }
 	State.Depth = State.Depth + 1
 
-	if State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
+	if State.Depth > (ACE.SpallTraceMaxDepth or 32) then
 		SetSpallTermination(Index, "depth_budget")
 		return false, State
 	end

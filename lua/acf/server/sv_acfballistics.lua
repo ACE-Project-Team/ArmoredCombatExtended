@@ -1,10 +1,104 @@
 --[[------------------------------------------------------------------------------------------------
 	SV_BALLISTICS.LUA
 ]]--------------------------------------------------------------------------------------------------
--- optimization; reuse tables for ballistics traces
+-- Reuse trace state; the result table is overwritten by each trace.
 local FlightRes = { }
 local FlightTr = { output = FlightRes }
--- end init
+
+local Gravity = -GetConVar("sv_gravity"):GetInt()
+local GravityVector = Vector(0, 0, Gravity)
+ACF.BallisticsGravity = Gravity
+ACF.BallisticsGravityVector = GravityVector
+cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
+	Gravity = -tonumber(Value)
+	GravityVector = Vector(0, 0, Gravity)
+	ACF.BallisticsGravity = Gravity
+	ACF.BallisticsGravityVector = GravityVector
+end, "ACE_BallisticsGravity")
+local ActiveBullets = {}
+local ActiveCount = 0
+local CurrentBallisticsFrame = ACE.BallisticsFrame or 0
+local ManagingBullets = false
+local CurrentActiveSlot = 0
+ACE.BallisticsFrame = CurrentBallisticsFrame
+
+ACE.BallisticsLimits = ACE.BallisticsLimits or {
+	VisibilityRetries = 50,
+	Impacts = 100,
+}
+
+ACE.BallisticsStats = ACE.BallisticsStats or {
+	Frames = 0,
+	ActivePeak = 0,
+	TraceCalls = 0,
+	VisibilityRetries = 0,
+	Impacts = 0,
+}
+
+function ACE.GetBallisticsStats()
+	return table.Copy(ACE.BallisticsStats)
+end
+
+function ACE.ResetBallisticsStats()
+	for Key in pairs(ACE.BallisticsStats) do
+		ACE.BallisticsStats[Key] = 0
+	end
+end
+
+local DebugConVar = GetConVar("acf_ballistics_debug") or CreateConVar(
+	"acf_ballistics_debug", "0", FCVAR_ARCHIVE, "Enable server-side ACE ballistics debug overlays."
+)
+
+local function BallisticsDebug()
+	return DebugConVar:GetBool()
+end
+
+function ACF_AcquireBullet(BulletData)
+	return table.Copy(BulletData)
+end
+
+function ACF_RegisterBullet(Index, Bullet)
+	if Bullet.ActiveSlot then return end
+	local Existing = ACF.Bullet[Index]
+	if Existing and Existing ~= Bullet then ACF_RemoveBullet(Index) end
+
+	ActiveCount = ActiveCount + 1
+	ActiveBullets[ActiveCount] = Index
+	Bullet.ActiveSlot = ActiveCount
+	ACF.Bullet[Index] = Bullet
+end
+
+local function RebuildActiveBulletRegistry()
+	for Key in pairs(ActiveBullets) do
+		ActiveBullets[Key] = nil
+	end
+	ActiveCount = 0
+
+	for Index, Bullet in pairs(ACF.Bullet) do
+		if Bullet then
+			ActiveCount = ActiveCount + 1
+			ActiveBullets[ActiveCount] = Index
+			Bullet.ActiveSlot = ActiveCount
+		end
+	end
+end
+
+local function UnregisterBullet(Bullet)
+	local Slot = Bullet and Bullet.ActiveSlot
+	if not Slot then return end
+
+	local LastIndex = ActiveBullets[ActiveCount]
+	ActiveBullets[Slot] = LastIndex
+	ActiveBullets[ActiveCount] = nil
+	ActiveCount = ActiveCount - 1
+	if ManagingBullets and Slot < CurrentActiveSlot then
+		CurrentActiveSlot = Slot
+	end
+
+	local LastBullet = ACF.Bullet[LastIndex]
+	if LastBullet then LastBullet.ActiveSlot = Slot end
+	Bullet.ActiveSlot = nil
+end
 
 --[[------------------------------------------------------------------------------------------------
 	DEBUG CONFIG
@@ -23,11 +117,11 @@ function ACF_CreateBullet( BulletData )
 		ACF.CurBulletIndex = 1
 	end
 
-	BulletData = table.Copy(BulletData) -- this is required to avoid overwritting the origin table
+	BulletData = ACF_AcquireBullet(BulletData)
 
 	--Those are BulletData settings that are global and shouldn't change round to round
-	BulletData.Gravity       = GetConVar("sv_gravity"):GetInt() * -1
-	BulletData.Accel         = Vector(0,0,BulletData.Gravity)
+	BulletData.Gravity       = Gravity
+	BulletData.Accel         = GravityVector
 	BulletData.LastThink     = ACF.SysTime
 	BulletData.FlightTime    = 0
 	BulletData.TraceBackComp = 0
@@ -44,14 +138,12 @@ function ACF_CreateBullet( BulletData )
 		end
 	end
 
-	if BulletData.Filter then
-		table.Add( BulletData.Filter, { BulletData.Gun } )
-	else
-		BulletData.Filter = { BulletData.Gun }
-	end
+	BulletData.Filter = BulletData.Filter or {}
+	table.insert(BulletData.Filter, BulletData.Gun)
 
 	BulletData.Index		= ACF.CurBulletIndex
-	ACF.Bullet[ACF.CurBulletIndex] = table.Copy(BulletData)	--Place the bullet at the current index pos
+	BulletData.ActiveFrame = CurrentBallisticsFrame
+	ACF_RegisterBullet(ACF.CurBulletIndex, BulletData)
 	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
 	ACF_CalcBulletFlight( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex] )
 
@@ -65,14 +157,33 @@ end
 ]]--------------------------------------------------------------------------------------------------
 function ACF_ManageBullets()
 
-	if next(ACF.Bullet) then
+	ACE.BallisticsStats.Frames = ACE.BallisticsStats.Frames + 1
+	CurrentBallisticsFrame = CurrentBallisticsFrame + 1
+	ACE.BallisticsFrame = CurrentBallisticsFrame
+	if ActiveCount == 0 then return end
+	if ActiveCount > ACE.BallisticsStats.ActivePeak then ACE.BallisticsStats.ActivePeak = ActiveCount end
 
-		for Index,Bullet in pairs(ACF.Bullet) do
+	local Frame = CurrentBallisticsFrame
+	local Slot = 1
+	ManagingBullets = true
+	while Slot <= ActiveCount do
+		CurrentActiveSlot = Slot
+		local Index = ActiveBullets[Slot]
+		local Bullet = ACF.Bullet[Index]
+		if Bullet and Bullet.ActiveFrame ~= Frame then
+			Bullet.ActiveFrame = Frame
 			if not Bullet.HandlesOwnIteration then
-				ACF_CalcBulletFlight( Index, Bullet )		--This is the bullet entry in the table, the Index var omnipresent refers to this
+				ACF_CalcBulletFlight(Index, Bullet)
 			end
 		end
+		if CurrentActiveSlot < Slot then
+			Slot = CurrentActiveSlot
+		elseif ActiveBullets[Slot] == Index then
+			Slot = Slot + 1
+		end
 	end
+	ManagingBullets = false
+	CurrentActiveSlot = 0
 end
 hook.Remove( "Tick", "ACF_ManageBullets" )
 hook.Add("Tick", "ACF_ManageBullets", ACF_ManageBullets)
@@ -84,10 +195,15 @@ function ACF_RemoveBullet( Index )
 
 	local Bullet = ACF.Bullet[Index]
 	ACF.Bullet[Index] = nil
-	if Bullet and Bullet.OnRemoved then Bullet:OnRemoved() end
+	if Bullet then
+		UnregisterBullet(Bullet)
+		if Bullet.OnRemoved then Bullet:OnRemoved() end
+	end
 
 	hook.Run("ACFOnBulletRemoved", Index, Bullet)
 end
+
+RebuildActiveBulletRegistry()
 
 --[[------------------------------------------------------------------------------------------------
 	checks the visclips of an entity, to determine if round should pass through or not.
@@ -150,6 +266,7 @@ do
 		WaterTr.start = Bullet.Pos
 		WaterTr.endpos = Bullet.Pos + NormFlight * 1
 		WaterTr.mask = MASK_WATER
+		ACE.BallisticsStats.TraceCalls = ACE.BallisticsStats.TraceCalls + 1
 		local Water = util.TraceLine( WaterTr )
 
 
@@ -175,9 +292,11 @@ do
 		Bullet.StartTrace = Bullet.Pos - Flightnorm * math.min( PhysVel, Bullet.FlightTime * FlightLength - Bullet.TraceBackComp * Bullet.DeltaTime )
 		Bullet.EndTrace	= Bullet.NextPos + Flightnorm * PhysVel
 
+	if BallisticsDebug() then
 		debugoverlay.Cross(Bullet.Pos,5,DebugTime,Color(255,255,255) ) --true start
 		debugoverlay.Line(Bullet.Pos, Bullet.NextPos, DebugTime, Color(0,255,0), true ) -- the predicted trayectory.
 		debugoverlay.Line(Bullet.StartTrace, Bullet.EndTrace, DebugTime, Color(255, 255, 0)) -- the real trace detection.
+	end
 
 		--updating timestep timers
 		Bullet.LastThink = ACF.SysTime
@@ -198,8 +317,6 @@ end
 ]]--------------------------------------------------------------------------------------------------
 do
 
-	local MaxvisclipPerBullet = 50
-
 	local function ACF_PerformTrace( Bullet )
 
 		-- perform the trace for damage
@@ -218,7 +335,9 @@ do
 		FlightTr.maxs = Vector(TROffset, TROffset, TROffset)
 		FlightTr.mins = -FlightTr.maxs
 
-		debugoverlay.Box( Bullet.Pos, FlightTr.mins, FlightTr.maxs, DebugTime, Color(255,100,0, 100) )
+		if BallisticsDebug() then
+			debugoverlay.Box( Bullet.Pos, FlightTr.mins, FlightTr.maxs, DebugTime, Color(255,100,0, 100) )
+		end
 		--debugoverlay.Cross( FlightTr.start, 10, 20, Color(255,0,0), true )
 		--debugoverlay.Cross( FlightTr.endpos, 10, 20, Color(0,255,0), true )
 
@@ -234,12 +353,12 @@ do
 		local visCount = 0
 
 		--if trace hits clipped part of prop, add prop to trace filter and retry
-		while RetryTrace and visCount < MaxvisclipPerBullet do
-
+		while RetryTrace and visCount < ACE.BallisticsLimits.VisibilityRetries do
 			-- Disables so we dont overloop it again
 			RetryTrace		= false
 
 			-- Defining tracehull at first instance. If you want serious cases, change this to traceline
+			ACE.BallisticsStats.TraceCalls = ACE.BallisticsStats.TraceCalls + 1
 			util.TraceHull(FlightTr)
 			--util.TraceLine(FlightTr)
 
@@ -248,6 +367,7 @@ do
 
 				--print("") -- not wanting linter annoys me.
 				-- trace result is stored in supplied output FlightRes (at top of file)
+				ACE.BallisticsStats.TraceCalls = ACE.BallisticsStats.TraceCalls + 1
 				util.TraceLine(FlightTr)
 
 				-- if our traceline doesnt detect anything after conversion, revert it to tracehull again. This should fix the 1 in 1 billon issue.
@@ -256,6 +376,7 @@ do
 					-- The traceline function overrides the mins/maxs. So i must redefine them again here.
 					FlightTr.maxs = Vector(TROffset, TROffset, TROffset)
 					FlightTr.mins = -FlightTr.maxs
+					ACE.BallisticsStats.TraceCalls = ACE.BallisticsStats.TraceCalls + 1
 					util.TraceHull(FlightTr)
 				end
 			end
@@ -268,6 +389,7 @@ do
 
 				-- Counts the amount of passed visclips during this tick. The loop will break if the limit is passed
 				visCount = visCount + 1
+				ACE.BallisticsStats.VisibilityRetries = ACE.BallisticsStats.VisibilityRetries + 1
 			end
 
 			-- If we hit a player or NPC, we need to retry the trace as a TraceLine
@@ -276,6 +398,7 @@ do
 			if FlightRes.HitNonWorld and (HitEnt:IsPlayer() or HitEnt:IsNPC()) then
 
 				FlightTr.output = nil
+				ACE.BallisticsStats.TraceCalls = ACE.BallisticsStats.TraceCalls + 1
 				local PlayerHitCheck = util.LegacyTraceLine(FlightTr) --new hit ent after traceline conversion
 				FlightTr.output = FlightRes
 
@@ -287,6 +410,7 @@ do
 
 					-- Counts the amount of passed visclips during this tick. The loop will break if the limit is passed
 					visCount = visCount + 1
+					ACE.BallisticsStats.VisibilityRetries = ACE.BallisticsStats.VisibilityRetries + 1
 				end
 				FlightRes.HitGroup = PlayerHitCheck.HitGroup
 			end
@@ -297,7 +421,6 @@ do
 
 	do
 
-		local MaxImpacts = 100 --How many impacts (including penetrations and ricochets) can a bullet tolerate before being deleted?
 		local Hit_Resolutions = {
 
 ------------ Called and performed when the bullet was told to penetrate ------------
@@ -317,7 +440,8 @@ do
 					Bullet.ImpactCount = (Bullet.ImpactCount or 0) + 1
 
 					--Removes the bullet if it could impact more than the specified
-					if Bullet.ImpactCount and Bullet.ImpactCount > MaxImpacts then
+					ACE.BallisticsStats.Impacts = ACE.BallisticsStats.Impacts + 1
+					if Bullet.ImpactCount and Bullet.ImpactCount > ACE.BallisticsLimits.Impacts then
 
 						ACF_BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
 						ACF_BulletEndFlight = ACF.RoundTypes[Bullet.Type]["endflight"]
@@ -352,7 +476,8 @@ do
 				end
 
 				--Removes the bullet if it could impact more than the specified
-				if Bullet.ImpactCount and Bullet.ImpactCount > MaxImpacts then
+				ACE.BallisticsStats.Impacts = ACE.BallisticsStats.Impacts + 1
+				if Bullet.ImpactCount and Bullet.ImpactCount > ACE.BallisticsLimits.Impacts then
 
 					ACF_BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
 					ACF_BulletEndFlight = ACF.RoundTypes[Bullet.Type]["endflight"]
@@ -416,8 +541,10 @@ do
 				ACF_BulletEndFlight = ACF.RoundTypes[Bullet.Type]["endflight"]
 				ACF_BulletEndFlight( Index, Bullet, ScaledPos, Bullet.Flight:GetNormalized() )
 
-				debugoverlay.Sphere(ScaledPos, 10, DebugTime, Color(255,100,0,255) )
-				debugoverlay.Text(ScaledPos, "Orange Sphere: Bullet Detonated here!", DebugTime )
+				if BallisticsDebug() then
+					debugoverlay.Sphere(ScaledPos, 10, DebugTime, Color(255,100,0,255) )
+					debugoverlay.Text(ScaledPos, "Orange Sphere: Bullet Detonated here!", DebugTime )
+				end
 
 			end
 

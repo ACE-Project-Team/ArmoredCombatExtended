@@ -30,22 +30,21 @@ function ACFM_BulletLaunch(BulletData)
 	end
 
 	--Those are BulletData settings that are global and shouldn't change round to round
-	BulletData.Gravity		= GetConVar("sv_gravity"):GetInt() * -1
-	BulletData.Accel		= Vector(0,0,BulletData.Gravity)
+	BulletData.Gravity		= ACF.BallisticsGravity
+	BulletData.Accel		= ACF.BallisticsGravityVector
 	BulletData.LastThink	= ACF.SysTime
 	BulletData.FlightTime	= 0
 	BulletData.TraceBackComp	= 0
 
 	BulletData.FuseLength	= type(BulletData.FuseLength) == "number" and BulletData.FuseLength or 0
 
-	if BulletData.Filter then
-		table.Add(BulletData.Filter, { BulletData.Gun } )
-	else
-		BulletData.Filter = { BulletData.Gun }
-	end
+	BulletData.Filter = BulletData.Filter or {}
+	table.insert(BulletData.Filter, BulletData.Gun)
 
 	BulletData.Index		= ACF.CurBulletIndex
-	ACF.Bullet[ACF.CurBulletIndex] = table.Copy(BulletData)	--Place the bullet at the current index pos
+	BulletData.ActiveFrame = ACE.BallisticsFrame
+	local ActiveBullet = ACF_AcquireBullet(BulletData)
+	ACF_RegisterBullet(ACF.CurBulletIndex, ActiveBullet)
 	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
 
 end
@@ -84,8 +83,7 @@ function ACFM_ExpandBulletData(bullet)
 	ret.Flight	= bullet.Flight or Vector(0,0,0)
 	ret.Type		= ret.Type	or bullet.Type
 
-	local cvarGrav  = GetConVar("sv_gravity")
-	ret.Accel	= cvarGrav
+	ret.Accel	= ACF.BallisticsGravityVector
 	if ret.Tracer == 0 and bullet["Tracer"] and bullet["Tracer"] > 0 then ret.Tracer = bullet["Tracer"] end
 	ret.Colour	= toconvert["Colour"]
 

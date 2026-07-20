@@ -21,7 +21,9 @@ class NativeSuiteManifestTests(unittest.TestCase):
         required = {
             "000_discovery_canary.lua",
             "armor_spall_corpus.lua",
+            "ballistics_scheduler.lua",
             "entity_registration.lua",
+            "general_use_contracts.lua",
             "invalidation_hooks.lua",
             "registries.lua",
             "spall_rubber.lua",

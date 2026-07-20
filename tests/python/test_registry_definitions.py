@@ -17,6 +17,7 @@ SHARED_ROOT = REPO / "lua" / "acf" / "shared"
 ROUND_ROOT = SHARED_ROOT / "rounds"
 COMPATIBILITY_SOURCE = REPO / "lua" / "autorun" / "acf_globals.lua"
 PREEXISTING_NAMESPACE_FUNCTIONS = {"GetHeadPos"}
+ACE_ONLY_NAMESPACE_FUNCTIONS = {"GetBallisticsStats", "ResetBallisticsStats", "RemoveExplosive"}
 LATE_LOADED_ALIASES = {
     "CalcVehicleView": "lua/autorun/sh_ace_workarounds.lua",
     "PrimitivePropertiesApplied": "lua/autorun/server/sv_ace_primitive_compat.lua",
@@ -133,7 +134,7 @@ class RegistryDefinitionTests(unittest.TestCase):
             "legacy compatibility loop is missing",
         )
 
-        migrated = namespace_functions - PREEXISTING_NAMESPACE_FUNCTIONS
+        migrated = namespace_functions - PREEXISTING_NAMESPACE_FUNCTIONS - ACE_ONLY_NAMESPACE_FUNCTIONS
         self.assertTrue(migrated <= legacy_globals)
 
         for name, relative_path in LATE_LOADED_ALIASES.items():

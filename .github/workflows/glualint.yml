@@ -7,6 +7,7 @@ on:
       - '!lua/entities/gmod_wire_expression2/**'
       - 'tests/**'
       - 'test.py'
+      - 'tools/**'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
   pull_request:
@@ -15,6 +16,7 @@ on:
       - '!lua/entities/gmod_wire_expression2/**'
       - 'tests/**'
       - 'test.py'
+      - 'tools/**'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
 
@@ -30,6 +32,17 @@ jobs:
     uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@7d26f3a416e6174991c21c962aaf295ff3e17f52 # master, 2026-07-17
     with:
       config: .glualint.json
+
+  LocalLint:
+    name: Local GLuaFixer
+    runs-on: windows-latest
+    steps:
+      - name: Check out ACE
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Run repository GLuaFixer
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File tools/glualint.ps1
 
   OfflineTests:
     name: Offline definition tests

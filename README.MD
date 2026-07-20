@@ -128,6 +128,10 @@ We welcome contributions! Before submitting:
 2. Use the [Dev Branch](https://github.com/ACE-Project-Team/ArmoredCombatExtended/tree/dev) for pull requests
 3. Join our [Discord](https://discord.gg/Y8aEYU6) to discuss changes
 
+Run the repository's pinned GLuaFixer locally before submitting:
+
+    powershell -ExecutionPolicy Bypass -File tools/glualint.ps1
+
 ---
 
 ## Community

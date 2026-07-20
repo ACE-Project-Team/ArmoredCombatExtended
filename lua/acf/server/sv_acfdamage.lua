@@ -403,6 +403,25 @@ function ACF_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 end
 
+-- Describes the only supported post-penetration contract. Armor resolution reports
+-- how much of the incoming energy was spent; callers must not reinterpret Overkill or
+-- Loss independently. Killed entities may continue when residual energy remains.
+function ACF_GetPostPenetration( HitRes, Energy )
+	local Loss = math.Clamp( HitRes.Loss or 1, 0, 1 )
+	local Remaining = 1 - Loss
+	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ((HitRes.Overkill or 0) > 0 or HitRes.Kill)
+
+	return {
+		Continue = Continue,
+		Loss = Loss,
+		Remaining = Remaining,
+		IncomingKinetic = Energy.Kinetic,
+		IncomingPenetration = Energy.Penetration,
+		SpentKinetic = Energy.Kinetic * Loss,
+		RemainingKinetic = Energy.Kinetic * Remaining,
+		RemainingPenetration = Energy.Penetration * Remaining
+	}
+end
 
 --Handles normal spalling
 function ACF_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Material) --_ = Armor
@@ -696,10 +715,18 @@ end
 
 --Spall trace core. For HESH and normal spalling
 function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity )
+	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
+	-- while later fragments must start from the original energy.
+	SpallEnergy = table.Copy(SpallEnergy)
 
 	local Entity_Crit_Hit_Factor = 1.01
 
-	local SpallRes = util.TraceLine(ACE.Spall[Index])
+	local SpallTrace = ACE.Spall[Index]
+	local SpallDirection = HitVec:GetNormalized()
+	if SpallTrace and SpallTrace.start and SpallTrace.endpos then
+		SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()
+	end
+	local SpallRes = util.TraceLine(SpallTrace)
 
 	-- Check if spalling hit something
 	if SpallRes.Hit and ACF_Check( SpallRes.Entity ) then
@@ -715,19 +742,19 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 				ACE.Spall[Index] = {}
 				ACE.Spall[Index].start  = SpallRes.HitPos
-				ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallRes.HitNormal + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 				ACE.Spall[Index].filter = Temp_Filter
 				ACE.Spall[Index].mins	= Vector(0,0,0)
 				ACE.Spall[Index].maxs	= Vector(0,0,0)
 
-				ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+				ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 				return
 			end
 
 		end
 
 		-- Get the spalling hitAngle
-		local Angle		= ACF_GetHitAngle( SpallRes.HitNormal , HitVec )
+		local Angle		= ACF_GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
 
 		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
@@ -759,38 +786,41 @@ function ACF_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- Applies the damage to the impacted entity
 		local HitRes = ACF_Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall") --Angle replaced with 0 for inconsistent spall
 
-		-- If it's able to destroy it, kill it and filter it
+		-- If it's able to destroy it, kill it. Any debris is added to the single
+		-- continuation filter below so this impact cannot spawn a second retry.
+		local Debris
 		if HitRes.Kill then
-			local Debris = ACF_APKill( SpallRes.Entity , HitVec:GetNormalized() , SpallEnergy.Kinetic )
-			if IsValid(Debris) then
-				table.insert( ACE.Spall[Index].filter , Debris )
-				ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
-			end
+			Debris = ACF_APKill( SpallRes.Entity , SpallDirection , SpallEnergy.Kinetic )
 		end
 
 		-- Applies a decal
 		util.Decal("GunShot1",SpallRes.StartPos, SpallRes.HitPos, ACE.Spall[Index].filter )
 
-		-- The entity was penetrated --Disabled since penetration values are not real
-		if HitRes.Overkill > 0 then
+		-- Continue once with the standard armor resolver's remaining-energy fraction.
+		-- This is fragment-local because SpallEnergy was copied at function entry.
+		local PostPenetration = ACF_GetPostPenetration( HitRes, SpallEnergy )
+		if PostPenetration.Continue then
+			SpallEnergy.Penetration = PostPenetration.RemainingPenetration
+			SpallEnergy.Kinetic = PostPenetration.RemainingKinetic
 
 			local Temp_Filter = table.Copy(ACE.Spall[Index].filter)
 			table.insert( Temp_Filter , SpallRes.Entity )
+			if IsValid(Debris) then
+				table.insert( Temp_Filter , Debris )
+			end
 
 			ACE.Spall[Index] = {}
 			ACE.Spall[Index].start  = SpallRes.HitPos
-			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallRes.HitNormal + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			ACE.Spall[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACF.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
 			ACE.Spall[Index].filter = Temp_Filter
 			ACE.Spall[Index].mins	= Vector(0,0,0)
 			ACE.Spall[Index].maxs	= Vector(0,0,0)
 
-			SpallRes = util.TraceLine(ACE.Spall[Index])
-
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
-			-- Blue trace means spall trace that overpenned and killed something.
+			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
-			ACF_SpallTrace( SpallRes.HitPos , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
+			ACF_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity )
 			return
 		else
 			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
@@ -828,6 +858,7 @@ function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	local HitRes	= ACF_Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
 
 	HitRes.Ricochet = false
+	HitRes.RicochetSelected = false
 
 	local Ricochet  = 0
 	local ricoProb  = 1
@@ -854,12 +885,15 @@ function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	if ricoProb < math.Rand(0,1) and Angle < 90 then
 		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
 		HitRes.Loss	= 1 - Ricochet
-		Energy.Kinetic = Energy.Kinetic * HitRes.Loss
+		-- Keep Energy as the incoming impact budget. The shared post-penetration
+		-- contract applies HitRes.Loss exactly once to derive spent/residual energy.
 	end
 
-	if HitRes.Kill then
-		local Debris = ACF_APKill( Target , (Bullet["Flight"]):GetNormalized() , Energy.Kinetic )
-		table.insert( Bullet["Filter"] , Debris )
+	-- Record the selected outcome before target-side damage callbacks can remove
+	-- or otherwise invalidate the target. Ricochet is terminal for this impact,
+	-- even when the round has reached its ricochet limit.
+	if Ricochet > 0 then
+		HitRes.RicochetSelected = true
 	end
 
 	if Ricochet > 0 and Bullet.Ricochets < 5 and IsValid(Target) then
@@ -875,7 +909,16 @@ function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		end
 
 		HitRes.Ricochet = true
+	end
 
+	HitRes.PostPenetration = ACF_GetPostPenetration( HitRes, Energy )
+
+	-- Resolve ricochet state before destroying the target. A killing ricochet must
+	-- remain a ricochet, not become a penetration because ACF_APKill invalidated it.
+	if HitRes.Kill and IsValid(Target) then
+		local KillPower = HitRes.RicochetSelected and HitRes.PostPenetration.RemainingKinetic or Energy.Kinetic
+		local Debris = ACF_APKill( Target , (Bullet["Flight"]):GetNormalized() , KillPower )
+		table.insert( Bullet["Filter"] , Debris )
 	end
 
 	ACF_KEShove(Target, HitPos, Bullet["Flight"]:GetNormalized(), Energy.Kinetic * HitRes.Loss * 500 * Bullet["ShovePower"] * (GetConVar("acf_kepush"):GetFloat() or 1), Bullet.Owner)
@@ -1154,7 +1197,7 @@ function ACF_APKill( Entity , HitVector , Power )
 	-- Create a debris only if the dead entity is greater than the specified scale.
 	if Entity:BoundingRadius() > ACF.DebrisScale then
 
-		local Debris = ents.Create( "ace_debris" )
+		Debris = ents.Create( "ace_debris" )
 		if IsValid(Debris) then
 
 			Debris:SetModel( Entity:GetModel() )
@@ -1595,6 +1638,11 @@ do
 end
 
 function ACF_GetHitAngle( HitNormal , HitVector )
+	-- Trace retries can occasionally provide a missing or zero normal. Treat that
+	-- as normal incidence instead of producing invalid/infinite effective armor.
+	if not HitNormal or not HitVector or HitNormal:LengthSqr() < 0.0001 or HitVector:LengthSqr() < 0.0001 then
+		return 0
+	end
 
 	HitVector = HitVector * -1
 	local Angle = math.min(math.deg(math.acos(HitNormal:Dot( HitVector:GetNormalized() ) ) ),89.999 )

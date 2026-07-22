@@ -6,6 +6,7 @@ silently disconnected while the backend names are migrated.
 """
 
 from pathlib import Path
+import re
 import unittest
 
 
@@ -156,9 +157,7 @@ class EntityPipelineContractTests(unittest.TestCase):
     def test_entity_backend_calls_resolve_to_ace_implementations(self):
         backend_sources = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in (LUA / "acf").rglob("*.lua")
-        ) + (LUA / "autorun" / "acf_globals.lua").read_text(
-            encoding="utf-8", errors="replace"
+            for path in LUA.rglob("*.lua")
         )
         required = (
             "Activate", "BulletClient", "CalcArmor", "CalcBulletFlight", "CalcCurve",
@@ -174,6 +173,24 @@ class EntityPipelineContractTests(unittest.TestCase):
                     backend_sources,
                     rf"(?:function\s+ACE_{name}\b|ACE_{name}\s*=)",
                 )
+
+    def test_dotted_ace_calls_have_ace_global_exports(self):
+        backend_sources = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in LUA.rglob("*.lua")
+        )
+        called = set(re.findall(r"\bACE\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", backend_sources))
+        exported = set(re.findall(r"(?:function\s+|\b)ACE_([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
+        explicitly_dotted = set(re.findall(r"function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
+        explicitly_assigned = set(re.findall(r"\bACE\.([A-Za-z_][A-Za-z0-9_]*)\s*=", backend_sources))
+        bridged = "string.StartWith(Name, \"ACE_\")" in backend_sources
+
+        self.assertTrue(bridged)
+        missing = sorted(
+            name for name in called
+            if name not in exported and name not in explicitly_dotted and name not in explicitly_assigned
+        )
+        self.assertEqual([], missing)
 
 
 if __name__ == "__main__":

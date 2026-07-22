@@ -136,6 +136,8 @@ function ACE_PrimitivePropertiesApplied(ent)
 	FinalizePrimitiveArmor(ent)
 end
 
+ACE.PrimitivePropertiesApplied = ACE_PrimitivePropertiesApplied
+
 hook.Add("Primitive_PreRebuildPhysics", "ACE_RememberPrimitiveCollisionGroup", function(ent)
 	RememberCollisionGroup(ent)
 	CapturePendingPrimitiveArmor(ent)

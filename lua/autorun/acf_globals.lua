@@ -638,4 +638,13 @@ end
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")
 
+-- Keep the structured ACE API aligned with the ACE_ global exports. Backend
+-- code may use either spelling, but neither spelling should depend on ACF.
+for Name, Value in pairs(_G) do
+    if string.StartWith(Name, "ACE_") and type(Value) == "function" then
+        local Method = string.sub(Name, 5)
+        ACE[Method] = ACE[Method] or Value
+    end
+end
+
 print("[ACE | INFO]- Done!")

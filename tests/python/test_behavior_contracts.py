@@ -153,6 +153,7 @@ class EntityPipelineContractTests(unittest.TestCase):
         for legacy_hook in ("ACFOnBulletHit", "ACFOnBulletRicochet", "ACFOnBulletPenetrated"):
             self.assertIn(f'ACE_RunLegacyHook("{legacy_hook}"', source("acf/server/sv_acfballistics.lua"))
         self.assertIn('ACE_LegacyRestrictInfo', globals_source)
+        self.assertIn('ACF_OnLoadAddon', globals_source)
         self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
         self.assertNotIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
         self.assertIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)

@@ -227,6 +227,7 @@ class NamespaceRefactorTests(unittest.TestCase):
         self.assertIn('duplicator.RegisterEntityModifier( "acf_replacesound", ReplaceSound )', sound_tool)
         self.assertIn('duplicator.ClearEntityModifier( Entity, "acf_replacesound" )', sound_tool)
         self.assertIn('duplicator.ClearEntityModifier( trace.Entity, "acf_replacesound" )', sound_tool)
+        self.assertIn('Entity.EntityMods and Entity.EntityMods.ace_replacesound', sound_tool)
 
         effect_names = {
             path.name for path in (REPO / "lua" / "effects").iterdir() if path.is_dir()

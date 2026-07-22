@@ -209,6 +209,8 @@ ACE.SoundToolSupport = ACE.SoundToolSupport or {
 
 local function ReplaceSound( _ , Entity , data)
 	if not IsValid( Entity ) then return end
+	local existing = Entity.EntityMods and Entity.EntityMods.ace_replacesound
+	data = existing or data
 	local sound = data[1]
 	local pitch = tonumber(data[2]) or 100
 	local isNew = data[3]

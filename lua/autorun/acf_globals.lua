@@ -22,6 +22,16 @@ function ACE_RunLegacyHook(Name, ...)
     end
 end
 
+-- ACF's loader can run later in the same autorun pass. If it does, remove the
+-- temporary ACE compatibility view before ACF starts using its own namespace.
+hook.Add("ACF_OnLoadAddon", "ACE_RemoveCompatibilityView", function()
+    if not ACE.LegacyCompatibility then return end
+
+    ACE.LegacyCompatibility = false
+    rawset(ACF, "__ACECompatibilityView", nil)
+    setmetatable(ACF, nil)
+end)
+
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
 ACE.AmmoBlacklist = {}

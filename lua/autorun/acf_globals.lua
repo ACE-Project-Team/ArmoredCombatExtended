@@ -242,6 +242,15 @@ if SERVER then
     CreateConVar("ace_meshvalue", 1)
 
     CreateConVar("ace_restrictinfo", 1)                -- 0=any, 1=owned
+    -- The unchanged Starfall adapter still reads the legacy name. Create this
+    -- default-only compatibility cvar only when ACF did not provide it.
+    if ACECompatibilityView then
+        CreateConVar("acf_restrictinfo", 1)
+        cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
+            local legacy = GetConVar("acf_restrictinfo")
+            if legacy then legacy:SetInt(new) end
+        end, "ACE_LegacyRestrictInfo")
+    end
     cvars.RemoveChangeCallback("ace_restrictinfo", "ACE_CVarChangeCallback")
     cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
         ACE.RestrictInfo = tobool(new)

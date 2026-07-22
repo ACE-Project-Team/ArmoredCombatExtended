@@ -232,6 +232,7 @@ local function ReplaceSound( _ , Entity , data)
 		local newdata = {sound, pitch, true}
 		support.SetSound(Entity, {Sound = sound, Pitch = pitch})
 		duplicator.StoreEntityModifier( Entity, "ace_replacesound", newdata )
+		duplicator.ClearEntityModifier( Entity, "acf_replacesound" )
 	end
 end
 
@@ -294,6 +295,7 @@ function TOOL:Reload( trace )
 	support.ResetSound(trace.Entity)
 
 	duplicator.ClearEntityModifier( trace.Entity, "ace_replacesound" )
+	duplicator.ClearEntityModifier( trace.Entity, "acf_replacesound" )
 
 	return true
 end

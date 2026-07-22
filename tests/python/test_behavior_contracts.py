@@ -146,10 +146,13 @@ class EntityPipelineContractTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertIn("ACE.LegacyCompatibility = ACECompatibilityView", globals_source)
-        self.assertNotIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
+        self.assertIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
         self.assertIn('if ACECompatibilityView then', globals_source)
         self.assertIn('GetConVar("acf_restrictinfo")', starfall)
         self.assertIn('ACFOnBulletCreation', starfall)
+        for legacy_hook in ("ACFOnBulletHit", "ACFOnBulletRicochet", "ACFOnBulletPenetrated"):
+            self.assertIn(f'ACE_RunLegacyHook("{legacy_hook}"', source("acf/server/sv_acfballistics.lua"))
+        self.assertIn('ACE_LegacyRestrictInfo', globals_source)
         self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
         self.assertNotIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
         self.assertIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)

@@ -430,6 +430,7 @@ do
 			Penetrated = function(Index, Bullet, FlightRes, type)
 
 				hook.Run("ACEOnBulletPenetrated", Index, Bullet, FlightRes)
+				ACE_RunLegacyHook("ACFOnBulletPenetrated", Index, Bullet, FlightRes)
 
 				if Bullet.OnPenetrated then
 					Bullet.OnPenetrated(Index, Bullet, FlightRes)
@@ -466,6 +467,7 @@ do
 			Ricochet = function(Index, Bullet, FlightRes, type)
 
 				hook.Run("ACEOnBulletRicochet", Index, Bullet, FlightRes)
+				ACE_RunLegacyHook("ACFOnBulletRicochet", Index, Bullet, FlightRes)
 
 				if Bullet.OnRicocheted then
 					Bullet.OnRicocheted(Index, Bullet, FlightRes)
@@ -496,6 +498,7 @@ do
 			Hit = function(Index, Bullet, FlightRes, _)
 
 				hook.Run("ACEOnBulletHit", Index, Bullet, FlightRes)
+				ACE_RunLegacyHook("ACFOnBulletHit", Index, Bullet, FlightRes)
 
 				if Bullet.OnEndFlight then
 					Bullet.OnEndFlight(Index, Bullet, FlightRes)

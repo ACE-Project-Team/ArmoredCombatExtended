@@ -78,6 +78,8 @@ function EFFECT:Init( data )
 			ACF_RenderLight(Gun:EntIndex(), Caliber * 75, Color(255, 128, 48), Muzzle.Pos + self.DirVec * (Caliber / 5))
 		end
 
+		if IsValid(self.Emitter) then self.Emitter:Finish() end
+
 		local LocPly = LocalPlayer()
 		if IsValid(LocPly) then
 			local PlayerDist = (LocPly:GetPos() - self.Origin):Length() / 80 + 0.001 --Divide by 0 is death

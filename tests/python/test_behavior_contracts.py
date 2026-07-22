@@ -146,6 +146,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertIn("ACE.LegacyCompatibility = ACECompatibilityView", globals_source)
+        self.assertIn('file.Exists("autorun/acf_loader.lua", "LUA")', globals_source)
         self.assertIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
         self.assertIn('if ACECompatibilityView then', globals_source)
         self.assertIn('GetConVar("acf_restrictinfo")', starfall)

@@ -1,6 +1,7 @@
 -- Keep a legacy view available for the intentionally unchanged E2 and
 -- Starfall adapters only when the ACF addon did not create its own table.
-local ACECompatibilityView = ACF == nil or rawget(ACF, "__ACECompatibilityView") == true
+local ACFAddonInstalled = file.Exists("autorun/acf_loader.lua", "LUA")
+local ACECompatibilityView = not ACFAddonInstalled and (ACF == nil or rawget(ACF, "__ACECompatibilityView") == true)
 ACF = ACF or {}
 
 ACE               = ACE or {}

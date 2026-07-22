@@ -157,6 +157,15 @@ function ACE_DefineExtras( id, data )
 	Extras[ id ] = data
 end
 
+-- Generic entity-definition entry point retained for shared metadata files.
+function ACE_DefineEntity( id, data )
+	if data.category == "Crew" then
+		return ACE_DefineCrewseat(id, data)
+	end
+
+	return ACE_DefineExtras(id, data)
+end
+
 -- Gun definition
 function ACE_DefineGun( id, data )
 	if (data.year or 0) < ACE.Year then

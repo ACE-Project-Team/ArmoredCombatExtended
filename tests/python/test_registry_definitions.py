@@ -29,6 +29,7 @@ LATE_LOADED_ALIASES = {
 }
 
 DEFINITION_FUNCTIONS = {
+    "ACE_DefineEntity",
     "ACE_DefineCrewseat",
     "ACE_DefineExtras",
     "ACE_DefineMuzzleFlash",

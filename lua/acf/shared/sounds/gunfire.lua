@@ -622,20 +622,20 @@ ACE_DefineGunFireSound( "ace_weapons/multi_sound/howitzer_multi.wav",
 )
 --[[
 --Generic Mortar gunfire. Ik its empty, the structure is here just to avoid recreate it in the future.
-ACE_DefineGunFireSound( "weapons/ACE_Gun/mortar_new.wav",
+ACE_DefineGunFireSound( "weapons/ACF_Gun/mortar_new.wav",
 	{
 		main = {
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACE_Gun/mortar_new.wav"
+				"weapons/ACF_Gun/mortar_new.wav"
 			}
 		},
 		mid = {
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACE_Gun/mortar_new.wav"
+				"weapons/ACF_Gun/mortar_new.wav"
 			}
 
 		},
@@ -643,7 +643,7 @@ ACE_DefineGunFireSound( "weapons/ACE_Gun/mortar_new.wav",
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACE_Gun/mortar_new.wav"
+				"weapons/ACF_Gun/mortar_new.wav"
 			}
 		}
 	}

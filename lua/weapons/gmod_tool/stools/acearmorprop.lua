@@ -135,7 +135,7 @@ do
 			return true
 		end
 
-		return ACE_OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
+		return ACE.OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
 	end
 end
 
@@ -860,7 +860,6 @@ if CLIENT then
 
 	end
 end
-
 
 
 

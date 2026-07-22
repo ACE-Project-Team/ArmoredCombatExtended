@@ -82,6 +82,7 @@ function ACE.DoContraptionLegalCheck(checkEnt)
 
 	ACE.CheckLegalCont(con)
 end
+ACE_DoContraptionLegalCheck = ACE.DoContraptionLegalCheck
 
 -- ------------------------------------------------------------
 -- Player warnings (over points, overweight, and dirty armor)

@@ -122,7 +122,7 @@ function ENT:Initialize()
 end
 
 
-function ACE.MakeRack(Owner, Pos, Angle, Id)
+function ACE_MakeRack(Owner, Pos, Angle, Id)
 
 
 	if not Owner:CheckLimit("_acf_rack") then return false end
@@ -207,6 +207,8 @@ function ACE.MakeRack(Owner, Pos, Angle, Id)
 	return Rack
 
 end
+
+ACE.MakeRack = ACE_MakeRack
 
 list.Set( "ACFCvars", "acf_rack" , {"id"} )
 duplicator.RegisterEntityClass("acf_rack", ACE.MakeRack, "Pos", "Angle", "Id")

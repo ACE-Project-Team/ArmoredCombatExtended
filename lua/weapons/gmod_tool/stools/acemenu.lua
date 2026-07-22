@@ -71,7 +71,7 @@ function TOOL:LeftClick( trace )
 		if Type == "Ammo" then
 			entClass = "acf_ammo"
 		elseif Type == "FuelTanks" then
-			entClass = "acf_fueltanks"
+			entClass = "acf_fueltank"
 		end
 	else
 		entClass = TypeId["ent"]

@@ -3,9 +3,9 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-local GunClasses = ACF.Classes.GunClass
+local GunClasses = ACE.Classes.GunClass
 
-local GunTable = ACF.Weapons.Guns
+local GunTable = ACE.Weapons.Guns
 
 --The distances these ents would have if its caliber was 10mm. Incremented by caliber size.
 local CrewLinkDistBase = 200
@@ -83,7 +83,7 @@ function ENT:Initialize()
 	self.NextFire            = 0
 	self.LastSend            = 0
 	self.LastLoadDuration    = 0
-	self.NextLegalCheck      = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck      = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal               = true
 	self.LegalIssues         = ""
 	self.FuseTime            = 0
@@ -216,7 +216,7 @@ do
 			if not Owner:CheckLimit("_acf_rapidgun") then return false end
 			Owner:AddCount("_acf_rapidgun", Gun)
 
-		elseif Lookup.caliber >= ACF.LargeCaliber then
+		elseif Lookup.caliber >= ACE.LargeCaliber then
 			if not Owner:CheckLimit("_acf_largegun") then return false end
 			Owner:AddCount("_acf_largegun", Gun)
 
@@ -243,7 +243,7 @@ do
 
 		Gun.Inaccuracy = ClassData.spread
 
-		if not GunnerExcluded and (Gun.Caliber * 10) > ACF.LargeGunsThreshold and ACF.LargeGunsRequireGunners ~= 0 then --If the caliber is large enough it requires a gunner.
+		if not GunnerExcluded and (Gun.Caliber * 10) > ACE.LargeGunsThreshold and ACE.LargeGunsRequireGunners ~= 0 then --If the caliber is large enough it requires a gunner.
 			Gun.RequiresGunner = true
 		end
 
@@ -394,7 +394,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText( text )
@@ -522,7 +522,7 @@ function ENT:Link( Target )
 		end
 
 		-- Don't link if it's a blacklisted round type for this gun
-		local Blacklist = ACF.AmmoBlacklist[ Target.RoundType ] or {}
+		local Blacklist = ACE.AmmoBlacklist[ Target.RoundType ] or {}
 
 		if table.HasValue( Blacklist, self.Class ) then
 			return false, "That round type cannot be used with this gun!"
@@ -539,7 +539,7 @@ function ENT:Link( Target )
 
 		RefreshGunRateOfFire(self, Target)
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
-		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
+		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACE.VelScale ) )
 
 		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
 			ACE.PointsInputChanged({ self, Target }, "gun-ammo-linked")
@@ -613,7 +613,7 @@ function ENT:TriggerInput(iname, value)
 	if iname == "Unload" and value > 0 and not self.Reloading then
 		-- Triggered to unload ammo
 		self:UnloadAmmo()
-	elseif iname == "Fire" and value > 0 and ACF.GunfireEnabled and self.Legal then
+	elseif iname == "Fire" and value > 0 and ACE.GunfireEnabled and self.Legal then
 		-- Triggered to fire if conditions are met
 		if self.NextFire < CurTime() then
 			-- Check if it's time to fire
@@ -740,11 +740,11 @@ end
 function ENT:Think()
 
 	--Legality check part
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
 		-- check gun is legal
 		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
 		-- check the seat is legal
 		local seat = IsValid(self.User) and self.User:GetVehicle() or nil
@@ -837,7 +837,7 @@ function ENT:Think()
 		end
 	end
 
-	self.LastThink = ACF.CurTime
+	self.LastThink = ACE.CurTime
 	self:NextThink(Time)
 
 	if self.CurrentRecoil > 0 then
@@ -860,7 +860,7 @@ function ENT:ReloadMag()
 		self.IsUnderWeight = true
 	end
 	if ( (self.CurrentShot > 0) and self.IsUnderWeight and self.Ready and self.Legal ) then
-		if ( ACF.RoundTypes[self.BulletData.Type] ) then		--Check if the roundtype loaded actually exists
+		if ( ACE.RoundTypes[self.BulletData.Type] ) then		--Check if the roundtype loaded actually exists
 			self:LoadAmmo(self.MagReload, false)
 			self:EmitSound("weapons/357/357_reload4.wav", 68, 100)
 			self.CurrentShot = 0
@@ -885,7 +885,7 @@ do
 
 	function ENT:GetInaccuracy()
 
-		local SpreadScale = ACF.SpreadScale
+		local SpreadScale = ACE.SpreadScale
 		local IaccMult = 1
 
 		if self.ACF.Health and self.ACF.MaxHealth then
@@ -902,7 +902,7 @@ do
 			IaccMult = IaccMult * 1.5
 		end
 
-		local coneAng = self.Inaccuracy * ACF.GunInaccuracyScale * IaccMult
+		local coneAng = self.Inaccuracy * ACE.GunInaccuracyScale * IaccMult
 
 		return coneAng
 	end
@@ -944,7 +944,7 @@ do
 
 	function ENT:FireShell()
 
-		local CanDo = hook.Run("ACF_FireShell", self, self.BulletData )
+		local CanDo = hook.Run("ACE_FireShell", self, self.BulletData )
 		if CanDo == false then return end
 
 		if self.IsUnderWeight == nil then
@@ -956,7 +956,7 @@ do
 			--self.OTWarnings
 			if not HasWarned then
 				--print("No")
-				ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACF.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
+				ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACE.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
 				self.OTWarnings.WarnedGunner = true
 			end
 			return
@@ -975,13 +975,13 @@ do
 		if ( bool and self.IsUnderWeight and (self.Ready or isEmpty) and self.Legal ) then
 
 			local Blacklist = {}
-			if not ACF.AmmoBlacklist[self.BulletData.Type] then
+			if not ACE.AmmoBlacklist[self.BulletData.Type] then
 				Blacklist = {}
 			else
-				Blacklist = ACF.AmmoBlacklist[self.BulletData.Type]
+				Blacklist = ACE.AmmoBlacklist[self.BulletData.Type]
 			end
 
-			if ( ACF.RoundTypes[self.BulletData.Type] and not table.HasValue( Blacklist, self.Class ) ) then	--Check if the roundtype loaded actually exists
+			if ( ACE.RoundTypes[self.BulletData.Type] and not table.HasValue( Blacklist, self.Class ) ) then	--Check if the roundtype loaded actually exists
 
 				self.HeatFire = true  --Used by Heat
 
@@ -990,7 +990,7 @@ do
 
 				local coneAng		= math.tan(math.rad(self:GetInaccuracy()))
 				local randUnitSquare	= (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
-				local spread			= randUnitSquare:GetNormalized() * coneAng * (math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)))
+				local spread			= randUnitSquare:GetNormalized() * coneAng * (math.random() ^ (1 / math.Clamp(ACE.GunInaccuracyBias, 0.5, 4)))
 				local ShootVec		= (MuzzleVec + spread):GetNormalized()
 
 				self:MuzzleEffect( MuzzlePos, MuzzleVec )
@@ -1013,7 +1013,7 @@ do
 					self.BulletData.FuseLength = self.FuseTime
 				end
 
-				self.CreateShell = ACF.RoundTypes[self.BulletData.Type].create
+				self.CreateShell = ACE.RoundTypes[self.BulletData.Type].create
 				self:CreateShell( self.BulletData )
 
 				self.CurrentRecoil = 1
@@ -1086,7 +1086,7 @@ function ENT:LoadAmmo( AddTime, Reload )
 		self.RateOfFire = (60 / self.ReloadTime)
 		Wire_TriggerOutput(self, "Fire Rate", self.RateOfFire)
 		Wire_TriggerOutput(self, "Muzzle Weight", math.floor(self.BulletData.ProjMass * 1000) )
-		Wire_TriggerOutput(self, "Muzzle Velocity", math.floor(self.BulletData.MuzzleVel * ACF.VelScale) )
+		Wire_TriggerOutput(self, "Muzzle Velocity", math.floor(self.BulletData.MuzzleVel * ACE.VelScale) )
 
 		self.KERecoil = (self.BulletData.PropMass * 39.37) * (GetConVar("ace_recoilpush"):GetFloat() or 1) * 375
 
@@ -1158,8 +1158,8 @@ function ENT:MuzzleEffect()
 		Effect:SetEntity( self )
 		Effect:SetScale( self.BulletData.PropMass )
 		Effect:SetMagnitude( self.ReloadTime )
-		Effect:SetSurfaceProp( ACF.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
-	util.Effect( "ACF_MuzzleFlash", Effect, true, true )
+		Effect:SetSurfaceProp( ACE.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
+	util.Effect( "ACE_MuzzleFlash", Effect, true, true )
 
 	if self.AutoSound and self.Sound ~= "" then
 		timer.Simple(0.6, function()
@@ -1174,8 +1174,8 @@ function ENT:ReloadEffect( EffectTime )
 		Effect:SetEntity( self )
 		Effect:SetScale( 0 )
 		Effect:SetMagnitude( EffectTime or self.ReloadTime )
-		Effect:SetSurfaceProp( ACF.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
-	util.Effect( "ACF_MuzzleFlash", Effect, true, true )
+		Effect:SetSurfaceProp( ACE.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
+	util.Effect( "ACE_MuzzleFlash", Effect, true, true )
 
 end
 

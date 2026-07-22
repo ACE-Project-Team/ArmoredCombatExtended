@@ -76,7 +76,7 @@ local function MarkPrimitiveArmorDirty(ent, reason)
 	if ACE_ClearArmorPointCache then ACE_ClearArmorPointCache(ent) end
 
 	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
-	if ACE_MarkArmorDirty then ACE_MarkArmorDirty(con, ent, reason) end
+	if ACE_MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
 end
 
 local function ApplyPrimitiveArmor(ent, phys)

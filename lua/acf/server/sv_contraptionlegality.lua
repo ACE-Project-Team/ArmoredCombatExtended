@@ -96,7 +96,7 @@ function ACE.CheckLegalCont(con)
 	end
 
 	local points = con.ACEPoints or 0
-	local pointsLimit = ACF.PointsLimit or math.huge
+	local pointsLimit = ACE.PointsLimit or math.huge
 	if points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
 		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
 		local above = points - pointsLimit
@@ -108,7 +108,7 @@ function ACE.CheckLegalCont(con)
 		con.OTWarnings.WarnedOverPoints = true
 	end
 
-	local maxWeight = ACF.MaxWeight or math.huge
+	local maxWeight = ACE.MaxWeight or math.huge
 	if (con.totalMass or 0) > maxWeight and not con.OTWarnings.WarnedOverWeight then
 		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
 		local above = con.totalMass - maxWeight
@@ -800,7 +800,7 @@ end)
 
 
 -- Mark armor points dirty for callers that know only armor changed.
-function ACE.MarkArmorDirty(con, ent, reason)
+function ACE_MarkArmorDirty(con, ent, reason)
 	if not con then
 		if ACE.ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
 		return
@@ -811,6 +811,9 @@ function ACE.MarkArmorDirty(con, ent, reason)
 		Warning = true,
 	}, { con })
 end
+
+-- Keep the dotted ACE table entry for the E2/Starfall compatibility boundary.
+ACE.MarkArmorDirty = ACE_MarkArmorDirty
 
 -- Reprice clipped armor after Proper Clipping replaces its physics object.
 local function ACE_ProperClippingPhysicsChanged(ent)

@@ -127,7 +127,7 @@ class InvalidationContractTests(unittest.TestCase):
     def test_non_entity_armor_producers_use_the_armor_boundary(self):
         for relative, reason in (
             ("lua/starfall/libs_sv/acf.lua", "armor-starfall"),
-            ("lua/weapons/gmod_tool/stools/acfarmorprop.lua", "armor-tool"),
+            ("lua/weapons/gmod_tool/stools/acearmorprop.lua", "armor-tool"),
             ("lua/entities/gmod_wire_expression2/core/custom/acf.lua", "armor-expression2"),
         ):
             with self.subTest(source=relative):

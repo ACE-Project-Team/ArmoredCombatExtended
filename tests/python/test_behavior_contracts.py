@@ -145,12 +145,12 @@ class EntityPipelineContractTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertIn("ACE.LegacyCompatibility = ACECompatibilityView", globals_source)
-        self.assertIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
+        self.assertNotIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
         self.assertIn('if ACECompatibilityView then', globals_source)
         self.assertIn('GetConVar("acf_restrictinfo")', starfall)
         self.assertIn('ACFOnBulletCreation', starfall)
-        self.assertIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
-        self.assertIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
+        self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
+        self.assertNotIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
         self.assertIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)
 
     def test_entity_backend_calls_resolve_to_ace_implementations(self):

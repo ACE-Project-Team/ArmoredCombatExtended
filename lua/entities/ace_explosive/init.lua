@@ -32,8 +32,8 @@ end
 function ENT:Initialize()
 	self.Detonated     = false
 	self.Legal         = true
-	self.SpecialHealth = true   -- use our ACF_Activate for HP
-	self.SpecialDamage = true   -- use our ACF_OnDamage (cook-off)
+	self.SpecialHealth = true   -- use our ACE_Activate for HP
+	self.SpecialDamage = true   -- use our ACE_OnDamage (cook-off)
 	self.IsExplosive   = true
 
 	self.Inputs = WireLib.CreateInputs(self, {

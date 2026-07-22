@@ -16,7 +16,7 @@ class BallisticsContractTests(unittest.TestCase):
         cls.missiles = MISSILES.read_text(encoding="utf-8")
 
     def test_missile_conversion_uses_cached_gravity_vector(self):
-        self.assertIn("ret.Accel\t= ACF.BallisticsGravityVector", self.missiles)
+        self.assertIn("ret.Accel\t= ACE.BallisticsGravityVector", self.missiles)
         self.assertNotIn('ret.Accel\t= cvarGrav', self.missiles)
 
     def test_scheduler_has_explicit_visibility_and_impact_limits(self):
@@ -27,9 +27,9 @@ class BallisticsContractTests(unittest.TestCase):
 
     def test_active_bullet_iteration_uses_registration(self):
         self.assertIn("local ActiveBullets = {}", self.ballistics)
-        self.assertIn("ACF_RegisterBullet", self.ballistics)
+        self.assertIn("ACE_RegisterBullet", self.ballistics)
         self.assertIn("UnregisterBullet", self.ballistics)
-        self.assertNotIn("for Index, Bullet in pairs(ACF.Bullet) do\n\t\tACF_CalcBulletFlight", self.ballistics)
+        self.assertNotIn("for Index, Bullet in pairs(ACE.Bullet) do\n\t\tACE_CalcBulletFlight", self.ballistics)
 
 
 if __name__ == "__main__":

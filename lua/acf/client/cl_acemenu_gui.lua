@@ -784,7 +784,7 @@ function ACE_SVGUICreate()	--Serverside folder content
 	General:NumSlider( "Child debris chance", "ace_debris_children", 0, 1, 2 )
 	General:ControlHelp( "Adjusts the chance of create debris when a contraption's gate have been destroyed" )
 
-	--General:NumSlider( "Year", "acf_year", 1900, 2021, 0 )
+	--General:NumSlider( "Year", "ACE_year", 1900, 2021, 0 )
 	--General:ControlHelp( "Changes the year. This will affect the available weaponry (requires restart)." )
 
 	acemenupanel.CustomDisplay:AddItem( General )

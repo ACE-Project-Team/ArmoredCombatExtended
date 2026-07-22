@@ -1,7 +1,7 @@
 """Offline regression tests for ACE's directional, layered spall traces.
 
 The source checks protect the exact GLua contract.  The small oracle below models only the
-load-bearing state transitions in ACF_SpallTrace: each fragment starts with the same energy,
+load-bearing state transitions in ACE_SpallTrace: each fragment starts with the same energy,
 its own trace consumes energy across layers, and retries keep the incoming direction.
 It intentionally does not pretend to replace a native GMod damage test.
 """
@@ -233,12 +233,12 @@ class SpallSourceContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = SOURCE.read_text(encoding="utf-8")
         match = re.search(
-            r"function ACF_SpallTrace\(.*?\n(?P<body>.*?)\nend\n\n--Calculates the vector",
+            r"function ACE_SpallTrace\(.*?\n(?P<body>.*?)\nend\n\n--Calculates the vector",
             cls.source,
             re.DOTALL,
         )
         if not match:
-            raise AssertionError("ACF_SpallTrace body could not be located")
+            raise AssertionError("ACE_SpallTrace body could not be located")
         cls.body = match.group("body")
         cls.rubber_source = RUBBER_SOURCE.read_text(encoding="utf-8")
 
@@ -281,7 +281,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_spall_trace_repeated_visit_guard_runs_before_damage(self):
         guard = self.body.index("CanContinue, State = CanContinueSpallTrace")
-        damage = self.body.index("local HitRes = ACF_Damage")
+        damage = self.body.index("local HitRes = ACE_Damage")
 
         self.assertLess(guard, damage)
 
@@ -296,11 +296,11 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertTrue(all("SpallRes.HitNormal" not in expression for expression in end_positions))
 
     def test_all_recursive_retries_preserve_incoming_direction(self):
-        recursive_calls = re.findall(r"ACF_SpallTrace\((.*?)\)", self.body)
+        recursive_calls = re.findall(r"ACE_SpallTrace\((.*?)\)", self.body)
 
         self.assertEqual(len(recursive_calls), 2)
         self.assertTrue(all(re.match(r"\s*SpallDirection\s*,", call) for call in recursive_calls))
-        self.assertNotIn("ACF_SpallTrace( SpallRes.HitPos", self.body)
+        self.assertNotIn("ACE_SpallTrace( SpallRes.HitPos", self.body)
 
     def test_fragment_direction_comes_from_current_trace_with_legacy_fallback(self):
         self.assertIn("local SpallDirection = HitVec:GetNormalized()", self.body)
@@ -311,7 +311,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertGreaterEqual(self.body.count("SpallEnergy.Penetration ="), 2)
 
     def test_resolver_loss_is_applied_once_before_the_single_retry(self):
-        self.assertEqual(self.body.count("local PostPenetration = ACF_GetPostPenetration"), 1)
+        self.assertEqual(self.body.count("local PostPenetration = ACE_GetPostPenetration"), 1)
         self.assertEqual(self.body.count("SpallEnergy.Kinetic = PostPenetration.RemainingKinetic"), 1)
         self.assertEqual(self.body.count("SpallEnergy.Penetration = PostPenetration.RemainingPenetration"), 1)
         self.assertEqual(self.body.count("-- Retry"), 1)
@@ -320,11 +320,11 @@ class SpallSourceContractTests(unittest.TestCase):
         kill_block = re.search(r"if HitRes\.Kill then(?P<body>.*?)end\n\n\t\t-- Applies a decal", self.body, re.DOTALL)
 
         self.assertIsNotNone(kill_block)
-        self.assertNotIn("ACF_SpallTrace", kill_block.group("body"))
-        self.assertIn("Debris = ACF_APKill", kill_block.group("body"))
+        self.assertNotIn("ACE_SpallTrace", kill_block.group("body"))
+        self.assertIn("Debris = ACE_APKill", kill_block.group("body"))
 
     def test_killed_plate_can_continue_when_residual_energy_remains(self):
-        self.assertIn("local PostPenetration = ACF_GetPostPenetration", self.body)
+        self.assertIn("local PostPenetration = ACE_GetPostPenetration", self.body)
         self.assertIn("PostPenetration.Continue", self.body)
 
     def test_killed_plate_still_stops_when_resolver_consumes_all_energy(self):
@@ -344,17 +344,17 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("local breachCaliber = Type == \"Spall\" and caliber or caliber * 10", self.rubber_source)
 
     def test_original_fragment_callers_remain_compatible(self):
-        callers = re.findall(r"ACF_SpallTrace\(HitVec, Index", self.source)
+        callers = re.findall(r"ACE_SpallTrace\(HitVec, Index", self.source)
 
         self.assertGreaterEqual(len(callers), 2)
 
     def test_post_penetration_contract_is_shared_by_round_impact(self):
-        self.assertIn("function ACF_GetPostPenetration( HitRes, Energy )", self.source)
-        self.assertIn("HitRes.PostPenetration = ACF_GetPostPenetration( HitRes, Energy )", self.source)
+        self.assertIn("function ACE_GetPostPenetration( HitRes, Energy )", self.source)
+        self.assertIn("HitRes.PostPenetration = ACE_GetPostPenetration( HitRes, Energy )", self.source)
 
     def test_ricochet_is_finalized_before_killing_the_target(self):
         ricochet = self.source.index("HitRes.Ricochet = true")
-        kill = self.source.index("local Debris = ACF_APKill", ricochet)
+        kill = self.source.index("local Debris = ACE_APKill", ricochet)
         self.assertLess(ricochet, kill)
 
     def test_ricochet_keeps_incoming_energy_for_the_shared_contract(self):
@@ -378,7 +378,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_killing_ricochet_uses_shared_remaining_kinetic(self):
         kill = re.search(
-            r"if HitRes\.Kill and IsValid\(Target\) then\s+local KillPower = HitRes\.RicochetSelected and HitRes\.PostPenetration\.RemainingKinetic or Energy\.Kinetic\s+local Debris = ACF_APKill",
+            r"if HitRes\.Kill and IsValid\(Target\) then\s+local KillPower = HitRes\.RicochetSelected and HitRes\.PostPenetration\.RemainingKinetic or Energy\.Kinetic\s+local Debris = ACE_APKill",
             self.source,
             re.DOTALL,
         )
@@ -393,7 +393,7 @@ class SpallSourceContractTests(unittest.TestCase):
         handlers = []
         for path in rounds:
             source = path.read_text(encoding="utf-8")
-            if "ACF_RoundImpact" in source and "if HitRes.PostPenetration.Continue then" in source:
+            if "ACE_RoundImpact" in source and "if HitRes.PostPenetration.Continue then" in source:
                 handlers.append(path.name)
 
         expected = {
@@ -418,7 +418,7 @@ class TheatDamageContractTests(unittest.TestCase):
         cls.source = cls.SOURCE.read_text(encoding="utf-8")
 
     def test_tandem_impact_normal_has_a_safe_fallback(self):
-        self.assertIn("function ACF_GetHitAngle( HitNormal , HitVector )", self.source)
+        self.assertIn("function ACE_GetHitAngle( HitNormal , HitVector )", self.source)
         self.assertIn("HitNormal:LengthSqr() < 0.0001", self.source)
         self.assertIn("return 0", self.source)
 

@@ -23,8 +23,8 @@ do
 	function ENT:Initialize()
 
 		self.CanUpdate        = true
-		self.SpecialHealth    = true  --If true, use the ACF_Activate function defined by this ent
-		self.SpecialDamage    = true  --If true, use the ACF_OnDamage function defined by this ent
+		self.SpecialHealth    = true  --If true, use the ACE_Activate function defined by this ent
+		self.SpecialDamage    = true  --If true, use the ACE_OnDamage function defined by this ent
 		self.IsExplosive      = true
 		self.Exploding        = false
 

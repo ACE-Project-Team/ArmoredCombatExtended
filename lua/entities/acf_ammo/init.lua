@@ -4,11 +4,11 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
-local GunClasses = ACF.Classes.GunClass
+local GunClasses = ACE.Classes.GunClass
 
-local GunTable  = ACF.Weapons.Guns
-local AmmoTable = ACF.Weapons.Ammo
-local LegacyAmmoTable = ACF.Weapons.LegacyAmmo
+local GunTable  = ACE.Weapons.Guns
+local AmmoTable = ACE.Weapons.Ammo
+local LegacyAmmoTable = ACE.Weapons.LegacyAmmo
 
 local COOKOFF_THRESHOLD = 0.02
 local COOKOFF_MIN_DURATION = 0.45
@@ -46,7 +46,7 @@ local function SpawnMiniHEFlash(ent, pos, radius)
 	HEFlash:SetOrigin( pos )
 	HEFlash:SetNormal( -vector_up )
 	HEFlash:SetRadius( radius )
-	util.Effect( "ACF_Scaled_Explosion", HEFlash )
+	util.Effect( "ACE_Scaled_Explosion", HEFlash )
 end
 
 local function ScheduleFinalExplosion( ent )
@@ -111,8 +111,8 @@ local Outputs = {
 
 function ENT:Initialize()
 
-	self.SpecialHealth       = true  --If true needs a special ACF_Activate function
-	self.SpecialDamage       = true  --If true needs a special ACF_OnDamage function
+	self.SpecialHealth       = true  --If true needs a special ACE_Activate function
+	self.SpecialDamage       = true  --If true needs a special ACE_OnDamage function
 
 	self.IsExplosive         = true
 	self.Exploding           = false
@@ -128,7 +128,7 @@ function ENT:Initialize()
 	self.Ammo                = 0
 	self.IsTwoPiece          = false
 
-	self.NextLegalCheck      = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck      = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal               = true
 	self.LegalIssues         = ""
 
@@ -147,9 +147,9 @@ function ENT:Initialize()
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
 	self.Outputs             = Wire_CreateOutputs( self, Outputs )
-	ACF.GetDefaultActiveInputState(self)
+	ACE.GetDefaultActiveInputState(self)
 
-	ACF.AmmoCrates           = ACF.AmmoCrates or {}
+	ACE.AmmoCrates           = ACE.AmmoCrates or {}
 
 end
 
@@ -170,7 +170,7 @@ function ENT:ACF_Activate( Recalc )
 	end
 
 	local Armour	= EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health	= (self.ACF.Volume / ACF.Threshold) / 20					--Ammo crates get reduced HP relative to props
+	local Health	= (self.ACF.Volume / ACE.Threshold) / 20					--Ammo crates get reduced HP relative to props
 	local Percent	= 1
 
 	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -215,7 +215,7 @@ do
 		self.Exploding    = true
 		self.Inflictor    = Inflictor or self.Inflictor
 		self.Damaged      = true
-		self.DamageDelay  = ACF.CurTime
+		self.DamageDelay  = ACE.CurTime
 
 		local config = GetCookoffConfig( self, severity )
 
@@ -235,7 +235,7 @@ do
 
 	function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
-		local Mul	= (( HEATtbl[Type] and ACF.HEATMulAmmo ) or 1) --Heat penetrators deal bonus damage to ammo
+		local Mul	= (( HEATtbl[Type] and ACE.HEATMulAmmo ) or 1) --Heat penetrators deal bonus damage to ammo
 		local HitRes	= ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
@@ -276,7 +276,7 @@ do
 			severity = math.max(severity, 0.5)
 		end
 
-		if hook.Run("ACF_AmmoExplode", self, self.BulletData ) == false then return HitRes end
+		if hook.Run("ACE_AmmoExplode", self, self.BulletData ) == false then return HitRes end
 
 		self.Exploding = true
 
@@ -302,7 +302,7 @@ do
 	-- scalable explosives (see ACE.Scalable.ParseScale); crates pass the crate size
 	-- limits as their bounds.
 	local function ConvertStringScale( ScaleId )
-		return ACE.Scalable.ParseScale( ScaleId, { min = ACF.CrateMinimumSize, max = ACF.CrateMaximumSize } )
+		return ACE.Scalable.ParseScale( ScaleId, { min = ACE.CrateMinimumSize, max = ACE.CrateMaximumSize } )
 	end
 
 	-- If the incoming Id belongs to an invalid ammo crate, but belongs to the legacy crates list, convert it into its scalable counterpart.
@@ -420,7 +420,7 @@ do
 			Owner:AddCount( "_acf_ammo", Ammo )
 			Owner:AddCleanup( "acfmenu", Ammo )
 
-			table.insert(ACF.AmmoCrates, Ammo)
+			table.insert(ACE.AmmoCrates, Ammo)
 
 			return Ammo
 		end
@@ -456,7 +456,7 @@ function ENT:Update( ArgsTable )
 		end
 		msg = "New ammo type loaded, crate unlinked."
 	else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
-		local Blacklist = ACF.AmmoBlacklist[ ArgsTable[6] ] or {}
+		local Blacklist = ACE.AmmoBlacklist[ ArgsTable[6] ] or {}
 
 		for _, Gun in pairs( self.Master ) do
 			if IsValid( Gun ) and table.HasValue( Blacklist, Gun.Class ) then
@@ -505,7 +505,7 @@ function ENT:UpdateOverlayText()
 
 		text = roundType .. " - " .. self.Ammo .. " / " .. self.Capacity
 
-		local RoundData = ACF.RoundTypes[ self.BulletData.Type ]
+		local RoundData = ACE.RoundTypes[ self.BulletData.Type ]
 
 		if RoundData and RoundData.cratetxt then
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
@@ -536,7 +536,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText( text )
@@ -614,7 +614,7 @@ do
 		PlayerData.Data14       = self.RoundData14
 		PlayerData.Data15       = self.RoundData15
 
-		self.ConvertData    = ACF.RoundTypes[self.RoundType].convert
+		self.ConvertData    = ACE.RoundTypes[self.RoundType].convert
 		self.BulletData     = self:ConvertData( PlayerData )
 		if IsMissileAmmo( self ) then self.BulletData.Data7 = self.RoundData7 end
 
@@ -656,13 +656,13 @@ do
 
 			if WeaponType == "missile" then
 
-				width = AmmoGunData.modeldiameter or (AmmoGunData.caliber / ACF.AmmoLengthMul / toInch)
-				shellLength = AmmoGunData.length / ACF.AmmoLengthMul / toInch
+				width = AmmoGunData.modeldiameter or (AmmoGunData.caliber / ACE.AmmoLengthMul / toInch)
+				shellLength = AmmoGunData.length / ACE.AmmoLengthMul / toInch
 
 			else
 
-				width = AmmoGunData.caliber / ACF.AmmoWidthMul / toInch
-				shellLength = ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.AmmoLengthMul / toInch
+				width = AmmoGunData.caliber / ACE.AmmoWidthMul / toInch
+				shellLength = ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACE.AmmoLengthMul / toInch
 
 			end
 
@@ -707,7 +707,7 @@ do
 		self:SetNWString( "Ammo", self.Ammo )
 		self:SetNWString( "WireName", WireName )
 
-		self.NetworkData = ACF.RoundTypes[self.BulletData.Type].network
+		self.NetworkData = ACE.RoundTypes[self.BulletData.Type].network
 		self:NetworkData( self.BulletData )
 
 		Wire_TriggerOutput( self, "Capacity", self.Capacity )
@@ -722,10 +722,10 @@ function ENT:UpdateMass()
 	self.Mass = self.EmptyMass + math.Round( self.AmmoMassMax * (self.Ammo / math.max(self.Capacity,1)) )
 
 	--reduce superflous engine calls, update crate mass every 5 kgs change or every 10s-15s
-	if math.abs((self.LastMass or 0) - self.Mass) > 5 or ACF.CurTime > self.NextMassUpdate then
+	if math.abs((self.LastMass or 0) - self.Mass) > 5 or ACE.CurTime > self.NextMassUpdate then
 
 		self.LastMass	= self.Mass
-		self.NextMassUpdate = ACF.CurTime + math.Rand(10,15)
+		self.NextMassUpdate = ACE.CurTime + math.Rand(10,15)
 
 		local phys = self:GetPhysicsObject()
 		if (phys:IsValid()) then
@@ -738,7 +738,7 @@ function ENT:UpdateMass()
 end
 
 function ENT:GetInaccuracy()
-	--local SpreadScale = ACF.SpreadScale
+	--local SpreadScale = ACE.SpreadScale
 	local inaccuracy = 0
 	local Gun = GunTable[self.RoundId]
 
@@ -746,14 +746,14 @@ function ENT:GetInaccuracy()
 		inaccuracy = (GunClasses[Gun.gunclass] or {spread = 0}).spread
 	end
 
-	local coneAng = inaccuracy * ACF.GunInaccuracyScale
+	local coneAng = inaccuracy * ACE.GunInaccuracyScale
 	return coneAng
 end
 
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		local active = ACF.GetDefaultActiveInputState(self, value)
+		local active = ACE.GetDefaultActiveInputState(self, value)
 
 		if active then
 			self.Active = true
@@ -787,7 +787,7 @@ function ENT:Think()
 
 	if not self.BulletData then return false end
 
-	if not ACF.IsDefaultActiveInputWired(self) then
+	if not ACE.IsDefaultActiveInputWired(self) then
 		self.Active = true
 
 		if self.Legal and not self.Load then
@@ -796,10 +796,10 @@ function ENT:Think()
 		end
 	end
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
 		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 
 		if not self.Legal then
@@ -844,7 +844,7 @@ function ENT:Think()
 			end
 		end
 
-		if self.DamageDelay < ACF.CurTime then
+		if self.DamageDelay < ACE.CurTime then
 			local CrateType = self.BulletData.Type or "Refill"
 
 			--If that is a refill, remove it
@@ -890,7 +890,7 @@ function ENT:Think()
 
 				if Now >= (self.CookoffNext or Now) then
 
-					if self.CookoffCount < (self.CookoffMaxRounds or 1) and ACF.RoundTypes[CrateType] then
+					if self.CookoffCount < (self.CookoffMaxRounds or 1) and ACE.RoundTypes[CrateType] then
 
 						local isMG = IsMachineGunAmmo( self )
 
@@ -916,12 +916,12 @@ function ENT:Think()
 					CookoffBullet.MuzzleVel	= (CookoffBullet.MuzzleVel or 0) * 0.75
 					local IsMissile = IsMissileAmmo(self)
 					local CookoffType = CrateType
-					if not ACF.RoundTypes[CookoffType] then
+					if not ACE.RoundTypes[CookoffType] then
 						CookoffType = CrateType
 					end
 					CookoffBullet.Type = CookoffType
 
-					self.CreateShell = ACF.RoundTypes[CookoffType].create
+					self.CreateShell = ACE.RoundTypes[CookoffType].create
 					self:CreateShell( CookoffBullet )
 
 						self.Ammo = self.Ammo - 1
@@ -940,7 +940,7 @@ function ENT:Think()
 									HEFlash:SetOrigin( self.BulletData.Pos )
 									HEFlash:SetNormal( -vector_up )
 									HEFlash:SetRadius( math.Clamp(self.BulletData.RoundVolume ^ 0.4 * 0.5, 0.6, 6) )
-								util.Effect( "ACF_Scaled_Explosion", HEFlash )
+								util.Effect( "ACE_Scaled_Explosion", HEFlash )
 							end )
 
 							local MiniRoundType = self.BulletData.Type
@@ -948,7 +948,7 @@ function ENT:Think()
 							local HE = ACE.GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
 							local Propel = self.BulletData.PropMass or 0
 							local PropScale = ACE.GetAmmoCookoffPropScale(MiniClass)
-							local HEWeight = ((HE + Propel * PropScale * ACF.APAmmoDetonateFactor * (ACF.PBase / ACF.HEPower)) * ACF.BoomMult)
+							local HEWeight = ((HE + Propel * PropScale * ACE.APAmmoDetonateFactor * (ACE.PBase / ACE.HEPower)) * ACE.BoomMult)
 							local RunHE = self.CookoffHEToggle
 							self.CookoffHEToggle = not self.CookoffHEToggle
 
@@ -994,13 +994,13 @@ function ENT:Think()
 	-- Completely new, fresh, genius, beautiful, flawless refill system.
 	elseif self.BulletData.Type == "Refill" and self.Load then
 
-		for _,Ammo in pairs( ACF.AmmoCrates ) do
+		for _,Ammo in pairs( ACE.AmmoCrates ) do
 
 			if Ammo.BulletData.Type ~= "Refill" then
 
 				local distsqrt = self:GetPos():DistToSqr( Ammo:GetPos() )
 
-				if distsqrt < ACF.RefillDistance ^ 2 and Ammo.Capacity > Ammo.Ammo then
+				if distsqrt < ACE.RefillDistance ^ 2 and Ammo.Capacity > Ammo.Ammo then
 
 					self.SupplyingTo = self.SupplyingTo or {}
 
@@ -1033,7 +1033,7 @@ function ENT:Think()
 			else
 				local dist = self:GetPos():Distance(Ammo:GetPos())
 				-- If ammo crate is out of refill max distance or is full or our refill crate is damaged or just in-active then stop refiliing it.
-				if (dist > ACF.RefillDistance) or (Ammo.Capacity <= Ammo.Ammo) or self.Damaged or not self.Load or not Ammo.Legal then
+				if (dist > ACE.RefillDistance) or (Ammo.Capacity <= Ammo.Ammo) or self.Damaged or not self.Load or not Ammo.Legal then
 					table.remove(self.SupplyingTo, k)
 					self:StopRefillEffect( EntID )
 				end
@@ -1046,17 +1046,17 @@ function ENT:Think()
 
 end
 
-util.AddNetworkString("ACF_RefillEffect")
+util.AddNetworkString("ACE_RefillEffect")
 function ENT:RefillEffect( Target )
-	net.Start("ACF_RefillEffect")
+	net.Start("ACE_RefillEffect")
 		net.WriteUInt( self:EntIndex(), 14 )
 		net.WriteUInt( Target:EntIndex(), 14 )
 	net.Broadcast()
 end
 
-util.AddNetworkString("ACF_StopRefillEffect")
+util.AddNetworkString("ACE_StopRefillEffect")
 function ENT:StopRefillEffect( TargetID )
-	net.Start("ACF_StopRefillEffect")
+	net.Start("ACE_StopRefillEffect")
 		net.WriteUInt( self:EntIndex(), 14 )
 		net.WriteUInt( TargetID, 14 )
 	net.Broadcast()
@@ -1079,9 +1079,9 @@ function ENT:OnRemove()
 	end
 	self._ACEPointsSuppress = nil
 	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
-	for k,v in pairs(ACF.AmmoCrates) do
+	for k,v in pairs(ACE.AmmoCrates) do
 		if v == self then
-			table.remove(ACF.AmmoCrates,k)
+			table.remove(ACE.AmmoCrates,k)
 		end
 	end
 

@@ -183,7 +183,7 @@ function ACE_Manu_EntCost(ent)
 
 	-- Armor prop: same class-skip as ACE_Points_PropArmor(skip acf_/ace_/gmod_/pod). Priced
 	-- by physics mass x the prop's armor-material $/ton.
-	if cls:sub(1, 4) ~= "acf_" and cls:sub(1, 4) ~= "ace_" and cls:sub(1, 5) ~= "gmod_"
+	if cls:sub(1, 4) ~= "ACE_" and cls:sub(1, 4) ~= "ace_" and cls:sub(1, 5) ~= "gmod_"
 		and not cls:find("pod", 1, true) then
 		local acf = ent.ACF
 		if istable(acf) and acf.Armour then

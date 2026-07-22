@@ -31,8 +31,8 @@ class StaticSafetyContractTests(unittest.TestCase):
             source = lua / "synthetic.lua"
             source.write_text(
                 """
-                function ACF_SpallTrace()
-                    ACF_SpallTrace()
+                function ACE_SpallTrace()
+                    ACE_SpallTrace()
                 end
 
                 while true do

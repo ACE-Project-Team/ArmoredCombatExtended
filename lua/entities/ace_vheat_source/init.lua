@@ -20,7 +20,7 @@ function ENT:Initialize()
 	self.CoolingRate = 0
 	self.MaxTemperature = self.Heat
 
-	self.SpecialHealth       = true  --If true needs a special ACF_Activate function
+	self.SpecialHealth       = true  --If true needs a special ACE_Activate function
 
 	self.Inputs = WireLib.CreateInputs(self, {
 		"Active (Whether to turn the virtual heat source on or off)",

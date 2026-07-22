@@ -1458,4 +1458,3 @@ function ACE_GetEntPoints(ent)
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
 	return (tonumber(ent.ACEPoints) or 0) * scale
 end
-

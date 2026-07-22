@@ -30,8 +30,8 @@ function ENT:Initialize()
 	self.PhysObj:EnableGravity( false )
 	self.PhysObj:EnableMotion( false )
 
-	self.SpecialHealth	= false  --If true needs a special ACF_Activate function
-	self.SpecialDamage	= true  --If true needs a special ACF_OnDamage function
+	self.SpecialHealth	= false  --If true needs a special ACE_Activate function
+	self.SpecialDamage	= true  --If true needs a special ACE_OnDamage function
 
 	self.MissileActive = false --False on rack, true in flight.
 

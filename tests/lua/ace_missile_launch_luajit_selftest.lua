@@ -2,24 +2,24 @@ local root = assert(arg[1], "usage: ace_missile_launch_luajit_selftest.lua <ACE 
 root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 local source = assert(io.open(root .. "/lua/autorun/server/sv_acf_missiles.lua", "r")):read("*a")
-local start = assert(source:find("function ACFM_BulletLaunch"))
-local finish = assert(source:find("function ACFM_ExpandBulletData", start))
+local start = assert(source:find("function ACE_Missile_BulletLaunch"))
+local finish = assert(source:find("function ACE_Missile_ExpandBulletData", start))
 
-ACF = {
+ACE = {
 	CurBulletIndex = 0,
 	BulletIndexLimit = 128,
 	BallisticsGravity = -600,
 	BallisticsGravityVector = { z = -600 },
 	SysTime = 12.5,
 	Bullet = {},
+	BallisticsFrame = 9,
 }
-ACE = { BallisticsFrame = 9 }
 
 local registeredIndex
 local registeredBullet
 local clientBullet
 
-function ACF_AcquireBullet(BulletData)
+function ACE_AcquireBullet(BulletData)
 	local Copy = {}
 	for Key, Value in pairs(BulletData) do
 		Copy[Key] = Value
@@ -27,13 +27,13 @@ function ACF_AcquireBullet(BulletData)
 	return Copy
 end
 
-function ACF_RegisterBullet(Index, Bullet)
+function ACE_RegisterBullet(Index, Bullet)
 	registeredIndex = Index
 	registeredBullet = Bullet
-	ACF.Bullet[Index] = Bullet
+	ACE.Bullet[Index] = Bullet
 end
 
-function ACF_BulletClient(_, Bullet)
+function ACE_BulletClient(_, Bullet)
 	clientBullet = Bullet
 end
 
@@ -46,12 +46,12 @@ local original = {
 }
 
 assert(loadstring(source:sub(start, finish - 1)))()
-ACFM_BulletLaunch(original)
+ACE_Missile_BulletLaunch(original)
 
 assert(original.Index == 1)
-assert(original.Gravity == ACF.BallisticsGravity)
-assert(original.Accel == ACF.BallisticsGravityVector)
-assert(original.LastThink == ACF.SysTime)
+assert(original.Gravity == ACE.BallisticsGravity)
+assert(original.Accel == ACE.BallisticsGravityVector)
+assert(original.LastThink == ACE.SysTime)
 assert(original.FlightTime == 0)
 assert(original.TraceBackComp == 0)
 assert(original.FuseLength == 0)
@@ -75,11 +75,11 @@ local roundType = {
 		impactBullet = Bullet
 	end,
 }
-ACF.RoundTypes = { HEAT = roundType }
+ACE.RoundTypes = { HEAT = roundType }
 
 local Bullet = original
 local Index = Bullet.Index
-ACF.RoundTypes[Bullet.Type].propimpact(Index, Bullet)
+ACE.RoundTypes[Bullet.Type].propimpact(Index, Bullet)
 
 assert(impactIndex == original.Index)
 assert(impactBullet == original)

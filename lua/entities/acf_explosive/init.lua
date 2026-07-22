@@ -12,7 +12,7 @@ CreateConVar("sbox_max_ace_explosive", 20)
 function ENT:Initialize()
 
 	self.BulletData = self.BulletData or {}
-	self.SpecialDamage = true	--If true needs a special ACF_OnDamage function
+	self.SpecialDamage = true	--If true needs a special ACE_OnDamage function
 
 	self.Inputs = Wire_CreateInputs( self, { "Detonate" } )
 	self.Outputs = Wire_CreateOutputs( self, {} )

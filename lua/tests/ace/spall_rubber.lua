@@ -11,11 +11,11 @@ local function withSpallTraceStubs(callback)
 	local original = {
 		TraceLine = util.TraceLine,
 		Decal = util.Decal,
-		ACFCheck = _G.ACF_Check,
-		ACFCheckClips = _G.ACF_CheckClips,
-		ACFDamage = _G.ACF_Damage,
-		ACFAPKill = _G.ACF_APKill,
-		ACFHitAngle = _G.ACF_GetHitAngle,
+		ACFCheck = _G.ACE_Check,
+		ACFCheckClips = _G.ACE_CheckClips,
+		ACFDamage = _G.ACE_Damage,
+		ACFAPKill = _G.ACE_APKill,
+		ACFHitAngle = _G.ACE_GetHitAngle,
 		GetMaterialData = ACE.GetMaterialData,
 		VectorRand = _G.VectorRand,
 		Line = debugoverlay.Line,
@@ -28,11 +28,11 @@ local function withSpallTraceStubs(callback)
 
 	util.TraceLine = original.TraceLine
 	util.Decal = original.Decal
-	_G.ACF_Check = original.ACFCheck
-	_G.ACF_CheckClips = original.ACFCheckClips
-	_G.ACF_Damage = original.ACFDamage
-	_G.ACF_APKill = original.ACFAPKill
-	_G.ACF_GetHitAngle = original.ACFHitAngle
+	_G.ACE_Check = original.ACFCheck
+	_G.ACE_CheckClips = original.ACFCheckClips
+	_G.ACE_Damage = original.ACFDamage
+	_G.ACE_APKill = original.ACFAPKill
+	_G.ACE_GetHitAngle = original.ACFHitAngle
 	ACE.GetMaterialData = original.GetMaterialData
 	_G.VectorRand = original.VectorRand
 	debugoverlay.Line = original.Line
@@ -90,10 +90,10 @@ return {
 						maxs = Vector(0, 0, 0),
 					}
 
-					_G.ACF_Check = function() return true end
-					_G.ACF_CheckClips = function() return false end
-					_G.ACF_GetHitAngle = function() return 0 end
-					_G.ACF_APKill = function() return nil end
+					_G.ACE_Check = function() return true end
+					_G.ACE_CheckClips = function() return false end
+					_G.ACE_GetHitAngle = function() return 0 end
+					_G.ACE_APKill = function() return nil end
 					_G.VectorRand = function() return Vector(0, 0, 0) end
 					ACE.GetMaterialData = function() return { spallresist = 1 } end
 					util.Decal = function() end
@@ -112,7 +112,7 @@ return {
 							HitPos = Vector(0, traces * 100, 0),
 						}
 					end
-					_G.ACF_Damage = function(entity, energy)
+					_G.ACE_Damage = function(entity, energy)
 						seen[#seen + 1] = { entity = entity, penetration = energy.Penetration, kinetic = energy.Kinetic }
 
 						if entity == front then
@@ -122,7 +122,7 @@ return {
 						return { Overkill = 0, Loss = 1, Kill = false }
 					end
 
-					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(traceEnds[2].x).to.equal(0)
 					expect(traceEnds[2].y).to.beGreaterThan(traceEnds[2].x + 100)
 				end)
@@ -150,10 +150,10 @@ return {
 						maxs = Vector(0, 0, 0),
 					}
 
-					_G.ACF_Check = function() return true end
-					_G.ACF_CheckClips = function() return false end
-					_G.ACF_GetHitAngle = function() return 0 end
-					_G.ACF_APKill = function() return nil end
+					_G.ACE_Check = function() return true end
+					_G.ACE_CheckClips = function() return false end
+					_G.ACE_GetHitAngle = function() return 0 end
+					_G.ACE_APKill = function() return nil end
 					_G.VectorRand = function() return Vector(0, 0, 0) end
 					ACE.GetMaterialData = function() return { spallresist = 1 } end
 					util.Decal = function() end
@@ -169,11 +169,11 @@ return {
 							HitPos = Vector(10, 0, 0),
 						}
 					end
-					_G.ACF_Damage = function()
+					_G.ACE_Damage = function()
 						return { Overkill = 10, Loss = 0.25, Kill = false }
 					end
 
-					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("repeated_visit")
 				end)
 
@@ -195,10 +195,10 @@ return {
 						maxs = Vector(0, 0, 0),
 					}
 
-					_G.ACF_Check = function() return true end
-					_G.ACF_CheckClips = function() return false end
-					_G.ACF_GetHitAngle = function() return 0 end
-					_G.ACF_APKill = function() return nil end
+					_G.ACE_Check = function() return true end
+					_G.ACE_CheckClips = function() return false end
+					_G.ACE_GetHitAngle = function() return 0 end
+					_G.ACE_APKill = function() return nil end
 					_G.VectorRand = function() return Vector(0, 0, 0) end
 					ACE.GetMaterialData = function() return { spallresist = 1 } end
 					util.Decal = function() end
@@ -215,11 +215,11 @@ return {
 							HitPos = Vector(traces, 0, 0),
 						}
 					end
-					_G.ACF_Damage = function()
+					_G.ACE_Damage = function()
 						return { Overkill = 10, Loss = 0.01, Kill = false }
 					end
 
-					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("depth_budget")
 				end)
 
@@ -240,7 +240,7 @@ return {
 						maxs = Vector(0, 0, 0),
 					}
 
-					_G.ACF_Check = function() return false end
+					_G.ACE_Check = function() return false end
 					util.TraceLine = function()
 						return {
 							Hit = true,
@@ -249,12 +249,12 @@ return {
 							HitPos = Vector(10, 0, 0),
 						}
 					end
-					_G.ACF_Damage = function()
+					_G.ACE_Damage = function()
 						damaged = true
 					end
 					debugoverlay.Line = function() end
 
-					ACF_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("invalid_entity")
 				end)
 
@@ -265,21 +265,21 @@ return {
 			name = "selected ricochet remains terminal at the ricochet cap",
 			func = function()
 				local original = {
-					Damage = _G.ACF_Damage,
-					HitAngle = _G.ACF_GetHitAngle,
-					KEShove = _G.ACF_KEShove,
+					Damage = _G.ACE_Damage,
+					HitAngle = _G.ACE_GetHitAngle,
+					KEShove = _G.ACE_KEShove,
 					GetConVar = _G.GetConVar,
 					Rand = math.Rand,
 				}
 
 				local ok, err = pcall(function()
-					_G.ACF_Damage = function() return { Loss = 0.8, Overkill = 1, Kill = false } end
-					_G.ACF_GetHitAngle = function() return 89 end
-					_G.ACF_KEShove = function() end
+					_G.ACE_Damage = function() return { Loss = 0.8, Overkill = 1, Kill = false } end
+					_G.ACE_GetHitAngle = function() return 89 end
+					_G.ACE_KEShove = function() end
 					_G.GetConVar = function() return { GetFloat = function() return 1 end } end
 					math.Rand = function() return 0.5 end
 
-					local result = ACF_RoundImpact({
+					local result = ACE_RoundImpact({
 						Ricochets = 5,
 						Caliber = 1,
 						Ricochet = 55,
@@ -295,9 +295,9 @@ return {
 					expect(result.PostPenetration.SpentKinetic).to.aboutEqual(64)
 				end)
 
-				_G.ACF_Damage = original.Damage
-				_G.ACF_GetHitAngle = original.HitAngle
-				_G.ACF_KEShove = original.KEShove
+				_G.ACE_Damage = original.Damage
+				_G.ACE_GetHitAngle = original.HitAngle
+				_G.ACE_KEShove = original.KEShove
 				_G.GetConVar = original.GetConVar
 				math.Rand = original.Rand
 

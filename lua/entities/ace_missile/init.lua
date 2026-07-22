@@ -2,6 +2,7 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
+local TraceMissileLOS = include("acf/shared/sh_ace_missiletrace.lua")
 
 DEFINE_BASECLASS("acf_explosive")
 
@@ -481,22 +482,11 @@ function ENT:Think()
 		--Detonation by fuse, if available
 
 		if self.CanDetonate == true then
-			local TraceData = {
-				start = Pos + self.Flight * DeltaTime * -30,
-				endpos = Pos + self.Flight * DeltaTime * 49,
-				filter = {self}
-			}
-			local tr
-			local VisclipCount = 0
-
-			repeat
-				tr = util.TraceLine(TraceData)
-
-				if not ACF_CheckClips(tr.Entity, tr.HitPos) then break end
-
-				TraceData.filter[#TraceData.filter + 1] = tr.Entity
-				VisclipCount = VisclipCount + 1
-			until VisclipCount >= 50
+			local tr = TraceMissileLOS(
+				Pos + self.Flight * DeltaTime * -30,
+				Pos + self.Flight * DeltaTime * 49,
+				{self}
+			)
 
 			--[[
 			self.LOSTraceData.start = Pos + self.Flight * DeltaTime * -30

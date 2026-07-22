@@ -27,7 +27,7 @@ class MissileDefinitionTests(unittest.TestCase):
         cls.source_definitions = []
         for path in cls.files:
             source = path.read_text(encoding="utf-8")
-            for name, _, after_argument in iter_named_calls(source, "ACE.DefineGun"):
+            for name, _, after_argument in iter_named_calls(source, "ACE_DefineGun"):
                 cls.source_definitions.append(
                     {
                         "name": name,

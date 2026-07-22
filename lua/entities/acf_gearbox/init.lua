@@ -3,7 +3,7 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
-local GearboxTable = ACF.Weapons.Gearboxes
+local GearboxTable = ACE.Weapons.Gearboxes
 
 do
 
@@ -47,14 +47,14 @@ do
 		self.Legal			= true
 		self.Parentable		= false
 		self.RootParent		= nil
-		self.NextLegalCheck = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+		self.NextLegalCheck = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 		self.LegalIssues	= ""
 
 		--self.Heat		= ACE.AmbientTemp
 
 	end
 
-	function ACE.MakeGearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+	function ACE_MakeGearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 
 		if not Owner:CheckLimit("_acf_misc") then return false end
 
@@ -62,7 +62,7 @@ do
 
 		if not IsValid( Gearbox ) then return false end
 
-		if not ACE.CheckGearbox( Id ) then
+		if not ACE_CheckGearbox( Id ) then
 			Id = "1Gear-T-S" --deal with it
 			Data1	= 0.1 --gear1
 			Data10  = 0.5 --gear2
@@ -188,7 +188,7 @@ do
 		Gearbox.OutR = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment( "driveshaftR" )).Pos)
 
 		Owner:AddCount("_acf_misc", Gearbox)
-		Owner:AddCleanup( "acfmenu", Gearbox )
+		Owner:AddCleanup( "acemenu", Gearbox )
 
 		Gearbox:ChangeGear(1)
 
@@ -201,12 +201,12 @@ do
 		Gearbox:SetNWString( "WireName", GearboxData.name )
 		Gearbox:UpdateOverlayText()
 
-		ACE.Activate( Gearbox, 0 )
+		ACE_Activate( Gearbox, 0 )
 
 		return Gearbox
 	end
 	list.Set( "ACFCvars", "acf_gearbox", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "data14", "data15"} )
-	duplicator.RegisterEntityClass("acf_gearbox", ACE.MakeGearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0" )
+	duplicator.RegisterEntityClass("acf_gearbox", ACE_MakeGearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0" )
 
 end
 
@@ -331,7 +331,7 @@ function ENT:Update( ArgsTable )
 	self:SetNWString( "WireName", GearboxData.name )
 	self:UpdateOverlayText()
 
-	ACE.Activate( self, 1 )
+	ACE_Activate( self, 1 )
 
 	return true, "Gearbox updated successfully!"
 end
@@ -360,7 +360,7 @@ function ENT:UpdateOverlayText()
 	text = text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round( self.MaxTorque * 0.73 ) .. " ft-lb"
 
 	if not self.Legal then
-		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText( text )
@@ -423,12 +423,12 @@ end
 
 function ENT:Think()
 
-	if ACF.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+	if ACE.CurTime > self.NextLegalCheck then
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 
-		if self.Legal and self.Parentable then self.RootParent = ACE.GetPhysicalParent(self) end
+		if self.Legal and self.Parentable then self.RootParent = ACE_GetPhysicalParent(self) end
 	end
 
 	local Time = CurTime()
@@ -521,7 +521,7 @@ function ENT:Calc( InputRPM, InputInertia )
 	end
 
 	if self.Auto and self.Drive == 1 and self.InGear then
-		local Base = ACE.GetPhysicalParent( self )
+		local Base = ACE_GetPhysicalParent( self )
 		local PhysObj = Base:GetPhysicsObject()
 		local vel = PhysObj:GetVelocity():Length()
 		if vel > (self.ShiftPoints[self.Gear] * self.ShiftScale) and not (self.Gear == self.Gears) and not self.Hold then
@@ -581,7 +581,7 @@ function ENT:Calc( InputRPM, InputInertia )
 	end
 
 	--I would need to learn more about this, disabled atm
-	--self.Heat = ACE.HeatFromGearbox( self , InputRPM)
+	--self.Heat = ACE_HeatFromGearbox( self , InputRPM)
 	--Wire_TriggerOutput(self, "Heat", self.Heat)
 
 	return math.min( self.TotalReqTq, self.MaxTorque )
@@ -790,7 +790,7 @@ function ENT:Link( Target )
 
 	local Rope = nil
 	if self:CPPIGetOwner():GetInfoNum( "ace_mobility_rope_links", 1) == 1 then
-		Rope = ACE.CreateLinkRope( OutPosWorld, self, OutPos, Target, InPos )
+		Rope = ACE_CreateLinkRope( OutPosWorld, self, OutPos, Target, InPos )
 	end
 
 	local Phys	= Target:GetPhysicsObject()

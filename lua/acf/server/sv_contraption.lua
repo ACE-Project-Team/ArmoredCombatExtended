@@ -93,7 +93,7 @@ ACE.ExplosiveEnts = {
 }
 
 -- whitelist for things that can be turned into debris
-ACF.Debris = {
+ACE.Debris = {
 	["acf_gun"]                   = true,
 	["acf_rack"]                  = true,
 	["acf_gearbox"]               = true,
@@ -285,7 +285,7 @@ hook.Add("EntityRemoved", "ACE_EntRemoval", function(Ent)
 end)
 
 -- Optimization resource, this will try to clean the main table just to reduce Ent count
-function ACE.refreshdata(Data)
+function ACE_refreshdata(Data)
 	--Not really perfect, but better than nothing. Cframepls
 	if istable(Data) and not table.IsEmpty(Data) then
 		local Entities = Data[1].CreatedEntities --wtf wire
@@ -321,7 +321,7 @@ function ACE.refreshdata(Data)
 	--print('Total Ents registered count: ' .. table.Count( ACE.contraptionEnts ))
 end
 
-timer.Create( "PeriodicCleanup", 3, 0, ACE.refreshdata )
+timer.Create( "PeriodicCleanup", 3, 0, ACE_refreshdata )
 
 hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 	local dupe = istable(dupeInfo) and dupeInfo[1]
@@ -343,5 +343,5 @@ hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 		end
 	end
 
-	ACE.refreshdata(dupeInfo)
+	ACE_refreshdata(dupeInfo)
 end)

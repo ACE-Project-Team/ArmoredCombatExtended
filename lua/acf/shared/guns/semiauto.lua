@@ -1,9 +1,9 @@
 --define the class
-ACE.DefineGunClass("SA", {
+ACE_DefineGunClass("SA", {
 	type = "Gun",
 	spread = 0.15,
 	name = "Semiautomatic Cannon",
-	desc = ACFTranslation.GunClasses[12],
+	desc = ACE.Translation.GunClasses[12],
 	muzzleflash = "AC",
 	rofmod = 0.5,
 	year = 1935,
@@ -13,7 +13,7 @@ ACE.DefineGunClass("SA", {
 } )
 
 --add a gun to the class
-ACE.DefineGun("25mmSA", { --id
+ACE_DefineGun("25mmSA", { --id
 	name = "25mm Semiautomatic Cannon",
 	desc = "The 25mm semiauto can quickly put five rounds downrange, being lethal, yet light.",
 	model = "models/autocannon/semiautocannon_25mm.mdl",
@@ -31,7 +31,7 @@ ACE.DefineGun("25mmSA", { --id
 	},
 } )
 
-ACE.DefineGun("37mmSA", {
+ACE_DefineGun("37mmSA", {
 	name = "37mm Semiautomatic Cannon",
 	desc = "The 37mm is surprisingly powerful, its five-round clips boasting a respectable payload and a high muzzle velocity.",
 	model = "models/autocannon/semiautocannon_37mm.mdl",
@@ -49,7 +49,7 @@ ACE.DefineGun("37mmSA", {
 	},
 } )
 
-ACE.DefineGun("45mmSA", { --
+ACE_DefineGun("45mmSA", { --
 	name = "45mm Semiautomatic Cannon",
 	desc = "The 45mm can easily shred light armor, with a respectable rate of fire, but its armor penetration pales in comparison to regular cannons.",
 	model = "models/autocannon/semiautocannon_45mm.mdl",
@@ -67,7 +67,7 @@ ACE.DefineGun("45mmSA", { --
 	},
 } )
 
-ACE.DefineGun("57mmSA", {
+ACE_DefineGun("57mmSA", {
 	name = "57mm Semiautomatic Cannon",
 	desc = "The 57mm is a respectable light armament, offering considerable penetration and moderate fire rate.",
 	model = "models/autocannon/semiautocannon_57mm.mdl",
@@ -85,7 +85,7 @@ ACE.DefineGun("57mmSA", {
 	},
 } )
 
-ACE.DefineGun("76mmSA", {
+ACE_DefineGun("76mmSA", {
 	name = "76mm Semiautomatic Cannon",
 	desc = "The 76mm semiauto is a fearsome weapon, able to put 12 76mm rounds downrange in 7 seconds.",
 	model = "models/autocannon/semiautocannon_76mm.mdl",

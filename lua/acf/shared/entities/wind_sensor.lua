@@ -1,4 +1,4 @@
-ACF_DefineEntity("WindSensor", {
+ACE_DefineEntity("WindSensor", {
 	name = "Wind Sensor",
 	ent = "ace_wind_sensor",
 	category = "Misc",

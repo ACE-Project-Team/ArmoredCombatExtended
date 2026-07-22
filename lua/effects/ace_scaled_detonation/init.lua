@@ -84,7 +84,7 @@ function EFFECT:Init( data )
 	end
 
 	local Mat = Ground.MatType or 0
-	local Material = ACE.GetMaterialName( Mat )
+	local Material = ACE_GetMaterialName( Mat )
 
 	if Ground.HitNonWorld then --Overide with ACE prop material
 		Mat = Mat
@@ -120,13 +120,13 @@ function EFFECT:Init( data )
 	--Main explosion
 	if self.Radius < 10 then
 		self:ExplosionSmall()
-		ACE.RenderLight( 0, self.Radius * 450, Color(255, 90, 15), self.Origin, 0.08) -- idx 0: world
+		ACE_RenderLight( 0, self.Radius * 450, Color(255, 90, 15), self.Origin, 0.08) -- idx 0: world
 	elseif self.Radius < 20 then
 		self:ExplosionMedium()
-		ACE.RenderLight( 0, self.Radius * 950, Color(255, 90, 15), self.Origin, 0.12) -- idx 0: world
+		ACE_RenderLight( 0, self.Radius * 950, Color(255, 90, 15), self.Origin, 0.12) -- idx 0: world
 	else
 		self:ExplosionMedium()
-		ACE.RenderLight( 0, self.Radius * 1100, Color(255, 90, 15), self.Origin, 0.16) -- idx 0: world
+		ACE_RenderLight( 0, self.Radius * 1100, Color(255, 90, 15), self.Origin, 0.16) -- idx 0: world
 	end
 
 	local flashOrigin = self.Origin - self.DirVec * math.Clamp(12 + self.Radius * 0.4, 10, 30)

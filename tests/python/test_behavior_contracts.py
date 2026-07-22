@@ -35,7 +35,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             "DefineMine",
         ):
             with self.subTest(family=family):
-                self.assertIn(f"function ACE.{family}", loader)
+                self.assertIn(f"function ACE_{family}", loader)
 
     def test_entity_load_contract_is_present_for_every_mounted_entity(self):
         entity_dirs = [
@@ -62,8 +62,8 @@ class EntityPipelineContractTests(unittest.TestCase):
         getters = source("acf/shared/sh_acfm_getters.lua")
         functions = source("acf/shared/sh_ace_functions.lua")
         for text, patterns in (
-            (base, ("function ACE.GetLinkedWheels", "function ACE.CreateLinkRope", "GearLink", "WheelLink")),
-            (getters, ("function ACE.RackCanLoadCaliber", "function ACE.CanLinkRack")),
+            (base, ("function ACE_GetLinkedWheels", "function ACE_CreateLinkRope", "GearLink", "WheelLink")),
+            (getters, ("function ACE_RackCanLoadCaliber", "function ACE_CanLinkRack")),
             (functions, ("AmmoLink", "Master")),
         ):
             for pattern in patterns:
@@ -77,9 +77,9 @@ class EntityPipelineContractTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertRegex(base, r"Inputs\.Fire")
-        self.assertRegex(ballistics, r"function ACE\.CreateBullet")
-        self.assertRegex(weapon_base, r"ACE\.CreateBullet")
-        self.assertRegex(ballistics, r"ACE\.BulletClient")
+        self.assertRegex(ballistics, r"function ACE_CreateBullet")
+        self.assertRegex(weapon_base, r"ACE_CreateBullet")
+        self.assertRegex(ballistics, r"ACE_BulletClient")
         self.assertRegex(ballistics, r"RoundTypes\[Bullet\.Type\]")
 
     def test_tracking_contract_keeps_radar_registration_and_tracking_definitions(self):
@@ -89,9 +89,9 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn("ACE.radarEntities", contraption)
         self.assertIn("table.insert(ACE.radarEntities", contraption)
         self.assertIn("table.remove(ACE.radarEntities", contraption)
-        self.assertIn("ACE.DefineTrackRadarClass", tracking)
-        self.assertIn("ACE.DefineTrackRadar", tracking)
-        self.assertIn("ACE.DefineTrackRadar", search)
+        self.assertIn("ACE_DefineTrackRadarClass", tracking)
+        self.assertIn("ACE_DefineTrackRadar", tracking)
+        self.assertIn("ACE_DefineTrackRadar", search)
 
     def test_revving_contract_keeps_engine_torque_and_rpm_inputs(self):
         engines = list((LUA / "acf/shared/engines").glob("*.lua"))
@@ -102,15 +102,56 @@ class EntityPipelineContractTests(unittest.TestCase):
                 self.assertIn(field, definitions)
         heat = source("acf/server/sv_heat.lua")
         self.assertIn("Engine.FlyRPM", heat)
-        self.assertIn("function ACE.HeatFromGearbox", heat)
+        self.assertIn("function ACE_HeatFromGearbox", heat)
 
-    def test_external_notification_protocol_remains_unchanged(self):
+    def test_ace_notification_protocol_is_namespaced(self):
         globals_source = source("autorun/acf_globals.lua")
         networking = source("acf/shared/sv_ace_networking.lua")
-        self.assertIn('net.Start( "ACF_Notify" )', globals_source)
-        self.assertIn('net.Receive( "ACF_Notify"', globals_source)
-        self.assertIn('util.AddNetworkString( "ACF_Notify" )', networking)
+        self.assertIn('net.Start( "ACE_Notify" )', globals_source)
+        self.assertIn('net.Receive( "ACE_Notify"', globals_source)
+        self.assertIn('util.AddNetworkString( "ACE_Notify" )', networking)
         self.assertNotIn('util.AddNetworkString( "notify" )', networking)
+
+    def test_backend_hook_identifiers_are_ace_namespaced(self):
+        backend = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in (LUA / "acf").rglob("*.lua")
+        )
+        globals_source = source("autorun/acf_globals.lua")
+        combined = backend + "\n" + globals_source
+        for legacy in ("ACFPermissions", "CreateACFCategory", "ACF Parented"):
+            with self.subTest(legacy=legacy):
+                self.assertNotIn(legacy, combined)
+        self.assertNotIn('hook.Run("ACFOn', backend)
+        self.assertIn('ACE_RunLegacyHook("ACFOnDamage"', backend)
+        self.assertIn('ACE_RunLegacyHook("ACFOnBulletCreation"', backend)
+        for current in ("ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory"):
+            with self.subTest(current=current):
+                self.assertIn(current, combined)
+
+    def test_backend_network_channels_are_ace_namespaced(self):
+        backend = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in (LUA / "acf").rglob("*.lua")
+        )
+        client = source("autorun/client/cl_acfm_menuinject.lua")
+        combined = backend + "\n" + client
+        self.assertNotIn('"colorchatmessage"', combined)
+        self.assertIn('"ACE_ColorChatMessage"', combined)
+
+    def test_legacy_starfall_boundary_is_gated_and_live(self):
+        globals_source = source("autorun/acf_globals.lua")
+        starfall = (LUA / "starfall" / "libs_sv" / "acf.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("ACE.LegacyCompatibility = ACECompatibilityView", globals_source)
+        self.assertIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
+        self.assertIn('if ACECompatibilityView then', globals_source)
+        self.assertIn('GetConVar("acf_restrictinfo")', starfall)
+        self.assertIn('ACFOnBulletCreation', starfall)
+        self.assertIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
+        self.assertIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
+        self.assertIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)
 
     def test_entity_backend_calls_resolve_to_ace_implementations(self):
         backend_sources = "\n".join(
@@ -131,7 +172,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertRegex(
                     backend_sources,
-                    rf"(?:function\s+ACE\.{name}\b|ACE\.{name}\s*=)",
+                    rf"(?:function\s+ACE_{name}\b|ACE_{name}\s*=)",
                 )
 
 

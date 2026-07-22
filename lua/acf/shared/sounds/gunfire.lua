@@ -1,6 +1,6 @@
 --Little desc for every value here:
 
---ACE.DefineGunFireSound( id, data)
+--ACE_DefineGunFireSound( id, data)
 
 --id	: this will be the sound patch which this content is associated to. Make sure that every id is unique so we dont have colliding data
 --data	: here we will have 3 tables, which each one will edit the sounds to be played PER distance. So we will have main sounds (those you hear normally when standing close to the gun), mid sounds and far sounds.
@@ -14,7 +14,7 @@
 -- These sound packages will work for both sounds placed via sound replacer or generic ones, so feel free to create your own scripted sounds. Only works with GUNs.
 
 --7.62mm Machinegun gunfire
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/7_62mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/7_62mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -93,7 +93,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/7_62mm_multi.mp3",
 )
 
 --12.7mm Machinegun gunfire
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/12_7mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/12_7mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -169,7 +169,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/12_7mm_multi.mp3",
 )
 
 --20mm heavy machinegun gunfire.
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/20mm_hmg_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/20mm_hmg_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -250,7 +250,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/20mm_hmg_multi.mp3",
 )
 
 --30mm heavy machinegun gunfire.
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/30mm_hmg_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/30mm_hmg_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -293,7 +293,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/30mm_hmg_multi.mp3",
 )
 
 --20mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/20mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/20mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -348,7 +348,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/20mm_multi.mp3",
 )
 
 --30mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/30mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/30mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -391,7 +391,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/30mm_multi.mp3",
 )
 
 --40mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/40mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/40mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -435,7 +435,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/40mm_multi.mp3",
 )
 
 --50mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/50mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/50mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -471,7 +471,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/50mm_multi.mp3",
 )
 
 --75mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/75mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/75mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -508,7 +508,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/75mm_multi.mp3",
 )
 
 --100mm Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/100mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/100mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -545,7 +545,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/100mm_multi.mp3",
 )
 
 --120mm+ Cannon sound
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/120mm_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/120mm_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -584,7 +584,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/120mm_multi.mp3",
 )
 
 --Generic Howitzer gunfire
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/howitzer_multi.wav",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/howitzer_multi.wav",
 	{
 		main = {
 			Volume	= 10,
@@ -622,20 +622,20 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/howitzer_multi.wav",
 )
 --[[
 --Generic Mortar gunfire. Ik its empty, the structure is here just to avoid recreate it in the future.
-ACE.DefineGunFireSound( "weapons/ACF_Gun/mortar_new.wav",
+ACE_DefineGunFireSound( "weapons/ACE_Gun/mortar_new.wav",
 	{
 		main = {
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACF_Gun/mortar_new.wav"
+				"weapons/ACE_Gun/mortar_new.wav"
 			}
 		},
 		mid = {
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACF_Gun/mortar_new.wav"
+				"weapons/ACE_Gun/mortar_new.wav"
 			}
 
 		},
@@ -643,14 +643,14 @@ ACE.DefineGunFireSound( "weapons/ACF_Gun/mortar_new.wav",
 			Volume	= 1,
 			Pitch	= 100,
 			Package = {
-				"weapons/ACF_Gun/mortar_new.wav"
+				"weapons/ACE_Gun/mortar_new.wav"
 			}
 		}
 	}
 )
 ]]
 --Generic AT Rifle gunfire
-ACE.DefineGunFireSound( "acf_extra/tankfx/gnomefather/7mm1.wav",
+ACE_DefineGunFireSound( "acf_extra/tankfx/gnomefather/7mm1.wav",
 	{
 		main = {
 			Volume	= 1,
@@ -684,7 +684,7 @@ ACE.DefineGunFireSound( "acf_extra/tankfx/gnomefather/7mm1.wav",
 )
 --[[
 --generic rotary autocannon gunfire. Broken atm
-ACE.DefineGunFireSound( "weapons/acf_gun/mg_fire2.wav",
+ACE_DefineGunFireSound( "weapons/acf_gun/mg_fire2.wav",
 	{
 		main = {
 			Volume	= 0.9,
@@ -719,7 +719,7 @@ ACE.DefineGunFireSound( "weapons/acf_gun/mg_fire2.wav",
 ]]
 --[[
 --Generic GL gunfire
-ACE.DefineGunFireSound( "weapons/acf_gun/grenadelauncher.wav",
+ACE_DefineGunFireSound( "weapons/acf_gun/grenadelauncher.wav",
 	{
 		main = {
 			Volume	= 1,
@@ -747,7 +747,7 @@ ACE.DefineGunFireSound( "weapons/acf_gun/grenadelauncher.wav",
 )
 
 --Generic SL gunfire
-ACE.DefineGunFireSound( "ace_weapons/multi_sound/smoke_multi.mp3",
+ACE_DefineGunFireSound( "ace_weapons/multi_sound/smoke_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -775,7 +775,7 @@ ACE.DefineGunFireSound( "ace_weapons/multi_sound/smoke_multi.mp3",
 )
 
 --Generic FGL gunfire
-ACE.DefineGunFireSound( "acf_extra/tankfx/flare_launch.wav",
+ACE_DefineGunFireSound( "acf_extra/tankfx/flare_launch.wav",
 	{
 		main = {
 			Volume	= 1,
@@ -804,7 +804,7 @@ ACE.DefineGunFireSound( "acf_extra/tankfx/flare_launch.wav",
 ]]--
 --[[
 --Test sound definition. Meant to see if the core works as intended.
-ACE.DefineGunFireSound( "physics/metal/bts5_panels_impact_lg_01.wav",
+ACE_DefineGunFireSound( "physics/metal/bts5_panels_impact_lg_01.wav",
 	{
 		main = {
 			Volume	= 1,

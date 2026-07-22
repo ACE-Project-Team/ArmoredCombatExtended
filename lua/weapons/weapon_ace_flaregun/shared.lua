@@ -56,7 +56,7 @@ function SWEP:PrimaryAttack()
 
 			ent:SetPos( owner:GetShootPos() )
 			ent:SetAngles( owner:GetAimVector():Angle() )
-			ent.Life = 1.5 / (0.4 * ACFM.FlareBurnMultiplier)
+			ent.Life = 1.5 / (0.4 * ACE.Missile.FlareBurnMultiplier)
 			ent:Spawn()
 			ent:SetOwner( Gun )
 			ent:SetColor( Color( 0, 0, 1, 1 ) ) --Blue set to 1 for flare, set to 2 for chaff

@@ -1,7 +1,7 @@
 
 -- Inline 2 engines
 
-ACE.DefineEngine( "0.8L-I2", {
+ACE_DefineEngine( "0.8L-I2", {
 	name = "0.8L I2 Diesel",
 	desc = "For when a 3 banger is still too bulky for your micro-needs",
 	model = "models/engines/inline2s.mdl",
@@ -18,7 +18,7 @@ ACE.DefineEngine( "0.8L-I2", {
 
 
 
-ACE.DefineEngine( "10.0-I2", {
+ACE_DefineEngine( "10.0-I2", {
 	name = "10.0L I2 Diesel",
 	desc = "TORQUE.",
 	model = "models/engines/inline2b.mdl",

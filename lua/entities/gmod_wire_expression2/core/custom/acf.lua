@@ -56,7 +56,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
+	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
 	local health		= ( Area + Area * Ductility ) / ACF.Threshold
 
 	return mass, armor, health
@@ -203,7 +203,7 @@ do
 
 		local wheels = {}
 
-		for _, ent in pairs(ACE.GetLinkedWheels(this)) do
+		for _, ent in pairs(ACF_GetLinkedWheels(this)) do
 			wheels[#wheels + 1] = ent
 		end
 
@@ -268,7 +268,7 @@ do
 	[nodiscard]
 	e2function number entity:acfHitClip(vector hitPos)
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot target this entity", 0) end
-		return ACE.CheckClips(this, hitPos) and 1 or 0
+		return ACF_CheckClips(this, hitPos) and 1 or 0
 	end
 
 	__e2setcost(2)
@@ -431,7 +431,7 @@ do
 		end
 
 		if notify > 0 then
-			ACE.SendNotify(self.player, success, msg)
+			ACF_SendNotify(self.player, success, msg)
 		end
 
 		return success and 1 or 0
@@ -462,7 +462,7 @@ do
 		end
 
 		if notify > 0 then
-			ACE.SendNotify(self.player, success, msg)
+			ACF_SendNotify(self.player, success, msg)
 		end
 
 		return success and 1 or 0
@@ -1283,7 +1283,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 		if not this.ACF or not this.ACF.Health then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return 0 end
 		end
@@ -1297,7 +1297,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 		if not this.ACF or not this.ACF.Armour then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return 0 end
 		end
@@ -1311,7 +1311,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 		if not this.ACF or not this.ACF.MaxHealth then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return 0 end
 		end
@@ -1325,7 +1325,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 		if not this.ACF or not this.ACF.MaxArmour then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return 0 end
 		end
@@ -1339,7 +1339,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 		if not this.ACF then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return 0 end
 		end
@@ -1354,12 +1354,12 @@ do
 		if not (this and validPhysics(ent)) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, ent) then return 0 end
 		if not ent.ACF then
-			local check = ACE.Check(ent)
+			local check = ACF_Check(ent)
 
 			if not check then return 0 end
 		end
 
-		local eff = ent.ACF.Armour / abs(cos(rad(ACE.GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
+		local eff = ent.ACF.Armour / abs(cos(rad(ACF_GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
 		return round(eff, 1)
 	end
 
@@ -1369,7 +1369,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", "") end
 		if restrictInfo(self.player, this) then return "" end
 		if not this.ACF then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return "" end
 		end
@@ -1387,7 +1387,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", ret) end
 		if restrictInfo(self.player, this) then return ret end
 		if not this.ACF then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return ret end
 		end
@@ -1426,7 +1426,7 @@ do
 		if restrictInfo(self.player, this) then return end
 
 		if not this.ACF then
-			local check = ACE.Check(this)
+			local check = ACF_Check(this)
 
 			if not check then return end
 		end

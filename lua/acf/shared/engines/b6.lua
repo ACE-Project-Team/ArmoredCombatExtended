@@ -1,7 +1,7 @@
 
 -- Flat 6 engines
 
-ACE.DefineEngine( "2.8-B6", {
+ACE_DefineEngine( "2.8-B6", {
 	name = "2.8L Flat 6 Petrol",
 	desc = "Car sized flat six engine, sporty and light",
 	model = "models/engines/b6small.mdl",
@@ -16,7 +16,7 @@ ACE.DefineEngine( "2.8-B6", {
 	limitrpm = 7250,
 } )
 
-ACE.DefineEngine( "5.0-B6", {
+ACE_DefineEngine( "5.0-B6", {
 	name = "5.0L Flat 6 Petrol",
 	desc = "Sports car grade flat six, renown for their smooth operation and light weight",
 	model = "models/engines/b6med.mdl",
@@ -31,7 +31,7 @@ ACE.DefineEngine( "5.0-B6", {
 	limitrpm = 6800,
 } )
 
-ACE.DefineEngine( "8.3-B6", {
+ACE_DefineEngine( "8.3-B6", {
 	name = "8.3L Flat 6 Multifuel",
 	desc = "Military-grade multifuel boxer engine.  Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
 	model = "models/engines/b6med.mdl",
@@ -46,7 +46,7 @@ ACE.DefineEngine( "8.3-B6", {
 	limitrpm = 4200,
 } )
 
-ACE.DefineEngine( "10.0-B6", {
+ACE_DefineEngine( "10.0-B6", {
 	name = "10.0L Flat 6 Petrol",
 	desc = "Aircraft grade boxer with a high rev range biased powerband",
 	model = "models/engines/b6large.mdl",
@@ -61,7 +61,7 @@ ACE.DefineEngine( "10.0-B6", {
 	limitrpm = 4500,
 } )
 
-ACE.DefineEngine( "5.4-B6", {
+ACE_DefineEngine( "5.4-B6", {
 	name = "5.4L Flat 6 Multifuel",
 	desc = "Military-grade multifuel boxer engine.  Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
 	model = "models/engines/b6med.mdl",
@@ -76,7 +76,7 @@ ACE.DefineEngine( "5.4-B6", {
 	limitrpm = 3500,
 } )
 
-ACE.DefineEngine( "15.8-B6", {
+ACE_DefineEngine( "15.8-B6", {
 	name = "15.8L Flat 6 Petrol",
 	desc = "Monstrous aircraft-grade boxer with a high rev range biased powerband",
 	model = "models/engines/b6large.mdl",
@@ -91,7 +91,7 @@ ACE.DefineEngine( "15.8-B6", {
 	limitrpm = 4900,
 } )
 
-ACE.DefineEngine( "13.6-B6", {
+ACE_DefineEngine( "13.6-B6", {
 	name = "13.6L Flat 6 Multifuel",
 	desc = "5TDF. Compact flat tank engine, with great power reserve, but with comparably high consumption. T-64 classic.",
 	model = "models/engines/b6med.mdl",
@@ -106,7 +106,7 @@ ACE.DefineEngine( "13.6-B6", {
 	limitrpm = 2800,
 } )
 
-ACE.DefineEngine( "20.7-B6", {
+ACE_DefineEngine( "20.7-B6", {
 	name = "20.7L Flat 6 Multifuel",
 	desc = "6TD-1. Not so large flat tank engine, with great power reserve, but with comparably high consumption.",
 	model = "models/engines/b6med.mdl",
@@ -121,7 +121,7 @@ ACE.DefineEngine( "20.7-B6", {
 	limitrpm = 2800,
 } )
 
-ACE.DefineEngine( "22.9-B6", {
+ACE_DefineEngine( "22.9-B6", {
 	name = "22.9L Flat 6 Multifuel",
 	desc = "6TD-2E. Large flat tank engine, with big power reserve, but with comparably high consumption",
 	model = "models/engines/b6xlarge.mdl",
@@ -136,7 +136,7 @@ ACE.DefineEngine( "22.9-B6", {
 	limitrpm = 2600,
 } )
 
-ACE.DefineEngine( "25.9-B6", {
+ACE_DefineEngine( "25.9-B6", {
 	name = "25.9L Flat 6 Multifuel",
 	desc = "6TD-3, designed by Kharkiv. Large flat tank engine, with really big power reserve, but with monstrous consumption",
 	model = "models/engines/b6huge.mdl", --We really need a huge model for this

@@ -143,14 +143,14 @@ function SWEP:InitBulletData()
 	self.BulletData.AmmoType = self.BulletData.Type
 	self.BulletData.FrArea = 3.1416 * (self.BulletData.Caliber / 2) ^ 2
 	self.BulletData.ProjMass = self.BulletData.FrArea * (self.BulletData.ProjLength * 7.9 / 1000)
-	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	self.BulletData.DragCoef = 0.01
 
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
-	self.BulletData.PenArea = self.BulletData.FrArea ^ ACF.PenAreaMod * 1.1
+	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod * 1.1
 	self.BulletData.Pos = Vector(0, 0, 0)
 	self.BulletData.LimitVel = 800
 	self.BulletData.Ricochet = 60
@@ -223,8 +223,8 @@ function SWEP:GetShootDir()
 		degrees = degrees + self.UnscopedSpread * (owner:Crouching() and self.CrouchRecoilBonus or 1)
 	end
 
-	spreadX = spreadX * degrees * ACF.SWEPInaccuracyMul
-	spreadY = spreadY * degrees * ACF.SWEPInaccuracyMul
+	spreadX = spreadX * degrees * ACE.SWEPInaccuracyMul
+	spreadY = spreadY * degrees * ACE.SWEPInaccuracyMul
 
 	shootDir = owner:GetAimVector()
 	local sideAxis = shootDir:Cross(Vector(0, 0, 1)):GetNormalized()
@@ -242,8 +242,8 @@ function SWEP:GetShootDir()
 
 		degrees = (degrees + 0.5) * Prof
 
-		spreadX = spreadX * degrees * ACF.SWEPInaccuracyMul
-		spreadY = spreadY * degrees * ACF.SWEPInaccuracyMul
+		spreadX = spreadX * degrees * ACE.SWEPInaccuracyMul
+		spreadY = spreadY * degrees * ACE.SWEPInaccuracyMul
 
 		local Enemy = owner:GetEnemy()
 		local EnemyPos = Enemy:WorldSpaceCenter()
@@ -296,7 +296,7 @@ function SWEP:DoSPClientEffects()
 		self:EmitSound(MainSound)
 	end
 
-	ACE.RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
+	ACE_RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
 
 end
 
@@ -320,16 +320,16 @@ function SWEP:PrimaryAttack()
 
 		if game.SinglePlayer() then
 			if owner:IsPlayer() then
-				ACE.NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
+				ACE_NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
 			else
-				ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
+				ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
 			end
 		else
 			--Client is called here. So lets go as usual.
 			local sounds = ACE.GSounds.GunFire[self.Primary.Sound]
 			if next(sounds) then
 				if SERVER then
-					ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
+					ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
 				else
 					self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 				end
@@ -338,7 +338,7 @@ function SWEP:PrimaryAttack()
 			end
 
 			if CLIENT then
-				ACE.RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
+				ACE_RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
 			end
 		end
 

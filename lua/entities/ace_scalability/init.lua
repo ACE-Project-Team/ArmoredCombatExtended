@@ -124,7 +124,7 @@ do
 	end
 
 	-- If the net sends an entity, we will send the render scale of that entity back to the requester.
-	-- Otherwise, we will send all the available entity render scales to the specified client. at 1 entity/tick. 
+	-- Otherwise, we will send all the available entity render scales to the specified client. at 1 entity/tick.
 	-- As reference, 1000 scalable ents takes around of 15.15 secs to fully complete at 66 tickrate
 	net.Receive("ACE_Scalable_Network", function( _, ply )
 
@@ -187,7 +187,7 @@ do -- AdvDupe2 duped parented ammo workaround
 		BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 
-	hook.Add("AdvDupe_FinishPasting", "ACF Parented Scalable Ent Fix", function(DupeInfo)
+	hook.Add("AdvDupe_FinishPasting", "ACE Parented Scalable Ent Fix", function(DupeInfo)
 		local Dupe	= unpack(DupeInfo, 1, 1)
 		local Player	= Dupe.Player
 		local CanParent = not IsValid(Player) or tobool(Player:GetInfo("advdupe2_paste_parents"))

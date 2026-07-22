@@ -2,11 +2,11 @@
 local ClassName = "Contact"
 
 
-ACF = ACF or {}
-ACF.Fuse = ACF.Fuse or {}
+ACE = ACE or {}
+ACE.Fuse = ACE.Fuse or {}
 
-local this = ACF.Fuse[ClassName] or inherit.NewBaseClass()
-ACF.Fuse[ClassName] = this
+local this = ACE.Fuse[ClassName] or inherit.NewBaseClass()
+ACE.Fuse[ClassName] = this
 
 ---
 
@@ -19,7 +19,7 @@ this.desc = "This fuse triggers upon direct contact against solid surfaces."
 this.Primer = 0
 this.StartDelay = 0
 
--- Configuration information for things like acfmenu.
+-- Configuration information for things like acemenu.
 this.Configurable =
 {
 	{
@@ -82,7 +82,7 @@ function this:PerformDetonation( missile, bdata, phys, pos )
 
 	bdata.HandlesOwnIteration = nil
 
-	ACE.Missile_BulletLaunch(bdata)
+	ACE_Missile_BulletLaunch(bdata)
 
 	missile:SetSolid(SOLID_NONE)
 	phys:EnableMotion(false)

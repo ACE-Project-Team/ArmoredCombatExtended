@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACE.DefineEngine( "1.2-I3", {
+ACE_DefineEngine( "1.2-I3", {
 	name = "1.2L I3 Petrol",
 	desc = "Tiny microcar engine, efficient but weak",
 	model = "models/engines/inline3s.mdl",
@@ -18,7 +18,7 @@ ACE.DefineEngine( "1.2-I3", {
 	limitrpm = 6000,
 } )
 
-ACE.DefineEngine( "3.4-I3", {
+ACE_DefineEngine( "3.4-I3", {
 	name = "3.4L I3 Petrol",
 	desc = "Short block engine for light utility use",
 	model = "models/engines/inline3m.mdl",
@@ -33,7 +33,7 @@ ACE.DefineEngine( "3.4-I3", {
 	limitrpm = 6800,
 } )
 
-ACE.DefineEngine( "13.5-I3", {
+ACE_DefineEngine( "13.5-I3", {
 	name = "13.5L I3 Petrol",
 	desc = "Short block light tank engine, likes sideways mountings",
 	model = "models/engines/inline3b.mdl",
@@ -50,7 +50,7 @@ ACE.DefineEngine( "13.5-I3", {
 
 -- Diesel
 
-ACE.DefineEngine( "1.1-I3", {
+ACE_DefineEngine( "1.1-I3", {
 	name = "1.1L I3 Diesel",
 	desc = "ATV grade 3-banger, enormous rev band but a choppy idle, great for light utility work",
 	model = "models/engines/inline3s.mdl",
@@ -65,7 +65,7 @@ ACE.DefineEngine( "1.1-I3", {
 	limitrpm = 3000,
 } )
 
-ACE.DefineEngine( "2.8-I3", {
+ACE_DefineEngine( "2.8-I3", {
 	name = "2.8L I3 Diesel",
 	desc = "Medium utility grade I3 diesel, for tractors",
 	model = "models/engines/inline3m.mdl",
@@ -80,7 +80,7 @@ ACE.DefineEngine( "2.8-I3", {
 	limitrpm = 3800,
 } )
 
-ACE.DefineEngine( "11.0-I3", {
+ACE_DefineEngine( "11.0-I3", {
 	name = "11.0L I3 Diesel",
 	desc = "Light tank duty engine, compact yet grunts hard",
 	model = "models/engines/inline3b.mdl",

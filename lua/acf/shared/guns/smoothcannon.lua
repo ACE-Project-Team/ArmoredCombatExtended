@@ -1,9 +1,9 @@
 --define the class
-ACE.DefineGunClass("SBC", {
+ACE_DefineGunClass("SBC", {
 	type = "Gun",
 	spread = 0.12,
 	name = "Smooth-Bore Cannon",
-	desc = ACFTranslation.GunClasses[15],
+	desc = ACE.Translation.GunClasses[15],
 	muzzleflash = "C",
 	rofmod = 1.7,
 	maxrof = 20, -- maximum rounds per minute
@@ -14,7 +14,7 @@ ACE.DefineGunClass("SBC", {
 
 --add a gun to the class
 
-ACE.DefineGun("50mmSBC", {
+ACE_DefineGun("50mmSBC", {
 	name = "50mm Smoothbore Cannon",
 	desc = "A small, 50mm Smoothbore cannon, being able to be fitted into a very light tank, it's a decent weapon if you want to create a hole on those ww2 tonks.",
 	model = "models/tankgun_new/tankgun_50mm.mdl",
@@ -30,7 +30,7 @@ ACE.DefineGun("50mmSBC", {
 	},
 } )
 
-ACE.DefineGun("75mmSBC", {
+ACE_DefineGun("75mmSBC", {
 	name = "75mm Smoothbore Cannon",
 	desc = "75mm Smoothbore cannon. The nightmare for those who think they are well armored.",
 	model = "models/tankgun_new/tankgun_75mm.mdl",
@@ -46,7 +46,7 @@ ACE.DefineGun("75mmSBC", {
 	},
 } )
 
-ACE.DefineGun("100mmSBC", {
+ACE_DefineGun("100mmSBC", {
 	name = "100mm Smoothbore Cannon",
 	desc = "100mm Smoothbore cannon, with good penetration performance, can perform a deadly strike in one single pass. Seen on those modern tank destroyers.",
 	model = "models/tankgun_new/tankgun_100mm.mdl",
@@ -62,7 +62,7 @@ ACE.DefineGun("100mmSBC", {
 	},
 } )
 
-ACE.DefineGun("120mmSBC", {
+ACE_DefineGun("120mmSBC", {
 	name = "120mm Smoothbore Cannon",
 	desc = "120mm Smoothbore cannon, powerful general purpose main battle tank cannon",
 	model = "models/tankgun_new/tankgun_120mm.mdl",
@@ -78,7 +78,7 @@ ACE.DefineGun("120mmSBC", {
 	},
 } )
 
-ACE.DefineGun("140mmSBC", {
+ACE_DefineGun("140mmSBC", {
 	name = "140mm Smoothbore Cannon",
 	desc = "140mm Smoothbore cannon, heavy railgun like cannon spawned out of a hatred of 60 tons. 'Your litterly removing the armor tool' -Anon",
 	model = "models/tankgun_new/tankgun_140mm.mdl",
@@ -95,7 +95,7 @@ ACE.DefineGun("140mmSBC", {
 } )
 
 
-ACE.DefineGun("170mmSBC", {
+ACE_DefineGun("170mmSBC", {
 	name = "170mm Smoothbore Cannon",
 	desc = "Some might laugh at those who choose to forego armor. The 170mm laughs at anyone as it casually tears all tanks alike to shreds.",
 	model = "models/tankgun_new/tankgun_170mm.mdl",

@@ -35,7 +35,7 @@ function ENT:Initialize()
 
 	WireLib.TriggerOutput( self, "JamCount", 0 )
 
-	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck	= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
 
@@ -89,10 +89,10 @@ function ENT:Think()
 	local curTime = CurTime()
 	self:NextThink(curTime + self.ThinkDelay)
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
 	end
 
@@ -177,7 +177,7 @@ function ENT:UpdateOverlayText()
 	local str = string.format("Active: %s\nJam Count: %s", Active, JamCount)
 
 	if not self.Legal then
-		str = str .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		str = str .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(str)

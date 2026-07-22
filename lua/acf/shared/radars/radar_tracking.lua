@@ -1,5 +1,5 @@
 
-ACE.DefineTrackRadarClass("DIR-TRACK", {
+ACE_DefineTrackRadarClass("DIR-TRACK", {
 	name = "Tracking Radar",
 	type = "Tracking-Radar",
 	desc = "A radar with unlimited range but limited view cone. Unlike the antimissile radar, this can detect vehicles in front of it, but is affected by ground clutter and subject to jamming.\n\nTo reduce inaccuracy point radar directly at the intended target. Offbore aim reduces accuracy. \n\nIf being jammed set a lower scan cone to increase resistence to jamming. Larger radars are also more jam resistent."
@@ -13,7 +13,7 @@ ACE.DefineTrackRadarClass("DIR-TRACK", {
 
 
 --Large SAM Radar better able to search for targets and burn-through jamming. Max burn through at 200m. Negligible accuracy loss from offbore targets.
-ACE.DefineTrackRadar("Large-TRACK", {
+ACE_DefineTrackRadar("Large-TRACK", {
 	name		= "Large Tracking Radar",
 	ent			= "ace_trackingradar",
 	desc		= "A large and HEAVY tracking radar mostly meant for ground installations. Can track offbore targets with negligible loss of accuracy. Powerful and capable of burning through jamming with ease.",
@@ -28,7 +28,7 @@ ACE.DefineTrackRadar("Large-TRACK", {
 } )
 
 --Baseline radar. Solid track cone. Center beam burn through at 200m. Decent offbore accuracy.
-ACE.DefineTrackRadar("Medium-TRACK", {
+ACE_DefineTrackRadar("Medium-TRACK", {
 	name		= "Medium Tracking Radar",
 	ent			= "ace_trackingradar",
 	desc		= "Mid-size radar useful in jets and fire directors when you cannot fit the larger radar. Needs to be aiming at a target to be fully accurate. Less useful for searching than the larger counterpart.",
@@ -43,7 +43,7 @@ ACE.DefineTrackRadar("Medium-TRACK", {
 } )
 
 --Only useful as a fire director
-ACE.DefineTrackRadar("Small-TRACK", { --Does not burn through.
+ACE_DefineTrackRadar("Small-TRACK", { --Does not burn through.
 	name		= "Small Tracking Radar",
 	ent			= "ace_trackingradar",
 	desc		= "Compact. Though usable as a fire director the tiny viewcone and offbore accuracy make it difficult to use. Will never burn through but it is light.",

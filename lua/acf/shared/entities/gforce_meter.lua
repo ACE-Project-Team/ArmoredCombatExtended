@@ -1,4 +1,4 @@
-ACF_DefineEntity("GForceMeter", {
+ACE_DefineEntity("GForceMeter", {
 	name = "G-Force Meter",
 	ent = "ace_gforce_meter",
 	category = "Misc",

@@ -1,4 +1,4 @@
-ACE.DefineEngine( "3.6-V6", {
+ACE_DefineEngine( "3.6-V6", {
 	name = "3.6L V6 Petrol",
 	desc = "Meaty Car sized V6, lots of torque\n\nV6s are more torquey than the Boxer and Inline 6s but suffer in power",
 	model = "models/engines/v6small.mdl",
@@ -13,7 +13,7 @@ ACE.DefineEngine( "3.6-V6", {
 	limitrpm = 5000,
 } )
 
-ACE.DefineEngine( "6.2-V6", {
+ACE_DefineEngine( "6.2-V6", {
 	name = "6.2L V6 Petrol",
 	desc = "Heavy duty 6V71 v6, throatier than an LA whore, but loaded with torque\n\nV6s are more torquey than the Boxer and Inline 6s but suffer in power",
 	model = "models/engines/v6med.mdl",
@@ -28,7 +28,7 @@ ACE.DefineEngine( "6.2-V6", {
 	limitrpm = 5000,
 } )
 
-ACE.DefineEngine( "5.2-V6", {
+ACE_DefineEngine( "5.2-V6", {
 	name = "5.2L V6 Diesel",
 	desc = "Light AFV-grade two-stroke multifuel, high output but heavy",
 	model = "models/engines/v6med.mdl",
@@ -43,7 +43,7 @@ ACE.DefineEngine( "5.2-V6", {
 	limitrpm = 4300,
 } )
 
-ACE.DefineEngine( "12.0-V6", {
+ACE_DefineEngine( "12.0-V6", {
 	name = "12.0L V6 Petrol",
 	desc = "Fuck duty V6, guts ripped from god himself diluted in salt and shaped into an engine.\n\nV6s are more torquey than the Boxer and Inline 6s but suffer in power",
 	model = "models/engines/v6large.mdl",
@@ -58,7 +58,7 @@ ACE.DefineEngine( "12.0-V6", {
 	limitrpm = 3800,
 } )
 
-ACE.DefineEngine( "15.0-V6", {
+ACE_DefineEngine( "15.0-V6", {
 	name = "15.0L V6 Diesel",
 	desc = "Powerful military-grade large V6, with impressive output.  Well suited to moderately-sized AFVs and able to handle multiple fuel types.\n\nV6s are more torquey than the Boxer and Inline 6s but suffer in power",
 	model = "models/engines/v6large.mdl",

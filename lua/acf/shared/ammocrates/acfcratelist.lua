@@ -646,10 +646,10 @@ local Shell170mm = {}
 	Shell170mm.volume = 11630.235
 AmmoTable["Shell170mm"] = Shell170mm
 
-ACF.Weapons.Ammo = AmmoTable --end ammo containers listing
+ACE.Weapons.Ammo = AmmoTable --end ammo containers listing
 
 --Cube
-ACE.DefineModelData("Box",{
+ACE_DefineModelData("Box",{
 
 	Shape = "Box",
 	Model = "models/holograms/rcube_thin.mdl", --Note: The model can be used as ID if needed.
@@ -674,7 +674,7 @@ ACE.DefineModelData("Box",{
 })
 
 --Triangle / Wedge
-ACE.DefineModelData("Wedge",{
+ACE_DefineModelData("Wedge",{
 
 	Shape = "Wedge",
 	Model = "models/holograms/right_prism.mdl",
@@ -697,7 +697,7 @@ ACE.DefineModelData("Wedge",{
 })
 
 --Another type of wedge.
-ACE.DefineModelData("Prism",{
+ACE_DefineModelData("Prism",{
 
 	Shape = "Prism",
 	Model = "models/holograms/prism.mdl",
@@ -722,7 +722,7 @@ ACE.DefineModelData("Prism",{
 local PI = math.pi
 
 --Cylinder
-ACE.DefineModelData("Cylinder",{
+ACE_DefineModelData("Cylinder",{
 
 	Shape = "Cylinder",
 	Model = "models/holograms/hq_rcylinder_thin.mdl",
@@ -758,7 +758,7 @@ ACE.DefineModelData("Cylinder",{
 })
 
 -- The sphere. Dont ask how i got its vertex.
-ACE.DefineModelData("Sphere",{
+ACE_DefineModelData("Sphere",{
 
 	Shape = "Sphere",
 	Model = "models/holograms/hq_sphere.mdl", --Note: The model can be used as ID if needed.
@@ -833,7 +833,7 @@ ACE.DefineModelData("Sphere",{
 })
 
 --Cone
-ACE.DefineModelData("Cone",{
+ACE_DefineModelData("Cone",{
 
 	Shape = "Cone",
 	Model = "models/holograms/hq_cone.mdl",

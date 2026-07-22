@@ -1,9 +1,9 @@
 --define the class
-ACE.DefineGunClass("GBU", {
+ACE_DefineGunClass("GBU", {
 	type			= "missile",  -- i know i know
 	spread		= 1,
 	name			= "[GBU] - Guided Bomb Unit",
-	desc			= ACFTranslation.MissileClasses[6],
+	desc			= ACE.Translation.MissileClasses[6],
 	muzzleflash	= "40mm_muzzleflash_noscale",
 	rofmod		= 0.1,
 	year = 1967,
@@ -22,7 +22,7 @@ ACE.DefineGunClass("GBU", {
 -- good idea before axing a bomb to check its specs! https://www.onwar.com/weapons/rocket/missiles/USA_AGM62.html http://www.designation-systems.net/dusrm/m-62.html
 
 
-ACE.DefineGun("GBU-39", {						-- id
+ACE_DefineGun("GBU-39", {						-- id
 	name			= "GBU-39 Small Diameter Glide Bomb",
 	desc			= "Tiny gliding bomblet with fins. Meant to be launched in swarms to completely saturate SAM batteries or distribute liberally to anything that moves.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu39.mdl",
@@ -86,7 +86,7 @@ ACE.DefineGun("GBU-39", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("FAB250-UPMP", {						-- id
+ACE_DefineGun("FAB250-UPMP", {						-- id
 	name			= "FAB-250 UPMP Glide Bomb",
 	desc			= "A Fab 250 that can fly. Has glide fins attached to help it loft into targets. A real menace.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/fab250m62_umpk.mdl",
@@ -149,7 +149,7 @@ ACE.DefineGun("FAB250-UPMP", {						-- id
 } )
 
 
-ACE.DefineGun("227kgGBU", {						-- id
+ACE_DefineGun("227kgGBU", {						-- id
 	name			= "227kg GBU-12 Paveway II",
 	desc			= "Based on the Mk 82 500-pound general-purpose bomb, but with the addition of a nose-mounted laser seeker and fins for guidance.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu12.mdl",
@@ -211,7 +211,7 @@ ACE.DefineGun("227kgGBU", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("454kgGBU", {						-- id
+ACE_DefineGun("454kgGBU", {						-- id
 	name			= "454kg GBU-16 Paveway II",
 	desc			= "Based on the Mk 83 general-purpose bomb, but with laser seeker and wings for guidance.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu16.mdl",
@@ -270,7 +270,7 @@ ACE.DefineGun("454kgGBU", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("909kgGBU", {						-- id
+ACE_DefineGun("909kgGBU", {						-- id
 	name			= "909kg GBU-10 Paveway II",
 	desc			= "Based on the Mk 84 general-purpose bomb, but with laser seeker and wings for guidance.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu10.mdl",
@@ -327,7 +327,7 @@ ACE.DefineGun("909kgGBU", {						-- id
 } )
 
 -- walleye: for fucking missile sites up
-ACE.DefineGun("WalleyeGBU", {						-- id
+ACE_DefineGun("WalleyeGBU", {						-- id
 	name			= "Guided Weapon AGM-62 Walleye",
 	desc			= "An early guided bomb of yield roughly between the 454kg and 1000kg, used over Vietnam by American strike aircraft and by other countries.  Unlike other GBUs, the larger fins let it glide more like an unpowered missile, allowing drops at far greater distances in a more stand-off role.  For this reason, it performs best when released at higher speeds.\nBecause of its large fins, obsolete guidance equipment, and thicker casing, it has greater size and weight than comparable guided bombs.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/agm62.mdl",

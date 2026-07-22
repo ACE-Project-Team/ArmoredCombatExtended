@@ -73,10 +73,10 @@ local function ClearPrimitiveArmorState(ent)
 end
 
 local function MarkPrimitiveArmorDirty(ent, reason)
-	if ACE.ClearArmorPointCache then ACE.ClearArmorPointCache(ent) end
+	if ACE_ClearArmorPointCache then ACE_ClearArmorPointCache(ent) end
 
 	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
-	if ACE.MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
+	if ACE_MarkArmorDirty then ACE_MarkArmorDirty(con, ent, reason) end
 end
 
 local function ApplyPrimitiveArmor(ent, phys)
@@ -107,8 +107,8 @@ local function FinalizePrimitiveArmor(ent)
 		return
 	end
 
-	if not ApplyPrimitiveArmor(ent, phys) and ACE.Activate then
-		ACE.Activate(ent, true)
+	if not ApplyPrimitiveArmor(ent, phys) and ACE_Activate then
+		ACE_Activate(ent, true)
 	end
 
 	MarkPrimitiveArmorDirty(ent, "primitive-physics-rebuilt")
@@ -129,7 +129,7 @@ end
 -- Primitive_PostRebuildPhysics fires before Primitive restores its serialized mass/material props.
 -- The PhysObj:SetMass wrapper lets ACE finalize its mass-dependent armor state without a timer;
 -- ACE restores the serialized material in the same finalization path.
-function ACE.PrimitivePropertiesApplied(ent)
+function ACE_PrimitivePropertiesApplied(ent)
 	if not IsValid(ent) or ent.ACE_PrimitiveFinalizing or not ent.ACE_PrimitivePropertiesPending then return end
 	if HasPendingPhysicsClip(ent) and not ent.ACE_PrimitiveClippingHandled then return end
 

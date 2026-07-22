@@ -1,10 +1,10 @@
-ACF = ACF or {}
-ACF.Fuse = ACF.Fuse or {}
+ACE = ACE or {}
+ACE.Fuse = ACE.Fuse or {}
 
 local ClassName = "Plunging"
 
-local this = ACF.Fuse[ClassName] or inherit.NewSubOf(ACF.Fuse.Contact)
-ACF.Fuse[ClassName] = this
+local this = ACE.Fuse[ClassName] or inherit.NewSubOf(ACE.Fuse.Contact)
+ACE.Fuse[ClassName] = this
 
 ---
 
@@ -20,7 +20,7 @@ this.Delay	= 0.1
 this.desc = "This fuse modifies the heatjet direction, sending the charge down, allowing strikes from above. Note using this will make direct hits useless for HEAT missiles.\n\nOnly works with HEAT."
 
 
--- Configuration information for things like acfmenu.
+-- Configuration information for things like acemenu.
 this.Configurable = this:super() and table.Copy(this:super().Configurable) or {}
 
 
@@ -68,7 +68,7 @@ function this:GetDetonate(missile)
 	}
 	local trace = util.TraceLine(tracedata)
 
-	if trace.Hit and IsValid(trace.Entity) and not ACF.HEFilter[trace.Entity:GetClass()] then
+	if trace.Hit and IsValid(trace.Entity) and not ACE.HEFilter[trace.Entity:GetClass()] then
 
 		timer.Simple(self.Delay, function()
 			if not IsValid(missile) then return end
@@ -102,7 +102,7 @@ function this:PerformDetonation( missile, bdata, phys, pos )
 	bdata.Pos	= pos + (missile.DetonateOffset or bdata.Flight)
 
 	--Simple way to reduce penetration.
-	bdata.PenArea = bdata.PenArea * ACF.HEATPlungingReduction
+	bdata.PenArea = bdata.PenArea * ACE.HEATPlungingReduction
 
 	bdata.NoOcc =	missile
 	bdata.Gun	=	missile
@@ -115,7 +115,7 @@ function this:PerformDetonation( missile, bdata, phys, pos )
 
 	bdata.HandlesOwnIteration = nil
 
-	ACE.Missile_BulletLaunch(bdata)
+	ACE_Missile_BulletLaunch(bdata)
 
 	missile:SetSolid(SOLID_NONE)
 	phys:EnableMotion(false)

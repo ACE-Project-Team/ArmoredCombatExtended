@@ -1,8 +1,8 @@
 
-local cat = ((ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction");
+local cat = ((ACE.CustomToolCategory and ACE.CustomToolCategory:GetBool()) and "ACF" or "Construction");
 
 TOOL.Category		= cat
-TOOL.Name			= "#tool.acfcopy.name";
+TOOL.Name			= "#tool.acecopy.name";
 TOOL.Author		= "looter";
 TOOL.Command		= nil;
 TOOL.ConfigName		= "";
@@ -33,7 +33,7 @@ function TOOL:LeftClick( trace )
 
 		local success, msg = ent:Update( self.GearboxCopyData );
 
-		ACE.SendNotify( pl, success, msg );
+		ACE_SendNotify( pl, success, msg );
 
 	end
 
@@ -41,7 +41,7 @@ function TOOL:LeftClick( trace )
 
 		local success, msg = ent:Update( self.AmmoCopyData );
 
-		ACE.SendNotify( pl, success, msg );
+		ACE_SendNotify( pl, success, msg );
 
 	end
 
@@ -86,7 +86,7 @@ function TOOL:RightClick( trace )
 
 		self.GearboxCopyData = ArgsTable;
 
-		ACE.SendNotify( pl, true, "#tool.acfcopy.gearbox" );
+		ACE_SendNotify( pl, true, "#tool.acecopy.gearbox" );
 
 	end
 
@@ -119,7 +119,7 @@ function TOOL:RightClick( trace )
 
 		self.AmmoCopyData = ArgsTable;
 
-		ACE.SendNotify( pl, true, "#tool.acfcopy.ammo" );
+		ACE_SendNotify( pl, true, "#tool.acecopy.ammo" );
 
 	end
 

@@ -1,4 +1,4 @@
-ACF_DefineEntity("Crewseat_Driver", {
+ACE_DefineEntity("Crewseat_Driver", {
 	name = "Driver Seat",
 	ent = "ace_crewseat_driver",
 	category = "Crew",
@@ -8,7 +8,7 @@ ACF_DefineEntity("Crewseat_Driver", {
 	defaultModel = "Sitting",
 })
 
-ACF_DefineEntity("Crewseat_Gunner", {
+ACE_DefineEntity("Crewseat_Gunner", {
 	name = "Gunner Seat",
 	ent = "ace_crewseat_gunner",
 	category = "Crew",
@@ -18,7 +18,7 @@ ACF_DefineEntity("Crewseat_Gunner", {
 	defaultModel = "Sitting",
 })
 
-ACF_DefineEntity("Crewseat_Loader", {
+ACE_DefineEntity("Crewseat_Loader", {
 	name = "Loader Seat",
 	ent = "ace_crewseat_loader",
 	category = "Crew",

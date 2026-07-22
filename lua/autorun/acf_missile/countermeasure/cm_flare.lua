@@ -2,11 +2,11 @@
 local ClassName = "Flare"
 
 
-ACF = ACF or {}
-ACF.Countermeasure = ACF.Countermeasure or {}
+ACE = ACE or {}
+ACE.Countermeasure = ACE.Countermeasure or {}
 
-local this = ACF.Countermeasure[ClassName] or inherit.NewBaseClass()
-ACF.Countermeasure[ClassName] = this
+local this = ACE.Countermeasure[ClassName] or inherit.NewBaseClass()
+ACE.Countermeasure[ClassName] = this
 
 ---
 
@@ -29,7 +29,7 @@ this.SuccessChance = 1
 this.Active = false
 
 
--- indicate to ACFM that this should only be applied when guidance is activated or flare is spawned - not per-frame.
+-- indicate to ACE.Missile that this should only be applied when guidance is activated or flare is spawned - not per-frame.
 this.ApplyContinuous = false
 
 
@@ -78,7 +78,7 @@ function this:GetGuidanceOverride()
 	self:UpdateActive()
 	if not self.Active then return end
 
-	local activeFlare = ACF.Bullet[self.Flare.Index]
+	local activeFlare = ACE.Bullet[self.Flare.Index]
 	if not (activeFlare and activeFlare.FlareUID == self.Flare.FlareUID) then return end
 
 	return {TargetPos = self.Flare.Pos, TargetVel = self.Flare.Vel}
@@ -123,7 +123,7 @@ function this:TryAgainst(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	return ACE.Missile_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
+	return ACE_Missile_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
 
 end
 
@@ -141,7 +141,7 @@ function this:ApplyToAll()
 
 	local ret = {}
 
-	local targets = ACE.Missile_GetAllMissilesWhichCanSee(self.Flare.Pos)
+	local targets = ACE_Missile_GetAllMissilesWhichCanSee(self.Flare.Pos)
 
 	for _, missile in pairs(targets) do
 
@@ -171,7 +171,7 @@ function this.ApplyAll(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	local flares = ACE.Missile_GetFlaresInCone(pos, dir, cone)
+	local flares = ACE_Missile_GetFlaresInCone(pos, dir, cone)
 
 	for _, flare in pairs(flares) do
 
@@ -186,6 +186,5 @@ function this.ApplyAll(missile, guidance)
 	return nil
 
 end
-
 
 

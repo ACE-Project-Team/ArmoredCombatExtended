@@ -15,7 +15,7 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Inline
 
-ACE.DefineGearbox( "6Gear-L-S", {
+ACE_DefineGearbox( "6Gear-L-S", {
 	name = "6-Speed, Inline, Small",
 	desc = "A small and light 6 speed inline gearbox, with a limited max torque rating.",
 	model = "models/engines/linear_s.mdl",
@@ -36,7 +36,7 @@ ACE.DefineGearbox( "6Gear-L-S", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-L-M", {
+ACE_DefineGearbox( "6Gear-L-M", {
 	name = "6-Speed, Inline, Medium",
 	desc = "A medium duty 6 speed inline gearbox with a limited torque rating.",
 	model = "models/engines/linear_m.mdl",
@@ -57,7 +57,7 @@ ACE.DefineGearbox( "6Gear-L-M", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-L-L", {
+ACE_DefineGearbox( "6Gear-L-L", {
 	name = "6-Speed, Inline, Large",
 	desc = "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed.",
 	model = "models/engines/linear_l.mdl",
@@ -80,7 +80,7 @@ ACE.DefineGearbox( "6Gear-L-L", {
 
 -- Inline Dual Clutch
 
-ACE.DefineGearbox( "6Gear-LD-S", {
+ACE_DefineGearbox( "6Gear-LD-S", {
 	name = "6-Speed, Inline, Small, Dual Clutch",
 	desc = "A small and light 6 speed inline gearbox, with a limited max torque rating. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_s.mdl",
@@ -102,7 +102,7 @@ ACE.DefineGearbox( "6Gear-LD-S", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-LD-M", {
+ACE_DefineGearbox( "6Gear-LD-M", {
 	name = "6-Speed, Inline, Medium, Dual Clutch",
 	desc = "A a medium duty 6 speed inline gearbox. The added gears reduce torque capacity substantially. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_m.mdl",
@@ -124,7 +124,7 @@ ACE.DefineGearbox( "6Gear-LD-M", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-LD-L", {
+ACE_DefineGearbox( "6Gear-LD-L", {
 	name = "6-Speed, Inline, Large, Dual Clutch",
 	desc = "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_l.mdl",
@@ -148,7 +148,7 @@ ACE.DefineGearbox( "6Gear-LD-L", {
 
 -- Transaxial
 
-ACE.DefineGearbox( "6Gear-T-S", {
+ACE_DefineGearbox( "6Gear-T-S", {
 	name = "6-Speed, Transaxial, Small",
 	desc = "A small and light 6 speed gearbox, with a limited max torque rating.",
 	model = "models/engines/transaxial_s.mdl",
@@ -169,7 +169,7 @@ ACE.DefineGearbox( "6Gear-T-S", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-T-M", {
+ACE_DefineGearbox( "6Gear-T-M", {
 	name = "6-Speed, Transaxial, Medium",
 	desc = "A medium duty 6 speed gearbox with a limited torque rating.",
 	model = "models/engines/transaxial_m.mdl",
@@ -190,7 +190,7 @@ ACE.DefineGearbox( "6Gear-T-M", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-T-L", {
+ACE_DefineGearbox( "6Gear-T-L", {
 	name = "6-Speed, Transaxial, Large",
 	desc = "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed.",
 	model = "models/engines/transaxial_l.mdl",
@@ -213,7 +213,7 @@ ACE.DefineGearbox( "6Gear-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE.DefineGearbox( "6Gear-TD-S", {
+ACE_DefineGearbox( "6Gear-TD-S", {
 	name = "6-Speed, Transaxial, Small, Dual Clutch",
 	desc = "A small and light 6 speed gearbox, with a limited max torque rating. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_s.mdl",
@@ -235,7 +235,7 @@ ACE.DefineGearbox( "6Gear-TD-S", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-TD-M", {
+ACE_DefineGearbox( "6Gear-TD-M", {
 	name = "6-Speed, Transaxial, Medium, Dual Clutch",
 	desc = "A a medium duty 6 speed gearbox. The added gears reduce torque capacity substantially. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_m.mdl",
@@ -257,7 +257,7 @@ ACE.DefineGearbox( "6Gear-TD-M", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-TD-L", {
+ACE_DefineGearbox( "6Gear-TD-L", {
 	name = "6-Speed, Transaxial, Large, Dual Clutch",
 	desc = "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_l.mdl",
@@ -281,7 +281,7 @@ ACE.DefineGearbox( "6Gear-TD-L", {
 
 -- Straight-through gearboxes
 
-ACE.DefineGearbox( "6Gear-ST-S", {
+ACE_DefineGearbox( "6Gear-ST-S", {
 	name = "6-Speed, Straight, Small",
 	desc = "A small and light 6 speed straight-through gearbox.",
 	model = "models/engines/t5small.mdl",
@@ -302,7 +302,7 @@ ACE.DefineGearbox( "6Gear-ST-S", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-ST-M", {
+ACE_DefineGearbox( "6Gear-ST-M", {
 	name = "6-Speed, Straight, Medium",
 	desc = "A medium 6 speed straight-through gearbox.",
 	model = "models/engines/t5med.mdl",
@@ -323,7 +323,7 @@ ACE.DefineGearbox( "6Gear-ST-M", {
 	}
 } )
 
-ACE.DefineGearbox( "6Gear-ST-L", {
+ACE_DefineGearbox( "6Gear-ST-L", {
 	name = "6-Speed, Straight, Large",
 	desc = "A large 6 speed straight-through gearbox.",
 	model = "models/engines/t5large.mdl",

@@ -1,10 +1,10 @@
 
 --define the class
-ACE.DefineGunClass("ARTY", {
+ACE_DefineGunClass("ARTY", {
 	type           = "missile",
 	spread         = 1,
 	name           = "[ARTY] - Artillery Rockets",
-	desc           = ACFTranslation.MissileClasses[2],
+	desc           = ACE.Translation.MissileClasses[2],
 	muzzleflash    = "40mm_muzzleflash_noscale",
 	rofmod         = 1,
 	sound          = "acf_extra/airfx/rocket_fire2.wav",
@@ -15,7 +15,7 @@ ACE.DefineGunClass("ARTY", {
 } )
 
 
-ACE.DefineGun("Type 63 RA", {							-- id
+ACE_DefineGun("Type 63 RA", {							-- id
 
 	name             = "Type 63 Rocket",
 	desc             = "A common artillery rocket in the third world, able to be launched from a variety of platforms with a painful whallop and a very arced trajectory.\nContrary to appearances and assumptions, does not in fact werf nebel.",
@@ -95,7 +95,7 @@ ACE.DefineGun("Type 63 RA", {							-- id
 
 
 
-ACE.DefineGun("SAKR-10 RA", {							-- id
+ACE_DefineGun("SAKR-10 RA", {							-- id
 
 	name             = "SAKR-10 Rocket",
 	desc             = "A short-range but formidable unguided artillery rocket, based upon the Grad.  Well suited to the backs of trucks.",
@@ -168,7 +168,7 @@ ACE.DefineGun("SAKR-10 RA", {							-- id
 } )
 
 
-ACE.DefineGun("RW61 RA", {								-- id
+ACE_DefineGun("RW61 RA", {								-- id
 
 	name             = "Raketwerfer-61",
 	desc             = "A heavy, demolition-oriented rocket-assisted mortar, devastating against field works but takes a very, VERY long time to load.\n\n\nDon't miss.",
@@ -242,7 +242,7 @@ ACE.DefineGun("RW61 RA", {								-- id
 	armdelay	= 0.15									-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("M26 RA", {							-- id
+ACE_DefineGun("M26 RA", {							-- id
 
 	name             = "M26 MLRS",
 	desc             = "Long range unguided rocket built for the M270 MLRS.",
@@ -309,7 +309,7 @@ ACE.DefineGun("M26 RA", {							-- id
 	armdelay	= 0.2									-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("SS-40 RA", {								-- id
+ACE_DefineGun("SS-40 RA", {								-- id
 
 	name             = "SS-40 Rocket",
 	desc             = "A large, heavy, guided artillery rocket for taking out stationary or dug-in targets.  Slow to load, slow to fire, slow to guide, and slow to arrive.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
@@ -382,7 +382,7 @@ ACE.DefineGun("SS-40 RA", {								-- id
 	armdelay	= 0.15									-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("M31 RA", {							-- id
+ACE_DefineGun("M31 RA", {							-- id
 
 	name             = "M31 GMLRS",
 	desc             = "Long range precision strike missile found in the M270 MLRS. Guided to give better precision and control over trajectory.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
@@ -450,7 +450,7 @@ ACE.DefineGun("M31 RA", {							-- id
 	armdelay	= 0.2									-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("ATACMS RA", {						-- id
+ACE_DefineGun("ATACMS RA", {						-- id
 	name             = "MGM-140 ATACMS",
 	desc             = "Mother of all artillery rockets. This slow lumbering menace of a MASSIVE missile is perfect for obliterating fortifications with precision. Though slow and not too maneuverabile it packs a hell of a punch. Get out of the way!!!\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes",
 	model            = "models/macc/MGM-140.mdl",
@@ -525,7 +525,7 @@ ACE.DefineGun("ATACMS RA", {						-- id
 
 
 
-ACE.DefineGun("9M79-1", {						-- id
+ACE_DefineGun("9M79-1", {						-- id
 	name             = "9M79-1 Tochka-U",
 	desc             = "Tactical nuke without the nuke. But what's the difference really? Will precisely wipe out entire gridsquares.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes",
 	model            = "models/missiles/9m79.mdl",

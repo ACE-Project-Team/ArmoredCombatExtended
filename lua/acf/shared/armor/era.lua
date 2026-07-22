@@ -114,11 +114,11 @@ if SERVER then
 			--print("----------------------------------------Boom")
 
 			local HEWeight  = math.Min(armor * 0.2, 200) -- #nonukespls
-			local Radius	= ACE.CalculateHERadius( HEWeight )
+			local Radius	= ACE_CalculateHERadius( HEWeight )
 			local Owner	= (CPPI and Entity:CPPIGetOwner()) or NULL
 			local EntPos	= Entity:GetPos()
 
-			ACE.HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity, 0.1 ) --ERABOOM
+			ACE_HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity, 0.1 ) --ERABOOM
 
 			--util.Effect not working during MP workaround. Waiting a while fixes the issue.
 			timer.Simple(0.001, function()
@@ -126,7 +126,7 @@ if SERVER then
 					Flash:SetOrigin( EntPos )
 					Flash:SetNormal( -vector_up )
 					Flash:SetRadius( math.Round(math.max(Radius / 39.37 * 0.125, 1),2) )
-				util.Effect( "ACF_Scaled_Explosion", Flash )
+				util.Effect( "ACE_Scaled_Explosion", Flash )
 			end)
 
 			return HitRes

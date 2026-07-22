@@ -1,9 +1,9 @@
 --define the class
-ACE.DefineGunClass("HMG", {
+ACE_DefineGunClass("HMG", {
 	type = "Gun",
 	spread = 0.17,
 	name = "Heavy Machinegun",
-	desc = ACFTranslation.GunClasses[7],
+	desc = ACE.Translation.GunClasses[7],
 	muzzleflash = "MG",
 	rofmod = 0.16,
 	year = 1935,
@@ -17,7 +17,7 @@ ACE.DefineGunClass("HMG", {
 	}
 } )
 
-ACE.DefineGun("30mmHMGShort", {
+ACE_DefineGun("30mmHMGShort", {
 	name = "Shortened 30mm Heavy Machinegun",
 	desc = "30mm shell chucker, light and compact. Great for lobbing mid sized HE shells at infantry.",
 	model = "models/machinegun/machinegun_30mm_compact.mdl",
@@ -33,7 +33,7 @@ ACE.DefineGun("30mmHMGShort", {
 	},
 } )
 
-ACE.DefineGun("40mmHMGShort", {
+ACE_DefineGun("40mmHMGShort", {
 	name = "Shortened 40mm Heavy Machinegun",
 	desc = "The heaviest of the heavy machineguns. Lobs low velocity shells at a decent rof for its weight.",
 	model = "models/machinegun/machinegun_40mm_compact.mdl",
@@ -50,7 +50,7 @@ ACE.DefineGun("40mmHMGShort", {
 } )
 
 --add a gun to the class
-ACE.DefineGun("20mmHMG", {
+ACE_DefineGun("20mmHMG", {
 	name = "20mm Heavy Machinegun",
 	desc = "The lightest of the HMGs, the 20mm has a rapid fire rate but suffers from poor payload size.  Often used to strafe ground troops or annoy low-flying aircraft.",
 	model = "models/machinegun/machinegun_20mm_compact.mdl",
@@ -68,7 +68,7 @@ ACE.DefineGun("20mmHMG", {
 	},
 } )
 
-ACE.DefineGun("30mmHMG", {
+ACE_DefineGun("30mmHMG", {
 	name = "30mm Heavy Machinegun",
 	desc = "30mm shell chucker, light and compact. Your average cold war dogfight go-to.",
 	model = "models/machinegun/machinegun_30mm_compact.mdl",
@@ -86,7 +86,7 @@ ACE.DefineGun("30mmHMG", {
 	},
 } )
 
-ACE.DefineGun("40mmHMG", {
+ACE_DefineGun("40mmHMG", {
 	name = "40mm Heavy Machinegun",
 	desc = "The heaviest of the heavy machineguns.  Massively powerful with a killer reload and hefty ammunition requirements, it can pop even relatively heavy targets with ease.",
 	model = "models/machinegun/machinegun_40mm_compact.mdl",

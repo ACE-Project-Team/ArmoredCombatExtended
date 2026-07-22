@@ -4,16 +4,21 @@ which was passed from the server.
 -----------------------------------------------------------]]
 function EFFECT:Init( data )
 
-	local Radar    = data:GetEntity()
-	if IsValid(Radar) then
-		local Sound        = Radar:GetNWString( "Sound", "" )
-		local SoundPitch   = Radar:GetNWInt( "SoundPitch", 100 )
+	local Missile    = data:GetEntity()
 
-		if not ACE.IsValidSound( Sound ) then
-			Sound = ACFM.DefaultRadarSound
+	if not IsValid( Missile ) then return end
+
+	local Rack       = Missile:GetNWEntity( "Launcher", NULL )
+
+	if IsValid(Rack) then
+		local Sound        = Rack:GetNWString( "Sound", "" )
+		local SoundPitch   = Rack:GetNWInt( "SoundPitch", 100 )
+
+		if not ACE_IsValidSound( Sound ) then
+			Sound = "acf_extra/airfx/rocket_fire2.wav"
 		end
 
-		ACE.SimpleSound( Sound, Radar:WorldSpaceCenter(), SoundPitch, 1000 )
+		ACE_SimpleSound( Sound, Missile:WorldSpaceCenter(), SoundPitch, 4000 )
 	end
 end
 

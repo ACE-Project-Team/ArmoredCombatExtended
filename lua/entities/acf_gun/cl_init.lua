@@ -1,9 +1,9 @@
 
 include("shared.lua")
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
+local ACE_GunInfoWhileSeated = CreateClientConVar("ace_gun_info_while_seated", 0, true, false)
 
-killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACF.KillIconColor)
+killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACE.KillIconColor)
 
 function ENT:Initialize()
 
@@ -23,7 +23,7 @@ end
 function ENT:Draw()
 
 	local lply = LocalPlayer()
-	local hideBubble = not ACF_GunInfoWhileSeated:GetBool() and IsValid(lply) and lply:InVehicle()
+	local hideBubble = not ACE_GunInfoWhileSeated:GetBool() and IsValid(lply) and lply:InVehicle()
 
 	self.BaseClass.DoNormalDraw(self, false, hideBubble)
 	Wire_Render(self)
@@ -80,34 +80,34 @@ function ENT:Animate( _, ReloadTime, LoadOnly )
 
 end
 
-function ACE.GunGUICreate( Table )
+function ACE_GunGUICreate( Table )
 
-	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
-	local GunDisplay = acfmenupanel.CData.DisplayModel
+	local GunDisplay = acemenupanel.CData.DisplayModel
 
-	GunDisplay = vgui.Create( "DModelPanel", acfmenupanel.CustomDisplay )
+	GunDisplay = vgui.Create( "DModelPanel", acemenupanel.CustomDisplay )
 	GunDisplay:SetModel( Table.model )
 	GunDisplay:SetCamPos( Vector( 250, 500, 250 ) )
 	GunDisplay:SetLookAt( Vector( 0, 0, 0 ) )
 	GunDisplay:SetFOV( 20 )
-	GunDisplay:SetSize(acfmenupanel:GetWide(),acfmenupanel:GetWide())
+	GunDisplay:SetSize(acemenupanel:GetWide(),acemenupanel:GetWide())
 	GunDisplay.LayoutEntity = function() end
-	acfmenupanel.CustomDisplay:AddItem( GunDisplay )
+	acemenupanel.CustomDisplay:AddItem( GunDisplay )
 
-	local GunClass = ACF.Classes.GunClass[Table.gunclass]
-	acfmenupanel:CPanelText("ClassDesc", GunClass.desc)
-	acfmenupanel:CPanelText("GunDesc", Table.desc)
-	acfmenupanel:CPanelText("Caliber", "Caliber: " .. (Table.caliber * 10) .. "mm")
-	acfmenupanel:CPanelText("Weight", "Weight: " .. Table.weight .. "kg")
-	acfmenupanel:CPanelText("Year", "Year: " .. Table.year)
+	local GunClass = ACE.Classes.GunClass[Table.gunclass]
+	acemenupanel:CPanelText("ClassDesc", GunClass.desc)
+	acemenupanel:CPanelText("GunDesc", Table.desc)
+	acemenupanel:CPanelText("Caliber", "Caliber: " .. (Table.caliber * 10) .. "mm")
+	acemenupanel:CPanelText("Weight", "Weight: " .. Table.weight .. "kg")
+	acemenupanel:CPanelText("Year", "Year: " .. Table.year)
 
 	if Table.rack then -- if it is missile
-		if Table.seekcone then acfmenupanel:CPanelText("SeekCone", "Seek Cone: " .. Table.seekcone .. " degrees") end
-		if Table.viewcone then acfmenupanel:CPanelText("ViewCone", "View Cone: " .. Table.viewcone .. " degrees") end
+		if Table.seekcone then acemenupanel:CPanelText("SeekCone", "Seek Cone: " .. Table.seekcone .. " degrees") end
+		if Table.viewcone then acemenupanel:CPanelText("ViewCone", "View Cone: " .. Table.viewcone .. " degrees") end
 
-		if Table.guidelay then acfmenupanel:CPanelText("GuiDelay", "Minimum delay to start maneuvers: " .. Table.guidelay .. " seconds")
-		else acfmenupanel:CPanelText("GuiDelay", "With a guidance, this ordnance will start to do maneuvers with no delays") end
+		if Table.guidelay then acemenupanel:CPanelText("GuiDelay", "Minimum delay to start maneuvers: " .. Table.guidelay .. " seconds")
+		else acemenupanel:CPanelText("GuiDelay", "With a guidance, this ordnance will start to do maneuvers with no delays") end
 
 
 		if Table.guidance and #Table.guidance > 0 then
@@ -120,7 +120,7 @@ function ACE.GunGUICreate( Table )
 			end
 
 			if guitxt ~= "" then
-				acfmenupanel:CPanelText("Guidances", "\nAvailable guidances: \n" .. guitxt )
+				acemenupanel:CPanelText("Guidances", "\nAvailable guidances: \n" .. guitxt )
 			end
 		end
 
@@ -131,23 +131,23 @@ function ACE.GunGUICreate( Table )
 				guitxt = guitxt .. "- " .. fuses .. "\n"
 			end
 
-			acfmenupanel:CPanelText("Fuses", "Available fuses: \n" .. guitxt )
+			acemenupanel:CPanelText("Fuses", "Available fuses: \n" .. guitxt )
 		end
 
 	else -- if gun
 		local RoundVolume = math.pi * (Table.caliber / 2) ^ 2 * Table.round.maxlength
 		local RoF = 60 / (((RoundVolume / 500 ) ^ 0.60 ) * GunClass.rofmod * (Table.rofmod or 1)) --class and per-gun use same var name
-		acfmenupanel:CPanelText("Firerate", "RoF: " .. math.Round(RoF, 1) .. " rounds/min")
+		acemenupanel:CPanelText("Firerate", "RoF: " .. math.Round(RoF, 1) .. " rounds/min")
 
 		if Table.maxrof then
-			acfmenupanel:CPanelText("Max_Rof", "Maximum RoF: " .. Table.maxrof .. " rounds/min")
+			acemenupanel:CPanelText("Max_Rof", "Maximum RoF: " .. Table.maxrof .. " rounds/min")
 		end
-		if Table.magsize then acfmenupanel:CPanelText("Magazine", "Magazine: " .. Table.magsize .. " rounds\nReload: " .. Table.magreload .. " s") end
-		acfmenupanel:CPanelText("Spread", "Spread: " .. (GunClass.spread * 1.5) .. " degrees")
-		acfmenupanel:CPanelText("Spread_Gunner", "Spread with gunner: " .. GunClass.spread .. " degrees")
+		if Table.magsize then acemenupanel:CPanelText("Magazine", "Magazine: " .. Table.magsize .. " rounds\nReload: " .. Table.magreload .. " s") end
+		acemenupanel:CPanelText("Spread", "Spread: " .. (GunClass.spread * 1.5) .. " degrees")
+		acemenupanel:CPanelText("Spread_Gunner", "Spread with gunner: " .. GunClass.spread .. " degrees")
 
 	end
 
-	acfmenupanel.CustomDisplay:PerformLayout()
+	acemenupanel.CustomDisplay:PerformLayout()
 
 end

@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACE.DefineEngine( "5.7-V8", {
+ACE_DefineEngine( "5.7-V8", {
 	name = "5.7L V8 Petrol",
 	desc = "Car sized petrol engine, good power and mid range torque",
 	model = "models/engines/v8s.mdl",
@@ -18,7 +18,7 @@ ACE.DefineEngine( "5.7-V8", {
 	limitrpm = 6500,
 } )
 
-ACE.DefineEngine( "9.0-V8", {
+ACE_DefineEngine( "9.0-V8", {
 	name = "9.0L V8 Petrol",
 	desc = "Thirsty, giant V8, for medium applications",
 	model = "models/engines/v8m.mdl",
@@ -33,7 +33,7 @@ ACE.DefineEngine( "9.0-V8", {
 	limitrpm = 5500,
 } )
 
-ACE.DefineEngine( "18.0-V8", {
+ACE_DefineEngine( "18.0-V8", {
 	name = "18.0L V8 Petrol",
 	desc = "American gasoline tank V8, good overall power and torque and fairly lightweight",
 	model = "models/engines/v8l.mdl",
@@ -50,7 +50,7 @@ ACE.DefineEngine( "18.0-V8", {
 
 -- Diesel
 
-ACE.DefineEngine( "4.5-V8", {
+ACE_DefineEngine( "4.5-V8", {
 	name = "4.5L V8 Diesel",
 	desc = "Light duty diesel v8, good for light vehicles that require a lot of torque",
 	model = "models/engines/v8s.mdl",
@@ -65,7 +65,7 @@ ACE.DefineEngine( "4.5-V8", {
 	limitrpm = 5000,
 } )
 
-ACE.DefineEngine( "7.8-V8", {
+ACE_DefineEngine( "7.8-V8", {
 	name = "7.8L V8 Diesel",
 	desc = "Redneck chariot material. Truck duty V8 diesel, has a good, wide powerband",
 	model = "models/engines/v8m.mdl",
@@ -80,7 +80,7 @@ ACE.DefineEngine( "7.8-V8", {
 	limitrpm = 4000,
 } )
 
-ACE.DefineEngine( "19.0-V8", {
+ACE_DefineEngine( "19.0-V8", {
 	name = "19.0L V8 Diesel",
 	desc = "Heavy duty diesel V8, used in heavy construction equipment and tanks",
 	model = "models/engines/v8l.mdl",

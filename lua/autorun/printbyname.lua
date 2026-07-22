@@ -12,7 +12,7 @@ end
 
 
 
-function ACE.PairsByKeys(t, f)
+function ACE_PairsByKeys(t, f)
 	if not t then
 		return function() end
 	end
@@ -39,12 +39,12 @@ function ACE.PairsByKeys(t, f)
 end
 
 
-pairsByName = ACE.PairsByKeys
+pairsByName = ACE_PairsByKeys
 
 
 
-function ACE.PrintByName(tbl)
-	for k, v in ACE.PairsByKeys(tbl) do
+function ACE_PrintByName(tbl)
+	for k, v in ACE_PairsByKeys(tbl) do
 		Msg(tostring(k), "\t", "\t", tostring(v), "\n")
 	end
 
@@ -55,16 +55,16 @@ function ACE.PrintByName(tbl)
 	end
 end
 
-pbn = ACE.PrintByName
+pbn = ACE_PrintByName
 
 
 
-function ACE.PrintByNameTable(tbl, name)
+function ACE_PrintByNameTable(tbl, name)
 	local typ = nil
 	local typ2 = nil
 	local vstr = nil
 
-	for k, v in ACE.PairsByKeys(tbl) do
+	for k, v in ACE_PairsByKeys(tbl) do
 		typ = type(k)
 		typ2 = type(v)
 		vstr = typ2 == "string" and "\"" .. v .. "\"" or tostring(v)
@@ -81,4 +81,4 @@ function ACE.PrintByNameTable(tbl, name)
 	plst = tbl -- reference!
 end
 
-pbnt = ACE.PrintByNameTable
+pbnt = ACE_PrintByNameTable

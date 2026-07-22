@@ -7,7 +7,7 @@ CreateConVar("sbox_max_ace_wind_sensor", 10)
 
 DEFINE_BASECLASS("base_wire_entity")
 
-local ExtrasTable = ACF.Weapons.Extras
+local ExtrasTable = ACE.Weapons.Extras
 
 function ENT:Initialize()
 	self.ThinkDelay = 0.1
@@ -24,7 +24,7 @@ function ENT:Initialize()
 	self:UpdateOverlayText()
 end
 
-function ACE.MakeWindSensor(Owner, Pos, Angle, Id)
+function ACE_MakeWindSensor(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_wind_sensor") then return false end
 
 	Id = Id or "WindSensor"
@@ -54,13 +54,13 @@ function ACE.MakeWindSensor(Owner, Pos, Angle, Id)
 	Sensor:UpdateOverlayText()
 
 	Owner:AddCount("_ace_wind_sensor", Sensor)
-	Owner:AddCleanup("acfmenu", Sensor)
+	Owner:AddCleanup("acemenu", Sensor)
 
 	return Sensor
 end
 
 list.Set("ACFCvars", "ace_wind_sensor", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_wind_sensor", ACE.MakeWindSensor, "Pos", "Angle", "Id", "Data")
+duplicator.RegisterEntityClass("ace_wind_sensor", ACE_MakeWindSensor, "Pos", "Angle", "Id", "Data")
 
 function ENT:SetNWNetwork()
 	self:SetNWString("WireName", self.ACFName)
@@ -81,7 +81,7 @@ function ENT:SetModelEasy(mdl)
 end
 
 function ENT:UpdateOutputs()
-	local Wind = ACF.Wind or Vector(0, 0, 0)
+	local Wind = ACE.Wind or Vector(0, 0, 0)
 	local WindSpeed = Wind:Length()
 	local WindAngle = Wind:Angle()
 
@@ -91,7 +91,7 @@ function ENT:UpdateOutputs()
 end
 
 function ENT:UpdateOverlayText()
-	local Wind = ACF.Wind or Vector(0, 0, 0)
+	local Wind = ACE.Wind or Vector(0, 0, 0)
 	local WindSpeed = math.Round(Wind:Length(), 1)
 	local WindAngle = Wind:Angle()
 

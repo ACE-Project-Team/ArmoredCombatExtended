@@ -11,11 +11,11 @@ local Cast =
 
 
 
-function ACE.Missile_CreateConfigurable(str, configurables, bdata, wlistPath)
+function ACE_Missile_CreateConfigurable(str, configurables, bdata, wlistPath)
 
 	local success, ret = xpcall( -- we're eating arbitrary user input, so let's not fuck up if they fuck up
 						function()
-							return ACE.Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
+							return ACE_Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
 						end,
 
 						ErrorNoHalt
@@ -28,7 +28,7 @@ end
 
 
 
-function ACE.Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
+function ACE_Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
 
 	-- we're parsing a string of the form "NAME:CMD=VAL:CMD=VAL"... potentially.
 
@@ -48,7 +48,7 @@ function ACE.Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath
 
 
 		if bdata then
-			local allowed = ACE.GetGunValue(bdata, wlistPath)
+			local allowed = ACE_GetGunValue(bdata, wlistPath)
 			if istable(allowed) and not table.HasValue(allowed, name) then return nil end
 		end
 

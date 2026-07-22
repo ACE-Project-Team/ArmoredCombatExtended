@@ -1,7 +1,7 @@
 
 -- Single-cylinder engines
 
-ACE.DefineEngine( "0.25-I1", {
+ACE_DefineEngine( "0.25-I1", {
 	name = "250cc Single",
 	desc = "Tiny bike engine",
 	model = "models/engines/1cylsml.mdl",
@@ -16,7 +16,7 @@ ACE.DefineEngine( "0.25-I1", {
 	limitrpm = 7500,
 } )
 
-ACE.DefineEngine( "0.5-I1", {
+ACE_DefineEngine( "0.5-I1", {
 	name = "500cc Single",
 	desc = "Large single cylinder bike engine",
 	model = "models/engines/1cylmed.mdl",
@@ -31,7 +31,7 @@ ACE.DefineEngine( "0.5-I1", {
 	limitrpm = 8000,
 } )
 
-ACE.DefineEngine( "1.3-I1", {
+ACE_DefineEngine( "1.3-I1", {
 	name = "1300cc Single",
 	desc = "Ridiculously large single cylinder engine, seriously what the fuck",
 	model = "models/engines/1cylbig.mdl",

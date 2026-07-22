@@ -53,7 +53,7 @@ do
 	local IsValidCache = {}
 
 	-- Returns whether or not a sound actually exists, fixes client timeout issues
-	function ACE.IsValidSound( path )
+	function ACE_IsValidSound( path )
 		if IsValidCache[path] == nil then
 			IsValidCache[path] = file.Exists( string.format( "sound/%s", tostring( path ) ), "GAME" ) and true or false
 		end
@@ -63,7 +63,7 @@ do
 	--Global sound function. In order to be modified by a convar config
 	--If the Origin is an entity, uses entity:EmitSound( SoundTxt , SoundLevel, Pitch, Volume )
 	--If the Origin is a vector Position, uses sound.Play(SoundTxt, Position, SoundLevel, Pitch, Volume)
-	function ACE.EmitSound( SoundTxt, Origin, SoundLevel, Pitch, Volume )
+	function ACE_EmitSound( SoundTxt, Origin, SoundLevel, Pitch, Volume )
 
 		Volume = math.min( Volume, 1 )
 		local VolumeConfig = GetConVar("ace_sound_volume"):GetInt() / 100
@@ -76,7 +76,7 @@ do
 	end
 
 	--Gets the player's point of view if he's using a camera. Returns the entity input if no external entity is involved.
-	function ACE.SGetHearingEntity( ply )
+	function ACE_SGetHearingEntity( ply )
 		if not IsValid(ply) then return ply end
 
 		------------------------------- Method 1: Via Camera tool -------------------------------
@@ -104,37 +104,37 @@ do
 
 
 
-	function ACE.GetDistanceTime( Dist )
+	function ACE_GetDistanceTime( Dist )
 		return (Dist / 13503) * ACE.DelayMultipler
 	end
 
-	function ACE.GetHeadPos( ply )
+	function ACE_GetHeadPos( ply )
 		local plyPos	= ply.aceposoverride or ply:GetPos()
 		local headPos	= plyPos + ( not ply:InVehicle() and ( ( ply:Crouching() and Vector(0,0,28) ) or Vector(0,0,64) ) or Vector(0,0,0) )
 		return headPos
 	end
 
 	--Used for those extremely quiet sounds, which should be heard close to the player
-	function ACE.SInDistance( Pos, Distance )
+	function ACE_SInDistance( Pos, Distance )
 
 		local ply    = LocalPlayer()
 
-		local entply = ACE.SGetHearingEntity( ply )
-		local plyPos = entply:IsPlayer() and ACE.GetHeadPos( ply ) or entply:GetPos()
+		local entply = ACE_SGetHearingEntity( ply )
+		local plyPos = entply:IsPlayer() and ACE_GetHeadPos( ply ) or entply:GetPos()
 
 		--return true if the distance is lower than the maximum distance
-		if ACE.InDist( plyPos, Pos, Distance ) then return true end
+		if ACE_InDist( plyPos, Pos, Distance ) then return true end
 
 		return false
 	end
 
 	--Gives the approaching speed of an object at a position moving a speed.
-	function ACE.Approaching( Pos, Flight )
+	function ACE_Approaching( Pos, Flight )
 
 		local ply    = LocalPlayer()
 
-		local entply = ACE.SGetHearingEntity( ply )
-		local plyPos = entply:IsPlayer() and ACE.GetHeadPos( ply ) or entply:GetPos()
+		local entply = ACE_SGetHearingEntity( ply )
+		local plyPos = entply:IsPlayer() and ACE_GetHeadPos( ply ) or entply:GetPos()
 
 		local CurDist = (plyPos - Pos):Length()
 		local NextDist = (plyPos - (Pos + Flight * 0.025)):Length()
@@ -143,10 +143,10 @@ do
 	end
 
 	--Used to see if the player has line of sight with the event
-	function ACE.SHasLOS( EventPos )
+	function ACE_SHasLOS( EventPos )
 
 		local ply = LocalPlayer()
-		local headPos = ACE.GetHeadPos( ply )
+		local headPos = ACE_GetHeadPos( ply )
 
 		local LOSTr	= {}
 		LOSTr.start    = EventPos + Vector(0,0,10)
@@ -158,10 +158,10 @@ do
 		return false
 	end
 
-	function ACE.SIsInDoor()
+	function ACE_SIsInDoor()
 
 		local ply    = LocalPlayer()
-		local entply = ACE.SGetHearingEntity( ply )
+		local entply = ACE_SGetHearingEntity( ply )
 		local plyPos = entply.aceposoverride or entply:GetPos()
 
 		local CeilTr	= {}
@@ -189,11 +189,11 @@ do
 	}
 
 	function eventBase:OnArrived()
-		self.Entity = ACE.SGetHearingEntity(LocalPlayer())
+		self.Entity = ACE_SGetHearingEntity(LocalPlayer())
 	end
 
 	function eventBase:Play()
-		ACE.EmitSound(self.Sound, self.Origin or self.Entity, self.SoundLevel, self.Pitch, self.Volume)
+		ACE_EmitSound(self.Sound, self.Origin or self.Entity, self.SoundLevel, self.Pitch, self.Volume)
 	end
 
 	local function newSoundEvent(event)
@@ -275,14 +275,14 @@ do
 	end
 
 	--Handles Explosion sounds
-	function ACE.SBlast( HitPos, Radius, HitWater, HitWorld )
+	function ACE_SBlast( HitPos, Radius, HitWater, HitWorld )
 		local event = newSoundEvent({
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - HitPos):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - HitPos):Length())
 		})
 
 		-- doing it in a hacky way, since it needs more then one sound, but should be no isuess
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 			local hearingPos = getHearingPos(hearingEntity)
 			local distance = (hearingPos - HitPos):Length()
 
@@ -292,7 +292,7 @@ do
 			if not HitWater then
 				local Sound, volFix, pitchFix = getBlastSoundAboveWater(distance, Radius)
 
-				if not ACE.SHasLOS( HitPos ) and ACE.SIsInDoor() then
+				if not ACE_SHasLOS( HitPos ) and ACE_SIsInDoor() then
 					volFix = volFix * 0.5
 				end
 
@@ -304,7 +304,7 @@ do
 				if not ply:HasGodMode() then
 					local tinZone = math.max(Radius * 80, 50) * ACE.TinnitusZoneMultipler
 
-					if distance <= tinZone and ACE.SHasLOS(HitPos) and hearingEntity == ply and not ply.aceposoverride then
+					if distance <= tinZone and ACE_SHasLOS(HitPos) and hearingEntity == ply and not ply.aceposoverride then
 
 						hearingEntity:SetDSP(33, true)
 
@@ -312,7 +312,7 @@ do
 
 							-- See if it supress the current tinnitus and creates a new one, from 0. Should stop the HE spam tinnitus
 							hearingEntity:StopSound("acf_other/explosions/ring/tinnitus.mp3")
-							ACE.EmitSound("acf_other/explosions/ring/tinnitus.mp3", hearingEntity, 75, 100, 1 )
+							ACE_EmitSound("acf_other/explosions/ring/tinnitus.mp3", hearingEntity, 75, 100, 1 )
 
 						end
 					end
@@ -320,20 +320,20 @@ do
 					--debugoverlay.Sphere(HitPos, TinZone, 15, Color(0,0,255,32), 1)
 				end
 
-				ACE.EmitSound( Sound or "", hearingEntity, 75, pitch, volume)
+				ACE_EmitSound( Sound or "", hearingEntity, 75, pitch, volume)
 
 				--play dirt sounds
 				if Radius >= ACE.SoundSmallEx and HitWorld then
-					ACE.EmitSound( ACE.Sounds["Debris"]["low"]["close"][math.random(1,#ACE.Sounds["Debris"]["low"]["close"])] or "", hearingPos + (HitPos - hearingPos):GetNormalized() * 64, 80, pitch * pitchFix, volume * volFix / 20 )
-					ACE.EmitSound( ACE.Sounds["Debris"]["high"]["close"][math.random(1,#ACE.Sounds["Debris"]["high"]["close"])] or "", hearingPos + (HitPos - hearingPos):GetNormalized() * 64, 80, (pitch * pitchFix) / 0.5, volume * volFix / 20 )
+					ACE_EmitSound( ACE.Sounds["Debris"]["low"]["close"][math.random(1,#ACE.Sounds["Debris"]["low"]["close"])] or "", hearingPos + (HitPos - hearingPos):GetNormalized() * 64, 80, pitch * pitchFix, volume * volFix / 20 )
+					ACE_EmitSound( ACE.Sounds["Debris"]["high"]["close"][math.random(1,#ACE.Sounds["Debris"]["high"]["close"])] or "", hearingPos + (HitPos - hearingPos):GetNormalized() * 64, 80, (pitch * pitchFix) / 0.5, volume * volFix / 20 )
 				end
 
 				return
 			end
 
 			-- underwater
-			ACE.EmitSound( "ambient/water/water_splash" .. math.random(1,3) .. ".wav", hearingEntity, 75, math.max(pitch * 0.75,65), volume * 0.075 )
-			ACE.EmitSound( "^weapons/underwater_explode3.wav", hearingEntity, 75, math.max(pitch * 0.75,65), volume * 0.075 )
+			ACE_EmitSound( "ambient/water/water_splash" .. math.random(1,3) .. ".wav", hearingEntity, 75, math.max(pitch * 0.75,65), volume * 0.075 )
+			ACE_EmitSound( "^weapons/underwater_explode3.wav", hearingEntity, 75, math.max(pitch * 0.75,65), volume * 0.075 )
 		end
 
 		function event:Play() end
@@ -370,18 +370,18 @@ do
 	end
 
 	--Handles ricochet sounds
-	function ACE.SBulletImpact( HitPos, Caliber, Velocity, _, Material )
+	function ACE_SBulletImpact( HitPos, Caliber, Velocity, _, Material )
 		local event = newSoundEvent({
 			Origin = HitPos,
 
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - HitPos):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - HitPos):Length())
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 
 			local volFix, pitchFix = bulletImpactCaliberFix(Caliber)
-			if not ACE.SHasLOS( HitPos ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( HitPos ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.5
 			end
 
@@ -425,17 +425,17 @@ do
 		return ACE.Sounds["Ricochets"]["large"]["close"][math.random(#ACE.Sounds["Ricochets"]["large"]["close"])], 7, 1
 	end
 
-	--Handles ricochet sounds 
-	function ACE.SRicochet( HitPos, Caliber, Velocity, HitWorld, Material )
+	--Handles ricochet sounds
+	function ACE_SRicochet( HitPos, Caliber, Velocity, HitWorld, Material )
 		local event = newSoundEvent({
 			SoundLevel = 100,
 			Pitch = math.Clamp(Velocity * 0.001, 90, 150),
 
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - HitPos):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - HitPos):Length())
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 
 			local volFix, pitchFix = 1, 1
 			if not HitWorld then
@@ -451,7 +451,7 @@ do
 				self.Sound = getImpactSound(Material or "invalid")
 			end
 
-			if not ACE.SHasLOS( HitPos ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( HitPos ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.5
 			end
 
@@ -481,17 +481,17 @@ do
 	end
 
 	--Handles penetration sounds
-	function ACE.SPenetration( HitPos, Caliber, Velocity, HitWorld, Material, Mass )
+	function ACE_SPenetration( HitPos, Caliber, Velocity, HitWorld, Material, Mass )
 		local event = newSoundEvent({
 			Sound = "acf_other/penetratingshots/penetrations/large/close/pen" .. math.random(3) .. ".mp3",
 
 			Pitch = math.Clamp(Velocity * 1, 90, 150),
 
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - HitPos):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - HitPos):Length())
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 
 			self.Entity = hearingEntity
 
@@ -505,7 +505,7 @@ do
 				self.Sound = getImpactSound(Material or "invalid")
 			end
 
-			if not ACE.SHasLOS( HitPos ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( HitPos ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.5
 			end
 
@@ -526,13 +526,13 @@ do
 	-- Nothing is accessing it so avoid globals everywhere
 	local fireSoundPackageIndex = {}
 
-	function ACE.SGunFire( Gun, Sound, PitchOverride, Propellant )
+	function ACE_SGunFire( Gun, Sound, PitchOverride, Propellant )
 		if not IsValid(Gun) then return end
 		if not Sound or Sound == "" then return end
 
 		Propellant = math.max(Propellant,50)
 
-		local hearingPos = getHearingPos(ACE.SGetHearingEntity( LocalPlayer() ))
+		local hearingPos = getHearingPos(ACE_SGetHearingEntity( LocalPlayer() ))
 
 		local event = newSoundEvent({
 			Sound = Sound or "",
@@ -540,13 +540,13 @@ do
 			SoundLevel = 100,
 			Pitch = PitchOverride,
 
-			Duration = ACE.GetDistanceTime((hearingPos - Gun:GetPos()):Length()),
+			Duration = ACE_GetDistanceTime((hearingPos - Gun:GetPos()):Length()),
 
 			Origin = Gun:GetPos()
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 			local hearingPos = getHearingPos(hearingEntity)
 			local origin = self.Origin
 
@@ -575,7 +575,7 @@ do
 				fireSoundPackageIndex[gunID] = index
 			end
 
-			if not ACE.SHasLOS( origin ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( origin ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.025
 			end
 
@@ -607,27 +607,27 @@ do
 	end
 
 	--TODO: Leave 5 sounds per caliber type. 22 7.26mm sounds go brrrr
-	function ACE.SBulletCrack( BulletData, Caliber )
+	function ACE_SBulletCrack( BulletData, Caliber )
 
 		-- flag this, so we are not playing this sound for this bullet next time
 		BulletData.CrackCreated = true
 
 		local CrackPos = BulletData.SimPos - BulletData.SimFlight:GetNormalized() * 5000
-		local distance = (getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - CrackPos):Length()
+		local distance = (getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - CrackPos):Length()
 
 		local event = newSoundEvent({
 			Volume = 10000 / distance,
 
-			Duration = ACE.GetDistanceTime(distance)
+			Duration = ACE_GetDistanceTime(distance)
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 
 			local Sound, volFix = getBulletCrackSound(Caliber)
 			self.Sound = Sound
 
-			if not ACE.SHasLOS( BulletData.SimPos ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( BulletData.SimPos ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.025
 			end
 			self.Volume = self.Volume * volFix
@@ -638,21 +638,21 @@ do
 
 
 	--TODO: Leave 5 sounds per caliber type. 22 7.26mm sounds go brrrr
-	function ACE.SBulletWhistle( BulletData )
+	function ACE_SBulletWhistle( BulletData )
 		-- flag this, so we are not playing this sound for this bullet next time
 		BulletData.HasWhistled = true
 
 		local event = newSoundEvent({
 			Sound = "acf_extra/ACE/SoundsMaccnificient/IncomingShell/whistle_arty_0" .. math.random(3) .. ".wav",
 
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - BulletData.SimPos):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - BulletData.SimPos):Length())
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 
 			local volFix = 1
-			if not ACE.SHasLOS( BulletData.SimPos ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( BulletData.SimPos ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.5
 			end
 			self.Volume = 10000 * volFix
@@ -668,22 +668,22 @@ do
 
 
 	--For any miscellaneous sound. BaseDistVolume is the Max dist where Volume will be 1. The volume will start losing dbs beyond this distance. In Units.
-	function ACE.SimpleSound( Sound, Origin, Pitch, BaseDistVolume  )
+	function ACE_SimpleSound( Sound, Origin, Pitch, BaseDistVolume  )
 		local event = newSoundEvent({
 			Sound = Sound or "",
 
 			SoundLevel = 100,
 			Pitch = Pitch,
 
-			Duration = ACE.GetDistanceTime((getHearingPos(ACE.SGetHearingEntity(LocalPlayer())) - Origin):Length())
+			Duration = ACE_GetDistanceTime((getHearingPos(ACE_SGetHearingEntity(LocalPlayer())) - Origin):Length())
 		})
 
 		function event:OnArrived()
-			local hearingEntity = ACE.SGetHearingEntity(LocalPlayer())
+			local hearingEntity = ACE_SGetHearingEntity(LocalPlayer())
 			local hearingPos = getHearingPos(hearingEntity)
 
 			local volFix = 1
-			if not ACE.SHasLOS( Origin ) and ACE.SIsInDoor() then
+			if not ACE_SHasLOS( Origin ) and ACE_SIsInDoor() then
 				volFix = volFix * 0.025
 			end
 

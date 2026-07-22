@@ -1,10 +1,10 @@
 
 --define the class
-ACE.DefineGunClass("ASM", {
+ACE_DefineGunClass("ASM", {
 	type           = "missile",
 	spread         = 1,
 	name           = "[ASM] - Air-To-Surface Missile",
-	desc           = ACFTranslation.MissileClasses[3],
+	desc           = ACE.Translation.MissileClasses[3],
 	muzzleflash    = "40mm_muzzleflash_noscale",
 	year           = 1969,
 	rofmod         = 1,
@@ -17,7 +17,7 @@ ACE.DefineGunClass("ASM", {
 } )
 
 --Sidearm, a lightweight anti-radar missile used by helicopters in the 80s
-ACE.DefineGun("AGM-122 ASM", {						-- id
+ACE_DefineGun("AGM-122 ASM", {						-- id
 	name             = "AGM-122 Sidearm Missile",
 	desc             = "A refurbished early-model AIM-9, for attacking ground targets.  Less well-known than the bigger Shrike, it provides easy-to-use blind-fire anti-SAM performance for helicopters and light aircraft, with far heavier a punch than its ancestor.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 182 m/s",
 	model            = "models/missiles/aim9m.mdl",
@@ -90,7 +90,7 @@ ACE.DefineGun("AGM-122 ASM", {						-- id
 } )
 
 -- The AGM-45 shrike, a vietnam war-era antiradiation missile built off the AIM-7 airframe.
-ACE.DefineGun("AGM-45 ASM", {						-- id
+ACE_DefineGun("AGM-45 ASM", {						-- id
 	name             = "AGM-45 Shrike Missile",
 	desc             = "The body of an AIM-7 sparrow, an air-to-ground seeker kit, and a far larger warhead than its ancestor.\nWith its anti radiation seeker, thicker skin, and long range, it is a great weapon for long-range, precision standoff attack pesky sam sites.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 148 m/s",
 	model            = "models/missiles/arend/aim7f.mdl",
@@ -161,7 +161,7 @@ ACE.DefineGun("AGM-45 ASM", {						-- id
 } )
 
 -- The AGM-45 shrike, a vietnam war-era antiradiation missile built off the AIM-7 airframe.
-ACE.DefineGun("AGM-88 ASM", {						-- id
+ACE_DefineGun("AGM-88 ASM", {						-- id
 	name             = "AGM-88 HARM",
 	desc             = "Advanced long range anti-radiation missile with improved guidance. Significantly heavier but makes up for it in range and tracking. \n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 206 m/s",
 	model            = "models/missiles/arend/agm-88.mdl",
@@ -232,7 +232,7 @@ ACE.DefineGun("AGM-88 ASM", {						-- id
 	armdelay           = 0.15								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("KH-31 ASM", {						-- id
+ACE_DefineGun("KH-31 ASM", {						-- id
 	name             = "KH-31A",
 	desc             = "Massive turbojet Antiradiation missile also used as antiship missile. It may be slower to get there but it HURTS. Mini Moskit. \n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 115 m/s",
 	model            = "models/missiles/arend/kh31.mdl",
@@ -306,7 +306,7 @@ ACE.DefineGun("KH-31 ASM", {						-- id
 } )
 
 -- Maverick. A heavy missile which excels at destroying armoured ground targets. Used by ground attack aircrafts like the A-10
-ACE.DefineGun("AGM-65 ASM", {						-- id
+ACE_DefineGun("AGM-65 ASM", {						-- id
 	name             = "AGM-65 Maverick Missile",
 	desc             = "You see that tank over there a mile away? I want you to lock onto it and forget about it.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 104 m/s",
 	model            = "models/missiles/arend/agm65d.mdl",
@@ -374,7 +374,7 @@ ACE.DefineGun("AGM-65 ASM", {						-- id
 
 } )
 
-ACE.DefineGun("AS-30 ASM", {						-- id
+ACE_DefineGun("AS-30 ASM", {						-- id
 	name			= "AS-30 Missile",
 	desc			= "Large Beam-riding NATO Air to Ground missile. CHEAP.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/missiles/as30.mdl",
@@ -439,7 +439,7 @@ ACE.DefineGun("AS-30 ASM", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("KH-23 ASM", {						-- id
+ACE_DefineGun("KH-23 ASM", {						-- id
 	name			= "KH-23 Missile",
 	desc			= "Beam-riding Soviet Air to Ground missile. Though 'Middlesize' for Russian standards this thing hits like a train. CHEAP.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/missiles/kh23.mdl",
@@ -505,7 +505,7 @@ ACE.DefineGun("KH-23 ASM", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("KH-25 ASM", {						-- id
+ACE_DefineGun("KH-25 ASM", {						-- id
 	name			= "KH-25 Missile",
 	desc			= "Soviet Air to Ground missile with every sort of guidance. Though 'Middlesize' for Russian standards this thing hits like a train.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/missiles/kh25.mdl",
@@ -571,7 +571,7 @@ ACE.DefineGun("KH-25 ASM", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACE.DefineGun("KH-29 ASM", {						-- id
+ACE_DefineGun("KH-29 ASM", {						-- id
 	name             = "KH-29 Missile",
 	desc             = "Massive Russian standoff missile of ludicrous proportions capable of lofting itself towards distant targets. Anything it hits ceases existing.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 144 m/s",
 	model            = "models/missiles/kh29.mdl",

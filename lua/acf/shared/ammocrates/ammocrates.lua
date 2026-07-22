@@ -3,7 +3,7 @@
 --Ammocrate Shells 75mm -> 170mm
 ------------------------------
 
-ACE.DefineAmmoCrate( "Shell75mm", {
+ACE_DefineAmmoCrate( "Shell75mm", {
 
 	name = "Modular Ammo Crate",
 	desc = "A single 75mm Shell. As an alternative to the bulky ammocrates.\n",
@@ -15,7 +15,7 @@ ACE.DefineAmmoCrate( "Shell75mm", {
 
 })
 
-ACE.DefineAmmoCrate("Shell100mm", {
+ACE_DefineAmmoCrate("Shell100mm", {
 	name = "Modular Ammo Crate",
 	desc = "A single 100mm Shell. As an alternative to the bulky ammocrates.\n",
 	model = "models/munitions/round_100mm.mdl",
@@ -25,7 +25,7 @@ ACE.DefineAmmoCrate("Shell100mm", {
 	Height = 36.7,
 })
 
-ACE.DefineAmmoCrate("Shell120mm", {
+ACE_DefineAmmoCrate("Shell120mm", {
 	name = "Modular Ammo Crate",
 	desc = "A single 120mm Shell. As an alternative to the bulky ammocrates.\n",
 	model = "models/munitions/round_120mm.mdl",
@@ -35,7 +35,7 @@ ACE.DefineAmmoCrate("Shell120mm", {
 	Height = 44,
 })
 
-ACE.DefineAmmoCrate("Shell120mmAP", {
+ACE_DefineAmmoCrate("Shell120mmAP", {
 	name = "Modular Ammo Crate",
 	desc = "A single 120mm AP Shell. As an alternative to the bulky ammocrates.\n",
 	model = "models/munitions/round_120mm_ap.mdl",
@@ -45,7 +45,7 @@ ACE.DefineAmmoCrate("Shell120mmAP", {
 	Height = 44,
 })
 
-ACE.DefineAmmoCrate("Shell140mm", {
+ACE_DefineAmmoCrate("Shell140mm", {
 	name = "Modular Ammo Crate",
 	desc = "A single 140mm Shell. As an alternative to the bulky ammocrates.\n",
 	model = "models/munitions/round_130mm.mdl",
@@ -55,7 +55,7 @@ ACE.DefineAmmoCrate("Shell140mm", {
 	Height = 50,
 })
 
-ACE.DefineAmmoCrate("Shell170mm", {
+ACE_DefineAmmoCrate("Shell170mm", {
 	name = "Modular Ammo Crate",
 	desc = "A single 170mm Shell. As an alternative to the bulky ammocrates.\n",
 	model = "models/munitions/round_200mm.mdl",
@@ -66,7 +66,7 @@ ACE.DefineAmmoCrate("Shell170mm", {
 })
 
 --Cube
-ACE.DefineModelData("Box",{
+ACE_DefineModelData("Box",{
 
 	Shape = "Box",
 	Model = "models/holograms/rcube_thin.mdl", --Note: The model can be used as ID if needed.
@@ -91,7 +91,7 @@ ACE.DefineModelData("Box",{
 })
 
 --Triangle / Wedge
-ACE.DefineModelData("Wedge",{
+ACE_DefineModelData("Wedge",{
 
 	Shape = "Wedge",
 	Model = "models/holograms/right_prism.mdl",
@@ -114,7 +114,7 @@ ACE.DefineModelData("Wedge",{
 })
 
 --Another type of wedge.
-ACE.DefineModelData("Prism",{
+ACE_DefineModelData("Prism",{
 
 	Shape = "Prism",
 	Model = "models/holograms/prism.mdl",
@@ -139,7 +139,7 @@ ACE.DefineModelData("Prism",{
 local PI = math.pi
 
 --Cylinder
-ACE.DefineModelData("Cylinder",{
+ACE_DefineModelData("Cylinder",{
 
 	Shape = "Cylinder",
 	Model = "models/holograms/hq_rcylinder_thin.mdl",
@@ -175,7 +175,7 @@ ACE.DefineModelData("Cylinder",{
 })
 
 -- The sphere. Dont ask how i got its vertex.
-ACE.DefineModelData("Sphere",{
+ACE_DefineModelData("Sphere",{
 
 	Shape = "Sphere",
 	Model = "models/holograms/hq_sphere.mdl", --Note: The model can be used as ID if needed.
@@ -250,7 +250,7 @@ ACE.DefineModelData("Sphere",{
 })
 
 --Cone
-ACE.DefineModelData("Cone",{
+ACE_DefineModelData("Cone",{
 
 	Shape = "Cone",
 	Model = "models/holograms/hq_cone.mdl",

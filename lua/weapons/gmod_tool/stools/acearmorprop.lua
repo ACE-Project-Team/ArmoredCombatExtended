@@ -1,8 +1,8 @@
 
-local cat = ((ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction");
+local cat = ((ACE.CustomToolCategory and ACE.CustomToolCategory:GetBool()) and "ACF" or "Construction");
 
 TOOL.Category	= cat
-TOOL.Name	= "#tool.acfarmorprop.name"
+TOOL.Name	= "#tool.acearmorprop.name"
 TOOL.Command	= nil
 TOOL.ConfigName = ""
 
@@ -18,26 +18,26 @@ if CLIENT then
 		{ name = "reloadfull" }
 	}
 
-	language.Add("tool.acfarmorprop.reloadhint", "Reload: Get information about contraption")
-	language.Add("tool.acfarmorprop.reloadfull", "Shift + Reload: Get full point readout")
+	language.Add("tool.acearmorprop.reloadhint", "Reload: Get information about contraption")
+	language.Add("tool.acearmorprop.reloadfull", "Shift + Reload: Get full point readout")
 end
 
 -- Shared panel state used across panel rebuilds to keep UI controls stable.
 local ToolPanel = ToolPanel or {}
 
-CreateClientConVar( "acfarmorprop_area", 0, false, true ) -- Transient area cache; do not persist.
+CreateClientConVar( "acearmorprop_area", 0, false, true ) -- Transient area cache; do not persist.
 
 -- Compute mass, armor, and health from prop area, ductility, thickness, and material.
 local function CalcArmor( Area, Ductility, Thickness, Mat )
 
 	Mat = Mat or "RHA"
 
-	local MatData	= ACE.GetMaterialData( Mat )
+	local MatData	= ACE_GetMaterialData( Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
-	local health		= ( Area + Area * Ductility ) / ACF.Threshold
+	local armor		= ACE_CalcArmor( Area, Ductility, mass / MassMod )
+	local health		= ( Area + Area * Ductility ) / ACE.Threshold
 
 	return mass, armor, health
 
@@ -70,7 +70,7 @@ local function ApplySettings( _, ent, data )
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
 	end
 
-	ACE.MarkArmorDirty(con, ent, "armor-tool")
+	ACE_MarkArmorDirty(con, ent, "armor-tool")
 
 end
 
@@ -84,7 +84,7 @@ function TOOL:LeftClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACE.Check( ent ) then return false end
+	if not ACE_Check( ent ) then return false end
 
 	local ply		= self:GetOwner()
 
@@ -110,13 +110,13 @@ function TOOL:RightClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACE.Check( ent ) then return false end
+	if not ACE_Check( ent ) then return false end
 
 	local ply = self:GetOwner()
 
-	ply:ConCommand( "acfarmorprop_ductility " .. (ent.ACF.Ductility or 0) * 100 )
-	ply:ConCommand( "acfarmorprop_thickness " .. ent.ACF.MaxArmour )
-	ply:ConCommand( "acfarmorprop_material " .. (ent.ACF.Material or "RHA") )
+	ply:ConCommand( "acearmorprop_ductility " .. (ent.ACF.Ductility or 0) * 100 )
+	ply:ConCommand( "acearmorprop_thickness " .. ent.ACF.MaxArmour )
+	ply:ConCommand( "acearmorprop_material " .. (ent.ACF.Material or "RHA") )
 
 	-- Clear cached target to force a fresh network update of armor values.
 	self.AimEntity = nil
@@ -131,11 +131,11 @@ do
 
 	-- Armor tool hook override for safe reloads.
 	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
-		if Name == "CanTool" and Tool == "acfarmorprop" and Player:KeyPressed(IN_RELOAD) then
+		if Name == "CanTool" and Tool == "acearmorprop" and Player:KeyPressed(IN_RELOAD) then
 			return true
 		end
 
-		return ACE.OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
+		return ACE_OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
 	end
 end
 
@@ -158,7 +158,7 @@ function TOOL:Reload( trace )
 
 	local ply = self:GetOwner()
 	local fullReadout = ply:KeyDown(IN_SPEED)
-	local data		= ACE.CalcMassRatio(ent, true) or {}
+	local data		= ACE_CalcMassRatio(ent, true) or {}
 
 	local total		= tonumber(ent.acftotal) or 0
 	local phystotal	= tonumber(ent.acfphystotal) or 0
@@ -168,8 +168,8 @@ function TOOL:Reload( trace )
 	local power		= tonumber(data.Power) or 0
 
 	local Contraption = ent:CFW_GetContraption() or nil
-	if Contraption and ACE.EnsureContraptionPoints then
-		ACE.EnsureContraptionPoints(Contraption, ent, false)
+	if Contraption and ACE_EnsureContraptionPoints then
+		ACE_EnsureContraptionPoints(Contraption, ent, false)
 	end
 
 	local PointVal		= 0
@@ -184,7 +184,7 @@ function TOOL:Reload( trace )
 
 	if Contraption ~= nil then
 		local pointsPerType = Contraption.ACEPointsPerType or {}
-		PointVal		= safeNumber(Contraption.ACEPoints or ACE.GetEntPoints(ent))
+		PointVal		= safeNumber(Contraption.ACEPoints or ACE_GetEntPoints(ent))
 		PtsArmor = safeNumber(pointsPerType.Armor)
 		PtsEngine = safeNumber(pointsPerType.Engines)
 		PtsFirepower = safeNumber(pointsPerType.Firepower)
@@ -192,15 +192,15 @@ function TOOL:Reload( trace )
 		PtsElectronics = safeNumber(pointsPerType.Electronics)
 		ArmorInitMissing = not Contraption.ACEArmorCalculated
 
-		if ACE.GetContraptionEntities and ACE.GetPtsType then
-			for _, candidate in ipairs(ACE.GetContraptionEntities(Contraption, ent)) do
-				if IsValid(candidate) and ACE.GetPtsType(candidate:GetClass()) == "Firepower" then
+		if ACE_GetContraptionEntities and ACE_GetPtsType then
+			for _, candidate in ipairs(ACE_GetContraptionEntities(Contraption, ent)) do
+				if IsValid(candidate) and ACE_GetPtsType(candidate:GetClass()) == "Firepower" then
 					FirepowerCount = FirepowerCount + 1
 				end
 			end
 		end
 	else
-		PointVal = safeNumber(ACE.GetEntPoints(ent))
+		PointVal = safeNumber(ACE_GetEntPoints(ent))
 	end
 
 	local GeneralTb	= { data.MaterialMass or {}, data.MaterialPercent or {} }
@@ -305,51 +305,51 @@ local function getPopupPoints(ent)
 
 	local cls = ent:GetClass()
 	local con = ent:CFW_GetContraption()
-	local armorPoints = ACE.GetArmorPoints and ACE.GetArmorPoints(ent) or 0
+	local armorPoints = ACE_GetArmorPoints and ACE_GetArmorPoints(ent) or 0
 	local componentPoints = 0
 	local componentLabel
 	local lines = {}
 
 	if cls == "acf_engine" then
-		componentPoints = ACE.GetEntPoints and ACE.GetEntPoints(ent) or 0
+		componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
 		componentLabel = CostLabelByCategory.Engines
 	elseif cls == "acf_gun" or cls == "acf_rack" then
-		local conEnts = (con and ACE.GetContraptionEntities) and ACE.GetContraptionEntities(con, ent) or nil
-		local readout = ACE.GetGunFirepowerReadout and ACE.GetGunFirepowerReadout(ent, conEnts)
+		local conEnts = (con and ACE_GetContraptionEntities) and ACE_GetContraptionEntities(con, ent) or nil
+		local readout = ACE_GetGunFirepowerReadout and ACE_GetGunFirepowerReadout(ent, conEnts)
 		componentPoints = readout and readout.Points
-			or (ACE.GetGunFirepowerPointsFor and ACE.GetGunFirepowerPointsFor(ent, conEnts))
-			or (ACE.GetGunFirepowerPoints and ACE.GetGunFirepowerPoints(ent)) or 0
+			or (ACE_GetGunFirepowerPointsFor and ACE_GetGunFirepowerPointsFor(ent, conEnts))
+			or (ACE_GetGunFirepowerPoints and ACE_GetGunFirepowerPoints(ent)) or 0
 		componentLabel = CostLabelByCategory.Firepower
 
 		if readout then
-			local pricing = ACE.GetGunFirepowerPricingLine and ACE.GetGunFirepowerPricingLine(readout, true)
+			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout, true)
 			if pricing then lines[#lines + 1] = pricing end
 			if readout.MinimumApplied then
 				lines[#lines + 1] = "Weapon Minimum Applied: " .. formatPoints(readout.Points)
 			end
-			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then lines[#lines + 1] = floorLine end
-			local roundLine = readout.Round and ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(readout.Round, true)
 			if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 		end
 	elseif cls == "acf_ammo" then
 		componentPoints = 0
-		if ACE.Points_RoundFromBullet and ACE.Points_BaseRoundCost and istable(ent.BulletData) then
-			local round = ACE.Points_RoundFromBullet(ent.BulletData)
+		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost and istable(ent.BulletData) then
+			local round = ACE_Points_RoundFromBullet(ent.BulletData)
 			if round then
-				local roundLine = ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine(round, true)
+				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round, true)
 				lines[#lines + 1] = "Crate Inventory Points: 0"
 				if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
-					.. string.format("%.1f", ACE.Points_BaseRoundCost(round))
+					.. string.format("%.1f", ACE_Points_BaseRoundCost(round))
 			end
 		end
 	else
 		local category = getPointsCategory(ent)
-		if category == "Crew" and ACE.GetCrewSeatPointCost then
-			componentPoints = ACE.GetCrewSeatPointCost(ent)
+		if category == "Crew" and ACE_GetCrewSeatPointCost then
+			componentPoints = ACE_GetCrewSeatPointCost(ent)
 		else
-			componentPoints = ACE.GetEntPoints and ACE.GetEntPoints(ent) or 0
+			componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
 		end
 		if componentPoints > 0 and category and category ~= "Armor" and category ~= "Ignore" then
 			componentLabel = CostLabelByCategory[category] or (category .. " Cost")
@@ -362,8 +362,8 @@ local function getPopupPoints(ent)
 	end
 
 	-- Manufacturing values are computed on read and are not part of combat points.
-	if ACE.Manu_EntCost then
-		local mfgCost = ACE.Manu_EntCost(ent)
+	if ACE_Manu_EntCost then
+		local mfgCost = ACE_Manu_EntCost(ent)
 		if mfgCost and mfgCost > 0 then
 			lines[#lines + 1] = "Mfg. Cost: " .. formatMoney(mfgCost)
 		end
@@ -398,15 +398,15 @@ function TOOL:Think()
 	local ent = trace.Entity
 	if ent == self.AimEntity then return end
 
-	if ACE.Check( ent ) then
+	if ACE_Check( ent ) then
 
 		local Mat = ent.ACF.Material or "RHA"
-		local MatData = ACE.GetMaterialData( Mat )
+		local MatData = ACE_GetMaterialData( Mat )
 		local AcePts, pointsLabel, pointBreakdown, componentCost = getPopupPoints(ent)
 
 		if not MatData then return end
 
-		ply:ConCommand( "acfarmorprop_area " .. ent.ACF.Area )
+		ply:ConCommand( "acearmorprop_area " .. ent.ACF.Area )
 		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
 		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
 		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
@@ -420,7 +420,7 @@ function TOOL:Think()
 
 	else
 
-		ply:ConCommand( "acfarmorprop_area 0" )
+		ply:ConCommand( "acearmorprop_area 0" )
 		self.Weapon:SetNWFloat( "WeightMass", 0 )
 		self.Weapon:SetNWFloat( "HP", 0 )
 		self.Weapon:SetNWFloat( "Armour", 0 )
@@ -444,23 +444,23 @@ if CLIENT then
 
 	-- Use the server pricing weights; unknown materials fall back to live material data.
 	local function getArmorPointPreview(armor, health, mat, matData)
-		if not ACE.Points_EffectiveMm or not ACE.Points_ArmorProp then return 0 end
+		if not ACE_Points_EffectiveMm or not ACE_Points_ArmorProp then return 0 end
 
 		local effKE, effCHEM
-		if ACE.Points_MaterialEff then
-			effKE, effCHEM = ACE.Points_MaterialEff(mat)
+		if ACE_Points_MaterialEff then
+			effKE, effCHEM = ACE_Points_MaterialEff(mat)
 		end
 		if not effKE then
 			if not matData then return 0 end
 			effKE = tonumber(matData.effectiveness) or 1
 			effCHEM = tonumber(matData.HEATeffectiveness or matData.effectiveness) or effKE
 		end
-		local effMm = ACE.Points_EffectiveMm(armor, effKE, effCHEM)
+		local effMm = ACE_Points_EffectiveMm(armor, effKE, effCHEM)
 		local hp = tonumber(health) or 0
 
 		if effMm <= 0 or hp <= 0 then return 0 end
 
-		return ACE.Points_ArmorProp(effMm, hp)
+		return ACE_Points_ArmorProp(effMm, hp)
 	end
 
 	-- Helper to add centered help text; mirrors PANEL:CPanelText for this file.
@@ -491,7 +491,7 @@ if CLIENT then
 		local MaterialTypes = ACE.ArmorTypes
 		if not MaterialTypes then return end
 
-		local Material = GetConVar("acfarmorprop_material"):GetString()
+		local Material = GetConVar("acearmorprop_material"):GetString()
 		local MaterialData  = MaterialTypes[Material] or MaterialTypes["RHA"]
 
 		ArmorPanelText( "ComboBox", panel, "Material" )
@@ -511,7 +511,7 @@ if CLIENT then
 		-- Rebuild the list each time to avoid stale entries.
 		for _, Mat  in pairs(MaterialTypes) do
 			local year = Mat.year or 0
-			if (ACF.Year or 0) >= year then
+			if (ACE.Year or 0) >= year then
 				ToolPanel.ComboMat:AddChoice(Mat.sname, Mat.id )
 			end
 		end
@@ -521,17 +521,17 @@ if CLIENT then
 		ArmorPanelText( "ComboTitle", ToolPanel.panel, MaterialData.name , "DermaDefaultBold" )
 		ArmorPanelText( "ComboDesc" , ToolPanel.panel, MaterialData.desc .. "\n" )
 
-		ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acfarmorprop.curve") .. ": " .. MaterialData.curve )
-		ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acfarmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
-		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acfarmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
-		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acfarmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
-		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acfarmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
+		ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acearmorprop.curve") .. ": " .. MaterialData.curve )
+		ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
+		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
+		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
+		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 
 		-- Update material selection from UI.
 		function ToolPanel.ComboMat:OnSelect(_, value, data)
 			-- Use provided material id when available; fallback to display value.
 			local matId = tostring(data or value)
-			RunConsoleCommand("acfarmorprop_material", matId)
+			RunConsoleCommand("acearmorprop_material", matId)
 			self:SetValue(value)
 		end
 	end
@@ -540,35 +540,35 @@ if CLIENT then
 	function TOOL.BuildCPanel( panel )
 		local Presets = vgui.Create( "ControlPresets" )
 
-		Presets:AddConVar( "acfarmorprop_thickness" )
-		Presets:AddConVar( "acfarmorprop_ductility" )
-		Presets:AddConVar( "acfarmorprop_material" )
-		Presets:SetPreset( "acfarmorprop" )
+		Presets:AddConVar( "acearmorprop_thickness" )
+		Presets:AddConVar( "acearmorprop_ductility" )
+		Presets:AddConVar( "acearmorprop_material" )
+		Presets:SetPreset( "acearmorprop" )
 
 		panel:AddItem( Presets )
 
-		panel:NumSlider( "#tool.acfarmorprop.thickness", "acfarmorprop_thickness", 1, 5000 )
-		panel:ControlHelp( "#tool.acfarmorprop.thicknessdesc" )
+		panel:NumSlider( "#tool.acearmorprop.thickness", "acearmorprop_thickness", 1, 5000 )
+		panel:ControlHelp( "#tool.acearmorprop.thicknessdesc" )
 
-		panel:NumSlider( "#tool.acfarmorprop.ductility", "acfarmorprop_ductility", -80, 80 )
-		panel:ControlHelp( "#tool.acfarmorprop.ductilitydesc" )
+		panel:NumSlider( "#tool.acearmorprop.ductility", "acearmorprop_ductility", -80, 80 )
+		panel:ControlHelp( "#tool.acearmorprop.ductilitydesc" )
 
 		MaterialTable(panel)
 
 	end
 
 	-- When ductility changes, adjust thickness to keep mass within bounds.
-	cvars.RemoveChangeCallback( "acfarmorprop_ductility", "acfarmorprop_ductility" ) -- Clear any prior callback so reloads do not stack.
-	cvars.AddChangeCallback( "acfarmorprop_ductility", function( _, _, value )
+	cvars.RemoveChangeCallback( "acearmorprop_ductility", "acearmorprop_ductility" ) -- Clear any prior callback so reloads do not stack.
+	cvars.AddChangeCallback( "acearmorprop_ductility", function( _, _, value )
 
-		local area = GetConVar( "acfarmorprop_area" ):GetFloat()
+		local area = GetConVar( "acearmorprop_area" ):GetFloat()
 
 		-- Skip if no valid area has been sampled.
 		if area == 0 then return end
 
 		local ductility = math.Clamp( ( tonumber( value ) or 0 ) / 100, -0.8, 0.8 )
-		local thickness = math.Clamp( GetConVar( "acfarmorprop_thickness" ):GetFloat(), 0.1, 5000 )
-		local material  = GetConVar( "acfarmorprop_material" ):GetString() or "RHA"
+		local thickness = math.Clamp( GetConVar( "acearmorprop_thickness" ):GetFloat(), 0.1, 5000 )
+		local material  = GetConVar( "acearmorprop_material" ):GetString() or "RHA"
 
 		local mass		= CalcArmor( area, ductility, thickness , material )
 
@@ -581,22 +581,22 @@ if CLIENT then
 		end
 
 		thickness = mass * 1000 / ( area + area * ductility ) / 0.78
-		RunConsoleCommand( "acfarmorprop_thickness", thickness )
+		RunConsoleCommand( "acearmorprop_thickness", thickness )
 
-	end, "acfarmorprop_ductility")
+	end, "acearmorprop_ductility")
 
 	-- When thickness changes, adjust ductility to keep mass within bounds.
-	cvars.RemoveChangeCallback( "acfarmorprop_thickness", "acfarmorprop_thickness" )
-	cvars.AddChangeCallback( "acfarmorprop_thickness", function( _, _, value )
+	cvars.RemoveChangeCallback( "acearmorprop_thickness", "acearmorprop_thickness" )
+	cvars.AddChangeCallback( "acearmorprop_thickness", function( _, _, value )
 
-		local area = GetConVar( "acfarmorprop_area" ):GetFloat()
+		local area = GetConVar( "acearmorprop_area" ):GetFloat()
 
 		-- Skip if no valid area has been sampled.
 		if area == 0 then return end
 
 		local thickness = math.Clamp( tonumber( value ) or 0, 0.1, 5000 )
-		local ductility = math.Clamp( GetConVar( "acfarmorprop_ductility" ):GetFloat() / 100, -0.8, 0.8 )
-		local material  = GetConVar( "acfarmorprop_material" ):GetString() or "RHA"
+		local ductility = math.Clamp( GetConVar( "acearmorprop_ductility" ):GetFloat() / 100, -0.8, 0.8 )
+		local material  = GetConVar( "acearmorprop_material" ):GetString() or "RHA"
 
 		local mass		= CalcArmor( area, ductility, thickness , material )
 
@@ -609,20 +609,20 @@ if CLIENT then
 		end
 
 		ductility = -( 39 * area * thickness - mass * 50000 ) / ( 39 * area * thickness )
-		RunConsoleCommand( "acfarmorprop_ductility", math.Clamp( ductility * 100, -80, 80 ) )
+		RunConsoleCommand( "acearmorprop_ductility", math.Clamp( ductility * 100, -80, 80 ) )
 
-	end, "acfarmorprop_thickness")
+	end, "acearmorprop_thickness")
 
 	-- Update material details when selection changes.
-	cvars.RemoveChangeCallback( "acfarmorprop_material", "acfarmorprop_material" )
-	cvars.AddChangeCallback( "acfarmorprop_material", function( _, _, value )
+	cvars.RemoveChangeCallback( "acearmorprop_material", "acearmorprop_material" )
+	cvars.AddChangeCallback( "acearmorprop_material", function( _, _, value )
 
 			if IsValid(ToolPanel.panel) then
 
-				local MatData = ACE.GetMaterialData( value )
+				local MatData = ACE_GetMaterialData( value )
 
 				-- Fallback to RHA if the selected material is invalid.
-				if not MatData then RunConsoleCommand( "acfarmorprop_material", "RHA" ) return end
+				if not MatData then RunConsoleCommand( "acearmorprop_material", "RHA" ) return end
 
 				-- Ensure the combo box reflects updates triggered from props.
 				ToolPanel.ComboMat:SetText(MatData.sname)
@@ -630,14 +630,14 @@ if CLIENT then
 				ArmorPanelText( "ComboTitle", ToolPanel.panel, MatData.name , "DermaDefaultBold" )
 				ArmorPanelText( "ComboDesc" , ToolPanel.panel, MatData.desc .. "\n" )
 
-				ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acfarmorprop.curve") .. ": " .. MatData.curve )
-				ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acfarmorprop.mass_scale") .. ": " .. MatData.massMod .. "x RHA")
-				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acfarmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
-				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acfarmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
-				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acfarmorprop.year") .. ": " .. (MatData.year or "unknown") )
+				ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acearmorprop.curve") .. ": " .. MatData.curve )
+				ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass_scale") .. ": " .. MatData.massMod .. "x RHA")
+				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
+				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
+				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
 
 			end
-	end, "acfarmorprop_material")
+	end, "acearmorprop_material")
 
 	net.Receive("ACE_ArmorSummary", function()
 
@@ -716,11 +716,11 @@ if CLIENT then
 
 		table.Add(Tabletxt, { Color3, Sep })
 
-		if total > ACF.MaxWeight then
+		if total > ACE.MaxWeight then
 			table.Add(Tabletxt, {
 				Color4, "-Total Mass: ", Color1, "" .. math.Truncate(total / 1000, 1) .. " tons",
 				Color4, " / ", Color1, "" .. total .. "kg",
-				Color2, "  -  ", Color1, math.Round(total - ACF.MaxWeight, 1) .. " kg over" .. Sep
+				Color2, "  -  ", Color1, math.Round(total - ACE.MaxWeight, 1) .. " kg over" .. Sep
 			})
 		else
 			table.Add(Tabletxt, {
@@ -734,10 +734,10 @@ if CLIENT then
 			Color4, " hp -> ", Color3, "" .. hpton, Color4, " hp/ton" .. Sep
 		})
 
-		local pointsColor = PointVal > ACF.PointsLimit and Color1 or Color3
+		local pointsColor = PointVal > ACE.PointsLimit and Color1 or Color3
 		table.Add(Tabletxt, { Color4, "-Total Point Cost: ", pointsColor, PointVal .. "pts" })
-		if PointVal > ACF.PointsLimit then
-			table.Add(Tabletxt, { Color2, "  -  ", Color1, math.Round(PointVal - ACF.PointsLimit, 1) .. " pts over" })
+		if PointVal > ACE.PointsLimit then
+			table.Add(Tabletxt, { Color2, "  -  ", Color1, math.Round(PointVal - ACE.PointsLimit, 1) .. " pts over" })
 		end
 
 		table.Add(Tabletxt, { Color2, "\n<|", Color1, "|===============================================|", Color2, "|>" .. Sep })
@@ -751,16 +751,16 @@ if CLIENT then
 
 	end)
 
-	local overlayTextFormat = getPhrase("tool.acfarmorprop.current") .. ":\n" ..
-		getPhrase("tool.acfarmorprop.mass") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.armor") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.health") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.material") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.after") .. ":\n" ..
-		getPhrase("tool.acfarmorprop.mass") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.armor") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.health") .. ": %s\n" ..
-		getPhrase("tool.acfarmorprop.material") .. ": %s\n" ..
+	local overlayTextFormat = getPhrase("tool.acearmorprop.current") .. ":\n" ..
+		getPhrase("tool.acearmorprop.mass") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.armor") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.health") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.material") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.after") .. ":\n" ..
+		getPhrase("tool.acearmorprop.mass") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.armor") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.health") .. ": %s\n" ..
+		getPhrase("tool.acearmorprop.material") .. ": %s\n" ..
 		"Entity Cost: %s\n\n" ..
 		"%s"
 
@@ -778,12 +778,12 @@ if CLIENT then
 		local nonArmorCost	= self.Weapon:GetNWFloat( "PointCostNonArmor", 0 )
 		local pointBreakdown = self.Weapon:GetNWString( "PointCostBreakdown", "" )
 
-		local area		= GetConVar( "acfarmorprop_area" ):GetFloat()
-		local ductility	= GetConVar( "acfarmorprop_ductility" ):GetFloat()
-		local thickness	= GetConVar( "acfarmorprop_thickness" ):GetFloat()
-		local mat		= GetConVar( "acfarmorprop_material" ):GetString() or "RHA"
+		local area		= GetConVar( "acearmorprop_area" ):GetFloat()
+		local ductility	= GetConVar( "acearmorprop_ductility" ):GetFloat()
+		local thickness	= GetConVar( "acearmorprop_thickness" ):GetFloat()
+		local mat		= GetConVar( "acearmorprop_material" ):GetString() or "RHA"
 
-		local MatData	= ACE.GetMaterialData( mat )
+		local MatData	= ACE_GetMaterialData( mat )
 
 		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
 		mass = math.min( mass, 50000 )
@@ -837,7 +837,7 @@ if CLIENT then
 			surface.SetFont( "Torchfont" )
 
 			-- Screen title.
-			draw.SimpleTextOutlined( "#tool.acfarmorprop.armorinfo", "Torchfont", 128, 30, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
+			draw.SimpleTextOutlined( "#tool.acearmorprop.armorinfo", "Torchfont", 128, 30, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
 
 			-- Armor progress bar.
 			draw.RoundedBox( 6, 10, 83, 236, 64, Color( 200, 200, 200, 255 ) )
@@ -845,7 +845,7 @@ if CLIENT then
 				draw.RoundedBox( 6, 15, 88, Armour / MaxArmour * 226, 54, Color( 0, 0, 200, 255 ) )
 			end
 
-			draw.SimpleTextOutlined( "#tool.acfarmorprop.armor", "Torchfont", 128, 100, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
+			draw.SimpleTextOutlined( "#tool.acearmorprop.armor", "Torchfont", 128, 100, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
 			draw.SimpleTextOutlined( ArmourTxt, "Torchfont", 128, 130, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
 
 			-- Health progress bar.
@@ -854,7 +854,7 @@ if CLIENT then
 				draw.RoundedBox( 6, 15, 188, Health / MaxHealth * 226, 54, Color( 200, 0, 0, 255 ) )
 			end
 
-			draw.SimpleTextOutlined( "#tool.acfarmorprop.health", "Torchfont", 128, 200, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
+			draw.SimpleTextOutlined( "#tool.acearmorprop.health", "Torchfont", 128, 200, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
 			draw.SimpleTextOutlined( HealthTxt, "Torchfont", 128, 230, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
 		cam.End2D()
 

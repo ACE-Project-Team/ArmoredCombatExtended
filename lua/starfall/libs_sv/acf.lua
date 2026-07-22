@@ -51,7 +51,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
+	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
 	local health		= ( Area + Area * Ductility ) / ACF.Threshold
 
 	return mass, armor, health
@@ -170,7 +170,7 @@ local sanitize = instance.Sanitize
 local getent = instance.Types.Entity.Unwrap or instance.Types.Entity.GetEntity
 
 local function restrictInfo(ent)
-	if GetConVar("ace_restrictinfo"):GetInt() ~= 0 then
+	if GetConVar("acf_restrictinfo"):GetInt() ~= 0 then
 		return ent:CPPIGetOwner() ~= instance.player
 	end
 
@@ -208,7 +208,7 @@ do
 	-- @server
 	-- @return boolean True if restriced, False if not
 	function acf_library.infoRestricted()
-		return GetConVar("ace_restrictinfo"):GetInt() ~= 0
+		return GetConVar("acf_restrictinfo"):GetInt() ~= 0
 	end
 
 	--- Returns latest version of ACF
@@ -314,7 +314,7 @@ do
 		hitpos = vunwrap(hitpos)
 
 		checkpermission(instance, this, "entities.acf")
-		if ACE.CheckClips(nil, nil, this, hitpos) then
+		if ACF_CheckClips(nil, nil, this, hitpos) then
 			return true
 		else
 			return false
@@ -408,7 +408,7 @@ do
 		end
 
 		if notify then
-			ACE.SendNotify(instance.player, success, msg)
+			ACF_SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -448,7 +448,7 @@ do
 		end
 
 		if notify then
-			ACE.SendNotify(instance.player, success, msg)
+			ACF_SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -520,7 +520,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE.Check(this) then return 0 end
+		if not ACF_Check(this) then return 0 end
 
 		return round(this.ACF.Health, 3)
 	end
@@ -533,7 +533,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE.Check(this) then return 0 end
+		if not ACF_Check(this) then return 0 end
 
 		return round(this.ACF.Armour, 3)
 	end
@@ -546,7 +546,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE.Check(this) then return 0 end
+		if not ACF_Check(this) then return 0 end
 
 		return round(this.ACF.MaxHealth, 3)
 	end
@@ -559,7 +559,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE.Check(this) then return 0 end
+		if not ACF_Check(this) then return 0 end
 
 		return round(this.ACF.MaxArmour, 3)
 	end
@@ -572,7 +572,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE.Check(this) then return 0 end
+		if not ACF_Check(this) then return 0 end
 
 		return this.ACF.Ductility * 100
 	end
@@ -586,7 +586,7 @@ do
 
 		if not validPhysics(this) then return empty end
 		if restrictInfo(this) then return empty end
-		if not ACE.Check(this) then return empty end
+		if not ACF_Check(this) then return empty end
 
 		local mat = this.ACF.Material
 		if not mat then return empty end
@@ -611,7 +611,7 @@ do
 
 		if not validPhysics(this) then return end
 		if restrictInfo(this) then return end
-		if not ACE.Check(this) then return end
+		if not ACF_Check(this) then return end
 
 		local matData = ACE.ArmorTypes[material]
 		if not matData then return end
@@ -1293,7 +1293,7 @@ do
 		end
 
 		local wheels = {}
-		for _, ent in pairs(ACE.GetLinkedWheels(this)) do
+		for _, ent in pairs(ACF_GetLinkedWheels(this)) do
 			wheels[#wheels + 1] = ent
 		end
 

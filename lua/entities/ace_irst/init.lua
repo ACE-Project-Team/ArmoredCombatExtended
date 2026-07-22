@@ -8,7 +8,7 @@ local min, Clamp = math.min, math.Clamp
 local insert = table.insert
 local Rand = math.Rand
 local TraceHull = util.TraceHull
-local RadarTable = ACF.Weapons.Radars
+local RadarTable = ACE.Weapons.Radars
 
 function ENT:Initialize()
 
@@ -42,7 +42,7 @@ function ENT:Initialize()
 	self.MinViewCone        = 2
 	self.MaxViewCone        = 60
 
-	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck     = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
 	self.LegalIssues        = ""
 
@@ -67,12 +67,12 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 4
 
 	self.IRResolution = {}
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE.GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
 
-function ACE.MakeIRST(Owner, Pos, Angle, Id)
+function ACE_MakeIRST(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_acf_missileradar") then return false end
 
@@ -107,7 +107,7 @@ function ACE.MakeIRST(Owner, Pos, Angle, Id)
 		IRST:UpdateOverlayText()
 
 		Owner:AddCount( "_acf_missileradar", IRST )
-		Owner:AddCleanup( "acfmenu", IRST )
+		Owner:AddCleanup( "acemenu", IRST )
 
 		return IRST
 	end
@@ -115,7 +115,7 @@ function ACE.MakeIRST(Owner, Pos, Angle, Id)
 	return false
 end
 list.Set( "ACFCvars", "ace_irst", {"id"} )
-duplicator.RegisterEntityClass("ace_irst", ACE.MakeIRST, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_irst", ACE_MakeIRST, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )
@@ -139,7 +139,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -241,7 +241,7 @@ function ENT:ScanForContraptions()
 		local BaseTemp = 0
 
 		if IsValid(BasePhys) and BasePhys:IsMoveable() then
-			BaseTemp = ACE.InfraredHeatFromProp(Base, self.HeatAboveAmbient)
+			BaseTemp = ACE_InfraredHeatFromProp(Base, self.HeatAboveAmbient)
 		end
 
 		local Pos
@@ -293,7 +293,7 @@ function ENT:ScanForContraptions()
 
 			self.TargetDetected = true
 
-			local Index = ACE.GetContraptionIndex(Contraption)
+			local Index = ACE_GetContraptionIndex(Contraption)
 
 			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 2.5,ClampMin,self.MaxInaccuracy)
 
@@ -308,7 +308,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -370,7 +370,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -417,12 +417,12 @@ function ENT:Think()
 	local curTime = CurTime()
 
 	-- Legal check system
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -459,7 +459,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(txt)

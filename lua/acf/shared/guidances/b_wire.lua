@@ -1,11 +1,11 @@
 
 local ClassName = "Wire"
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Dumb)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Dumb)
+ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
@@ -44,7 +44,7 @@ function this:Configure(missile)
 			local _, LauncherBoundsMax = missile.Launcher:GetCollisionBounds()
 			local OffsetLength = LauncherBoundsMax.x
 
-			self.GuidanceWire = ACE.CreateLinkRope( missile:GetPos(), missile, MissileOffset, launcher, Vector(OffsetLength,0,0) )
+			self.GuidanceWire = ACE_CreateLinkRope( missile:GetPos(), missile, MissileOffset, launcher, Vector(OffsetLength,0,0) )
 			end
 		end
 end

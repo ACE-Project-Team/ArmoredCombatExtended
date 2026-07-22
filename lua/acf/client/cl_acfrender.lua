@@ -4,12 +4,12 @@ do
 	local ACE_HealthRenderList = {}
 
 	local Damaged = {
-		CreateMaterial("ACF_Damaged1", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged1"}),
-		CreateMaterial("ACF_Damaged2", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged2"}),
-		CreateMaterial("ACF_Damaged3", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged3"})
+		CreateMaterial("ACE_Damaged1", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged1"}),
+		CreateMaterial("ACE_Damaged2", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged2"}),
+		CreateMaterial("ACE_Damaged3", "VertexLitGeneric", {["$basetexture"] = "damaged/damaged3"})
 	}
 
-	hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", function()
+	hook.Add("PostDrawOpaqueRenderables", "ACE_RenderDamage", function()
 		if not ACE_HealthRenderList then return end
 
 		cam.Start3D( EyePos(), EyeAngles() )
@@ -30,7 +30,7 @@ do
 		cam.End3D()
 	end)
 
-	net.Receive("ACF_RenderDamage", function()
+	net.Receive("ACE_RenderDamage", function()
 
 		local Index = net.ReadUInt(13)
 		local Entity = ents.GetByIndex( Index )
@@ -75,7 +75,7 @@ do
 	end
 
 	--[[
-		ACE.RenderLight(idx, lightSize, colour, pos, duration)
+		ACE_RenderLight(idx, lightSize, colour, pos, duration)
 
 		- idx		: the index of this light. Use the entity index, or 0 for the world.
 		- lightSize	: sets the scale size factor of the light.
@@ -83,7 +83,7 @@ do
 		- pos 		: the position
 		- duration	: the duration, in seconds, that this light will stand before turning off.
 	]]
-	function ACE.RenderLight(idx, lightSize, colour, pos, duration)
+	function ACE_RenderLight(idx, lightSize, colour, pos, duration)
 		if not CanEmitLight(lightSize) then return end
 
 		local dlight = DynamicLight( idx )

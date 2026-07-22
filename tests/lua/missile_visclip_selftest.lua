@@ -17,8 +17,8 @@ local function run_case(name, results, expected_calls, expected_entity, expected
 		end
 	}
 
-	_G.ACF_CheckClips = function(entity)
-		return entity and entity.clip == true
+	_G.ACF_CheckClips = function(entity, hit_pos)
+		return entity and entity.clip == true and entity.clip_pos == hit_pos
 	end
 
 	local trace = dofile(trace_path)
@@ -30,18 +30,19 @@ local function run_case(name, results, expected_calls, expected_entity, expected
 end
 
 local clip_a = {clip = true}
-local clip_b = {clip = true}
+clip_a.clip_pos = "clip-a"
 local solid = {clip = false}
-local world = {clip = false}
+local world = {world = true}
 
-run_case("clipped-only", {{Entity = clip_a}, {Entity = world}}, 2, world, 1)
-run_case("clipped-then-solid", {{Entity = clip_a}, {Entity = solid}}, 2, solid, 1)
-run_case("normal-hit", {{Entity = solid}}, 1, solid, 0)
-run_case("world-or-no-hit", {{Entity = false}}, 1, false, 0)
+run_case("clipped-only", {{Entity = clip_a, HitPos = "clip-a"}, {Entity = world}}, 2, world, 1)
+run_case("clipped-then-solid", {{Entity = clip_a, HitPos = "clip-a"}, {Entity = solid}}, 2, solid, 1)
+run_case("normal-hit", {{Entity = solid, HitPos = "solid"}}, 1, solid, 0)
+run_case("world-hit", {{Entity = world, HitPos = "world"}}, 1, world, 0)
+run_case("no-hit", {{Entity = nil, HitPos = "none"}}, 1, nil, 0)
 
 local many_clips = {}
 for i = 1, 50 do
-	many_clips[i] = {Entity = {clip = true}}
+	many_clips[i] = {Entity = {clip = true, clip_pos = i}, HitPos = i}
 end
 
 run_case("fifty-clip-bound", many_clips, 50, many_clips[50].Entity, 50)

@@ -236,6 +236,7 @@ local function ReplaceSound( _ , Entity , data)
 end
 
 duplicator.RegisterEntityModifier( "ace_replacesound", ReplaceSound )
+duplicator.RegisterEntityModifier( "acf_replacesound", ReplaceSound )
 
 local function IsReallyValid(trace, ply)
 	if not trace.Entity:IsValid() then return false end

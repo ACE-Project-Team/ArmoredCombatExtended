@@ -567,7 +567,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 
 	missile.ContrapId = ACE.Check( self ) and self.ACF.ContraptionId or 1
 
-	local BulletData = ACE.Missile_CompactBulletData(Crate)
+	local BulletData = ACE_Missile_CompactBulletData(Crate)
 	BulletData.IsShortForm  = true
 	BulletData.Owner		= ply
 	missile:SetBulletData(BulletData)
@@ -643,7 +643,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	local fuse	= BulletData.Data8
 
 	if guidance then
-		guidance = ACE.Missile_CreateConfigurable(guidance, GuidanceTable, bdata, "guidance")
+		guidance = ACE_Missile_CreateConfigurable(guidance, GuidanceTable, bdata, "guidance")
 		--if guidance then missile:SetGuidance(guidance) end
 		if guidance then
 			missile.Guidance = guidance
@@ -654,7 +654,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	--print(GuidanceTable.guidance)
 
 	if fuse then
-		fuse = ACE.Missile_CreateConfigurable(fuse, FuseTable, bdata, "fuses")
+		fuse = ACE_Missile_CreateConfigurable(fuse, FuseTable, bdata, "fuses")
 		if fuse then
 			missile.Fuse = fuse
 			fuse:Configure(missile, missile.Guidance or missile:SetGuidance(GuidanceTable.Dumb()))

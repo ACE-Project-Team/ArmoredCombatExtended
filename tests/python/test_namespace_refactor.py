@@ -204,7 +204,7 @@ class NamespaceRefactorTests(unittest.TestCase):
                 self.assertNotRegex(
                     source,
                     r"(?i)acf/client/cl_acfmenu|\bacfmenu\b|\bacfsound\b|"
-                    r"\bacfarmorprop\b|\bacfchaircam\b|\bacfcopy\b|\bacf_replacesound\b",
+                    r"\bacfarmorprop\b|\bacfchaircam\b|\bacfcopy\b",
                 )
                 self.assertNotRegex(
                     source,
@@ -219,6 +219,12 @@ class NamespaceRefactorTests(unittest.TestCase):
                     r'(?i)(?:hook\.(?:Add|Run|Call)|net\.(?:Start|Receive)|'
                     r'util\.AddNetworkString)\s*\(\s*["\'](?:ACF_|acfmenu|acfsound)',
                 )
+
+        sound_tool = (REPO / "lua" / "weapons" / "gmod_tool" / "stools" / "acesound.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn('duplicator.RegisterEntityModifier( "ace_replacesound", ReplaceSound )', sound_tool)
+        self.assertIn('duplicator.RegisterEntityModifier( "acf_replacesound", ReplaceSound )', sound_tool)
 
         effect_names = {
             path.name for path in (REPO / "lua" / "effects").iterdir() if path.is_dir()
@@ -288,7 +294,7 @@ class NamespaceRefactorTests(unittest.TestCase):
                 )
                 self.assertNotRegex(
                     source,
-                    r"\bACE_Make[A-Za-z_][A-Za-z0-9_]*\s*=",
+                    r"\bACE_Make(?!(?:Ammo|Gun)\b)[A-Za-z_][A-Za-z0-9_]*\s*=",
                 )
 
     def test_ace_convars_use_modern_names_without_acf_aliases(self):

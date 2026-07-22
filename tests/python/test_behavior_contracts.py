@@ -165,7 +165,8 @@ class EntityPipelineContractTests(unittest.TestCase):
             "GetAllPhysicalConstraints", "GetGunValue", "GetHitAngle", "GetLinkedWheels",
             "GetPhysicalParent", "GetRackValue", "HE", "HEKill", "KEShove", "Kinetic",
             "MuzzleVelocity", "PropDamage", "RackCanLoadCaliber", "RenderLight",
-            "ScaledExplosion", "SendNotify",
+            "ScaledExplosion", "SendNotify", "MakeAmmo", "MakeGun",
+            "Missile_CompactBulletData", "Missile_CreateConfigurable",
         )
         for name in required:
             with self.subTest(name=name):

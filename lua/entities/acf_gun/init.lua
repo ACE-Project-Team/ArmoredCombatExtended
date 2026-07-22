@@ -346,7 +346,8 @@ do
 end
 
 list.Set( "ACFCvars", "acf_gun", {"id"} )
-duplicator.RegisterEntityClass("acf_gun", ACE.MakeGun, "Pos", "Angle", "Id")
+ACE_MakeGun = ACE.MakeGun
+duplicator.RegisterEntityClass("acf_gun", ACE_MakeGun, "Pos", "Angle", "Id")
 
 function ENT:UpdateOverlayText()
 

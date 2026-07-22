@@ -481,7 +481,22 @@ function ENT:Think()
 		--Detonation by fuse, if available
 
 		if self.CanDetonate == true then
-			local tr = util.QuickTrace(Pos + self.Flight * DeltaTime * -30, self.Flight * DeltaTime * 79, {self})
+			local TraceData = {
+				start = Pos + self.Flight * DeltaTime * -30,
+				endpos = Pos + self.Flight * DeltaTime * 49,
+				filter = {self}
+			}
+			local tr
+			local VisclipCount = 0
+
+			repeat
+				tr = util.TraceLine(TraceData)
+
+				if not ACF_CheckClips(tr.Entity, tr.HitPos) then break end
+
+				TraceData.filter[#TraceData.filter + 1] = tr.Entity
+				VisclipCount = VisclipCount + 1
+			until VisclipCount >= 50
 
 			--[[
 			self.LOSTraceData.start = Pos + self.Flight * DeltaTime * -30

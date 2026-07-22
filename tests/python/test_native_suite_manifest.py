@@ -22,6 +22,7 @@ class NativeSuiteManifestTests(unittest.TestCase):
             {
                 "000_discovery_canary.lua",
                 "entity_registration.lua",
+                "general_use_contracts.lua",
                 "invalidation_hooks.lua",
                 "registries.lua",
             },

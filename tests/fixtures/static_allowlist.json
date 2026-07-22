@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "rules": {
+    "ACE_POSSIBLY_UNBOUNDED_LOOP": [],
+    "ACE_RECURSION": [],
+    "ACE_TIMER_CALLBACK_SUBSTITUTE": [],
+    "ACE_TIMER_TEARDOWN": [],
+    "ACE_TIMER_ENTITY_CAPTURE": [],
+    "ACE_TIMER_SELF_RESCHEDULE": [],
+    "ACE_TIMER_NAME_COLLISION": []
+  }
+}

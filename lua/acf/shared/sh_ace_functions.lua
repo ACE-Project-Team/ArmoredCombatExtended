@@ -345,10 +345,19 @@ function ACE_UpdateChecking( )
 	http.Fetch("https://raw.githubusercontent.com/ACE-Project-Team/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
 
 		--maybe not the best way to get git but well......
-		str = tostring("String:" .. contents)
-		i,k = string.find(str,"ACE.Version =")
+		local str = tostring("String:" .. contents)
+		local _, versionEnd = string.find( str, "ACE.Version =" )
 
-		local rev = tonumber(string.sub(str,k + 2,k + 4)) or 0
+		if not versionEnd then
+			_, versionEnd = string.find( str, "ACF.Version =" )
+		end
+
+		if not versionEnd then
+			print( "[ACE | ERROR]- Unable to find the latest version! Failed to parse GitHub response." )
+			return
+		end
+
+		local rev = tonumber( string.sub( str, versionEnd + 2, versionEnd + 4 ) ) or 0
 
 		if rev and ACE.Version == rev  and rev ~= 0 then
 

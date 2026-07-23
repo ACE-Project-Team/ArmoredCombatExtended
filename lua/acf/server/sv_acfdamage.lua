@@ -514,7 +514,7 @@ function ACE_PropShockwave( HitPos, HitVec, Filter, Caliber )
 	--General
 	local FindEnd	= true			--marked for initial loop
 	local iteration	= 0				--since while has not index
-	local EntsToHit	= Filter	--Used for the second tracer, where it tells what ents must hit
+	local EntsToHit	= table.Copy( Filter )	--Used for the second tracer, where it tells what ents must hit
 	--HitPos
 	local HitFronts	= {}				--Any tracefronts hitpos will be stored here
 	local HitBacks	= {}				--Any traceback hitpos will be stored here
@@ -629,7 +629,7 @@ end
 --Handles HESH spalling
 function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
 
-	local Temp_Filter = Filter
+	local Temp_Filter = table.Copy( Filter )
 	local _, Armour, PEnts, fNormal = ACE_PropShockwave( HitPos, -HitVec, Filter, Caliber )
 	table.Add( Temp_Filter , PEnts )
 

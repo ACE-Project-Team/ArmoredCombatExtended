@@ -36,7 +36,7 @@ class ArmorToolPrimitiveRetryTests(unittest.TestCase):
             source,
         )
         self.assertIn("self.AimEntityArmorReady = true", source)
-        self.assertIn("self.AimEntityArmorReady = false", source)
+        self.assertIn("self.AimEntityArmorReady = not ent.IsPrimitive", source)
         self.assertIn('displays "nan"', source)
 
 

@@ -434,7 +434,9 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCost", 0 )
 		self.Weapon:SetNWFloat( "PointCostNonArmor", 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", "" )
-		self.AimEntityArmorReady = false
+		-- Only Primitive is known to transition from a temporary failed ACF check to a valid
+		-- armor state without the player changing target. Cache all other failed targets normally.
+		self.AimEntityArmorReady = not ent.IsPrimitive
 	end
 
 	self.AimEntity = ent
@@ -864,7 +866,6 @@ if CLIENT then
 
 	end
 end
-
 
 
 

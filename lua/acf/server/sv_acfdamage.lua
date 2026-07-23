@@ -492,7 +492,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 			ACE.SpallTraces[Index] = {}
 			ACE.SpallTraces[Index].start  = HitPos
 			ACE.SpallTraces[Index].endpos = HitPos + ( HitVec:GetNormalized() + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVel / 8, 600 ) --Spall endtrace. Used to determine spread and the spall trace length. Only adjust the value in the max to determine the minimum distance spall will travel. 600 should be fine.
-			ACE.SpallTraces[Index].filter = Filter
+			ACE.SpallTraces[Index].filter = table.Copy(Filter)
 			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
 			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 

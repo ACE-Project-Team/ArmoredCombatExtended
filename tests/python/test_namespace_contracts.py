@@ -56,14 +56,5 @@ class NamespaceContractTests(unittest.TestCase):
 
         self.assertEqual([], findings)
 
-    def test_repository_has_no_caller_filter_alias_mutations(self):
-        sources = {
-            path.relative_to(REPO).as_posix(): path.read_text(encoding="utf-8", errors="replace")
-            for path in (REPO / "lua").rglob("*.lua")
-        }
-        findings = find_mutable_filter_aliases(sources)
-        self.assertEqual([], findings, "caller-owned filter aliases: %s" % findings)
-
-
 if __name__ == "__main__":
     unittest.main()

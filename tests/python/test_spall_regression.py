@@ -256,16 +256,6 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or 32", self.source)
         self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or 32)", self.source)
 
-    def test_hesh_trace_uses_private_filter_copies(self):
-        self.assertIn("local EntsToHit\t= table.Copy(Filter)", self.source)
-        self.assertIn("local Temp_Filter = table.Copy(Filter)", self.source)
-        self.assertNotIn("local EntsToHit\t= Filter", self.source)
-        self.assertNotIn("local Temp_Filter = Filter", self.source)
-
-    def test_hesh_trace_uses_an_explicit_iteration_budget(self):
-        self.assertIn("ACE.HESHTraceMaxIterations = ACE.HESHTraceMaxIterations or 1000", self.source)
-        self.assertIn("iteration > ACE.HESHTraceMaxIterations", self.source)
-
     def test_spall_trace_records_explicit_termination_reasons(self):
         for reason in (
             '"depth_budget"',

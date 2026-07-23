@@ -316,7 +316,7 @@ do
 
 	function ACE.MakeAmmo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data14, Data15)
 
-		if not Owner:CheckLimit("_acf_ammo") then return false end
+		if not Owner:CheckLimit("_ace_ammo") then return false end
 
 		local Ammo = ents.Create("acf_ammo")
 		if IsValid(Ammo) then
@@ -417,8 +417,8 @@ do
 			Ammo.LastMass	= 1
 			Ammo:UpdateMass()
 
-			Owner:AddCount( "_acf_ammo", Ammo )
-			Owner:AddCleanup( "acfmenu", Ammo )
+			Owner:AddCount( "_ace_ammo", Ammo )
+			Owner:AddCleanup( "acemenu", Ammo )
 
 			table.insert(ACE.AmmoCrates, Ammo)
 

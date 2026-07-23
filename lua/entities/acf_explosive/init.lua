@@ -44,7 +44,7 @@ end
 
 function ACE_MakeLegacyExplosive(Owner, Pos, Angle, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Mdl, Data11, Data12, Data13, Data14, Data15)
 
-	if not Owner:CheckLimit("_acf_explosive") then return false end
+	if not Owner:CheckLimit("_ace_explosive") then return false end
 
 
 	--local weapon = ACE.Weapons.Guns[Data1]
@@ -63,7 +63,7 @@ function ACE_MakeLegacyExplosive(Owner, Pos, Angle, Data1, Data2, Data3, Data4, 
 	Bomb.Id = Id
 	Bomb:CreateBomb(Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Mdl, Data11, Data12, Data13 , Data14 , Data15)
 
-	Owner:AddCount( "_acf_explosive", Bomb )
+	Owner:AddCount( "_ace_explosive", Bomb )
 	Owner:AddCleanup( "acemenu", Bomb )
 
 	return Bomb

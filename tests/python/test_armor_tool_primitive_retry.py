@@ -11,7 +11,7 @@ SOURCE = (
     / "weapons"
     / "gmod_tool"
     / "stools"
-    / "acfarmorprop.lua"
+    / "acearmorprop.lua"
 )
 
 

@@ -316,6 +316,15 @@ class NamespaceRefactorTests(unittest.TestCase):
                 with self.subTest(source=path.relative_to(REPO), name=name):
                     self.assertNotIn(f'"acf_{name}"', source)
 
+    def test_entity_limits_and_cleanup_use_ace_tool_namespace(self):
+        for path in ENTITY_ROOT.rglob("*.lua"):
+            if (ENTITY_ROOT / "gmod_wire_expression2") in path.parents:
+                continue
+            source = path.read_text(encoding="utf-8", errors="replace")
+            with self.subTest(source=path.relative_to(REPO)):
+                self.assertNotRegex(source, r'"_acf_[A-Za-z0-9_]+"')
+                self.assertNotIn('"acfmenu"', source)
+
 
 if __name__ == "__main__":
     unittest.main()

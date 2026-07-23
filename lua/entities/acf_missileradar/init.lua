@@ -133,7 +133,7 @@ end
 
 function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	local radar = ACE.Weapons.Radars[Id]
 
@@ -165,7 +165,7 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 	Radar:SetModelEasy(radar.model)
 	Radar:SetActive(ACE.GetDefaultActiveInputState(Radar), true)
 
-	Owner:AddCount( "_acf_missileradar", Radar )
+	Owner:AddCount( "_ace_missileradar", Radar )
 	Owner:AddCleanup( "acemenu", Radar )
 
 	Radar:SetNWString( "WireName", Radar.ACFName )

@@ -67,7 +67,7 @@ end
 
 function ACE_MakeTrackingRadar(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Large-TRACK"
 
@@ -111,7 +111,7 @@ function ACE_MakeTrackingRadar(Owner, Pos, Angle, Id)
 
 	Radar:UpdateOverlayText()
 
-	Owner:AddCount( "_acf_missileradar", Radar )
+	Owner:AddCount( "_ace_missileradar", Radar )
 	Owner:AddCleanup( "acemenu", Radar )
 
 	return Radar

@@ -125,7 +125,7 @@ end
 function ACE_MakeRack(Owner, Pos, Angle, Id)
 
 
-	if not Owner:CheckLimit("_acf_rack") then return false end
+	if not Owner:CheckLimit("_ace_rack") then return false end
 
 	local Rack = ents.Create("acf_rack")
 
@@ -135,8 +135,8 @@ function ACE_MakeRack(Owner, Pos, Angle, Id)
 	Rack:SetPos(Pos)
 	Rack:Spawn()
 
-	Owner:AddCount("_acf_rack", Rack)
-	Owner:AddCleanup( "acfmenu", Rack )
+	Owner:AddCount("_ace_rack", Rack)
+	Owner:AddCleanup( "acemenu", Rack )
 
 	if not ACE.CheckRack( Id ) then
 		Id = "1xRK"

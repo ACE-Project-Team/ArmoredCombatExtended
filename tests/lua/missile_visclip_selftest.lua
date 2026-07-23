@@ -17,7 +17,7 @@ local function run_case(name, results, expected_calls, expected_entity, expected
 		end
 	}
 
-	_G.ACF_CheckClips = function(entity, hit_pos)
+	_G.ACE_CheckClips = function(entity, hit_pos)
 		return entity and entity.clip == true and entity.clip_pos == hit_pos
 	end
 

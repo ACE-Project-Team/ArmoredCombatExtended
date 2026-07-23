@@ -74,7 +74,7 @@ end
 
 function ACE_MakeIRST(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Small-IRST"
 
@@ -106,7 +106,7 @@ function ACE_MakeIRST(Owner, Pos, Angle, Id)
 		IRST:SetModelEasy(radar.model)
 		IRST:UpdateOverlayText()
 
-		Owner:AddCount( "_acf_missileradar", IRST )
+		Owner:AddCount( "_ace_missileradar", IRST )
 		Owner:AddCleanup( "acemenu", IRST )
 
 		return IRST

@@ -209,20 +209,20 @@ do
 		local ClassData = GunClasses[Lookup.gunclass]
 
 		if Lookup.gunclass == "SL" then
-			if not Owner:CheckLimit("_acf_smokelauncher") then return false end
-			Owner:AddCount("_acf_smokelauncher", Gun)
+			if not Owner:CheckLimit("_ace_smokelauncher") then return false end
+			Owner:AddCount("_ace_smokelauncher", Gun)
 
 		elseif rapidgun[Lookup.gunclass] then
-			if not Owner:CheckLimit("_acf_rapidgun") then return false end
-			Owner:AddCount("_acf_rapidgun", Gun)
+			if not Owner:CheckLimit("_ace_rapidgun") then return false end
+			Owner:AddCount("_ace_rapidgun", Gun)
 
 		elseif Lookup.caliber >= ACE.LargeCaliber then
-			if not Owner:CheckLimit("_acf_largegun") then return false end
-			Owner:AddCount("_acf_largegun", Gun)
+			if not Owner:CheckLimit("_ace_largegun") then return false end
+			Owner:AddCount("_ace_largegun", Gun)
 
 		else
-			if not Owner:CheckLimit("_acf_gun") then return false end
-			Owner:AddCount("_acf_gun", Gun)
+			if not Owner:CheckLimit("_ace_gun") then return false end
+			Owner:AddCount("_ace_gun", Gun)
 		end
 
 		Gun:SetAngles(Angle)
@@ -336,7 +336,7 @@ do
 
 		Gun:UpdateOverlayText()
 
-		Owner:AddCleanup("acfmenu", Gun)
+		Owner:AddCleanup("acemenu", Gun)
 
 		ACE.Activate(Gun, 0)
 

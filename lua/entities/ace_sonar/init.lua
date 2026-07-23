@@ -127,7 +127,7 @@ function ACE_MakeSonar(Owner, Pos, Angle, Id)
 
 	--print("Test")
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Small-Sonar"
 	--print(Id)
@@ -169,7 +169,7 @@ function ACE_MakeSonar(Owner, Pos, Angle, Id)
 		Sonar:SetModelEasy(radar.model)
 		Sonar:UpdateOverlayText()
 
-		Owner:AddCount( "_acf_missileradar", Sonar )
+		Owner:AddCount( "_ace_missileradar", Sonar )
 		Owner:AddCleanup( "acemenu", Sonar )
 
 		return Sonar

@@ -663,7 +663,7 @@ include("autorun/acf_missile/folder.lua")
 for Name, Value in pairs(_G) do
     if string.StartWith(Name, "ACE_") and type(Value) == "function" then
         local Method = string.sub(Name, 5)
-        ACE[Method] = ACE[Method] or Value
+        ACE[Method] = Value
     end
 end
 

@@ -143,6 +143,29 @@ class NamespaceRefactorTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(f"ACE.{name} = ACE_{name}", globals_source)
 
+    def test_reloadable_ace_aliases_replace_stale_function_values(self):
+        globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        functions_source = (LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("ACE[Method] = Value", globals_source)
+        self.assertNotIn("ACE[Method] = ACE[Method] or Value", globals_source)
+        self.assertIn("ACE.IsEnt = ACE_IsEnt", functions_source)
+
+    def test_missile_radar_registries_are_initialized_before_scans(self):
+        cm_source = (
+            LUA_ROOT / "autorun" / "acf_missile" / "countermeasure" / "cm_globals.lua"
+        ).read_text(encoding="utf-8", errors="replace")
+        missile_source = (LUA_ROOT / "autorun" / "server" / "sv_acf_missiles.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("ACE.CMTable = ACE.CMTable or {}", cm_source)
+        self.assertIn("ACE.ActiveMissiles = ACE.ActiveMissiles or ACE_ActiveMissiles or {}", cm_source)
+        self.assertIn("ACE_ActiveMissiles = ACE_ActiveMissiles or ACE.ActiveMissiles or {}", missile_source)
+        self.assertIn("ACE.ActiveMissiles = ACE_ActiveMissiles", missile_source)
+
     def test_backend_does_not_initialize_acf_global_table(self):
         for path in ace_owned_sources():
             source = code_without_comments_and_strings(

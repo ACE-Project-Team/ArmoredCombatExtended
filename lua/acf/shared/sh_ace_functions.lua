@@ -800,7 +800,7 @@ function ACE_IsEnt(ent)
 	return IsValid(ent)
 end
 
-ACE.IsEnt = ACE.IsEnt or ACE_IsEnt
+ACE.IsEnt = ACE_IsEnt
 
 -- Check whether an entity is a Wiremod class.
 function ACE_IsWireEntity(ent)

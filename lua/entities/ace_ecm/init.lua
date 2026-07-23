@@ -35,12 +35,12 @@ function ENT:Initialize()
 
 	WireLib.TriggerOutput( self, "JamCount", 0 )
 
-	--out radars jammed?
-	self:SetActive(false)
-
 	self.NextLegalCheck	= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
+
+	--out radars jammed?
+	self:SetActive(false)
 
 	self.CurrentlyJamming = 0
 	self.JamDirection = vector_origin

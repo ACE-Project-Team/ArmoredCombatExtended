@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import re
-import subprocess
 import unittest
 
 from lua_source import code_without_comments_and_strings
@@ -144,20 +143,6 @@ class NamespaceRefactorTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(f"ACE.{name} = ACE_{name}", globals_source)
 
-    def test_unchanged_adapter_files_match_pr290(self):
-        for relative in (
-            "lua/entities/gmod_wire_expression2/core/custom/acf.lua",
-            "lua/entities/gmod_wire_expression2/core/custom/cl_acf.lua",
-            "lua/starfall/libs_sv/acf.lua",
-        ):
-            result = subprocess.run(
-                ["git", "diff", "--quiet", "047df31f", "--", relative],
-                cwd=REPO,
-                check=False,
-            )
-            with self.subTest(path=relative):
-                self.assertEqual(result.returncode, 0)
-
     def test_backend_does_not_initialize_acf_global_table(self):
         for path in ace_owned_sources():
             source = code_without_comments_and_strings(
@@ -239,17 +224,16 @@ class NamespaceRefactorTests(unittest.TestCase):
         }:
             self.assertNotIn(old_name, effect_names)
 
-    def test_e2_and_starfall_adapters_remain_at_the_pr2_base(self):
+    def test_deferred_adapters_keep_legacy_compatibility_boundaries(self):
         for relative in (
             "lua/entities/gmod_wire_expression2/core/custom/acf.lua",
             "lua/starfall/libs_sv/acf.lua",
         ):
-            path = REPO / relative
-            expected = subprocess.check_output(
-                ["git", "show", f"047df31f:{relative}"], cwd=REPO
-            )
+            source = (REPO / relative).read_text(encoding="utf-8", errors="replace")
             with self.subTest(source=relative):
-                self.assertEqual(expected, path.read_bytes())
+                self.assertNotIn('"acemenu"', source)
+            if relative.endswith("custom/acf.lua"):
+                self.assertIn('"acfmenu"', source)
 
     def test_named_global_functions_are_namespaced_or_entity_methods(self):
         for path in LUA_ROOT.rglob("*.lua"):

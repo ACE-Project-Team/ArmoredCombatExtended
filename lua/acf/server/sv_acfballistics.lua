@@ -139,7 +139,19 @@ function ACF_CreateBullet( BulletData )
 	end
 
 	BulletData.Filter = BulletData.Filter or {}
-	table.insert(BulletData.Filter, BulletData.Gun)
+
+	local Gun = BulletData.Gun
+	local HasGun = false
+	for Index = 1, #BulletData.Filter do
+		if BulletData.Filter[Index] == Gun then
+			HasGun = true
+			break
+		end
+	end
+
+	if Gun and not HasGun then
+		BulletData.Filter[#BulletData.Filter + 1] = Gun
+	end
 
 	BulletData.Index		= ACF.CurBulletIndex
 	BulletData.ActiveFrame = CurrentBallisticsFrame

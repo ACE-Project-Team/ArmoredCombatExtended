@@ -1006,6 +1006,10 @@ do
 				self.BulletData.Owner = self.User
 				self.BulletData.Gun = self
 
+				local Contraption = self:CFW_GetContraption()
+				local BulletFilter = Contraption and Contraption.BulletFilter
+				self.BulletData.Filter = BulletFilter or { self }
+
 				--local Cal = self.Caliber
 
 				--using fusetime via wire will override the ammo fusetime!

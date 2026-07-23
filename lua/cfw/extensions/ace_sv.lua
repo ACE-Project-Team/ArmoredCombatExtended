@@ -5,6 +5,12 @@ TraceLine = util.TraceLine
 
 -- Maintains a table of ACE components for each contraption
 do
+    -- Keep projectile traces from re-entering the firing contraption, including when its physics
+    -- motion makes the traceback segment overlap armor behind the muzzle.
+    hook.Add("cfw.contraption.created", "CFW_ACE_BulletFilter", function(con)
+        con.BulletFilter = {}
+    end)
+
     hook.Add("cfw.contraption.entityAdded", "CFW_ACE_Entities", function(con, ent)
         if not IsValid(ent) then return end
 
@@ -13,6 +19,21 @@ do
         if class:match("^ace_") or class:match("^acf_") then
             if not con.aceEntities then con.aceEntities = {} end
             con.aceEntities[ent] = true
+        end
+
+        con.BulletFilter = con.BulletFilter or {}
+        con.BulletFilter[#con.BulletFilter + 1] = ent
+    end)
+
+    hook.Add("cfw.contraption.entityRemoved", "CFW_ACE_BulletFilter", function(con, ent)
+        local filter = con.BulletFilter
+        if not filter then return end
+
+        for index = #filter, 1, -1 do
+            if filter[index] == ent then
+                table.remove(filter, index)
+                break
+            end
         end
     end)
 

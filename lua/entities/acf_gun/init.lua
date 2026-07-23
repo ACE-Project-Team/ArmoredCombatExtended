@@ -995,14 +995,13 @@ do
 
 				self:MuzzleEffect( MuzzlePos, MuzzleVec )
 
-				local GPos = self:GetPos()
-				local TestVel = self:WorldToLocal(ACF_GetPhysicalParent(self):GetVelocity() + GPos)
+				local Parent = ACF_GetPhysicalParent(self)
+				local ParentVelocity = IsValid(Parent) and Parent:GetVelocity() or vector_origin
 
-				--Traceback component
-				TestVel = self:LocalToWorld(Vector(math.max(TestVel.x,-0.1),TestVel.y,TestVel.z)) - GPos
-
-				self.BulletData.Pos = MuzzlePos + TestVel * self.DeltaTime * 5 --Less clipping on fast vehicles, especially moving perpindicular since traceback doesnt compensate for that. A multiplier of 3 is semi-reliable. A multiplier of 5 guarentees it doesnt happen.
-				self.BulletData.Flight = ShootVec * self.BulletData.MuzzleVel * 39.37 + TestVel
+				-- The projectile must start at the physical muzzle. Ballistics adds traceback
+				-- compensation while tracing, so shifting this origin by vehicle motion is incorrect.
+				self.BulletData.Pos = MuzzlePos
+				self.BulletData.Flight = ShootVec * self.BulletData.MuzzleVel * 39.37 + ParentVelocity
 				self.BulletData.Owner = self.User
 				self.BulletData.Gun = self
 

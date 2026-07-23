@@ -33,6 +33,9 @@ class SelfFirePreventionTests(unittest.TestCase):
             fire,
         )
         self.assertIn("self.BulletData.Filter = BulletFilter or { self }", fire)
+        self.assertIn("self.BulletData.Pos = MuzzlePos", fire)
+        self.assertIn("local ParentVelocity = IsValid(Parent) and Parent:GetVelocity() or vector_origin", fire)
+        self.assertNotIn("TestVel", fire)
         self.assertLess(fire.index("self.BulletData.Filter"), fire.index("self.CreateShell"))
         self.assertIn("local HasGun = false", ballistics)
         self.assertIn("if Gun and not HasGun then", ballistics)

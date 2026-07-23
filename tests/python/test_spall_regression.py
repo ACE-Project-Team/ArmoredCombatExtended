@@ -253,8 +253,8 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertNotIn("ACE.Spall[Index]", self.body)
 
     def test_spall_trace_depth_budget_is_tied_to_existing_spall_cap(self):
-        self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or 32", self.source)
-        self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or 32)", self.source)
+        self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax", self.source)
+        self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
 
     def test_spall_trace_records_explicit_termination_reasons(self):
         for reason in (

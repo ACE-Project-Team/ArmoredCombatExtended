@@ -215,6 +215,7 @@ do
 		local Bomblets  = math.Round(math.Clamp(math.Round(bdata.FillerMass * 3),10,160) * (bdata.ClusterMult or 100) / 100)	--30 bomblets original
 
 		local GEnt = bdata.Gun
+		local Filter = istable(bdata.Filter) and table.Copy(bdata.Filter) or { GEnt }
 
 		GEnt.BulletDataC = {}
 
@@ -232,7 +233,7 @@ do
 		--print(Bomblets)
 		--print(missile.BulletDataC["FillerMass"])
 
-		GEnt.BulletDataC["Filter"]		= {}
+		GEnt.BulletDataC["Filter"]		= Filter
 		GEnt.BulletDataC["Flight"]		= bdata.Flight
 		GEnt.BulletDataC["FlightTime"]	= 0
 		GEnt.BulletDataC["FrArea"]		= bdata.FrArea

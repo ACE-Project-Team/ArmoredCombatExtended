@@ -40,6 +40,19 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("local HasGun = false", ballistics)
         self.assertIn("if Gun and not HasGun then", ballistics)
 
+        flechette = source("lua/acf/shared/rounds/roundfl.lua")
+        self.assertIn('FlechetteData["Filter"]', flechette)
+
+        for relative in (
+            "lua/acf/shared/rounds/roundclusterap.lua",
+            "lua/acf/shared/rounds/roundclusterhe.lua",
+            "lua/acf/shared/rounds/roundclusterheat.lua",
+        ):
+            with self.subTest(round=relative):
+                cluster = source(relative)
+                self.assertIn("local Filter = istable(bdata.Filter) and table.Copy(bdata.Filter) or { GEnt }", cluster)
+                self.assertIn('BulletDataC["Filter"]\t\t= Filter', cluster)
+
 
 if __name__ == "__main__":
     unittest.main()

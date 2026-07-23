@@ -4,7 +4,11 @@ from pathlib import Path
 import re
 import unittest
 
-from lua_source import code_without_comments_and_strings
+from lua_source import (
+    IDENTIFIER,
+    code_without_comments_and_strings,
+    skip_string_or_comment,
+)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -47,6 +51,255 @@ def ace_owned_sources():
         yield path
 
 
+def backend_symbol_sources():
+    for path in LUA_ROOT.rglob("*.lua"):
+        if STARFALL_ROOT in path.parents or (LUA_ROOT / "entities" / "gmod_wire_expression2") in path.parents:
+            continue
+        yield path
+
+
+def skip_namespace_space(source, start):
+    index = start
+    while index < len(source):
+        if source[index].isspace():
+            index += 1
+        elif source.startswith("--", index):
+            index = skip_string_or_comment(source, index)
+        elif source.startswith("//", index):
+            newline = source.find("\n", index + 2)
+            index = len(source) if newline < 0 else newline + 1
+        elif source.startswith("/*", index):
+            end = source.find("*/", index + 2)
+            index = len(source) if end < 0 else end + 2
+        else:
+            break
+    return index
+
+
+def skip_namespace_wrappers(source, start):
+    index = skip_namespace_space(source, start)
+    if index < len(source) and source[index] == ")":
+        index = skip_namespace_space(source, index + 1)
+    return index
+
+
+def read_namespace_string(source, start):
+    if start < len(source) and source[start] in "'\"":
+        quote = source[start]
+        value = []
+        index = start + 1
+        while index < len(source):
+            char = source[index]
+            if char == quote:
+                return "".join(value), index + 1
+            if char == "\\" and index + 1 < len(source):
+                index += 1
+                if source[index].isdigit():
+                    end = index
+                    while end < len(source) and end < index + 3 and source[end].isdigit():
+                        end += 1
+                    value.append(chr(int(source[index:end])))
+                    index = end
+                elif source[index] == "x" and index + 2 < len(source):
+                    digits = source[index + 1 : index + 3]
+                    if re.fullmatch(r"[0-9A-Fa-f]{2}", digits):
+                        value.append(chr(int(digits, 16)))
+                        index += 3
+                    else:
+                        value.append(source[index])
+                        index += 1
+                else:
+                    value.append({
+                        "a": "\a", "b": "\b", "f": "\f", "n": "\n", "r": "\r",
+                        "t": "\t", "v": "\v", "\\": "\\", "\"": "\"", "'": "'",
+                    }.get(source[index], source[index]))
+                    index += 1
+            else:
+                value.append(char)
+                index += 1
+        return None, len(source)
+
+    match = re.match(r"\[(=*)\[", source[start:])
+    if not match:
+        return None, start
+
+    closing = "]" + match.group(1) + "]"
+    content_start = start + match.end()
+    content_end = source.find(closing, content_start)
+    if content_end < 0:
+        return None, len(source)
+    value = source[content_start:content_end]
+    if value.startswith("\r\n"):
+        value = value[2:]
+    elif value.startswith(("\r", "\n")):
+        value = value[1:]
+    return value, content_end + len(closing)
+
+
+def has_namespace_receiver_dot(source, start):
+    prefix = backend_code_without_ignored_text(source[:start]).rstrip()
+    if not prefix.endswith(".") or prefix.endswith(".."):
+        return False
+    receiver = prefix[:-1].rstrip()
+    return not re.search(r"(?:^|[^A-Za-z0-9_])\d+(?:\.\d*)?$", receiver)
+
+
+def namespace_grouping_depth(source, start):
+    prefix = backend_code_without_ignored_text(source[:start]).rstrip()
+    depth = len(prefix) - len(prefix.rstrip("("))
+    if not depth:
+        return 0
+    before_open = prefix[:-depth].rstrip()
+    token = re.search(r"([A-Za-z_][A-Za-z0-9_]*|\S)\s*$", before_open)
+    if token and token.group(1) == ")" and re.search(
+        r"\bfunction(?:\s+[A-Za-z_][A-Za-z0-9_]*(?:[.:][A-Za-z_][A-Za-z0-9_]*)*)?\s*\([^()]*\)$",
+        before_open,
+    ):
+        return depth
+    if before_open.endswith(".."):
+        return depth
+    grouping_tokens = {
+        "and", "do", "elseif", "end", "for", "if", "in", "local", "not", "or", "repeat",
+        "return", "then", "until", "while", "(", "[", "{", ":", ",", ";", "=", "+",
+        "-", "*", "/", "%", "^", "<", ">", "~", "&", "|", "#", "!",
+    }
+    if token and token.group(1) == ")":
+        return max(depth - 1, 0)
+    return max(depth - 1, 0) if token and token.group(1) not in grouping_tokens else depth
+
+
+def contains_bracket_field_access(source, table_name, field_name):
+    index = 0
+    while index < len(source):
+        if (
+            source.startswith("--", index)
+            or source.startswith("//", index)
+            or source.startswith("/*", index)
+            or source[index] in "'\"["
+        ):
+            if source.startswith("//", index):
+                newline = source.find("\n", index + 2)
+                index = len(source) if newline < 0 else newline + 1
+                continue
+            if source.startswith("/*", index):
+                end = source.find("*/", index + 2)
+                index = len(source) if end < 0 else end + 2
+                continue
+            index = skip_string_or_comment(source, index)
+            continue
+
+        match = IDENTIFIER.match(source, index)
+        if not match:
+            index += 1
+            continue
+
+        index = match.end()
+        if match.group(0) != table_name:
+            continue
+        if has_namespace_receiver_dot(source, match.start()):
+            continue
+
+        grouping_depth = namespace_grouping_depth(source, match.start())
+        bracket = skip_namespace_space(source, index)
+        if grouping_depth:
+            for _ in range(grouping_depth):
+                bracket = skip_namespace_wrappers(source, bracket)
+        if bracket >= len(source) or source[bracket] != "[":
+            continue
+
+        value_start = skip_namespace_space(source, bracket + 1)
+        wrapped_value_depth = 0
+        while value_start < len(source) and source[value_start] == "(":
+            wrapped_value_depth += 1
+            value_start = skip_namespace_space(source, value_start + 1)
+        value, after_value = read_namespace_string(source, value_start)
+        if value != field_name:
+            continue
+
+        closing = skip_namespace_space(source, after_value)
+        while wrapped_value_depth and closing < len(source) and source[closing] == ")":
+            wrapped_value_depth -= 1
+            closing = skip_namespace_space(source, closing + 1)
+        if closing < len(source) and source[closing] == "]":
+            return True
+
+    return False
+
+
+def contains_dotted_field_access(source, table_name, field_name):
+    index = 0
+    while index < len(source):
+        if (
+            source.startswith("--", index)
+            or source.startswith("//", index)
+            or source.startswith("/*", index)
+            or source[index] in "'\"["
+        ):
+            if source.startswith("//", index):
+                newline = source.find("\n", index + 2)
+                index = len(source) if newline < 0 else newline + 1
+            elif source.startswith("/*", index):
+                end = source.find("*/", index + 2)
+                index = len(source) if end < 0 else end + 2
+            else:
+                index = skip_string_or_comment(source, index)
+            continue
+
+        match = IDENTIFIER.match(source, index)
+        if not match:
+            index += 1
+            continue
+
+        index = match.end()
+        if match.group(0) != table_name:
+            continue
+        if has_namespace_receiver_dot(source, match.start()):
+            continue
+
+        grouping_depth = namespace_grouping_depth(source, match.start())
+        dot = skip_namespace_space(source, index)
+        if grouping_depth:
+            for _ in range(grouping_depth):
+                dot = skip_namespace_wrappers(source, dot)
+        if dot >= len(source) or source[dot] not in ".:":
+            continue
+        field = IDENTIFIER.match(source, skip_namespace_space(source, dot + 1))
+        if field and field.group(0) == field_name:
+            return True
+
+    return False
+
+
+def backend_code_without_ignored_text(source):
+    """Blank GLua comments and strings without treating comment markers in strings as code."""
+
+    result = list(source)
+    index = 0
+    while index < len(source):
+        if source.startswith(("--", "//", "/*"), index):
+            if source.startswith("--", index):
+                end = skip_string_or_comment(source, index)
+            elif source.startswith("//", index):
+                newline = source.find("\n", index + 2)
+                end = len(source) if newline < 0 else newline + 1
+            else:
+                close = source.find("*/", index + 2)
+                end = len(source) if close < 0 else close + 2
+            for position in range(index, end):
+                if result[position] not in "\r\n":
+                    result[position] = " "
+            index = end
+        elif source[index] in "'\"" or source[index] == "[":
+            end = skip_string_or_comment(source, index)
+            for position in range(index, end):
+                if result[position] not in "\r\n":
+                    result[position] = " "
+            index = end
+        else:
+            index += 1
+    return "".join(result)
+
+
 class NamespaceRefactorTests(unittest.TestCase):
     def test_non_entity_private_helpers_use_ace_prefix(self):
         for path in non_entity_sources():
@@ -69,6 +322,123 @@ class NamespaceRefactorTests(unittest.TestCase):
                     source,
                     r"(?<![:.])\bACF_[A-Za-z_][A-Za-z0-9_]*\s*\(",
                 )
+
+    def test_major_refactor_legacy_backend_symbols_stay_absent(self):
+        """Reject compatibility names that have no ACE-side implementation."""
+
+        forbidden_symbols = (
+            ("ACF_CheckLegal", r"(?<![A-Za-z0-9_])ACF_CheckLegal(?![A-Za-z0-9_])"),
+            ("ACF.Legal", r"(?<![A-Za-z0-9_.])ACF\s*\.\s*Legal\b"),
+            ("ACF_BulletClient", r"(?<![A-Za-z0-9_])ACF_BulletClient(?![A-Za-z0-9_])"),
+            ("ACF_RoundBaseGunpowder", r"(?<![A-Za-z0-9_])ACF_RoundBaseGunpowder(?![A-Za-z0-9_])"),
+        )
+        for symbol, pattern in forbidden_symbols:
+            with self.subTest(symbol=symbol, synthetic=True):
+                self.assertRegex(backend_code_without_ignored_text(f"{symbol}()"), pattern)
+        for path in backend_symbol_sources():
+            raw_source = path.read_text(encoding="utf-8", errors="replace")
+            source = backend_code_without_ignored_text(raw_source)
+            with self.subTest(source=path.relative_to(REPO)):
+                for symbol, pattern in forbidden_symbols:
+                    with self.subTest(symbol=symbol):
+                        if symbol == "ACF.Legal":
+                            self.assertFalse(contains_dotted_field_access(raw_source, "ACF", "Legal"))
+                        else:
+                            self.assertNotRegex(source, pattern)
+                self.assertFalse(contains_bracket_field_access(raw_source, "ACF", "Legal"))
+
+    def test_legacy_backend_symbol_scanner_handles_glua_forms(self):
+        forbidden = (
+            'ACF["Legal"]',
+            "ACF[ [[Legal]] ]",
+            "ACF /* comment */ [ 'Legal' ]",
+            "ACF // comment\n ['Legal']",
+            "ACF[ [[\nLegal]] ]",
+            "local n = 1.\nACF[\"Legal\"] = value",
+            'ACF["\\076egal"]',
+            'ACF["\\x4cegal"]',
+            'ACF[("Legal")]',
+            "local x = foo[bar]\nACF[\"Legal\"] = value",
+            'value .. ACF["Legal"]',
+            'return (ACF)["Legal"]',
+            'factory()((ACF)["Legal"])',
+            'value .. (ACF)["Legal"]',
+            'local function f() (ACF)["Legal"] = 1 end',
+            'function T.f() (ACF)["Legal"] = 1 end',
+            'function T:f() (ACF)["Legal"] = 1 end',
+            'do (ACF)["Legal"] = 1 end',
+            'ACF[(("Legal"))]',
+            '#(ACF)["Legal"]',
+            '!(ACF)["Legal"]',
+        )
+        allowed = (
+            '"ACF[\\"Legal\\"]"',
+            "/* ACF[\"Legal\"] */",
+            'Other.ACF["Legal"]',
+            "(Other).ACF['Legal']",
+            "Other. /* comment */ ACF['Legal']",
+            '"/*"; ACF_CheckLegal(); "*/"',
+            "// ACF['Legal']",
+            "Other. /* comment */ ACF.Legal",
+            "Other. -- comment\n ACF.Legal",
+            "Other. // comment\n ACF.Legal",
+            "(ACF).Other.Legal",
+            'factory(ACF)["Legal"]',
+            'factory((ACF))["Legal"]',
+            'factory()(ACF)["Legal"]',
+            'function prior() end\nfactory()(ACF)["Legal"]',
+            'Other1.ACF["Legal"]',
+            'ACF["Leg\\al"]',
+            "factory(ACF).Legal",
+            "factory()(ACF).Legal",
+            "function prior() end\nfactory()(ACF).Legal",
+        )
+        for source in forbidden:
+            with self.subTest(source=source):
+                self.assertTrue(contains_bracket_field_access(source, "ACF", "Legal"))
+        for source in allowed:
+            with self.subTest(source=source):
+                self.assertFalse(contains_bracket_field_access(source, "ACF", "Legal"))
+
+        dotted_forbidden = (
+            "ACF.Legal",
+            "ACF:Legal()",
+            "function ACF:Legal() end",
+            "ACF /* comment */ . Legal",
+            "value .. ACF.Legal",
+            "return (ACF).Legal",
+            "value .. (ACF).Legal",
+            "if (ACF).Legal then",
+            "local x = (ACF).Legal",
+            "sink((ACF).Legal)",
+            "factory()((ACF).Legal)",
+            "return (((ACF))).Legal",
+            "for x in (ACF).Legal do",
+            "#(ACF).Legal",
+            "!(ACF).Legal",
+            "local function f() (ACF).Legal = 1 end",
+            "function T.f() (ACF).Legal = 1 end",
+            "function T:f() (ACF).Legal = 1 end",
+            "do (ACF).Legal = 1 end",
+        )
+        dotted_allowed = (
+            "Other. /* comment */ ACF.Legal",
+            "factory((ACF)).Legal",
+            "Other1.ACF.Legal",
+        )
+        for source in dotted_forbidden:
+            with self.subTest(source=source):
+                self.assertTrue(contains_dotted_field_access(source, "ACF", "Legal"))
+        for source in dotted_allowed:
+            with self.subTest(source=source):
+                self.assertFalse(contains_dotted_field_access(source, "ACF", "Legal"))
+
+        embedded_markers = backend_code_without_ignored_text('"/*"; ACF_CheckLegal(); "*/"')
+        self.assertIn("ACF_CheckLegal", embedded_markers)
+        self.assertNotIn("ACF_CheckLegal", backend_code_without_ignored_text("/* ACF_CheckLegal */"))
+
+        self.assertTrue(contains_dotted_field_access("(ACF).Legal", "ACF", "Legal"))
+        self.assertTrue(contains_bracket_field_access('(ACF)["Legal"]', "ACF", "Legal"))
 
     def test_ace_global_functions_are_defined_with_ace_prefix(self):
         definitions = set()

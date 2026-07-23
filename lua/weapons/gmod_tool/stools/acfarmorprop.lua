@@ -396,7 +396,9 @@ function TOOL:Think()
 	local trace = util.TraceHull(tr)
 
 	local ent = trace.Entity
-	if ent == self.AimEntity then return end
+	-- Primitive can expose a transient non-ACF state while it rebuilds. Do not cache that failed
+	-- observation forever: the client preview divides its zero area by zero and displays "nan".
+	if ent == self.AimEntity and self.AimEntityArmorReady then return end
 
 	if ACF_Check( ent ) then
 
@@ -417,6 +419,7 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
 		self.Weapon:SetNWFloat( "PointCostNonArmor", componentCost or 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
+		self.AimEntityArmorReady = true
 
 	else
 
@@ -431,6 +434,7 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCost", 0 )
 		self.Weapon:SetNWFloat( "PointCostNonArmor", 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", "" )
+		self.AimEntityArmorReady = false
 	end
 
 	self.AimEntity = ent
@@ -860,7 +864,6 @@ if CLIENT then
 
 	end
 end
-
 
 
 

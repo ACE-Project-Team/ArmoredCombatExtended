@@ -1,11 +1,18 @@
 -- Reconcile Primitive armor from its lifecycle callbacks, not delayed timers.
 local collisionGroups = setmetatable({}, { __mode = "k" })
 
+local function IsFiniteNumber(value)
+	return isnumber(value) and value == value and value > -math.huge and value < math.huge
+end
+
 local function CopyArmorValues(acf)
 	if not istable(acf) then return end
-	if not isnumber(acf.Area) or acf.Area <= 0 then return end
-	if not isnumber(acf.MaxArmour) or acf.MaxArmour <= 0 then return end
-	if not isnumber(acf.MaxHealth) or acf.MaxHealth <= 0 then return end
+	if not IsFiniteNumber(acf.Area) or acf.Area <= 0 then return end
+	if not IsFiniteNumber(acf.Armour) or acf.Armour <= 0 then return end
+	if not IsFiniteNumber(acf.MaxArmour) or acf.MaxArmour <= 0 then return end
+	if not IsFiniteNumber(acf.Health) or acf.Health < 0 then return end
+	if not IsFiniteNumber(acf.MaxHealth) or acf.MaxHealth <= 0 then return end
+	if not IsFiniteNumber(acf.Ductility or 0) then return end
 
 	return {
 		Area = acf.Area,
@@ -25,7 +32,7 @@ local function CaptureSavedArmor(ent)
 end
 
 local function RestoreSavedArmor(ent, phys)
-	local saved = ent.ACE_PrimitiveSavedArmor
+	local saved = CopyArmorValues(ent.ACE_PrimitiveSavedArmor)
 	if not saved or not istable(ent.ACF) then return false end
 
 	local acf = ent.ACF
@@ -79,6 +86,21 @@ local function MarkPrimitiveArmorDirty(ent, reason)
 	if ACE.MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
 end
 
+local function ClearInvalidLiveArmorValues(acf)
+	acf.Area = nil
+	acf.PhysObj = nil
+
+	if not IsFiniteNumber(acf.Ductility or 0) then
+		acf.Ductility = nil
+	end
+
+	if not IsFiniteNumber(acf.Health) or acf.Health < 0
+		or not IsFiniteNumber(acf.MaxHealth) or acf.MaxHealth <= 0 then
+		acf.Health = nil
+		acf.MaxHealth = nil
+	end
+end
+
 local function ApplyPrimitiveArmor(ent, phys)
 	CapturePendingPrimitiveArmor(ent)
 	local collisionGroup = collisionGroups[ent]
@@ -89,8 +111,7 @@ local function ApplyPrimitiveArmor(ent, phys)
 	if RestoreSavedArmor(ent, phys) then return true end
 
 	if ent.ACF then
-		ent.ACF.Area = nil
-		ent.ACF.PhysObj = nil
+		ClearInvalidLiveArmorValues(ent.ACF)
 	end
 
 	return false

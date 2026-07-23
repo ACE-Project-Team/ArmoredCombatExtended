@@ -2,9 +2,7 @@
 ACE.SpallTraces	= ACE.SpallTraces or {}
 ACE.CurSpallIndex = 0
 ACE.SpallMax	= 250
--- Layered vehicle armor should terminate well below the GLua call-stack danger zone.
-ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or 32
-ACE.HESHTraceMaxIterations = ACE.HESHTraceMaxIterations or 1000
+ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
 
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
@@ -494,7 +492,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 			ACE.SpallTraces[Index] = {}
 			ACE.SpallTraces[Index].start  = HitPos
 			ACE.SpallTraces[Index].endpos = HitPos + ( HitVec:GetNormalized() + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVel / 8, 600 ) --Spall endtrace. Used to determine spread and the spall trace length. Only adjust the value in the max to determine the minimum distance spall will travel. 600 should be fine.
-			ACE.SpallTraces[Index].filter = table.Copy(Filter)
+			ACE.SpallTraces[Index].filter = Filter
 			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
 			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
@@ -516,7 +514,7 @@ function ACE_PropShockwave( HitPos, HitVec, Filter, Caliber )
 	--General
 	local FindEnd	= true			--marked for initial loop
 	local iteration	= 0				--since while has not index
-	local EntsToHit	= table.Copy(Filter)	--Used for the second tracer, where it tells what ents must hit
+	local EntsToHit	= Filter	--Used for the second tracer, where it tells what ents must hit
 	--HitPos
 	local HitFronts	= {}				--Any tracefronts hitpos will be stored here
 	local HitBacks	= {}				--Any traceback hitpos will be stored here
@@ -543,11 +541,8 @@ function ACE_PropShockwave( HitPos, HitVec, Filter, Caliber )
 	while FindEnd do
 		iteration = iteration + 1
 		--print('iteration #' .. iteration)
-		-- In case of total failure, this loop has an explicit work budget.
-		if iteration > ACE.HESHTraceMaxIterations then
-			FindEnd = false
-			break
-		end
+		--In case of total failure, this loop is limited to 1000 iterations, don't make me increase it even more.
+		if iteration >= 1000 then FindEnd = false end
 		--================-TRACEFRONT-==================-
 		local tracefront = util.TraceHull( TrFront )
 		--insert the hitpos here
@@ -634,7 +629,7 @@ end
 --Handles HESH spalling
 function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
 
-	local Temp_Filter = table.Copy(Filter)
+	local Temp_Filter = Filter
 	local _, Armour, PEnts, fNormal = ACE_PropShockwave( HitPos, -HitVec, Filter, Caliber )
 	table.Add( Temp_Filter , PEnts )
 
@@ -741,7 +736,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 	State = State or { Depth = 0, Visited = {} }
 	State.Depth = State.Depth + 1
 
-	if State.Depth > (ACE.SpallTraceMaxDepth or 32) then
+	if State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
 		SetSpallTermination(Index, "depth_budget")
 		return false, State
 	end

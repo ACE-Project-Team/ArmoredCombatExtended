@@ -1,5 +1,8 @@
 
 
+ACE = ACE or {}
+ACE.CMTable = ACE.CMTable or {}
+ACE.ActiveMissiles = ACE.ActiveMissiles or ACE_ActiveMissiles or {}
 ACE.Missile_Flares = {}
 
 ACE.Missile_FlareUID = 0

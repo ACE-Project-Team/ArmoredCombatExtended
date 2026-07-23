@@ -589,9 +589,9 @@ do
 							local PunchStrength
 
 							if Bullet.Caliber >= 1 then
-								PunchStrength = 1.5 * Bullet.Caliber
+								PunchStrength = 1 * Bullet.Caliber
 							else
-								PunchStrength = 1.5
+								PunchStrength = 1 * Bullet.Caliber
 							end
 
 							ply:ViewPunch(Angle(

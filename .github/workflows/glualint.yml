@@ -5,16 +5,12 @@ on:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
-      - 'tests/**'
-      - 'test.py'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
-      - 'tests/**'
-      - 'test.py'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
 
@@ -23,7 +19,7 @@ permissions:
 
 concurrency:
   group: ace-quality-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   Lint:

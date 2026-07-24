@@ -2,6 +2,8 @@ name: GLuaFixer
 
 on:
   push:
+    branches:
+      - dev
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'

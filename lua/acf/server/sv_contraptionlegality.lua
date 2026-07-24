@@ -100,7 +100,7 @@ function ACE_CheckLegalCont(con)
 	if points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
 		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
 		local above = points - pointsLimit
-		chatMessageGlobal(
+		ACE_ChatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "pts] over the limit costing [" ..
 				math.ceil(points) .. "pts / " .. math.ceil(pointsLimit) .. "pts]",
 			Color(255, 234, 0)
@@ -112,7 +112,7 @@ function ACE_CheckLegalCont(con)
 	if (con.totalMass or 0) > maxWeight and not con.OTWarnings.WarnedOverWeight then
 		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
 		local above = con.totalMass - maxWeight
-		chatMessageGlobal(
+		ACE_ChatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "kg] over the limit, weighing [" ..
 				math.ceil(con.totalMass) .. "kg / " .. math.ceil(maxWeight) .. "kg]",
 			Color(255, 234, 0)

@@ -319,7 +319,7 @@ end
 ]]--------------------------------------------------------------------------------------------------
 do
 
-	local function ACE_PerformTrace( Bullet )
+	local function PerformTrace( Bullet )
 
 		-- perform the trace for damage
 		local RetryTrace = true
@@ -521,7 +521,7 @@ do
 		local CanDo = hook.Run("ACE_BulletsFlight", Index, Bullet )
 		if CanDo == false then return end
 
-		ACE_PerformTrace( Bullet )
+		PerformTrace( Bullet )
 
 		--Fuse detonation. Note: Its possible that the bullet prefers to hit the incoming prop instead of detonate. Not a big concern.
 		if Bullet.FuseLength and Bullet.FuseLength > 0 and Bullet.FlightTime > Bullet.FuseLength then

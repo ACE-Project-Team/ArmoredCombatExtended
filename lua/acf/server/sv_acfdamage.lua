@@ -1042,7 +1042,7 @@ end
 --helper function to replace ENT:ApplyForceOffset()
 --Gmod applyforce creates weird torque when moving https://github.com/Facepunch/garrysmod-issues/issues/5159
 local m_insq = 1 / 39.37 ^ 2
-local function ACE_ApplyForceOffset(Phys, Force, Pos) --For some reason this function somestimes reverses the impulse. I don't know why. Deal with this another day.
+local function ApplyForceOffset(Phys, Force, Pos) --For some reason this function somestimes reverses the impulse. I don't know why. Deal with this another day.
 	--Old
 	Phys:ApplyForceCenter(Force)
 	local off = Pos - Phys:LocalToWorld(Phys:GetMassCenter())
@@ -1085,7 +1085,7 @@ function ACE_KEShove(Target, Pos, Vec, KE, Inflictor)
 	--Pos			= parent:LocalToWorld(Res)
 
 	if ACE.UseLegacyRecoil < 1 then
-		ACE_ApplyForceOffset(phys, Vec:GetNormalized() * KE * physratio, Pos ) --Had a lot of odd quirks including reversing torque angles.
+		ApplyForceOffset(phys, Vec:GetNormalized() * KE * physratio, Pos ) --Had a lot of odd quirks including reversing torque angles.
 	else
 		phys:ApplyForceCenter( Vec:GetNormalized() * KE * physratio )
 	end
@@ -1093,7 +1093,7 @@ end
 
 -- helper function to process children of an acf-destroyed prop
 -- AP will HE-kill children props like a detonation; looks better than a directional spray of unrelated debris from the AP kill
-local function ACE_KillChildProps( Entity, BlastPos, Energy )
+local function KillChildProps( Entity, BlastPos, Energy )
 
 	if ACE.DebrisChance <= 0 then return end
 	local children = ACE_GetAllChildren(Entity)
@@ -1181,7 +1181,7 @@ end
 function ACE_HEKill( Entity , HitVector , Energy , BlastPos )
 
 	-- if it hasn't been processed yet, check for children
-	if not Entity.ACF_Killed then ACE_KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy ) end
+	if not Entity.ACF_Killed then KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy ) end
 
 	do
 		--ERA props should not create debris
@@ -1237,7 +1237,7 @@ end
 -- Creates a debris related to kinetic destruction.
 function ACE_APKill( Entity , HitVector , Power )
 	-- kill the children of this ent, instead of disappearing them from removing parent
-	ACE_KillChildProps( Entity, Entity:GetPos(), Power )
+	KillChildProps( Entity, Entity:GetPos(), Power )
 
 	do
 		--ERA props should not create debris

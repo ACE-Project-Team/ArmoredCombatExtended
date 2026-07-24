@@ -312,6 +312,21 @@ class NamespaceRefactorTests(unittest.TestCase):
                     r"\b(?:local\s+)?function\s+ACF_[A-Za-z_][A-Za-z0-9_]*\s*\(",
                 )
 
+    def test_backend_private_helpers_do_not_use_flat_ace_prefix(self):
+        for path in (
+            LUA_ROOT / "acf" / "server" / "sv_acfballistics.lua",
+            LUA_ROOT / "acf" / "server" / "sv_acfdamage.lua",
+            LUA_ROOT / "acf" / "server" / "sv_contraptionlegality.lua",
+        ):
+            source = code_without_comments_and_strings(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+            with self.subTest(source=path.relative_to(REPO)):
+                self.assertNotRegex(
+                    source,
+                    r"\blocal\s+function\s+ACE_[A-Za-z_][A-Za-z0-9_]*\s*\(",
+                )
+
     def test_non_entity_calls_do_not_use_legacy_acf_prefix(self):
         for path in non_entity_sources():
             source = code_without_comments_and_strings(

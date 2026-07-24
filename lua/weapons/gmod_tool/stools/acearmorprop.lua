@@ -334,14 +334,14 @@ local function getPopupPoints(ent)
 		end
 	elseif cls == "acf_ammo" then
 		componentPoints = 0
-		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost and istable(ent.BulletData) then
-			local round = ACE_Points_RoundFromBullet(ent.BulletData)
+		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost and istable(ent.BulletData) then
+			local round = ACE.Points.RoundFromBullet(ent.BulletData)
 			if round then
 				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round, true)
 				lines[#lines + 1] = "Crate Inventory Points: 0"
 				if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
-					.. string.format("%.1f", ACE_Points_BaseRoundCost(round))
+					.. string.format("%.1f", ACE.Points.BaseRoundCost(round))
 			end
 		end
 	else
@@ -362,8 +362,8 @@ local function getPopupPoints(ent)
 	end
 
 	-- Manufacturing values are computed on read and are not part of combat points.
-	if ACE_Manu_EntCost then
-		local mfgCost = ACE_Manu_EntCost(ent)
+	if ACE.Manufacturing.EntCost then
+		local mfgCost = ACE.Manufacturing.EntCost(ent)
 		if mfgCost and mfgCost > 0 then
 			lines[#lines + 1] = "Mfg. Cost: " .. formatMoney(mfgCost)
 		end
@@ -450,23 +450,23 @@ if CLIENT then
 
 	-- Use the server pricing weights; unknown materials fall back to live material data.
 	local function getArmorPointPreview(armor, health, mat, matData)
-		if not ACE_Points_EffectiveMm or not ACE_Points_ArmorProp then return 0 end
+		if not ACE.Points.EffectiveMm or not ACE.Points.ArmorProp then return 0 end
 
 		local effKE, effCHEM
-		if ACE_Points_MaterialEff then
-			effKE, effCHEM = ACE_Points_MaterialEff(mat)
+		if ACE.Points.MaterialEff then
+			effKE, effCHEM = ACE.Points.MaterialEff(mat)
 		end
 		if not effKE then
 			if not matData then return 0 end
 			effKE = tonumber(matData.effectiveness) or 1
 			effCHEM = tonumber(matData.HEATeffectiveness or matData.effectiveness) or effKE
 		end
-		local effMm = ACE_Points_EffectiveMm(armor, effKE, effCHEM)
+		local effMm = ACE.Points.EffectiveMm(armor, effKE, effCHEM)
 		local hp = tonumber(health) or 0
 
 		if effMm <= 0 or hp <= 0 then return 0 end
 
-		return ACE_Points_ArmorProp(effMm, hp)
+		return ACE.Points.ArmorProp(effMm, hp)
 	end
 
 	-- Helper to add centered help text; mirrors PANEL:CPanelText for this file.
@@ -866,6 +866,5 @@ if CLIENT then
 
 	end
 end
-
 
 

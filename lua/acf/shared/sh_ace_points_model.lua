@@ -1,3 +1,6 @@
+ACE = ACE or {}
+ACE.Points = ACE.Points or {}
+
 --[[-----------------------------------------------------------------------------
 	ACE Contraption Points -- pricing model
 
@@ -5,8 +8,6 @@
 	Retune the calibrated constants together against the reference corpus.
 	The pure model must load under vanilla Lua 5.1; GMod calls belong in the adapters.
 -------------------------------------------------------------------------------]]
-
-ACE = ACE or {}
 
 -- ================================================================
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
@@ -92,7 +93,7 @@ local GUIDANCE = {
 -- (frontal area x the type's damage multiplier, normalized so a 100mm AP shell = 1.0; HEAT
 -- uses its jet cross-section, not the shell body), plus the explosive payload it delivers
 -- (sqrt of filler kg vs a 6kg reference). Utility (smoke/refill) rounds return 0,0,0.
-function ACE_Points_PostPenParts(round)
+function ACE.Points.PostPenParts(round)
 	local t = round.Type
 	if not t or t == "" then t = "AP" end
 	local fam = TYPE_MAP[t] or "AP"
@@ -114,14 +115,14 @@ function ACE_Points_PostPenParts(round)
 end
 
 -- The three parts summed: the per-round "inside-armor damage" multiplier.
-function ACE_Points_PostPenMult(round)
-	local base, hole, blast = ACE_Points_PostPenParts(round)
+function ACE.Points.PostPenMult(round)
+	local base, hole, blast = ACE.Points.PostPenParts(round)
 	return base + hole + blast
 end
 
 -- Penetration used for lethality: raw maxPen, but HE/HESH floor it at a blast-equivalent so
 -- big fillers still register a threat even with token stated pen.
-function ACE_Points_LethalityPen(round)
+function ACE.Points.LethalityPen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
 	if fam == "HE" or fam == "HESH" then
@@ -133,7 +134,7 @@ end
 
 -- Guidance multiplier for a round (1.0 for everything but guided missile ammo). Public so
 -- displays can show the "x 1.5 guidance" factor instead of hiding it inside baseRoundCost.
-function ACE_Points_GuidanceMul(round)
+function ACE.Points.GuidanceMul(round)
 	local g = round.guidance
 	if g and g ~= "" then
 		return GUIDANCE[g] or 1.0
@@ -142,21 +143,21 @@ function ACE_Points_GuidanceMul(round)
 end
 
 -- Intrinsic value beyond direct lethality terms; shared by billing and explanatory readouts.
-function ACE_Points_IntrinsicValueMul(round)
+function ACE.Points.IntrinsicValueMul(round)
 	local fam = TYPE_MAP[round and round.Type or "AP"] or "AP"
 	return fam == "HE" and HE_INTRINSIC_VALUE_MULT or 1.0
 end
 
 -- Intrinsic cost of one configured round. Inventory count is not billed, but every weapon
 -- multiplies this value by its own delivery rate and threat factor.
-function ACE_Points_BaseRoundCost(round)
-	local cost = ACE_Points_LethalityPen(round) * ACE_Points_PostPenMult(round)
-		* ACE_Points_GuidanceMul(round) * ACE_Points_IntrinsicValueMul(round)
+function ACE.Points.BaseRoundCost(round)
+	local cost = ACE.Points.LethalityPen(round) * ACE.Points.PostPenMult(round)
+		* ACE.Points.GuidanceMul(round) * ACE.Points.IntrinsicValueMul(round)
 	return max(cost, ROUND_COST_FLOOR)
 end
 
 -- Share of the meta this pen defeats. The curve is continuous from zero with no minimum share.
-function ACE_Points_Gate(pen)
+function ACE.Points.Gate(pen)
 	pen = tonumber(pen) or 0
 	if pen <= 0 then return 0 end
 	return pen / (pen + Model.P50)
@@ -165,11 +166,11 @@ end
 -- Penetration the GATE judges a round by. HE uses its blast lethality reach because splash,
 -- module damage, and soft-target effects create combat value without literal armor penetration;
 -- HESH retains only the damage code's literal blast-penetration channel.
-function ACE_Points_GatePen(round)
+function ACE.Points.GatePen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
 	if fam == "HE" then
-		pen = max(pen, ACE_Points_LethalityPen(round))
+		pen = max(pen, ACE.Points.LethalityPen(round))
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
 	elseif fam == "HESH" then
@@ -180,12 +181,12 @@ function ACE_Points_GatePen(round)
 end
 
 -- Round score = threat * baseRoundCost.
-function ACE_Points_RoundScore(round)
-	return ACE_Points_Gate(ACE_Points_GatePen(round)) * ACE_Points_BaseRoundCost(round)
+function ACE.Points.RoundScore(round)
+	return ACE.Points.Gate(ACE.Points.GatePen(round)) * ACE.Points.BaseRoundCost(round)
 end
 
 -- Candidate ordering is final weapon output, then per-shot score, then stable source order.
-function ACE_Points_IsBetterCandidate(candidate, best)
+function ACE.Points.IsBetterCandidate(candidate, best)
 	if not best then return true end
 	if candidate.FinalScore ~= best.FinalScore then return candidate.FinalScore > best.FinalScore end
 	if candidate.RoundScore ~= best.RoundScore then return candidate.RoundScore > best.RoundScore end
@@ -196,7 +197,7 @@ end
 -- non-auto classes. baseRps already folds in the gun's current wire ROFLimit (the adapter
 -- below applies it via ACE_GetGunConfiguredRps before calling here), so a low limit lengthens
 -- the effective cycle through this same math rather than being ignored.
-function ACE_Points_SustainedRps(baseRps, magSize, magReload, gunClass, loaders)
+function ACE.Points.SustainedRps(baseRps, magSize, magReload, gunClass, loaders)
 	local base   = tonumber(baseRps) or 0
 	local mag    = tonumber(magSize) or 0
 	local magrel = tonumber(magReload) or 0
@@ -213,7 +214,7 @@ end
 
 -- Gun firepower cost (scaled). This is called once per gun entity; identical guns therefore
 -- add linearly instead of sharing or deduplicating the round cost.
-function ACE_Points_GunCost(sustainedRps, baseRoundCost, threat)
+function ACE.Points.GunCost(sustainedRps, baseRoundCost, threat)
 	local pricedRps = max(tonumber(sustainedRps) or 0, 1.0 / RACK_WINDOW)
 	return max(Model.kGun
 		* pricedRps
@@ -221,7 +222,7 @@ function ACE_Points_GunCost(sustainedRps, baseRoundCost, threat)
 		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
 end
 
-function ACE_Points_RackRate(reloadTime, maxMissile)
+function ACE.Points.RackRate(reloadTime, maxMissile)
 	local rt = tonumber(reloadTime) or 0
 	if rt == 0 then rt = 10.0 end
 	local mm = tonumber(maxMissile) or 0
@@ -229,7 +230,7 @@ function ACE_Points_RackRate(reloadTime, maxMissile)
 	return min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
 end
 
-function ACE_Points_RackCostFromRate(rate, bestScore)
+function ACE.Points.RackCostFromRate(rate, bestScore)
 	local pricedRate = max(tonumber(rate) or 0, 1.0 / RACK_WINDOW)
 	return max(Model.kGun * pricedRate
 		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
@@ -237,29 +238,29 @@ end
 
 -- Public so readouts can tell a player when the priced-rate floor changed their bill, instead
 -- of leaving the window a silently duplicated magic number.
-function ACE_Points_RateFloor()
+function ACE.Points.RateFloor()
 	return 1.0 / RACK_WINDOW
 end
 
 -- Tube count caps sustained rack rate over the engagement window.
-function ACE_Points_RackCost(reloadTime, maxMissile, bestScore)
-	return ACE_Points_RackCostFromRate(ACE_Points_RackRate(reloadTime, maxMissile), bestScore)
+function ACE.Points.RackCost(reloadTime, maxMissile, bestScore)
+	return ACE.Points.RackCostFromRate(ACE.Points.RackRate(reloadTime, maxMissile), bestScore)
 end
 
 -- Mounted charges use one tube-window without the rack hardware floor. Stored ammo remains free.
-function ACE_Points_ChargeCost(fillerKg)
+function ACE.Points.ChargeCost(fillerKg)
 	fillerKg = tonumber(fillerKg) or 0
 	if fillerKg <= 0 then return 0 end
 	local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = fillerKg, guidance = "Dumb" }
-	return Model.kGun * (1.0 / RACK_WINDOW) * ACE_Points_RoundScore(round) * Model.Scale
+	return Model.kGun * (1.0 / RACK_WINDOW) * ACE.Points.RoundScore(round) * Model.Scale
 end
 
-function ACE_Points_EffectiveMm(armourMm, ke, chem)
+function ACE.Points.EffectiveMm(armourMm, ke, chem)
 	return (tonumber(armourMm) or 0) * (0.7 * (tonumber(ke) or 1) + 0.3 * (tonumber(chem) or 1))
 end
 
 -- Per-prop armor survivability cost (scaled). mm is intensive (^1.4), HP is linear (^1.0).
-function ACE_Points_ArmorProp(effMm, maxHealth)
+function ACE.Points.ArmorProp(effMm, maxHealth)
 	return Model.kArmor * 100.0
 		* ((tonumber(effMm) or 0) / 50.0) ^ EXP_MM
 		* ((tonumber(maxHealth) or 0) / 75.0) ^ EXP_HP
@@ -267,12 +268,12 @@ function ACE_Points_ArmorProp(effMm, maxHealth)
 end
 
 -- Engine cost (scaled). hp is peak power (peakkw / 0.7457); fuel scales upkeep-ish value.
-function ACE_Points_EngineCost(hp, fuelType)
+function ACE.Points.EngineCost(hp, fuelType)
 	return Model.kEng * (tonumber(hp) or 0) * (FUEL_FACTOR[fuelType or "Petrol"] or 1.0) * Model.Scale
 end
 
 -- Crew seat cost (scaled). Loader seats cost more than generic seats.
-function ACE_Points_CrewCost(isLoader)
+function ACE.Points.CrewCost(isLoader)
 	return (isLoader and LOADER_SEAT or CREW_SEAT) * Model.Scale
 end
 
@@ -322,14 +323,14 @@ local function materialEff(mat)
 end
 
 -- Returns nil for unknown materials so display code can fall back to live material data.
-function ACE_Points_MaterialEff(mat)
+function ACE.Points.MaterialEff(mat)
 	local eff = MATERIAL_EFF[mat]
 	if not eff then return nil end
 	return eff[1], eff[2]
 end
 
 -- Build the plain pricing round from a gun/crate/rack BulletData table. nil if not a table.
-function ACE_Points_RoundFromBullet(bdata)
+function ACE.Points.RoundFromBullet(bdata)
 	if not istable(bdata) then return nil end
 
 	local round = {
@@ -354,24 +355,24 @@ end
 
 -- ROFLimit is a pricing input and its trigger path must dirty points. LoaderCount is local to
 -- the gun, including loaders linked across contraption fragments.
-function ACE_Points_GunSustainedRps(gun, bdata, crate)
+function ACE.Points.GunSustainedRps(gun, bdata, crate)
 	if not ACE_IsEnt(gun) then return 0 end
 	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0, bdata, crate)
-	return ACE_Points_SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
+	return ACE.Points.SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
 end
 
 -- Mounted charge (scalable explosives / bombs family) -> scaled points. Prices the charge's
 -- REAL filler mass -- self.FillerMass, kg of HE, set once at spawn from the scaled charge
--- volume -- as mounted ordnance via ACE_Points_ChargeCost. 0 for a filler-less/invalid entity.
-function ACE_Points_ChargeEntCost(ent)
+-- volume -- as mounted ordnance via ACE.Points.ChargeCost. 0 for a filler-less/invalid entity.
+function ACE.Points.ChargeEntCost(ent)
 	if not ACE_IsEnt(ent) then return 0 end
-	return ACE_Points_ChargeCost(tonumber(ent.FillerMass) or 0)
+	return ACE.Points.ChargeCost(tonumber(ent.FillerMass) or 0)
 end
 
 -- Prop -> (effectiveMm, maxHealth) for the armor term, or nil to skip. Skips ACF/ACE
 -- components and pods (they price in their own categories) and props with no armour or HP.
 -- Uses MAX armour/health (static design). Material ke/chem via the curated MATERIAL_EFF above.
-function ACE_Points_PropArmor(ent)
+function ACE.Points.PropArmor(ent)
 	if not ACE_IsEnt(ent) then return nil end
 
 	local cls = ent:GetClass() or ""
@@ -388,5 +389,34 @@ function ACE_Points_PropArmor(ent)
 	if armourMm <= 0 or hp <= 0 then return nil end
 
 	local ke, chem = materialEff(acf.Material or ent.ACF_Material)
-	return ACE_Points_EffectiveMm(armourMm, ke, chem), hp
+	return ACE.Points.EffectiveMm(armourMm, ke, chem), hp
 end
+
+
+-- Legacy aliases retained for external ACE callers during the namespace migration.
+ACE_Points_ArmorProp = ACE.Points.ArmorProp
+ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost
+ACE_Points_ChargeCost = ACE.Points.ChargeCost
+ACE_Points_ChargeEntCost = ACE.Points.ChargeEntCost
+ACE_Points_CrewCost = ACE.Points.CrewCost
+ACE_Points_EffectiveMm = ACE.Points.EffectiveMm
+ACE_Points_EngineCost = ACE.Points.EngineCost
+ACE_Points_Gate = ACE.Points.Gate
+ACE_Points_GatePen = ACE.Points.GatePen
+ACE_Points_GuidanceMul = ACE.Points.GuidanceMul
+ACE_Points_GunCost = ACE.Points.GunCost
+ACE_Points_GunSustainedRps = ACE.Points.GunSustainedRps
+ACE_Points_IntrinsicValueMul = ACE.Points.IntrinsicValueMul
+ACE_Points_IsBetterCandidate = ACE.Points.IsBetterCandidate
+ACE_Points_LethalityPen = ACE.Points.LethalityPen
+ACE_Points_MaterialEff = ACE.Points.MaterialEff
+ACE_Points_PostPenMult = ACE.Points.PostPenMult
+ACE_Points_PostPenParts = ACE.Points.PostPenParts
+ACE_Points_PropArmor = ACE.Points.PropArmor
+ACE_Points_RackCost = ACE.Points.RackCost
+ACE_Points_RackCostFromRate = ACE.Points.RackCostFromRate
+ACE_Points_RackRate = ACE.Points.RackRate
+ACE_Points_RateFloor = ACE.Points.RateFloor
+ACE_Points_RoundFromBullet = ACE.Points.RoundFromBullet
+ACE_Points_RoundScore = ACE.Points.RoundScore
+ACE_Points_SustainedRps = ACE.Points.SustainedRps

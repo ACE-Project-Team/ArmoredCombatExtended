@@ -440,6 +440,35 @@ class NamespaceRefactorTests(unittest.TestCase):
         self.assertTrue(contains_dotted_field_access("(ACF).Legal", "ACF", "Legal"))
         self.assertTrue(contains_bracket_field_access('(ACF)["Legal"]', "ACF", "Legal"))
 
+    def test_points_and_manufacturing_helpers_use_namespaces(self):
+        points_model = (LUA_ROOT / "acf" / "shared" / "sh_ace_points_model.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        manufacturing = (LUA_ROOT / "acf" / "shared" / "sh_ace_manufacturing.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertRegex(points_model, r"function\s+ACE\.Points\.[A-Za-z_][A-Za-z0-9_]*\s*\(")
+        self.assertRegex(manufacturing, r"function\s+ACE\.Manufacturing\.[A-Za-z_][A-Za-z0-9_]*\s*\(")
+        self.assertNotRegex(points_model, r"function\s+ACE_Points_[A-Za-z_][A-Za-z0-9_]*\s*\(")
+        self.assertNotRegex(manufacturing, r"function\s+ACE_Manu_[A-Za-z_][A-Za-z0-9_]*\s*\(")
+        self.assertLess(points_model.index("ACE = ACE or {}"), points_model.index("ACE.Points = ACE.Points or {}"))
+        self.assertLess(
+            manufacturing.index("ACE = ACE or {}"),
+            manufacturing.index("ACE.Manufacturing = ACE.Manufacturing or {}"),
+        )
+        self.assertIn("ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost", points_model)
+        self.assertIn("ACE_Manu_EntCost = ACE.Manufacturing.EntCost", manufacturing)
+
+        consumers = (
+            LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua",
+            LUA_ROOT / "acf" / "client" / "cl_acemenu_gui.lua",
+            LUA_ROOT / "weapons" / "gmod_tool" / "stools" / "acearmorprop.lua",
+        )
+        for path in consumers:
+            source = path.read_text(encoding="utf-8", errors="replace")
+            with self.subTest(source=path.relative_to(REPO)):
+                self.assertNotRegex(source, r"\bACE_(?:Points|Manu)_[A-Za-z_][A-Za-z0-9_]*\b")
+
     def test_ace_global_functions_are_defined_with_ace_prefix(self):
         definitions = set()
         for path in non_entity_sources():

@@ -147,6 +147,7 @@ function ACE_CreateBullet( BulletData )
 	ACE.BulletClient( ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex], "Init" , 0 )
 	ACE.CalcBulletFlight( ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] )
 
+	hook.Run("ACE_OnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 	hook.Run("ACEOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 	ACE.RunLegacyHook("ACFOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 
@@ -201,6 +202,7 @@ function ACE_RemoveBullet( Index )
 		if Bullet.OnRemoved then Bullet:OnRemoved() end
 	end
 
+	hook.Run("ACE_OnBulletRemoved", Index, Bullet)
 	hook.Run("ACEOnBulletRemoved", Index, Bullet)
 	ACE.RunLegacyHook("ACFOnBulletRemoved", Index, Bullet)
 end
@@ -429,6 +431,7 @@ do
 
 			Penetrated = function(Index, Bullet, FlightRes, type)
 
+				hook.Run("ACE_OnBulletPenetrated", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletPenetrated", Index, Bullet, FlightRes)
 				ACE.RunLegacyHook("ACFOnBulletPenetrated", Index, Bullet, FlightRes)
 
@@ -466,6 +469,7 @@ do
 
 			Ricochet = function(Index, Bullet, FlightRes, type)
 
+				hook.Run("ACE_OnBulletRicochet", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletRicochet", Index, Bullet, FlightRes)
 				ACE.RunLegacyHook("ACFOnBulletRicochet", Index, Bullet, FlightRes)
 
@@ -497,6 +501,7 @@ do
 
 			Hit = function(Index, Bullet, FlightRes, _)
 
+				hook.Run("ACE_OnBulletHit", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletHit", Index, Bullet, FlightRes)
 				ACE.RunLegacyHook("ACFOnBulletHit", Index, Bullet, FlightRes)
 

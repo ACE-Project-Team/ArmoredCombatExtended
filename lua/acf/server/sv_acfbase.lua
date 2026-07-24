@@ -167,6 +167,7 @@ function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	end
 
+	hook.Run("ACE_OnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
 	hook.Run("ACEOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
 	ACE.RunLegacyHook("ACFOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
 	return hitRes

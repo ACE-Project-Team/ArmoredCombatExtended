@@ -131,7 +131,11 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertNotIn('hook.Run("ACFOn', backend)
         self.assertIn('ACE.RunLegacyHook("ACFOnDamage"', backend)
         self.assertIn('ACE.RunLegacyHook("ACFOnBulletCreation"', backend)
-        for current in ("ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory"):
+        for current in (
+            "ACE_OnDamage", "ACE_OnBulletCreation", "ACE_OnBulletRemoved",
+            "ACE_OnBulletPenetrated", "ACE_OnBulletRicochet", "ACE_OnBulletHit",
+            "ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory",
+        ):
             with self.subTest(current=current):
                 self.assertIn(current, combined)
         self.assertIn('"ACE_RestoreSZsCleanup"', source("acf/server/sv_acfpermission.lua"))
@@ -139,6 +143,24 @@ class EntityPipelineContractTests(unittest.TestCase):
         missiles = source("autorun/server/sv_acf_missiles.lua")
         self.assertIn('"ACE_Missiles_DupeDeny"', missiles)
         self.assertIn('"ACE_Missiles_AddLinkable"', missiles)
+
+    def test_legacy_hook_events_forward_to_ace_namespaced_events(self):
+        globals_source = source("autorun/acf_globals.lua")
+        self.assertIn('hook.Add("ACE_OnLoadAddon", "ACE_RemoveCompatibilityView"', globals_source)
+        self.assertIn('hook.Add("ACF_OnLoadAddon", "ACE_RemoveCompatibilityView"', globals_source)
+        self.assertIn('hook.Run("ACE_OnLoadAddon", ...)', globals_source)
+
+        ballistics = source("acf/server/sv_acfballistics.lua")
+        for name in (
+            "BulletCreation", "BulletRemoved", "BulletPenetrated", "BulletRicochet", "BulletHit",
+        ):
+            with self.subTest(name=name):
+                self.assertIn(f'hook.Run("ACE_On{name}"', ballistics)
+                self.assertIn(f'hook.Run("ACEOn{name}"', ballistics)
+
+        damage = source("acf/server/sv_acfbase.lua")
+        self.assertIn('hook.Run("ACE_OnDamage"', damage)
+        self.assertIn('hook.Run("ACEOnDamage"', damage)
 
     def test_backend_network_channels_are_ace_namespaced(self):
         backend = "\n".join(

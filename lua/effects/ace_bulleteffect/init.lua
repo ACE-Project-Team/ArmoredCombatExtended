@@ -3,6 +3,7 @@
 function ACE_RemoveBulletClient( Bullet, Index )
 
 	if Bullet then
+		if IsValid(Bullet.Tracer) then Bullet.Tracer:Finish() end
 
 		local BulletEnt = Bullet.Effect
 		if IsValid(BulletEnt) then
@@ -117,9 +118,6 @@ do
 				BulletData.Counter        = 0
 				BulletData.TracerColour   = BulletData.Crate:GetNWVector( "TracerColour", BulletData.Crate:GetColor() ) or Vector(255,255,255)
 			end
-
-
-			BulletData.ShellParticles         = ParticleEmitter( BulletData.SimPos )
 
 			--Add all that data to the bullet table, overwriting if needed
 			ACE.BulletEffect[self.Index] = BulletData

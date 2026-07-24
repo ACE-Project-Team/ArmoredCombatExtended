@@ -20,6 +20,7 @@ local function run_case(name, results, expected_calls, expected_entity, expected
 	_G.ACE_CheckClips = function(entity, hit_pos)
 		return entity and entity.clip == true and entity.clip_pos == hit_pos
 	end
+	_G.ACE = {CheckClips = _G.ACE_CheckClips}
 
 	local trace = dofile(trace_path)
 	local result = trace("start", "end", filter)

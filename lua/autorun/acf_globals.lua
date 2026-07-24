@@ -385,7 +385,7 @@ if SERVER then
         elseif CVar == "ace_legality_largegunthreshold" then
             ACE.LargeGunsThreshold = math.ceil(math.Clamp(New, 0, 10000))
         elseif CVar == "ace_enable_dp" then
-			if ACE.SendDPStatus then
+            if ACE.SendDPStatus then
                 ACE.SendDPStatus()
             end
         end

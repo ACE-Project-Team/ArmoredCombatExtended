@@ -21,6 +21,34 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("con.BulletFilter[#con.BulletFilter + 1] = ent", cfw)
         self.assertIn('hook.Add("cfw.contraption.entityRemoved", "CFW_ACE_BulletFilter"', cfw)
         self.assertIn("table.remove(filter, index)", cfw)
+        self.assertIn("con.BulletFilter[ent] = true", cfw)
+        self.assertIn("filter[ent] = nil", cfw)
+
+    def test_bullet_filter_expires_after_three_unused_ticks(self):
+        ballistics = source("lua/acf/server/sv_acfballistics.lua")
+
+        self.assertIn("local FilterGraceTicks = 3", ballistics)
+        self.assertIn("local IsLaunchEntity = Bullet.LaunchFilter[Ent]", ballistics)
+        self.assertIn("if Bullet.LiveFilter and Bullet.LiveFilter[Ent] then return false end", ballistics)
+        self.assertIn("if #Filter ~= Bullet.FilterInitialLength then", ballistics)
+        self.assertIn("local DynamicFilter = {}", ballistics)
+        self.assertIn("Bullet.Filter = DynamicFilter", ballistics)
+        self.assertIn("if Bullet.FilterExpired then", ballistics)
+        self.assertIn("if Filter[Index] == Ent then return false end", ballistics)
+        self.assertIn("Bullet.FilterExpired = true", ballistics)
+        self.assertIn("Bullet.FilterLastUsedFrame = CurrentBallisticsFrame", ballistics)
+        self.assertIn("Bullet.FilterUnusedTicks = (Bullet.FilterUnusedTicks or 0) + 1", ballistics)
+        self.assertIn("Bullet.FilterUnusedTicks = -1", ballistics)
+        self.assertIn("Bullet.FilterUnusedTicks >= FilterGraceTicks", ballistics)
+        self.assertIn("Bullet.FilterActive = false", ballistics)
+        self.assertIn("UpdateBulletFilter(Bullet)", ballistics)
+        self.assertIn("FlightTr.filter = Bullet.TraceFilter", ballistics)
+        self.assertIn("Acquired.LiveFilter = BulletData.LiveFilter or Filter", ballistics)
+        self.assertLess(ballistics.index("UpdateBulletFilter(Bullet)"), ballistics.index("if not Bullet.HandlesOwnIteration"))
+        self.assertIn("if Bullet.FilterLastUpdateFrame == CurrentBallisticsFrame then return end", ballistics)
+        self.assertIn("InitializeBulletFilter(Bullet)", ballistics)
+        self.assertIn("BulletData.LaunchFilter = BuildLaunchFilter(BulletData.Filter, BulletData.LaunchFilter)", ballistics)
+        self.assertIn("return BulletData.LaunchFilter", ballistics)
 
     def test_gun_passes_the_live_filter_to_the_bullet_snapshot(self):
         gun = source("lua/entities/acf_gun/init.lua")
@@ -42,6 +70,7 @@ class SelfFirePreventionTests(unittest.TestCase):
 
         flechette = source("lua/acf/shared/rounds/roundfl.lua")
         self.assertIn('FlechetteData["Filter"]', flechette)
+        self.assertIn("FlechetteData.LiveFilter\t\t= BulletData.LiveFilter or BulletData.Filter", flechette)
 
         for relative in (
             "lua/acf/shared/rounds/roundclusterap.lua",
@@ -52,6 +81,8 @@ class SelfFirePreventionTests(unittest.TestCase):
                 cluster = source(relative)
                 self.assertIn("local Filter = istable(bdata.Filter) and table.Copy(bdata.Filter) or { GEnt }", cluster)
                 self.assertIn('BulletDataC["Filter"]\t\t= Filter', cluster)
+                self.assertIn('BulletDataC["LaunchFilter"]\t= LaunchFilter', cluster)
+                self.assertIn('BulletDataC["LiveFilter"]\t= bdata.Filter', cluster)
 
 
 if __name__ == "__main__":

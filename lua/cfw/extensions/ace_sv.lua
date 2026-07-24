@@ -23,6 +23,7 @@ do
 
         con.BulletFilter = con.BulletFilter or {}
         con.BulletFilter[#con.BulletFilter + 1] = ent
+        con.BulletFilter[ent] = true
     end)
 
     hook.Add("cfw.contraption.entityRemoved", "CFW_ACE_BulletFilter", function(con, ent)
@@ -35,6 +36,8 @@ do
                 break
             end
         end
+
+        filter[ent] = nil
     end)
 
     hook.Add("cfw.contraption.entityRemoved", "CFW_ACE_Entities", function(con, ent)

@@ -205,7 +205,7 @@ do
 		HEAT	= true,
 	}]]--
 
-	local function GenerateCluster(bdata)
+	local function GenerateCluster(bdata, LaunchFilter)
 
 		--local RoundType = bdata.Type
 
@@ -234,6 +234,8 @@ do
 		--print(missile.BulletDataC["FillerMass"])
 
 		GEnt.BulletDataC["Filter"]		= Filter
+		GEnt.BulletDataC["LaunchFilter"]	= LaunchFilter
+		GEnt.BulletDataC["LiveFilter"]	= bdata.Filter
 		GEnt.BulletDataC["Flight"]		= bdata.Flight
 		GEnt.BulletDataC["FlightTime"]	= 0
 		GEnt.BulletDataC["FrArea"]		= bdata.FrArea
@@ -317,9 +319,9 @@ do
 
 	function Round.create( _, BulletData )
 
-		ACF_CreateBullet( BulletData )
+		local LaunchFilter = ACF_CreateBullet( BulletData )
 
-		GenerateCluster(BulletData)
+		GenerateCluster(BulletData, LaunchFilter)
 
 	end
 

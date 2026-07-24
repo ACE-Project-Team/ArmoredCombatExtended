@@ -54,8 +54,8 @@ if CLIENT then
 
 	end
 
-	hook.Remove( "CalcVehicleView", "ACE_CalcVehicleView_Override")
-	hook.Add( "CalcVehicleView", "ACE_CalcVehicleView_Override", ACE_CalcVehicleView)
+	hook.Remove( "CalcVehicleView", "ACE_VehicleViewOverride")
+	hook.Add( "CalcVehicleView", "ACE_VehicleViewOverride", ACE_CalcVehicleView)
 
 end
 

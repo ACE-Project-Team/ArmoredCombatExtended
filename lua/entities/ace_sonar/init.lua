@@ -671,8 +671,14 @@ function ENT:passiveSonar() --Subject to rework
 
 		if ACE_CheckShadowZoneObscured(TarDepth, SonarDepth, -AngPitch) then continue end
 
-		-- Noise is relative to the target threshold, halves every 200 m,
-		-- and is reduced by 25% for each 10 m of depth.
+		--About noise
+		-- Base noise is the sound-level input used by sonar detection.
+		--A target needs a relative noise of 1 to be detected
+		--It halves every 200m
+		-- Movement noise is reduced by 25% for each 10 m of depth.
+
+		--A stationary target can be detected 100m away
+		--A moving target at 10mph can be detected 400m away
 
 		local Noise = 3.75 --Base noise of contraption
 		Noise = Noise + TarSpeed / 88 / (1 + TarDepth / 10 * 0.25) -- 1/88 = 1 / 17.6 / 10 * 2. The noise needed to be detected 400m away.

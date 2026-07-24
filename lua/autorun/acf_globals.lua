@@ -580,7 +580,7 @@ timer.Simple( 0, function()
 end)
 
 --Stupid workaround red added to precache timescaling.
-hook.Add( "Think", "Update ACE Internal Clock", function()
+hook.Add( "Think", "ACE_InternalClock", function()
     ACE.CurTime = CurTime()
     ACE.SysTime = SysTime()
 end )

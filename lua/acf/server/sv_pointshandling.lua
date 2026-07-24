@@ -14,7 +14,7 @@ end
 -- Public point lifecycle hooks:
 -- ACE_OnContraptionPointsInvalidated(con, change) reports every known pricing-input mutation,
 -- even when the cache is already dirty or the resulting point delta is zero. change contains
--- Revision, Entity, Reason, Armor, and NonArmor. Consumers can call ACE_EnsureContraptionPoints
+-- Revision, Entity, Reason, Armor, and NonArmor. Consumers can call ACE.EnsureContraptionPoints
 -- from this hook when they need the updated total immediately.
 -- ACE_OnContraptionPointsRecalculated(con, change) reports Revision, OldTotal, Total, OldByType,
 -- ByType, Armor, and NonArmor as detached snapshots after a rebuild.

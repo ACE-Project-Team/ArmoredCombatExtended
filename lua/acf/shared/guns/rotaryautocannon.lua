@@ -1,6 +1,6 @@
 do
 	--define the class
-	ACE_DefineGunClass("RAC", {
+	ACE.DefineGunClass("RAC", {
 		type = "Gun",
 		spread = 0.2,
 		name = "Rotary Autocannon",
@@ -14,7 +14,7 @@ do
 		color = {135, 135, 135}
 	} )
 
-	ACE_DefineGun("14.5mmRAC", { --id
+	ACE.DefineGun("14.5mmRAC", { --id
 		name = "14.5mm Rotary Autocannon",
 		desc = "A lightweight rotary autocannon, a great support weapon for effortlessly shredding infantry and technicals alike.",
 		model = "models/rotarycannon/kw/14_5mmrac.mdl",
@@ -30,7 +30,7 @@ do
 		},
 	} )
 
-	ACE_DefineGun("20mmRAC", {
+	ACE.DefineGun("20mmRAC", {
 		name = "20mm Rotary Autocannon",
 		desc = "The 20mm is able to chew up light armor with decent penetration or put up a big flak screen. Typically mounted on ground attack aircraft, SPAAGs and the ocassional APC.",
 		model = "models/rotarycannon/kw/20mmrac.mdl",
@@ -46,7 +46,7 @@ do
 		},
 	} )
 
-	ACE_DefineGun("30mmRAC", {
+	ACE.DefineGun("30mmRAC", {
 		name = "30mm Rotary Autocannon",
 		desc = "The 30mm is the bane of ground-attack aircraft, able to tear up light armor without giving one single fuck.  Also seen in the skies above dead T-72s.",
 		model = "models/rotarycannon/kw/30mmrac.mdl",
@@ -64,7 +64,7 @@ do
 end
 
 do
-	ACE_DefineMuzzleFlash("RAC", {
+	ACE.DefineMuzzleFlash("RAC", {
 
 		muzzlefunc = function( Effect )
 			if not Effect.Emitter then return end

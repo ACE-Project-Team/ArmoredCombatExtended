@@ -123,7 +123,7 @@ function this:TryAgainst(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	return ACE_Missile_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
+	return ACE.Missile_ConeContainsPos(pos, dir, cone, self.Flare.Pos) and self:ApplyChance(missile, guidance, flare)
 
 end
 
@@ -141,7 +141,7 @@ function this:ApplyToAll()
 
 	local ret = {}
 
-	local targets = ACE_Missile_GetAllMissilesWhichCanSee(self.Flare.Pos)
+	local targets = ACE.Missile_GetAllMissilesWhichCanSee(self.Flare.Pos)
 
 	for _, missile in pairs(targets) do
 
@@ -171,7 +171,7 @@ function this.ApplyAll(missile, guidance)
 	local pos = missile:GetPos()
 	local dir = missile:GetForward()
 
-	local flares = ACE_Missile_GetFlaresInCone(pos, dir, cone)
+	local flares = ACE.Missile_GetFlaresInCone(pos, dir, cone)
 
 	for _, flare in pairs(flares) do
 

@@ -10,7 +10,7 @@ function EFFECT:Init( data )
 	if not IsValid(Gun) then return end
 
 	if not Gun.Parent then
-		Gun.Parent = ACE_GetPhysicalParent(Gun) or Gun
+		Gun.Parent = ACE.GetPhysicalParent(Gun) or Gun
 	--	print(Gun.Parent)
 	end
 
@@ -43,13 +43,13 @@ function EFFECT:Init( data )
 		end
 	end
 
-	if not ACE_IsValidSound( Sound ) then
+	if not ACE.IsValidSound( Sound ) then
 		Sound = ClassData.sound
 	end
 
 	if Propellant > 0 then
 
-		ACE_SGunFire( Gun, Sound, SoundPitch, Propellant )
+		ACE.SGunFire( Gun, Sound, SoundPitch, Propellant )
 
 		local Muzzle = Gun:GetAttachment( Gun:LookupAttachment(Attachment)) or { Pos = Gun:GetPos(), Ang = Gun:GetAngles() }
 
@@ -75,7 +75,7 @@ function EFFECT:Init( data )
 
 			-- Any ground detection system was ported inside of this. CHECK BELOW.
 			self:Shockwave( MuzzleEffect )
-			ACE_RenderLight(Gun:EntIndex(), Caliber * 75, Color(255, 128, 48), Muzzle.Pos + self.DirVec * (Caliber / 5))
+			ACE.RenderLight(Gun:EntIndex(), Caliber * 75, Color(255, 128, 48), Muzzle.Pos + self.DirVec * (Caliber / 5))
 		end
 
 		local LocPly = LocalPlayer()
@@ -127,7 +127,7 @@ function EFFECT:Shockwave( MuzzleType )
 	local Ground = util.TraceLine( GroundTr )
 
 	local MatType = Ground.MatType or 0
-	local Materialvalue = ACE_GetMaterialName( MatType )
+	local Materialvalue = ACE.GetMaterialName( MatType )
 	local DustColors = table.Copy(ACE.DustMaterialColor)
 
 	-- The explosion was detonated above a prop

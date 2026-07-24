@@ -90,9 +90,9 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn("ACE.radarEntities", contraption)
         self.assertIn("table.insert(ACE.radarEntities", contraption)
         self.assertIn("table.remove(ACE.radarEntities", contraption)
-        self.assertIn("ACE_DefineTrackRadarClass", tracking)
-        self.assertIn("ACE_DefineTrackRadar", tracking)
-        self.assertIn("ACE_DefineTrackRadar", search)
+        self.assertIn("ACE.DefineTrackRadarClass", tracking)
+        self.assertIn("ACE.DefineTrackRadar", tracking)
+        self.assertIn("ACE.DefineTrackRadar", search)
 
     def test_revving_contract_keeps_engine_torque_and_rpm_inputs(self):
         engines = list((LUA / "acf/shared/engines").glob("*.lua"))
@@ -124,8 +124,8 @@ class EntityPipelineContractTests(unittest.TestCase):
             with self.subTest(legacy=legacy):
                 self.assertNotIn(legacy, combined)
         self.assertNotIn('hook.Run("ACFOn', backend)
-        self.assertIn('ACE_RunLegacyHook("ACFOnDamage"', backend)
-        self.assertIn('ACE_RunLegacyHook("ACFOnBulletCreation"', backend)
+        self.assertIn('ACE.RunLegacyHook("ACFOnDamage"', backend)
+        self.assertIn('ACE.RunLegacyHook("ACFOnBulletCreation"', backend)
         for current in ("ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory"):
             with self.subTest(current=current):
                 self.assertIn(current, combined)
@@ -152,7 +152,7 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn('GetConVar("acf_restrictinfo")', starfall)
         self.assertIn('ACFOnBulletCreation', starfall)
         for legacy_hook in ("ACFOnBulletHit", "ACFOnBulletRicochet", "ACFOnBulletPenetrated"):
-            self.assertIn(f'ACE_RunLegacyHook("{legacy_hook}"', source("acf/server/sv_acfballistics.lua"))
+            self.assertIn(f'ACE.RunLegacyHook("{legacy_hook}"', source("acf/server/sv_acfballistics.lua"))
         self.assertIn('ACE_LegacyRestrictInfo', globals_source)
         self.assertIn('ACF_OnLoadAddon', globals_source)
         self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)

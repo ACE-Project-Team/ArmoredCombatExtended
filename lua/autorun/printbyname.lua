@@ -44,7 +44,7 @@ pairsByName = ACE_PairsByKeys
 
 
 function ACE_PrintByName(tbl)
-	for k, v in ACE_PairsByKeys(tbl) do
+	for k, v in ACE.PairsByKeys(tbl) do
 		Msg(tostring(k), "\t", "\t", tostring(v), "\n")
 	end
 
@@ -64,7 +64,7 @@ function ACE_PrintByNameTable(tbl, name)
 	local typ2 = nil
 	local vstr = nil
 
-	for k, v in ACE_PairsByKeys(tbl) do
+	for k, v in ACE.PairsByKeys(tbl) do
 		typ = type(k)
 		typ2 = type(v)
 		vstr = typ2 == "string" and "\"" .. v .. "\"" or tostring(v)

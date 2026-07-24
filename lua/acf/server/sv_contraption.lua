@@ -343,5 +343,5 @@ hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 		end
 	end
 
-	ACE_refreshdata(dupeInfo)
+	ACE.refreshdata(dupeInfo)
 end)

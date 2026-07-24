@@ -1,5 +1,5 @@
 
-ACE_DefineRadarClass("DIR-AM", {
+ACE.DefineRadarClass("DIR-AM", {
 	name = "Directional Anti-missile Radar",
 	type = "Anti-missile",
 	desc = ACE.Translation.Radar[1],
@@ -8,7 +8,7 @@ ACE_DefineRadarClass("DIR-AM", {
 
 
 
-ACE_DefineRadar("SmallDIR-AM", {
+ACE.DefineRadar("SmallDIR-AM", {
 	name		= "Small Directional Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACE.Translation.Radar[2],
@@ -20,7 +20,7 @@ ACE_DefineRadar("SmallDIR-AM", {
 } )
 
 
-ACE_DefineRadar("MediumDIR-AM", {
+ACE.DefineRadar("MediumDIR-AM", {
 	name		= "Medium Directional Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACE.Translation.Radar[3],
@@ -32,7 +32,7 @@ ACE_DefineRadar("MediumDIR-AM", {
 } )
 
 
-ACE_DefineRadar("LargeDIR-AM", {
+ACE.DefineRadar("LargeDIR-AM", {
 	name		= "Large Directional Anti-Missile Radar",
 	ent			= "acf_missileradar",
 	desc		= ACE.Translation.Radar[4],

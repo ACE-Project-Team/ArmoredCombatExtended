@@ -16,7 +16,7 @@ Round.Type  = "HEAT"
 
 function Round.create( _, BulletData )
 
-	ACE_CreateBullet( BulletData )
+	ACE.CreateBullet( BulletData )
 
 end
 
@@ -45,7 +45,7 @@ function Round.convert( _, PlayerData )
 	if not PlayerData.Data6 then PlayerData.Data6 = 0 end
 	if not PlayerData.Data7 then PlayerData.Data7 = 0 end
 
-	PlayerData, Data, ServerData, GUIData = ACE_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	local ConeThick		= Data.Caliber / 50
 	--local ConeLength		= 0
@@ -55,14 +55,14 @@ function Round.convert( _, PlayerData )
 	ConeLength, ConeArea, AirVol = Round.ConeCalc( PlayerData.Data6, Data.Caliber / 2, PlayerData.ProjLength )
 
 	Data.ProjMass		= math.max(GUIData.ProjVolume-PlayerData.Data5,0) * 7.9 / 1000 + math.min(PlayerData.Data5,GUIData.ProjVolume) * ACE.HEDensity / 1000 + ConeArea * ConeThick * 7.9 / 1000 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
-	Data.MuzzleVel		= ACE_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
+	Data.MuzzleVel		= ACE.MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 
-	local Energy = ACE_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
+	local Energy = ACE.Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local MaxVol			= 0
 	--local MaxLength		= 0
 	--local MaxRadius		= 0
 
-	MaxVol, MaxLength, MaxRadius = ACE_RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
+	MaxVol, MaxLength, MaxRadius = ACE.RoundShellCapacity( Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength )
 
 	GUIData.MinConeAng	= 0
 	GUIData.MaxConeAng = math.deg(math.atan((Data.ProjLength - ConeThick) / (Data.Caliber / 2)))
@@ -79,7 +79,7 @@ function Round.convert( _, PlayerData )
 	Data.FillerMass = GUIData.FillerVol * ACE.HEDensity / 1450
 	Data.BoomFillerMass = Data.FillerMass / 3 --manually update function "pierceeffect" with the divisor
 	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 7.9 / 1000 + Data.FillerMass + ConeVol * 7.9 / 1000
-	Data.MuzzleVel = ACE_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
+	Data.MuzzleVel = ACE.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 	--local Energy = ACE_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 
 	--Let's calculate the actual HEAT slug
@@ -131,9 +131,9 @@ end
 function Round.getDisplayData(Data)
 	local GUIData	= {}
 
-	local SlugEnergy	= ACE_Kinetic( Data.SlugMV * 39.37 , Data.SlugMass, 999999 )
+	local SlugEnergy	= ACE.Kinetic( Data.SlugMV * 39.37 , Data.SlugMass, 999999 )
 
-	GUIData.MaxPen = ACE_CalcPenetration(SlugEnergy, Data.SlugPenArea)
+	GUIData.MaxPen = ACE.CalcPenetration(SlugEnergy, Data.SlugPenArea)
 	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
 	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACE.HEFrag), 2)
 	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
@@ -183,7 +183,7 @@ end
 
 function Round.detonate( _, Bullet, HitPos, HitNormal )
 
-	ACE_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, nil, Bullet.Gun )
+	ACE.HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, nil, Bullet.Gun )
 
 	Bullet.Detonated		= true
 	Bullet.InitTime		= SysTime()
@@ -208,7 +208,7 @@ end
 
 function Round.propimpact( Index, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACE_Check( Target ) then
+	if ACE.Check( Target ) then
 
 		if not Bullet.Detonated then --Bullet hits the plate
 
@@ -238,15 +238,15 @@ function Round.propimpact( Index, Bullet, Target, HitNormal, HitPos, Bone )
 			Bullet.NotFirstPen = true
 
 			local Speed  = Bullet.Flight:Length() / ACE.VelScale
-			local Energy = ACE_Kinetic( Speed, Bullet.ProjMass, 999999 )
-			local HitRes = ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+			local Energy = ACE.Kinetic( Speed, Bullet.ProjMass, 999999 )
+			local HitRes = ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 			if HitRes.PostPenetration.Continue then
 
 				table.insert( Bullet.Filter , Target )
 
 
-				ACE_Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.IncomingKinetic * 0.75 , Bullet.CannonCaliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
+				ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.IncomingKinetic * 0.75 , Bullet.CannonCaliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
 
 				Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(HitRes.PostPenetration.RemainingKinetic * ((Bullet.NotFirstPen and ACE.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
 
@@ -271,8 +271,8 @@ function Round.worldimpact( Index, Bullet, HitPos, HitNormal )
 	end
 
 	local Speed  = Bullet.Flight:Length() / ACE.VelScale
-	local Energy = ACE_Kinetic( Speed, Bullet.ProjMass, 999999 )
-	local HitRes = ACE_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
+	local Energy = ACE.Kinetic( Speed, Bullet.ProjMass, 999999 )
+	local HitRes = ACE.PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 
 	if HitRes.Penetrated then
 		return "Penetrated"
@@ -285,10 +285,10 @@ end
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
 
 	if not Bullet.Detonated then
-		ACE_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
+		ACE.HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun )
 	end
 
-	ACE_RemoveBullet( Index )
+	ACE.RemoveBullet( Index )
 
 end
 
@@ -364,7 +364,7 @@ function Round.guicreate( Panel, Table )
 	acemenupanel:AmmoSlider("ConeAng",0,0,1000,3, "HEAT Cone Angle", "")
 	acemenupanel:AmmoSlider("FillerVol",0,0,1000,3, "Total HEAT Warhead volume", "")
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	acemenupanel:CPanelText("VelocityDisplay", "")  --Proj muzzle velocity (Name, Desc)
 	acemenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
@@ -401,14 +401,14 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acemenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acemenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. math.floor(Data.PropMass * 1000) .. " g" .. "/ " .. math.Round(Data.PropMass, 1) .. " kg") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. math.floor(Data.ProjMass * 1000) .. " g" .. "/ " .. math.Round(Data.ProjMass, 1) .. " kg") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ConeAng", Data.ConeAng, Data.MinConeAng, Data.MaxConeAng, 0, "Crush Cone Angle", "") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "HE Filler Volume", "HE Filler Mass : " .. math.floor(Data.FillerMass * 1000) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acemenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
@@ -424,16 +424,16 @@ function Round.guiupdate( Panel )
 	-------------------------------------------------------------------------------
 	--HEAT doesnt lose Pen by distance, so its ok to say MaxPen on every value below
 
-	local R1V, R1P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 100)
-	R1P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
-	local R2V, R2P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 200)
-	R2P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
-	local R3V, R3P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 400)
-	R3P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
-	local R4V, R4P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
-	R4P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
-	local R5V, R5P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea * ACE.HEATPlungingReduction, Data.LimitVel, 100)
-	R5P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea * ACE.HEATPlungingReduction)
+	local R1V, R1P = ACE.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 100)
+	R1P = ACE.CalcPenetration(ACE.Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	local R2V, R2P = ACE.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 200)
+	R2P = ACE.CalcPenetration(ACE.Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	local R3V, R3P = ACE.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 400)
+	R3P = ACE.CalcPenetration(ACE.Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	local R4V, R4P = ACE.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+	R4P = ACE.CalcPenetration(ACE.Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	local R5V, R5P = ACE.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea * ACE.HEATPlungingReduction, Data.LimitVel, 100)
+	R5P = ACE.CalcPenetration(ACE.Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea * ACE.HEATPlungingReduction)
 
 	acemenupanel:CPanelText("SlugDisplay", "Penetrator Mass : " .. (math.floor(Data.SlugMass * 10000) / 10) .. " g \nPenetrator Caliber : " .. (math.floor(Data.SlugCaliber * 100) / 10) .. " mm \nPenetrator Velocity : " .. math.floor(Data.MuzzleVel + Data.SlugMV) .. " m/s \nMax Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n100m pen: " .. math.floor(R1P, 0) .. "mm @ " .. math.floor(R1V, 0) .. " m\\s\n200m pen: " .. math.floor(R2P, 0) .. "mm @ " .. math.floor(R2V, 0) .. " m\\s\n400m pen: " .. math.floor(R3P, 0) .. "mm @ " .. math.floor(R3V, 0) .. " m\\s\n800m pen: " .. math.floor(R4P, 0) .. "mm @" .. math.floor(R4V, 0) .. " m\\s\n\nIf using Plunging Fuse: " .. math.floor(R5P, 0) .. "mm @ " .. math.floor(R5V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.\n") --Proj muzzle penetration (Name, Desc)
 end

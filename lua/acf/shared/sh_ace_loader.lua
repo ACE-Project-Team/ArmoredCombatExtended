@@ -96,40 +96,40 @@ local explosive_base = {
 -- add gui stuff to base classes if this is client
 -- more required stuff for the menu. Janky as fuck
 if CLIENT then
-	gun_base.guicreate           = function( _, Table ) ACE_GunGUICreate( Table )		end or nil
+	gun_base.guicreate           = function( _, Table ) ACE.GunGUICreate( Table )		end or nil
 	gun_base.guiupdate           = function() return end
 
-	engine_base.guicreate        = function( _, tbl ) ACE_EngineGUI_Update( tbl )		end or nil
+	engine_base.guicreate        = function( _, tbl ) ACE.EngineGUI_Update( tbl )		end or nil
 
-	gearbox_base.guicreate       = function( _, tbl ) ACE_GearboxGUICreate( tbl )		end or nil
+	gearbox_base.guicreate       = function( _, tbl ) ACE.GearboxGUICreate( tbl )		end or nil
 	gearbox_base.guiupdate       = function() return end
 
-	fueltank_base.guicreate      = function( _, tbl ) ACE_FuelTankGUICreate( tbl )		end or nil
-	fueltank_base.guiupdate      = function( _, tbl ) ACE_FuelTankGUIUpdate( tbl )		end or nil
+	fueltank_base.guicreate      = function( _, tbl ) ACE.FuelTankGUICreate( tbl )		end or nil
+	fueltank_base.guiupdate      = function( _, tbl ) ACE.FuelTankGUIUpdate( tbl )		end or nil
 
-	radar_base.guicreate         = function( _, Table ) ACE_RadarGUICreate( Table )	end
+	radar_base.guicreate         = function( _, Table ) ACE.RadarGUICreate( Table )	end
 	radar_base.guiupdate         = function() return end
 
-	trackradar_base.guicreate    = function( _, Table ) ACE_TrackRadarGUICreate( Table )  end or nil
+	trackradar_base.guicreate    = function( _, Table ) ACE.TrackRadarGUICreate( Table )  end or nil
 	trackradar_base.guiupdate    = function() return end
 
-	sonar_base.guicreate    = function( _, Table ) ACE_SonarGUICreate( Table )  end or nil
+	sonar_base.guicreate    = function( _, Table ) ACE.SonarGUICreate( Table )  end or nil
 	sonar_base.guiupdate    = function() return end
 
-	irst_base.guicreate          = function( _, Table ) ACE_IRSTGUICreate( Table )		end or nil
+	irst_base.guicreate          = function( _, Table ) ACE.IRSTGUICreate( Table )		end or nil
 	irst_base.guiupdate          = function() return end
 
-	vheat_source_base.guicreate  = function( _, Table ) ACE_VHeatSourceGUICreate( Table )	end or nil
+	vheat_source_base.guicreate  = function( _, Table ) ACE.VHeatSourceGUICreate( Table )	end or nil
 	vheat_source_base.guiupdate  = function() return end
 
 	crewseat_base.guicreate  = function( _, Table ) ACECrewseatGUICreate( Table ) end or nil
 	crewseat_base.guiupdate  = function() return end
 
-	extras_base.guicreate    = function( _, Table ) ACE_ExtrasGUICreate( Table ) end or nil
+	extras_base.guicreate    = function( _, Table ) ACE.ExtrasGUICreate( Table ) end or nil
 	extras_base.guiupdate    = function() return end
 
-	explosive_base.guicreate = function( _, Table ) ACE_ExplosiveGUICreate( Table ) end or nil
-	explosive_base.guiupdate = function( _, Table ) ACE_ExplosiveGUIUpdate( Table ) end or nil
+	explosive_base.guicreate = function( _, Table ) ACE.ExplosiveGUICreate( Table ) end or nil
+	explosive_base.guiupdate = function( _, Table ) ACE.ExplosiveGUIUpdate( Table ) end or nil
 end
 
 -- some factory functions for defining ents
@@ -160,10 +160,10 @@ end
 -- Generic entity-definition entry point retained for shared metadata files.
 function ACE_DefineEntity( id, data )
 	if data.category == "Crew" then
-		return ACE_DefineCrewseat(id, data)
+		return ACE.DefineCrewseat(id, data)
 	end
 
-	return ACE_DefineExtras(id, data)
+	return ACE.DefineExtras(id, data)
 end
 
 -- Gun definition
@@ -221,7 +221,7 @@ end
 --Engine definition
 function ACE_DefineEngine( id, data )
 	if (data.year or 0) < ACE.Year then
-		local engineData = ACE_CalcEnginePerformanceData(data.torquecurve or ACE.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
+		local engineData = ACE.CalcEnginePerformanceData(data.torquecurve or ACE.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
 
 		data.peaktqrpm    = engineData.peakTqRPM
 		data.peakpower    = engineData.peakPower

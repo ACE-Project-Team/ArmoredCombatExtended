@@ -1,5 +1,5 @@
 --define the class
-ACE_DefineGunClass("SL", {
+ACE.DefineGunClass("SL", {
 	type		= "Gun",
 	spread		= 0.2,
 	name		= "Smoke Launcher",
@@ -12,7 +12,7 @@ ACE_DefineGunClass("SL", {
 } )
 
 --add a gun to the class
-ACE_DefineGun("40mmSL", { --id
+ACE.DefineGun("40mmSL", { --id
 	name		= "40mm Smoke Launcher",
 	desc		= "",
 	model		= "models/launcher/40mmsl.mdl",
@@ -29,7 +29,7 @@ ACE_DefineGun("40mmSL", { --id
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACE_DefineGun("20mmSL", { --id
+ACE.DefineGun("20mmSL", { --id
 	name		= "20mm Smoke Launcher",
 	desc		= "",
 	model		= "models/launcher/20mmsl.mdl",
@@ -46,7 +46,7 @@ ACE_DefineGun("20mmSL", { --id
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACE_DefineGun("40mmCL", { --id
+ACE.DefineGun("40mmCL", { --id
 	name		= "40mm Countermeasure Launcher",
 	desc		= "A revolver-style launcher capable of firing off several smoke or flare rounds.",
 	model		= "models/launcher/40mmgl.mdl",

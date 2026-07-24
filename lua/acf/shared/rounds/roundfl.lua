@@ -46,7 +46,7 @@ function Round.create( Gun, BulletData )
 			Inaccuracy			= VectorRand() / 360 * ((Gun.Inaccuracy or 0) + BulletData["FlechetteSpread"])
 			FlechetteData["Flight"] = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData["MuzzleVel"] * 39.37 + Gun:GetVelocity()
 
-			ACE_CreateBullet( FlechetteData )
+			ACE.CreateBullet( FlechetteData )
 		end
 	else
 		local BaseInaccuracy	= math.tan(math.rad(Gun:GetInaccuracy()))
@@ -58,7 +58,7 @@ function Round.create( Gun, BulletData )
 			BaseSpread			= BaseInaccuracy * (math.random() ^ (1 / math.Clamp(ACE.GunInaccuracyBias, 0.5, 4))) * (Gun:GetUp() * (2 * math.random() - 1) + Gun:GetRight() * (2 * math.random() - 1)):GetNormalized()
 			AddSpread			= AddInaccuracy * (math.random() ^ (1 / math.Clamp(ACE.GunInaccuracyBias, 0.5, 4))) * (Gun:GetUp() * (2 * math.random() - 1) + Gun:GetRight() * (2 * math.random() - 1)):GetNormalized()
 			FlechetteData["Flight"] = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData["MuzzleVel"] * 39.37 + Gun:GetVelocity()
-			ACE_CreateBullet( FlechetteData )
+			ACE.CreateBullet( FlechetteData )
 		end
 	end
 
@@ -81,7 +81,7 @@ function Round.convert( _, PlayerData )
 	PlayerData["Data6"]		= PlayerData["Data6"]	or 0	-- flechette spread
 
 
-	PlayerData, Data, ServerData, GUIData = ACE_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	--local GunClass = ACE.Weapons["Guns"][Data["Id"] or PlayerData["Id"]]["gunclass"]
 
@@ -116,7 +116,7 @@ function Round.convert( _, PlayerData )
 	Data["LimitVel"]			= 500									--Most efficient penetration speed in m/s
 	Data["KETransfert"]		= 0.1								--Kinetic energy transfert to the target for movement purposes
 	Data["Ricochet"]			= 50										--Base ricochet angle
-	Data["MuzzleVel"]		= ACE_MuzzleVelocity( Data["PropMass"], Data["ProjMass"], Data["Caliber"] )
+	Data["MuzzleVel"]		= ACE.MuzzleVelocity( Data["PropMass"], Data["ProjMass"], Data["Caliber"] )
 
 	Data["BoomPower"]		= Data["PropMass"]
 
@@ -135,8 +135,8 @@ end
 
 function Round.getDisplayData(Data)
 	local GUIData = {}
-	local Energy = ACE_Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
-	GUIData["MaxPen"] = ACE_CalcPenetration(Energy, Data["FlechettePenArea"])
+	local Energy = ACE.Kinetic( Data["MuzzleVel"] * 39.37 , Data["FlechetteMass"], Data["LimitVel"] )
+	GUIData["MaxPen"] = ACE.CalcPenetration(Energy, Data["FlechettePenArea"])
 	return GUIData
 end
 
@@ -187,11 +187,11 @@ end
 
 function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACE_Check( Target ) then
+	if ACE.Check( Target ) then
 
 		local Speed	= Bullet["Flight"]:Length() / ACE.VelScale
-		local Energy	= ACE_Kinetic( Speed , Bullet["ProjMass"], Bullet["LimitVel"] )
-		local HitRes	= ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+		local Energy	= ACE.Kinetic( Speed , Bullet["ProjMass"], Bullet["LimitVel"] )
+		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.PostPenetration.Continue then
 
@@ -214,8 +214,8 @@ end
 
 function Round.worldimpact( _, Bullet, HitPos, HitNormal )
 
-	local Energy = ACE_Kinetic( Bullet.Flight:Length() / ACE.VelScale, Bullet.ProjMass, Bullet.LimitVel )
-	local HitRes = ACE_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
+	local Energy = ACE.Kinetic( Bullet.Flight:Length() / ACE.VelScale, Bullet.ProjMass, Bullet.LimitVel )
+	local HitRes = ACE.PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 
 	if HitRes.Penetrated then
 
@@ -231,7 +231,7 @@ end
 
 function Round.endflight( Index )
 
-	ACE_RemoveBullet( Index )
+	ACE.RemoveBullet( Index )
 
 end
 
@@ -278,14 +278,14 @@ function Round.guicreate( Panel, Table )
 
 	acemenupanel:AmmoSelect( ACE.AmmoBlacklist["FL"] )
 
-	ACE_UpperCommonDataDisplay()
+	ACE.UpperCommonDataDisplay()
 
 	acemenupanel:AmmoSlider("PropLength",0,0,1000,3, "Propellant Length", "")	--Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("Flechettes",2,3,128,0, "Flechettes", "")	--flechette count Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FlechetteSpread",10,5,60,1, "Flechette Spread", "")	--flechette spread Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 
-	ACE_CommonDataDisplay()
+	ACE.CommonDataDisplay()
 
 	Round.guiupdate( Panel, Table )
 
@@ -320,8 +320,8 @@ function Round.guiupdate( Panel )
 	acemenupanel:AmmoSlider("Flechettes",Data.Flechettes,Data.MinFlechettes,Data.MaxFlechettes,0, "Flechettes", "Flechette Radius: " .. math.Round(Data["FlechetteRadius"] * 10,2) .. " mm")
 	acemenupanel:AmmoSlider("FlechetteSpread",Data.FlechetteSpread,Data.MinSpread,Data.MaxSpread,1, "Flechette Spread", "")
 
-	ACE_UpperCommonDataDisplay( Data, PlayerData )
-	ACE_CommonDataDisplay( Data )
+	ACE.UpperCommonDataDisplay( Data, PlayerData )
+	ACE.CommonDataDisplay( Data )
 end
 
 list.Set( "APRoundTypes", "FL", Round )

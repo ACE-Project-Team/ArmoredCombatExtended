@@ -1,4 +1,4 @@
-ACE_DefineEntity("WindSensor", {
+ACE.DefineEntity("WindSensor", {
 	name = "Wind Sensor",
 	ent = "ace_wind_sensor",
 	category = "Misc",

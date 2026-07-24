@@ -27,7 +27,7 @@ function ACE_Missile_RegisterFlare(bdata)
 	bdata.FlareObj = flareObj
 
 
-	ACE_Missile_OnFlareSpawn(bdata)
+	ACE.Missile_OnFlareSpawn(bdata)
 
 end
 
@@ -73,7 +73,7 @@ function ACE_Missile_GetFlaresInCone(pos, dir, degs)
 
 		if not flare:IsValid() then continue end
 
-		if ACE_Missile_ConeContainsPos(pos, dir, degs, flare:GetPos()) then
+		if ACE.Missile_ConeContainsPos(pos, dir, degs, flare:GetPos()) then
 			ret[index] = flare
 			index = index + 1
 		end
@@ -110,7 +110,7 @@ function ACE_Missile_GetMissilesInCone(radar, dir, degs)
 		--debugoverlay.Line(pos, traceResult.HitPos, 0.25, Color(255, 0, 0), true) -- radar to missile
 		--debugoverlay.Box(pos, Vector(-5, -5, -5), Vector(5, 5, 5), 0.25, Color(0, 255, 0, 150)) -- radar pos
 
-		if traceResult.Fraction == 1 and ACE_Missile_ConeContainsPos(pos, dir, degs, missilePos) then
+		if traceResult.Fraction == 1 and ACE.Missile_ConeContainsPos(pos, dir, degs, missilePos) then
 			ret[#ret + 1] = missile
 		end
 
@@ -178,7 +178,7 @@ function ACE_Missile_GetAllMissilesWhichCanSee(pos)
 			continue
 		end
 
-		if ACE_Missile_ConeContainsPos(missile:GetPos(), missile:GetForward(), guidance.ViewCone, pos) then
+		if ACE.Missile_ConeContainsPos(missile:GetPos(), missile:GetForward(), guidance.ViewCone, pos) then
 			ret[#ret + 1] = missile
 		end
 
@@ -216,7 +216,7 @@ function ACE_Missile_ApplyCountermeasures(missile, guidance)
 			continue
 		end
 
-		if ACE_Missile_ApplyCountermeasure(missile, guidance, measure) then
+		if ACE.Missile_ApplyCountermeasure(missile, guidance, measure) then
 			break
 		end
 
@@ -237,7 +237,7 @@ function ACE_Missile_ApplySpawnCountermeasures(missile, guidance)
 			continue
 		end
 
-		if ACE_Missile_ApplyCountermeasure(missile, guidance, measure) then
+		if ACE.Missile_ApplyCountermeasure(missile, guidance, measure) then
 			break
 		end
 

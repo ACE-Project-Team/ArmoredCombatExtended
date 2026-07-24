@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACE_DefineEngine( "1.5-I4", {
+ACE.DefineEngine( "1.5-I4", {
 	name = "1.5L I4 Petrol",
 	desc = "Small car engine, not a whole lot of git",
 	model = "models/engines/inline4s.mdl",
@@ -18,7 +18,7 @@ ACE_DefineEngine( "1.5-I4", {
 	limitrpm = 7500,
 } )
 
-ACE_DefineEngine( "3.7-I4", {
+ACE.DefineEngine( "3.7-I4", {
 	name = "3.7L I4 Petrol",
 	desc = "Large inline 4, sees most use in light trucks",
 	model = "models/engines/inline4m.mdl",
@@ -33,7 +33,7 @@ ACE_DefineEngine( "3.7-I4", {
 	limitrpm = 6500,
 } )
 
-ACE_DefineEngine( "16.0-I4", {
+ACE.DefineEngine( "16.0-I4", {
 	name = "16.0L I4 Petrol",
 	desc = "Giant, thirsty I4 petrol, most commonly used in boats",
 	model = "models/engines/inline4l.mdl",
@@ -50,7 +50,7 @@ ACE_DefineEngine( "16.0-I4", {
 
 -- Diesel
 
-ACE_DefineEngine( "1.6-I4", {
+ACE.DefineEngine( "1.6-I4", {
 	name = "1.6L I4 Diesel",
 	desc = "Small and light diesel, for low power applications requiring a wide powerband",
 	model = "models/engines/inline4s.mdl",
@@ -65,7 +65,7 @@ ACE_DefineEngine( "1.6-I4", {
 	limitrpm = 5000,
 } )
 
-ACE_DefineEngine( "3.1-I4", {
+ACE.DefineEngine( "3.1-I4", {
 	name = "3.1L I4 Diesel",
 	desc = "Light truck duty diesel, good overall grunt",
 	model = "models/engines/inline4m.mdl",
@@ -80,7 +80,7 @@ ACE_DefineEngine( "3.1-I4", {
 	limitrpm = 4000,
 } )
 
-ACE_DefineEngine( "15.0-I4", {
+ACE.DefineEngine( "15.0-I4", {
 	name = "15.0L I4 Diesel",
 	desc = "Small boat sized diesel, with large amounts of torque",
 	model = "models/engines/inline4l.mdl",

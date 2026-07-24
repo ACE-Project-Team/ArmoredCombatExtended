@@ -290,7 +290,7 @@ end
 -- Guidance may be a serialized string, keyed table, or ordered mode list.
 local function resolveGuidanceName(guidanceValue)
 	if isstring(guidanceValue) then
-		local name = ACE_GetConfigurableName(guidanceValue, "")
+		local name = ACE.GetConfigurableName(guidanceValue, "")
 		if name == "" then name = guidanceValue end
 		return normalizeGuidanceName(name)
 	elseif istable(guidanceValue) then
@@ -334,11 +334,11 @@ function ACE.Points.RoundFromBullet(bdata)
 	if not istable(bdata) then return nil end
 
 	local round = {
-		Type        = ACE_ResolveAmmoType(nil, bdata),   -- bdata branch: bdata.Type or bdata.RoundType
-		maxPen      = ACE_GetAmmoMaxPen(bdata),
+		Type        = ACE.ResolveAmmoType(nil, bdata),   -- bdata branch: bdata.Type or bdata.RoundType
+		maxPen      = ACE.GetAmmoMaxPen(bdata),
 		FrArea      = tonumber(bdata.FrArea) or 0,
 		SlugCaliber = tonumber(bdata.SlugCaliber),       -- HEAT family only; nil otherwise
-		blastMass   = ACE_GetAmmoBlastMass(bdata),
+		blastMass   = ACE.GetAmmoBlastMass(bdata),
 	}
 
 	-- Guidance folds the old per-missile pricing premium into baseRoundCost. Candidates:
@@ -346,7 +346,7 @@ function ACE.Points.RoundFromBullet(bdata)
 	-- legacy pricing read). GLATGM (gun-launched grenade ammo) opts out, as it always has.
 	-- Non-missiles carry none, so guidance stays nil (1.0).
 	local guid = bdata.guidance or bdata.Guidance or bdata.Data7
-	if guid ~= nil and not ACE_IsGLATGMAmmoType(bdata.Type) then
+	if guid ~= nil and not ACE.IsGLATGMAmmoType(bdata.Type) then
 		round.guidance = resolveGuidanceName(guid)
 	end
 
@@ -356,8 +356,8 @@ end
 -- ROFLimit is a pricing input and its trigger path must dirty points. LoaderCount is local to
 -- the gun, including loaders linked across contraption fragments.
 function ACE.Points.GunSustainedRps(gun, bdata, crate)
-	if not ACE_IsEnt(gun) then return 0 end
-	local base = ACE_GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0, bdata, crate)
+	if not ACE.IsEnt(gun) then return 0 end
+	local base = ACE.GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0, bdata, crate)
 	return ACE.Points.SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
 end
 
@@ -365,7 +365,7 @@ end
 -- REAL filler mass -- self.FillerMass, kg of HE, set once at spawn from the scaled charge
 -- volume -- as mounted ordnance via ACE.Points.ChargeCost. 0 for a filler-less/invalid entity.
 function ACE.Points.ChargeEntCost(ent)
-	if not ACE_IsEnt(ent) then return 0 end
+	if not ACE.IsEnt(ent) then return 0 end
 	return ACE.Points.ChargeCost(tonumber(ent.FillerMass) or 0)
 end
 
@@ -373,7 +373,7 @@ end
 -- components and pods (they price in their own categories) and props with no armour or HP.
 -- Uses MAX armour/health (static design). Material ke/chem via the curated MATERIAL_EFF above.
 function ACE.Points.PropArmor(ent)
-	if not ACE_IsEnt(ent) then return nil end
+	if not ACE.IsEnt(ent) then return nil end
 
 	local cls = ent:GetClass() or ""
 	if cls:sub(1, 4) == "ACE_" or cls:sub(1, 4) == "ace_" or cls:sub(1, 5) == "gmod_"

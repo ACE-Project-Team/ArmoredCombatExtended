@@ -1,5 +1,5 @@
 --define the class
-ACE_DefineRackClass("POD", {
+ACE.DefineRackClass("POD", {
 	spread		= 0.5,
 	name			= "Rocket Pod",
 	desc			= "An accurate, lightweight rocket launcher which can explode if its armour is pierced.",
@@ -20,7 +20,7 @@ ACE_DefineRackClass("POD", {
 
 
 
-ACE_DefineRack("40mm7xPOD", {
+ACE.DefineRack("40mm7xPOD", {
 	name		= "7x 40mm FFAR Pod",
 	desc		= "A lightweight pod for small rockets which is vulnerable to shots and explosions.",
 	model	= "models/missiles/launcher7_40mm.mdl",
@@ -49,7 +49,7 @@ ACE_DefineRack("40mm7xPOD", {
 
 
 
-ACE_DefineRack("70mm7xPOD", {
+ACE.DefineRack("70mm7xPOD", {
 	name		= "7x 70mm FFAR Pod",
 	desc		= "A lightweight pod for rockets which is vulnerable to shots and explosions.",
 	model	= "models/missiles/launcher7_70mm.mdl",
@@ -79,7 +79,7 @@ ACE_DefineRack("70mm7xPOD", {
 
 
 
-ACE_DefineRack("1x BGM-71E", {
+ACE.DefineRack("1x BGM-71E", {
 	name = "BGM-71E Single Tube",
 	desc = "A single BGM-71E round.",
 	model = "models/missiles/bgm_71e_round.mdl",
@@ -100,7 +100,7 @@ ACE_DefineRack("1x BGM-71E", {
 
 
 
-ACE_DefineRack("2x BGM-71E", {
+ACE.DefineRack("2x BGM-71E", {
 	name = "BGM-71E 2x Rack",
 	desc = "A BGM-71E rack designed to carry 2 rounds.",
 	model = "models/missiles/bgm_71e_2xrk.mdl",
@@ -124,7 +124,7 @@ ACE_DefineRack("2x BGM-71E", {
 
 
 
-ACE_DefineRack("4x BGM-71E", {
+ACE.DefineRack("4x BGM-71E", {
 	name = "BGM-71E 4x Rack",
 	desc = "A BGM-71E rack designed to carry 4 rounds.",
 	model = "models/missiles/bgm_71e_4xrk.mdl",
@@ -147,7 +147,7 @@ ACE_DefineRack("4x BGM-71E", {
 } )
 
 
-ACE_DefineRack("380mmRW61", {
+ACE.DefineRack("380mmRW61", {
 	name		= "380mm rocket asisted mortar",
 	desc		= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions.",
 	model	= "models/launcher/RW61.mdl",
@@ -171,7 +171,7 @@ ACE_DefineRack("380mmRW61", {
 -- New-old racks became pods:
 
 
-ACE_DefineRack("3xUARRK", {
+ACE.DefineRack("3xUARRK", {
 	name = "A-20 3x HVAR Rocket pod",
 	desc = "A lightweight rack for bombs which is vulnerable to shots and explosions.",
 	model	= "models/missiles/rk3uar.mdl",
@@ -192,7 +192,7 @@ ACE_DefineRack("3xUARRK", {
 	}
 } )
 
-ACE_DefineRack("6xUARRK", {
+ACE.DefineRack("6xUARRK", {
 	name = "M270 6x Artillery Launcher",
 	desc = "6-pack of death, used to efficiently carry artillery rockets",
 	model	= "models/missiles/6pod_rk.mdl",
@@ -221,7 +221,7 @@ ACE_DefineRack("6xUARRK", {
 	}
 } )
 
-ACE_DefineRack("1x FIM-92", {
+ACE.DefineRack("1x FIM-92", {
 	name = "Single Munition FIM-92 Rack",
 	desc = "A FIM-92 rack designed to carry 1 missile.",
 	model	= "models/missiles/fim_92_1xrk.mdl",
@@ -239,7 +239,7 @@ ACE_DefineRack("1x FIM-92", {
 	}
 } )
 
-ACE_DefineRack("2x FIM-92", {
+ACE.DefineRack("2x FIM-92", {
 	name = "Double Munition FIM-92 Rack",
 	desc = "A FIM-92 rack designed to carry 2 missiles.",
 	model	= "models/missiles/fim_92_2xrk.mdl",
@@ -260,7 +260,7 @@ ACE_DefineRack("2x FIM-92", {
 	}
 } )
 
-ACE_DefineRack("4x FIM-92", {
+ACE.DefineRack("4x FIM-92", {
 	name = "Quad Munition FIM-92 Rack",
 	desc = "A FIM-92 rack designed to carry 4 missile.",
 	model	= "models/missiles/fim_92_4xrk.mdl",
@@ -283,7 +283,7 @@ ACE_DefineRack("4x FIM-92", {
 } )
 
 
-ACE_DefineRack("1x Strela-1", {
+ACE.DefineRack("1x Strela-1", {
 	name = "Single Munition 9M31 Rack",
 	desc = "An 9M31 rack designed to carry 1 missile.",
 	model	= "models/missiles/9m31_rk1.mdl",
@@ -302,7 +302,7 @@ ACE_DefineRack("1x Strela-1", {
 	}
 } )
 
-ACE_DefineRack("2x Strela-1", {
+ACE.DefineRack("2x Strela-1", {
 	name = "Double Munition 9M31 Rack",
 	desc = "An 9M31 rack designed to carry 2 missiles.",
 	model	= "models/missiles/9m31_rk2.mdl",
@@ -322,7 +322,7 @@ ACE_DefineRack("2x Strela-1", {
 } )
 
 --strela-1
-ACE_DefineRack("4x Strela-1", {
+ACE.DefineRack("4x Strela-1", {
 	name = "Quad Munition 9M31 Rack",
 	desc = "An 9m31 rack designed to carry 4 missiles.",
 	model	= "models/missiles/9m31_rk4.mdl",
@@ -345,7 +345,7 @@ ACE_DefineRack("4x Strela-1", {
 } )
 
 --ataka tube
-ACE_DefineRack("1x Ataka", {
+ACE.DefineRack("1x Ataka", {
 	name = "Single Munition 9M120 Rack",
 	desc = "An 9M120 rack designed to carry 1 missile.",
 	model	= "models/missiles/9m120_rk1.mdl",
@@ -365,7 +365,7 @@ ACE_DefineRack("1x Ataka", {
 } )
 
 --spg9 tube
-ACE_DefineRack("1x SPG9", {
+ACE.DefineRack("1x SPG9", {
 	name = "SPG-9 Launch Tube",
 	desc = "Launch tube for SPG-9 recoilless rocket.",
 	model	= "models/spg9/spg9.mdl",
@@ -386,7 +386,7 @@ ACE_DefineRack("1x SPG9", {
 } )
 
 -- 1 Kornet tube
-ACE_DefineRack("1x Kornet", {
+ACE.DefineRack("1x Kornet", {
 	name       = "Kornet Launch Tube",
 	desc       = "Launch tube for Kornet antitank missile.",
 	model      = "models/kali/weapons/kornet/parts/9m133 kornet tube.mdl",
@@ -406,7 +406,7 @@ ACE_DefineRack("1x Kornet", {
 } )
 
 -- 2 Kornet tube
-ACE_DefineRack("2x Kornet", {
+ACE.DefineRack("2x Kornet", {
 	name       = "Kornet Launch Tube",
 	desc       = "A double Launch tube for 2 Kornet missiles.",
 	model      = "models/missiles/kornetrack2.mdl",
@@ -427,7 +427,7 @@ ACE_DefineRack("2x Kornet", {
 } )
 
 -- 4 Kornet tube
-ACE_DefineRack("4x Kornet", {
+ACE.DefineRack("4x Kornet", {
 	name       = "Kornet Launch Tube",
 	desc       = "A Quad Launch tube for 4 Kornet missiles.",
 	model      = "models/missiles/kornetrack4.mdl",
@@ -451,7 +451,7 @@ ACE_DefineRack("4x Kornet", {
 
 
 --Zuni pod
-ACE_DefineRack("127mm4xPOD", {
+ACE.DefineRack("127mm4xPOD", {
 	name = "5.0 Inch Zuni Pod",
 	desc = "LAU-10/A Pod for the Zuni rocket.",
 	model	= "models/ghosteh/lau10.mdl",
@@ -474,7 +474,7 @@ ACE_DefineRack("127mm4xPOD", {
 } )
 
 --9m311 pod
-ACE_DefineRack("1x 9m311", {
+ACE.DefineRack("1x 9m311", {
 	name = "Single 9M311 Launch Tube",
 	desc = "A single 9M311 round.",
 	model = "models/missiles/arend/9m311_tube.mdl",
@@ -495,7 +495,7 @@ ACE_DefineRack("1x 9m311", {
 } )
 
 --Javelin pod. Using the unfixed model since in the new one, missile is created at 90° degrees from original direction. I wonder why.
-ACE_DefineRack("1x Javelin", {
+ACE.DefineRack("1x Javelin", {
 	name = "FGM-148 Javelin Launch Tube",
 	desc = "A launch tube designed for the javelin.",
 	model = "models/mac/Javelin_straight.mdl",
@@ -514,7 +514,7 @@ ACE_DefineRack("1x Javelin", {
 	}
 } )
 
-ACE_DefineRack("20x S8KO", {
+ACE.DefineRack("20x S8KO", {
 	name = "S-8KO Rocket Pod",
 	desc = "The S-8 is a rocket weapon developed by the Soviet Air Force for use by military aircraft. It remains in service with the Russian Aerospace Forces and various export customers.",
 	model = "models/missiles/arend/s8kolauncher.mdl",
@@ -552,7 +552,7 @@ ACE_DefineRack("20x S8KO", {
 	}
 } )
 
-ACE_DefineRack("2x SRAAM", {
+ACE.DefineRack("2x SRAAM", {
 	name = "SRAAM Launcher",
 	desc = "A Launcher made for 2 SRAAM missiles",
 	model       = "models/missiles/arend/sraam_rack.mdl",
@@ -569,7 +569,7 @@ ACE_DefineRack("2x SRAAM", {
 	}
 } )
 
-ACE_DefineRack("1x VT-1", {
+ACE.DefineRack("1x VT-1", {
 	name = "VT-1 Single Tube",
 	desc = "A single VT-1 round.",
 	model = "models/missiles/arend/vt1_launcher.mdl",
@@ -589,7 +589,7 @@ ACE_DefineRack("1x VT-1", {
 	}
 } )
 
-ACE_DefineRack("1x HVM", {
+ACE.DefineRack("1x HVM", {
 	name = "HVM Single Tube",
 	desc = "A single Starstreak round.",
 	model = "models/missiles/hvm_tube.mdl",
@@ -609,7 +609,7 @@ ACE_DefineRack("1x HVM", {
 	}
 } )
 
-ACE_DefineRack("6x 9K121", {
+ACE.DefineRack("6x 9K121", {
 	name = "9K121 Vikhr Rack",
 	desc = "The 9K121 Vikhr rack designed to carry 6 9K121 missiles.",
 	model       = "models/missiles/arend/9k121_rack.mdl",
@@ -630,7 +630,7 @@ ACE_DefineRack("6x 9K121", {
 	}
 } )
 
-ACE_DefineRack("1x 9M113", {
+ACE.DefineRack("1x 9M113", {
 	name = "9M113 Single Tube",
 	desc = "A single 9M113 Konkurs round.",
 	model = "models/missiles/arend/9m113_launcher.mdl",
@@ -651,7 +651,7 @@ ACE_DefineRack("1x 9M113", {
 } )
 
 
-ACE_DefineRack("1xVLS", {
+ACE.DefineRack("1xVLS", {
 	name = "1x Vertical Launch Cell",
 	desc = "Self enclosed vertical launch tube.",
 	model	= "models/macc/VLS_SingleBase.mdl",
@@ -675,7 +675,7 @@ ACE_DefineRack("1xVLS", {
 	}
 } )
 
-ACE_DefineRack("1xmVLS", {
+ACE.DefineRack("1xmVLS", {
 	name = "1x Mini Vertical Launch Cell",
 	desc = "Small self enclosed vertical launch tube.",
 	model	= "models/macc/VLS_SingleBase_Small.mdl",
@@ -699,7 +699,7 @@ ACE_DefineRack("1xmVLS", {
 	}
 } )
 
-ACE_DefineRack("4xVLS", {
+ACE.DefineRack("4xVLS", {
 	name = "4x Vertical Launch Cell",
 	desc = "Quad vertical launch tubes for unleasing the storm.",
 	model	= "models/macc/VLS_4X.mdl",
@@ -727,7 +727,7 @@ ACE_DefineRack("4xVLS", {
 	}
 } )
 
-ACE_DefineRack("4xmVLS", {
+ACE.DefineRack("4xmVLS", {
 	name = "4x Mini Vertical Launch Cell",
 	desc = "Quad vertical launch tubes for unleasing the storm. Small edition.",
 	model	= "models/macc/VLS_4X_Small.mdl",
@@ -753,7 +753,7 @@ ACE_DefineRack("4xmVLS", {
 	}
 } )
 
-ACE_DefineRack("1xTorpedo", {
+ACE.DefineRack("1xTorpedo", {
 	name = "1x 533mm Torpedo Rack",
 	desc = "A single 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/1x1xtorpedolauncher.mdl",
@@ -771,7 +771,7 @@ ACE_DefineRack("1xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("2xTorpedo", {
+ACE.DefineRack("2xTorpedo", {
 	name = "2x 533mm Torpedo Rack",
 	desc = "Twin 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/1x2xtorpedolauncher.mdl",
@@ -790,7 +790,7 @@ ACE_DefineRack("2xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("3xTorpedo", {
+ACE.DefineRack("3xTorpedo", {
 	name = "3x 533mm Torpedo Rack",
 	desc = "Triple 533cm torpedo rack.",
 	model	= "models/golem/TorpedoLaunchers/1x3xTorpedoLauncher.mdl",
@@ -810,7 +810,7 @@ ACE_DefineRack("3xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("4xTorpedo", {
+ACE.DefineRack("4xTorpedo", {
 	name = "4x 533mm Torpedo Rack",
 	desc = "A quad 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/1x4xtorpedolauncher.mdl",
@@ -831,7 +831,7 @@ ACE_DefineRack("4xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("5xTorpedo", {
+ACE.DefineRack("5xTorpedo", {
 	name = "5x 533mm Torpedo Rack",
 	desc = "Quintuple 533cm torpedo rack.",
 	model	= "models/golem/TorpedoLaunchers/1x5xTorpedoLauncher.mdl",
@@ -853,7 +853,7 @@ ACE_DefineRack("5xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("6xTorpedo", {
+ACE.DefineRack("6xTorpedo", {
 	name = "6x 533mm Torpedo Rack",
 	desc = "Sextuple 533cm torpedo rack.",
 	model	= "models/golem/TorpedoLaunchers/1x6xTorpedoLauncher.mdl",
@@ -876,7 +876,7 @@ ACE_DefineRack("6xTorpedo", {
 	}
 } )
 
-ACE_DefineRack("1xSmallTorpedo", {
+ACE.DefineRack("1xSmallTorpedo", {
 	name = "1x 533mm Torpedo Rack",
 	desc = "A single 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x1xtorpedolauncher.mdl",
@@ -894,7 +894,7 @@ ACE_DefineRack("1xSmallTorpedo", {
 	}
 } )
 
-ACE_DefineRack("2xSmallTorpedo", {
+ACE.DefineRack("2xSmallTorpedo", {
 	name = "2x 533mm Torpedo Rack",
 	desc = "Twin 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x2xtorpedolauncher.mdl",
@@ -913,7 +913,7 @@ ACE_DefineRack("2xSmallTorpedo", {
 	}
 } )
 
-ACE_DefineRack("3xSmallTorpedo", {
+ACE.DefineRack("3xSmallTorpedo", {
 	name = "3x 533mm Torpedo Rack",
 	desc = "Triple 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x3xtorpedolauncher.mdl",
@@ -933,7 +933,7 @@ ACE_DefineRack("3xSmallTorpedo", {
 	}
 } )
 
-ACE_DefineRack("4xSmallTorpedo", {
+ACE.DefineRack("4xSmallTorpedo", {
 	name = "4x 533mm Torpedo Rack",
 	desc = "A quad 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x4xtorpedolauncher.mdl",
@@ -954,7 +954,7 @@ ACE_DefineRack("4xSmallTorpedo", {
 	}
 } )
 
-ACE_DefineRack("5xSmallTorpedo", {
+ACE.DefineRack("5xSmallTorpedo", {
 	name = "5x 533mm Torpedo Rack",
 	desc = "Quintuple 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x5xtorpedolauncher.mdl",
@@ -976,7 +976,7 @@ ACE_DefineRack("5xSmallTorpedo", {
 	}
 } )
 
-ACE_DefineRack("6xSmallTorpedo", {
+ACE.DefineRack("6xSmallTorpedo", {
 	name = "6x 533mm Torpedo Rack",
 	desc = "Sextuple 533cm torpedo rack.",
 	model	= "models/golem/torpedolaunchers/375x6xtorpedolauncher.mdl",

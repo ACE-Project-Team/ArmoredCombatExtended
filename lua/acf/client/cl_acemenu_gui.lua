@@ -118,8 +118,8 @@ function PANEL:Init( )
 	HomeNode = TreePanel:AddNode( "ACE Main Menu" , MainMenuIcon ) --Main Menu folder
 	HomeNode:SetExpanded(true)
 	HomeNode.mytable = {}
-	HomeNode.mytable.guicreate = (function( _, Table ) ACE_HomeGUICreate( Table ) end or nil)
-	HomeNode.mytable.guiupdate = (function( _, Table ) ACE_HomeGUIUpdate( Table ) end or nil)
+	HomeNode.mytable.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
+	HomeNode.mytable.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
 
 	function HomeNode:DoClick()
 		acemenupanel:UpdateDisplay(self.mytable)
@@ -362,7 +362,7 @@ function PANEL:Init( )
 			-- IMPORTANT: default to a valid crewseat so left-click spawns something even if user doesn't touch UI
 			type = "Crewseats",
 			id = "Crewseat_Driver",
-			guicreate = function(_, Table) ACE_CrewMenuGUICreate(Table) end,
+			guicreate = function(_, Table) ACE.CrewMenuGUICreate(Table) end,
 			guiupdate = function() return end
 		}
 
@@ -401,8 +401,8 @@ function PANEL:Init( )
 	CLNod.mytable  = {}
 	SVNod.mytable  = {}
 
-	CLNod.mytable.guicreate = (function( _, Table ) ACE_CLGUICreate( Table ) end or nil)
-	SVNod.mytable.guicreate = (function( _, Table ) ACE_SVGUICreate( Table ) end or nil)
+	CLNod.mytable.guicreate = (function( _, Table ) ACE.CLGUICreate( Table ) end or nil)
+	SVNod.mytable.guicreate = (function( _, Table ) ACE.SVGUICreate( Table ) end or nil)
 
 	function CLNod:DoClick()
 		acemenupanel:UpdateDisplay(self.mytable)
@@ -423,7 +423,7 @@ function PANEL:Init( )
 	local Contact =  TreePanel:AddNode( "Contact Us" , "icon16/feed.png" ) --Options folder
 	Contact.mytable = {}
 
-	Contact.mytable.guicreate = (function( _, Table ) ACE_ContactGUICreate( Table ) end or nil)
+	Contact.mytable.guicreate = (function( _, Table ) ACE.ContactGUICreate( Table ) end or nil)
 
 	function Contact:DoClick()
 		acemenupanel:UpdateDisplay(self.mytable)
@@ -445,7 +445,7 @@ function PANEL:UpdateRoundCostPreview()
 	local RoundType = ACE.RoundTypes[DisplayTable.Type or ""]
 	if not RoundType or not isfunction(RoundType.convert) then return end
 
-	local RawData = ACE_GetRoundFromCVars()
+	local RawData = ACE.GetRoundFromCVars()
 	local Success, BulletData = pcall(RoundType.convert, self, RawData)
 	if not Success or not istable(BulletData) then return end
 	BulletData.Id = RawData.Id
@@ -668,8 +668,8 @@ function ACE_ChangelogHTTPCallBack(contents)
 	table.SortByKey(acemenupanel.Changelog,true)
 
 	local Table = {}
-	Table.guicreate = (function( _, Table ) ACE_HomeGUICreate( Table ) end or nil)
-	Table.guiupdate = (function( _, Table ) ACE_HomeGUIUpdate( Table ) end or nil)
+	Table.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
+	Table.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
 	acemenupanel:UpdateDisplay( Table )
 
 end
@@ -1409,7 +1409,7 @@ function ACE_CrewMenuGUICreate(Table)
 
 	local function GetCameraForPose(poseName)
 		-- Check if it's a standing pose
-		if ACE_IsStandingPose and ACE_IsStandingPose(poseName) then
+		if ACE_IsStandingPose and ACE.IsStandingPose(poseName) then
 			return CameraPresets.Standing
 		end
 
@@ -1711,7 +1711,7 @@ end
 -- physical volume (same HE maths as shells). Pre-built model charges live in the
 -- Q spawnmenu instead.
 function ACE_ExplosiveGUICreate(Table)
-	ACE_BuildScalableConfig(Table, function(_cfg, vol)
+	ACE.BuildScalableConfig(Table, function(_cfg, vol)
 		local CM3 = 16.387
 		local f   = Table.FillerFraction or 0.65
 		local fillerMass = vol * CM3 * f * (ACE.HEDensity or 1.65) / 1000 * (ACE.ExplosiveHEMul or 0.12)

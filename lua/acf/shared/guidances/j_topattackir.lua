@@ -54,13 +54,13 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone		= (ACE_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone)
+	self.ViewCone		= (ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone)
 	self.ViewConeCos		= (math.cos(math.rad(self.ViewCone)))
-	self.SeekCone		= (ACE_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone)
-	self.HeatAboveAmbient = self.HeatAboveAmbient / (ACE_GetGunValue(missile.BulletData, "seeksensitivity") or 10)
+	self.SeekCone		= (ACE.GetGunValue(missile.BulletData, "seekcone") or this.SeekCone)
+	self.HeatAboveAmbient = self.HeatAboveAmbient / (ACE.GetGunValue(missile.BulletData, "seeksensitivity") or 10)
 	--self.SeekSensitivity	= ACE_GetGunValue(missile.BulletData, "seeksensitivity") or this.SeekSensitivity
-	self.HasIRCCM	= ACE_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
-	self.seekReduction	= ACE_GetGunValue(missile.BulletData, "seekreduction") or 1
+	self.HasIRCCM	= ACE.GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.seekReduction	= ACE.GetGunValue(missile.BulletData, "seekreduction") or 1
 
 	--print("CEent")
 	--for i, ent in ipairs(ACE.contraptionEnts) do
@@ -283,7 +283,7 @@ function this:AcquireLock(missile)
 		physEnt = classifyent:GetPhysicsObject()
 
 		if IsValid(physEnt) and physEnt:IsMoveable() then
-			BaseTemp = ACE_InfraredHeatFromProp( classifyent , dist )
+			BaseTemp = ACE.InfraredHeatFromProp( classifyent , dist )
 		end
 
 
@@ -352,7 +352,7 @@ function this:AcquireLock(missile)
 
 	end
 
-	local CounterMeasures = ACE_Missile_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
+	local CounterMeasures = ACE.Missile_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
 
 	local HottestCM = 0
 	local CM = nil

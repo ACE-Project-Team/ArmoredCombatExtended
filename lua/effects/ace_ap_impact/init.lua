@@ -78,7 +78,7 @@ function EFFECT:Init( data )
 		if self.Id and self.Id == "FL" then self.Caliber = 0.01 end
 
 		local Mat = SurfaceTr.MatType or 0
-		MatVal = ACE_GetMaterialName( Mat )
+		MatVal = ACE.GetMaterialName( Mat )
 
 		if SurfaceTr.HitNonWorld then --Overide with ACE prop material
 			local TEnt = SurfaceTr.Entity
@@ -128,7 +128,7 @@ function EFFECT:Init( data )
 		end
 
 		util.Decal(DecalMat, SurfaceTr.StartPos, self.Origin + self.DirVec * 10 )
-		ACE_SBulletImpact( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
+		ACE.SBulletImpact( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
 
 	end
 

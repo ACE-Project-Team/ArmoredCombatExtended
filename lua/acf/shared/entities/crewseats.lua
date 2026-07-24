@@ -1,4 +1,4 @@
-ACE_DefineEntity("Crewseat_Driver", {
+ACE.DefineEntity("Crewseat_Driver", {
 	name = "Driver Seat",
 	ent = "ace_crewseat_driver",
 	category = "Crew",
@@ -8,7 +8,7 @@ ACE_DefineEntity("Crewseat_Driver", {
 	defaultModel = "Sitting",
 })
 
-ACE_DefineEntity("Crewseat_Gunner", {
+ACE.DefineEntity("Crewseat_Gunner", {
 	name = "Gunner Seat",
 	ent = "ace_crewseat_gunner",
 	category = "Crew",
@@ -18,7 +18,7 @@ ACE_DefineEntity("Crewseat_Gunner", {
 	defaultModel = "Sitting",
 })
 
-ACE_DefineEntity("Crewseat_Loader", {
+ACE.DefineEntity("Crewseat_Loader", {
 	name = "Loader Seat",
 	ent = "ace_crewseat_loader",
 	category = "Crew",

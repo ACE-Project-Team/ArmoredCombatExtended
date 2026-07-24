@@ -38,14 +38,14 @@ else
 				swep.ACEPropmass = propmass
 				swep:DoSPClientEffects()
 			else
-				ACE_SGunFire(swep:GetOwner(), swep.Primary.Sound, 1, propmass)
+				ACE.SGunFire(swep:GetOwner(), swep.Primary.Sound, 1, propmass)
 			end
 		end
 	end)
 end
 
 --ak47mm gunfire
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/ak47_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/ak47_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -104,7 +104,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/ak47_multi.mp3",
 
 
 --amr
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/amr_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/amr_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -143,7 +143,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/amr_multi.mp3",
 
 
 --at4 Anti Tank
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -183,7 +183,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4_multi.mp3",
 
 
 --at4P Anti Tank Proto
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4p_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4p_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -219,7 +219,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/at4p_multi.mp3",
 )
 
 --aug
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/aug_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/aug_multi.mp3",
 	{
 		main = {
 			Volume	= 1,
@@ -274,7 +274,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/aug_multi.mp3",
 )
 
 --awp
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/awp_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/awp_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -314,7 +314,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/awp_multi.mp3",
 )
 
 --deagle
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/deagle_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/deagle_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -331,7 +331,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/deagle_multi.mp3",
 
 
 --deagle
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/elite_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/elite_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -347,7 +347,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/elite_multi.mp3",
 )
 
 --famas
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/famas_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/famas_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -402,7 +402,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/famas_multi.mp3",
 )
 
 --fiveseven
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/fiveseven_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/fiveseven_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -421,7 +421,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/fiveseven_multi.mp3",
 )
 
 --galil
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/galil_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/galil_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -476,7 +476,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/galil_multi.mp3",
 )
 
 --glock
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/glock_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/glock_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -494,7 +494,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/glock_multi.mp3",
 )
 
 --m3super90
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m3super90_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/m3super90_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -526,7 +526,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m3super90_multi.mp3",
 )
 
 --m16mm gunfire
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m16_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/m16_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -569,7 +569,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m16_multi.mp3",
 )
 
 --m249saw
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m249saw_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/m249saw_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -624,7 +624,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/m249saw_multi.mp3",
 )
 
 --mac10
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/mac10_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/mac10_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -677,7 +677,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/mac10_multi.mp3",
 )
 
 --mp5
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/mp5_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/mp5_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -730,7 +730,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/mp5_multi.mp3",
 )
 
 --p90
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/p90_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/p90_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -783,7 +783,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/p90_multi.mp3",
 )
 
 --p228
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/p228_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/p228_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -800,7 +800,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/p228_multi.mp3",
 )
 
 --scout
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/scout_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/scout_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -847,7 +847,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/scout_multi.mp3",
 )
 
 --sg552
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/sg552_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/sg552_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -902,7 +902,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/sg552_multi.mp3",
 )
 
 --tmp
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/tmp_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/tmp_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -924,7 +924,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/tmp_multi.mp3",
 )
 
 --ump45
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/ump45_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/ump45_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -977,7 +977,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/ump45_multi.mp3",
 )
 
 --usp
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/usp_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/usp_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -994,7 +994,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/usp_multi.mp3",
 )
 
 --xm25
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/xm25_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/xm25_multi.mp3",
 {
 	main = {
 		Volume	= 1,
@@ -1014,7 +1014,7 @@ ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/xm25_multi.mp3",
 )
 
 --xm1014mm gunfire
-ACE_DefineGunFireSound( "ace_weapons/sweps/multi_sound/xm1014_multi.mp3",
+ACE.DefineGunFireSound( "ace_weapons/sweps/multi_sound/xm1014_multi.mp3",
 {
 	main = {
 		Volume	= 1,

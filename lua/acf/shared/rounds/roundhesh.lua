@@ -15,7 +15,7 @@ Round.Type  = "HESH"
 
 function Round.create( _, BulletData )
 
-	ACE_CreateBullet( BulletData )
+	ACE.CreateBullet( BulletData )
 
 end
 
@@ -32,21 +32,21 @@ function Round.convert( _, PlayerData )
 	PlayerData.TwoPiece	=  PlayerData.TwoPiece	or 0
 	PlayerData.Data5 = math.max(PlayerData.Data5 or 0, 0)
 
-	PlayerData, Data, ServerData, GUIData = ACE_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	--Shell sturdiness calcs
 	Data.ProjMass = math.max(GUIData.ProjVolume - PlayerData.Data5, 0) * 7.9 / 1000 + math.min(PlayerData.Data5, GUIData.ProjVolume) * ACE.HEDensity / 1000 --Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	Data.MuzzleVel = ACE_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
-	local Energy = ACE_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
+	Data.MuzzleVel = ACE.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
+	local Energy = ACE.Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 
-	local MaxVol = ACE_RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
+	local MaxVol = ACE.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
 	GUIData.MinFillerVol = 0
 	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol)
 	GUIData.FillerVol = math.min(PlayerData.Data5, GUIData.MaxFillerVol)
 	Data.FillerMass = GUIData.FillerVol * ACE.HEDensity / 1000
 
 	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 7.9 / 1000 + Data.FillerMass
-	Data.MuzzleVel = ACE_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
+	Data.MuzzleVel = ACE.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 
 	--Random bullshit left
 	Data.ShovePower = 0.1
@@ -121,23 +121,23 @@ end
 
 function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not used.
 
-	if ACE_Check( Target ) then
+	if ACE.Check( Target ) then
 
 		local Speed = Bullet.Flight:Length() / ACE.VelScale
 		-- HESH should not behave like a giant AP slug; use mostly-casing impact mass.
 		local ImpactMass = math.max(Bullet.ProjMass - Bullet.FillerMass * 0.85, Bullet.ProjMass * 0.1)
-		local Energy = ACE_Kinetic(Speed, ImpactMass, Bullet.LimitVel)
+		local Energy = ACE.Kinetic(Speed, ImpactMass, Bullet.LimitVel)
 
 		local Mat		= Target.ACF.Material or "RHA"
-		local MatData	= ACE_GetMaterialData( Mat )
+		local MatData	= ACE.GetMaterialData( Mat )
 
 		local Pen = Bullet.FillerMass / 300 * ACE.HEPower
 		if ( Pen * 1.25 ) > ( Target.ACF.Armour * (MatData.ArmorMul or 1) ) then
 
-			ACE_RoundImpact(Bullet, Speed, Energy, Target, HitPos, -Bullet.Flight:GetNormalized(), Bone) --( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
+			ACE.RoundImpact(Bullet, Speed, Energy, Target, HitPos, -Bullet.Flight:GetNormalized(), Bone) --( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
 
 			table.insert( Bullet.Filter , Target )
-			ACE_Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACE.HEPower, Bullet.Caliber, Target.ACF.Armour, Bullet.Owner, Target.ACF.Material) --Do some spalling
+			ACE.Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACE.HEPower, Bullet.Caliber, Target.ACF.Armour, Bullet.Owner, Target.ACF.Material) --Do some spalling
 
 		end
 
@@ -162,8 +162,8 @@ end
 
 function Round.endflight( Index, Bullet, HitPos, HitNormal )
 
-	ACE_HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass * 0.7, Bullet.ProjMass - Bullet.FillerMass * 0.7, Bullet.Owner, nil, Bullet.Gun )
-	ACE_RemoveBullet( Index )
+	ACE.HE( HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, Bullet.FillerMass * 0.7, Bullet.ProjMass - Bullet.FillerMass * 0.7, Bullet.Owner, nil, Bullet.Gun )
+	ACE.RemoveBullet( Index )
 
 end
 
@@ -228,7 +228,7 @@ function Round.guicreate( Panel, Table )
 	acemenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FillerVol",0,0,1000,3, "HE Filler", "")			--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	acemenupanel:CPanelText("VelocityDisplay", "")	--Proj muzzle velocity (Name, Desc)
 	acemenupanel:CPanelText("BlastDisplay", "")	--HE Blast data (Name, Desc)
@@ -261,13 +261,13 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acemenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acemenupanel:AmmoSlider("PropLength",Data.PropLength,Data.MinPropLength,Data.MaxTotalLength,3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g" )	--Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength",Data.ProjLength,Data.MinProjLength,Data.MaxTotalLength,3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g")	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FillerVol",Data.FillerVol,Data.MinFillerVol,Data.MaxFillerVol,3, "HE Filler Volume", "HE Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g")	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acemenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)

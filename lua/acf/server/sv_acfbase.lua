@@ -78,11 +78,11 @@ function ACE_Activate( Entity , Recalc )
 	local Ductility = math.Clamp( Entity.ACF.Ductility, -0.8, 0.8 )
 
 	local Mat	= Entity.ACF.Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	local massMod	= MatData.massMod
 
-	local Armour	= ACE_CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
+	local Armour	= ACE.CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
 	local Health	= ( Area / ACE.Threshold ) * ( 1 + Ductility ) -- Setting the threshold of the prop Area gone
 
 	local Percent	= 1
@@ -130,9 +130,9 @@ function ACE_Check( Entity )
 	if Entity.Exploding then return false end
 
 	if not Entity.ACF or (Entity.ACF and isnumber(Entity.ACF.Material)) then
-		ACE_Activate( Entity )
+		ACE.Activate( Entity )
 	elseif Entity.ACF.Mass ~= physobj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= physobj) then
-		ACE_Activate( Entity , true )
+		ACE.Activate( Entity , true )
 	end
 
 	return Entity.ACF.Type
@@ -140,7 +140,7 @@ end
 
 function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
 
-	local Activated = ACE_Check( Entity )
+	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
 	if CanDo == false or Activated == false then -- above (default) hook does nothing with activated. Excludes godded players.
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
@@ -155,20 +155,20 @@ function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	elseif Activated == "Prop" then
 
-		hitRes = ACE_PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
+		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
 
 	elseif Activated == "Vehicle" then
 
-		hitRes = ACE_VehicleDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
+		hitRes = ACE.VehicleDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
 
 	elseif Activated == "Squishy" then
 
-		hitRes = ACE_SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
+		hitRes = ACE.SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
 
 	end
 
 	hook.Run("ACEOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
-	ACE_RunLegacyHook("ACFOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
+	ACE.RunLegacyHook("ACFOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
 	return hitRes
 
 end
@@ -194,7 +194,7 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
 	local Mat			= Entity.ACF.Material or "RHA"	--very important thing
-	local MatData		= ACE_GetMaterialData( Mat )
+	local MatData		= ACE.GetMaterialData( Mat )
 
 	local damageMult		= 1
 
@@ -223,7 +223,7 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	end
 
 	-- RHA Penetration
-	local maxPenetration = ACE_CalcPenetration(Energy, FrArea)
+	local maxPenetration = ACE.CalcPenetration(Energy, FrArea)
 
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
@@ -242,7 +242,7 @@ end
 -- replaced with _ due to lack of use: Inflictor, Bone
 function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
-	local HitRes = ACE_CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
 
 	HitRes.Kill = false
 
@@ -261,7 +261,7 @@ function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) --Simulating the plate weakening after a hit
 
 		if Entity.ACF.PrHealth then
-			ACE_UpdateVisualHealth(Entity)
+			ACE.UpdateVisualHealth(Entity)
 		end
 		Entity.ACF.PrHealth = Entity.ACF.Health
 	end
@@ -280,7 +280,7 @@ function ACE_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 		}
 	}
 
-	local HitRes = ACE_CalcDamage( Target , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Target , Energy , FrArea , Angle  , Type)
 	local Driver = Entity:GetDriver()
 	local validd = Driver:IsValid()
 	local canDamageDriver = validd and canDamagePlayer(Driver, Inflictor)
@@ -492,7 +492,7 @@ function ACE_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 		}
 	}
 
-	HitRes = ACE_CalcDamage(Target, Energy, FrArea, 0, Type)
+	HitRes = ACE.CalcDamage(Target, Energy, FrArea, 0, Type)
 
 	return HitRes
 end
@@ -517,7 +517,7 @@ function ACE_GetAllPhysicalConstraints( ent, ResultTable )
 		-- skip shit that is attached by a nocollide
 		if con.Type ~= "NoCollide" then
 			for _, Ent in pairs( con.Entity ) do
-				ACE_GetAllPhysicalConstraints( Ent.Entity, ResultTable )
+				ACE.GetAllPhysicalConstraints( Ent.Entity, ResultTable )
 			end
 		end
 
@@ -543,7 +543,7 @@ function ACE_GetAllChildren( ent, ResultTable )
 
 	for _, v in pairs( ChildTable ) do
 
-		ACE_GetAllChildren( v, ResultTable )
+		ACE.GetAllChildren( v, ResultTable )
 
 	end
 
@@ -694,74 +694,74 @@ function ACE_VisualizeSZ(Point1, Point2)
 	local PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	local LPT1 = SZEnt:WorldToLocal(PT1)
 	local LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	--Lower Rectangle
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 	--4 corners
 	PT1 = Vector(Point2.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point1.x,Point2.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point1.x,Point2.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 	PT1 = Vector(Point2.x,Point1.y,Point1.z) + Vector(0,0,2)
 	PT2 = Vector(Point2.x,Point1.y,Point2.z) + Vector(0,0,2)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 
 --[[
 	PT1 = Vector(Point1.x,Point1.y,Point1.z)
@@ -812,13 +812,13 @@ function ACE_GetWeaponUser( Weapon, inp )
 		end
 	elseif inp:GetClass() == "gmod_wire_expression2" then
 		if inp.Inputs.Fire then
-			return ACE_GetWeaponUser( Weapon, inp.Inputs.Fire.Src )
+			return ACE.GetWeaponUser( Weapon, inp.Inputs.Fire.Src )
 		elseif inp.Inputs.Shoot then
-			return ACE_GetWeaponUser( Weapon, inp.Inputs.Shoot.Src )
+			return ACE.GetWeaponUser( Weapon, inp.Inputs.Shoot.Src )
 		elseif inp.Inputs then
 			for _,v in pairs(inp.Inputs) do
 				if IsValid(v.Src) and WireTable[v.Src:GetClass()] then
-					return ACE_GetWeaponUser( Weapon, v.Src )
+					return ACE.GetWeaponUser( Weapon, v.Src )
 				end
 			end
 		end

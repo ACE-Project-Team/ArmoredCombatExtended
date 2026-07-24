@@ -68,7 +68,7 @@ local function SetMissileGUIEnabled(_, enabled, gundata)
 				if guidance and guidance.desc then
 					acemenupanel:CPanelText("GuidanceDesc", guidance.desc .. "\n")
 
-					local configPanel = ACE_Missiles_CreateMenuConfiguration(guidance, acemenupanel.CData.GuidanceSelect, "acemenu_data7", acemenupanel.CData.GuidanceSelect.ConfigPanel, gun)
+					local configPanel = ACE.Missiles_CreateMenuConfiguration(guidance, acemenupanel.CData.GuidanceSelect, "acemenu_data7", acemenupanel.CData.GuidanceSelect.ConfigPanel, gun)
 					acemenupanel.CData.GuidanceSelect.ConfigPanel = configPanel
 				else
 					acemenupanel:CPanelText("GuidanceDesc", "Missiles and bombs can be given a guidance package to steer them during flight.\n")
@@ -117,13 +117,13 @@ local function SetMissileGUIEnabled(_, enabled, gundata)
 				if fuse and fuse.desc then
 					acemenupanel:CPanelText("FuseDesc", fuse.desc .. "\n")
 
-					local configPanel = ACE_Missiles_CreateMenuConfiguration(fuse, acemenupanel.CData.FuseSelect, "acemenu_data8", acemenupanel.CData.FuseSelect.ConfigPanel, gun)
+					local configPanel = ACE.Missiles_CreateMenuConfiguration(fuse, acemenupanel.CData.FuseSelect, "acemenu_data8", acemenupanel.CData.FuseSelect.ConfigPanel, gun)
 					acemenupanel.CData.FuseSelect.ConfigPanel = configPanel
 				else
 					acemenupanel:CPanelText("FuseDesc", "Missiles and bombs can be given a fuse to control when they detonate.\n")
 				end
 
-				ACE_Missiles_SetCommand(acemenupanel.CData.FuseSelect, acemenupanel.CData.FuseSelect.ControlGroup, "acemenu_data8")
+				ACE.Missiles_SetCommand(acemenupanel.CData.FuseSelect, acemenupanel.CData.FuseSelect.ControlGroup, "acemenu_data8")
 			end
 
 			acemenupanel.CustomDisplay:AddItem( acemenupanel.CData.FuseSelect )
@@ -260,7 +260,7 @@ local function CreateRackSelectGUI(node)
 	acemenupanel.CData.RackSelect:Clear()
 
 	local default = node.mytable.rack
-	for _, Value in pairs( ACE_GetCompatibleRacks(node.mytable.id) ) do
+	for _, Value in pairs( ACE.GetCompatibleRacks(node.mytable.id) ) do
 		local Display = Value
 		local Rack = ACE.Weapons.Racks[Value]
 		if Rack then

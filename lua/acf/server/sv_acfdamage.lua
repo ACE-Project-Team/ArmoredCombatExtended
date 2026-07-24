@@ -91,7 +91,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 		IsValid(Gun) and Gun:EntIndex() or "nil"
 	)
 
-	local Radius       = ACE_CalculateHERadius(FillerMass) -- Scalling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m.
+	local Radius       = ACE.CalculateHERadius(FillerMass) -- Scalling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m.
 	local MaxSphere    = 4 * PI * (Radius * 2.54) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Power        = FillerMass * ACE.HEPower -- Power in KiloJoules of the filler mass of  TNT
 	local Amp          = math.min(Power / 2000, 50)
@@ -124,7 +124,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 	local OccFilter	= istable(NoOcc) and NoOcc or { NoOcc }
 	local LoopKill	= true
 
-	local FRTargets	= ACE_HEFind( Hitpos, Radius * ACE.HEFragRadiusMul )		-- Will give tiny HE just a pinch of radius to help it hit the player
+	local FRTargets	= ACE.HEFind( Hitpos, Radius * ACE.HEFragRadiusMul )		-- Will give tiny HE just a pinch of radius to help it hit the player
 	DebugExplosion("HE:Targets", "Count", #FRTargets, "FragRadiusMul", ACE.HEFragRadiusMul)
 
 	--Generates a list of critical entities inside the blast radius
@@ -144,7 +144,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			local SqDist = Hitpos:DistToSqr( epos )
 			if SqDist > RadSq then continue end --Perhaps a table storing positions would be faster?
 
-			local LosArmor = ACE_LOSMultiTrace(Hitpos,epos, HEPen)
+			local LosArmor = ACE.LOSMultiTrace(Hitpos,epos, HEPen)
 			--print("LosArmor: " .. LosArmor)
 
 			local Dist = math.sqrt(SqDist)
@@ -156,12 +156,12 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 				--print(ent:GetClass())
 				--print("LosArmor: " .. LosArmor)
 				--ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
-				BlastRes = ACE_Damage ( ent  , Blast , 1 , 0 , Inflictor ,0 , Gun, "Frag" ) --Swapped from "HE" to "Frag" to prevent instantly cooking off fuel.
+				BlastRes = ACE.Damage ( ent  , Blast , 1 , 0 , Inflictor ,0 , Gun, "Frag" ) --Swapped from "HE" to "Frag" to prevent instantly cooking off fuel.
 
 				if BlastRes and BlastRes.Kill then
 
 					--Add the debris created to the ignore so we don't hit it in other rounds
-					local Debris = ACE_HEKill( ent , VectorRand() , Power * 0.0001 , Hitpos )
+					local Debris = ACE.HEKill( ent , VectorRand() , Power * 0.0001 , Hitpos )
 					table.insert( OccFilter , Debris )
 
 					LoopKill = true --look for fresh targets since we blew a hole somewhere
@@ -186,7 +186,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			if not IsValid(Tar) then continue end
 			if Power <= 0 or Tar.Exploding then continue end
 
-			local Type = ACE_Check(Tar)
+			local Type = ACE.Check(Tar)
 			if Type then
 
 				local TargetPos = Tar:GetPos()
@@ -301,7 +301,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			local FragRes
 			local FragHit	= Fragments * AreaFraction
 			FragVel	= math.max(FragVel - ( (Table.Dist / FragVel) * FragVel ^ 2 * FragWeight ^ 0.33 * ACE.HEFragDragFactor ) / ACE.DragDiv,0)
-			local FragKE	= ACE_Kinetic( FragVel , FragWeight * FragHit, 1500 )
+			local FragKE	= ACE.Kinetic( FragVel , FragWeight * FragHit, 1500 )
 
 			--Why would this ever be below 0?
 			if FragHit < 0 then
@@ -338,29 +338,29 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 					if not (Occ.Hit and Occ.Entity:EntIndex() ~= Tar:EntIndex()) and not (not Occ.Hit and NewHitpos ~= NewHitat) then
 
-						BlastRes = ACE_Damage ( Tar	, Blast  , AreaAdjusted , 0	, Inflictor , 0	, Gun , "HE" )
-						FragRes = ACE_Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
+						BlastRes = ACE.Damage ( Tar	, Blast  , AreaAdjusted , 0	, Inflictor , 0	, Gun , "HE" )
+						FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
 
 						if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
-							ACE_HEKill( Tar, (TargetPos - NewHitpos):GetNormalized(), PowerFraction , Hitpos)
+							ACE.HEKill( Tar, (TargetPos - NewHitpos):GetNormalized(), PowerFraction , Hitpos)
 						else
-							ACE_KEShove(Tar, NewHitpos, (TargetPos - NewHitpos):GetNormalized(), PowerFraction * 1 * (GetConVar("ace_hepush"):GetFloat() or 1), Inflictor) --0.333
+							ACE.KEShove(Tar, NewHitpos, (TargetPos - NewHitpos):GetNormalized(), PowerFraction * 1 * (GetConVar("ace_hepush"):GetFloat() or 1), Inflictor) --0.333
 						end
 					end
 				end)
 
 				--calculate damage that would be applied (without applying it), so HE deals correct damage to other props
-				BlastRes = ACE_CalcDamage( Tar, Blast, AreaAdjusted, 0 )
+				BlastRes = ACE.CalcDamage( Tar, Blast, AreaAdjusted, 0 )
 
 			else
 
-				BlastRes = ACE_Damage ( Tar  , Blast , AreaAdjusted , 0 , Inflictor ,0 , Gun, "HE" )
-				FragRes = ACE_Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
+				BlastRes = ACE.Damage ( Tar  , Blast , AreaAdjusted , 0 , Inflictor ,0 , Gun, "HE" )
+				FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
 
 				if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
 
 					--Add the debris created to the ignore so we don't hit it in other rounds
-					local Debris = ACE_HEKill( Tar , Table.Vec , PowerFraction , Hitpos )
+					local Debris = ACE.HEKill( Tar , Table.Vec , PowerFraction , Hitpos )
 					table.insert( OccFilter , Debris )
 
 					LoopKill = true --look for fresh targets since we blew a hole somewhere
@@ -368,7 +368,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 				else
 
 					--Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
-					ACE_KEShove(Tar, Hitpos, Table.Vec, PowerFraction * 5 * (GetConVar("ace_hepush"):GetFloat() or 1), Inflictor)
+					ACE.KEShove(Tar, Hitpos, Table.Vec, PowerFraction * 5 * (GetConVar("ace_hepush"):GetFloat() or 1), Inflictor)
 
 				end
 			end
@@ -431,7 +431,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 	if not ACE.Spalling then return end
 
 	local Mat		= Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	-- Spall damage
 	local SpallMul	= MatData.spallmult or 1
@@ -466,7 +466,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 		local SpallVel = ((KE * Velocityfactor) / SpallWeight)
 		SpallWeight = SpallWeight * MassFactor
 		local SpallArea = 4 * (TotalWeight / SpallWeight)
-		local SpallEnergy = ACE_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
+		local SpallEnergy = ACE.Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
 
 
 		-- print("AR: " .. SpallArea)
@@ -496,7 +496,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
 			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
-			ACE_SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
+			ACE.SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
 
 			-- little sound optimization
 			if i < math.max(math.Round(Spall / 2), 1) then
@@ -561,7 +561,7 @@ function ACE_PropShockwave( HitPos, HitVec, Filter, Caliber )
 				local space = math.abs( (HitFronts[iteration] - HitBacks[iteration - 1]):Length() )
 				--prop's material
 				local mat = tracefront.Entity.ACF and tracefront.Entity.ACF.Material or "RHA"
-				local MatData = ACE_GetMaterialData( mat )
+				local MatData = ACE.GetMaterialData( mat )
 				local Hasvoid = false
 				local NotOverlap = false
 				--print("DATA TABLE - DONT FUCKING DELETE")
@@ -630,14 +630,14 @@ end
 function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
 
 	local Temp_Filter = table.Copy( Filter )
-	local _, Armour, PEnts, fNormal = ACE_PropShockwave( HitPos, -HitVec, Filter, Caliber )
+	local _, Armour, PEnts, fNormal = ACE.PropShockwave( HitPos, -HitVec, Filter, Caliber )
 	table.Add( Temp_Filter , PEnts )
 
 	--Don't use it if it's not allowed to
 	if not ACE.Spalling then return end
 
 	local Mat		= Material or "RHA"
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 
 	-- Spall damage
 	local SpallMul	= MatData.spallmult or 1
@@ -673,7 +673,7 @@ function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 		local SpallVel = ((HEFiller * Velocityfactor) / math.max(SpallWeight, 0.1))
 		SpallWeight = SpallWeight * MassFactor
 		local SpallArea = 4 * (TotalWeight / SpallWeight)
-		local SpallEnergy = ACE_Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
+		local SpallEnergy = ACE.Kinetic(SpallVel, SpallWeight, Max_Spall_Vel)
 
 		-- print("AR: " .. SpallArea)
 
@@ -701,7 +701,7 @@ function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Infl
 			ACE.SpallTraces[Index].endpos	= HitPos + ((fNormal * 2500 + HitVec):GetNormalized() + VectorRand() / 3):GetNormalized() * math.max( SpallVel / 8, 600) --I got bored of spall not going across the tank
 			ACE.SpallTraces[Index].filter	= table.Copy(Temp_Filter)
 
-			ACE_SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
+			ACE.SpallTrace(HitVec, Index , SpallEnergy , SpallArea , Inflictor, SpallVel)
 
 			--little sound optimization
 			if i < math.max(math.Round(Spall / 2), 1) then
@@ -778,7 +778,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 	end
 
 	-- Check if spalling hit something
-	if SpallRes.Hit and ACE_Check( SpallRes.Entity ) then
+	if SpallRes.Hit and ACE.Check( SpallRes.Entity ) then
 		local CanContinue
 		CanContinue, State = CanContinueSpallTrace(Index, SpallRes, State)
 		if not CanContinue then return end
@@ -787,7 +787,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			local phys = SpallRes.Entity:GetPhysicsObject()
 
-			if IsValid(phys) and ACE_CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
+			if IsValid(phys) and ACE.CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
 
 				local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
 				table.insert( Temp_Filter , SpallRes.Entity )
@@ -799,18 +799,18 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 				ACE.SpallTraces[Index].mins	= Vector(0,0,0)
 				ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
 
-				ACE_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
+				ACE.SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 				return
 			end
 
 		end
 
 		-- Get the spalling hitAngle
-		local Angle		= ACE_GetHitAngle( SpallRes.HitNormal , SpallDirection )
+		local Angle		= ACE.GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
 
 		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
-		local MatData	= ACE_GetMaterialData( Mat )
+		local MatData	= ACE.GetMaterialData( Mat )
 
 		local spall_resistance = MatData.spallresist
 
@@ -836,13 +836,13 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- print(SpallEnergy.Penetration)
 
 		-- Applies the damage to the impacted entity
-		local HitRes = ACE_Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall") --Angle replaced with 0 for inconsistent spall
+		local HitRes = ACE.Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall") --Angle replaced with 0 for inconsistent spall
 
 		-- If it's able to destroy it, kill it. Any debris is added to the single
 		-- continuation filter below so this impact cannot spawn a second retry.
 		local Debris
 		if HitRes.Kill then
-			Debris = ACE_APKill( SpallRes.Entity , SpallDirection , SpallEnergy.Kinetic )
+			Debris = ACE.APKill( SpallRes.Entity , SpallDirection , SpallEnergy.Kinetic )
 		end
 
 		-- Applies a decal
@@ -850,7 +850,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 		-- Continue once with the standard armor resolver's remaining-energy fraction.
 		-- This is fragment-local because SpallEnergy was copied at function entry.
-		local PostPenetration = ACE_GetPostPenetration( HitRes, SpallEnergy )
+		local PostPenetration = ACE.GetPostPenetration( HitRes, SpallEnergy )
 		if PostPenetration.Continue then
 			SpallEnergy.Penetration = PostPenetration.RemainingPenetration
 			SpallEnergy.Kinetic = PostPenetration.RemainingKinetic
@@ -872,7 +872,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
-			ACE_SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
+			ACE.SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 			return
 		else
 			SetSpallTermination(Index, "no_penetration")
@@ -908,8 +908,8 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	]]
 	Bullet.Ricochets = Bullet.Ricochets or 0
 
-	local Angle	= ACE_GetHitAngle( HitNormal , Bullet["Flight"] )
-	local HitRes	= ACE_Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
+	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
+	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false
@@ -956,26 +956,26 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		Bullet["Pos"]	= HitPos + HitNormal * 0.05
 		Bullet.FlightTime	= 0
 		Bullet.Flight = Bullet.Flight * 0.05 --0.05 = ~35 m/s for a 700 m/s projectile
-		Bullet.Flight	= (ACE_RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Ricochet
+		Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Ricochet
 
-		if IsValid( ACE_GetPhysicalParent(Target):GetPhysicsObject() ) then
-			Bullet.TraceBackComp = math.max(ACE_GetPhysicalParent(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)
+		if IsValid( ACE.GetPhysicalParent(Target):GetPhysicsObject() ) then
+			Bullet.TraceBackComp = math.max(ACE.GetPhysicalParent(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)
 		end
 
 		HitRes.Ricochet = true
 	end
 
-	HitRes.PostPenetration = ACE_GetPostPenetration( HitRes, Energy )
+	HitRes.PostPenetration = ACE.GetPostPenetration( HitRes, Energy )
 
 	-- Resolve ricochet state before destroying the target. A killing ricochet must
 	-- remain a ricochet, not become a penetration because ACE_APKill invalidated it.
 	if HitRes.Kill and IsValid(Target) then
 		local KillPower = HitRes.RicochetSelected and HitRes.PostPenetration.RemainingKinetic or Energy.Kinetic
-		local Debris = ACE_APKill( Target , (Bullet["Flight"]):GetNormalized() , KillPower )
+		local Debris = ACE.APKill( Target , (Bullet["Flight"]):GetNormalized() , KillPower )
 		table.insert( Bullet["Filter"] , Debris )
 	end
 
-	ACE_KEShove(Target, HitPos, Bullet["Flight"]:GetNormalized(), Energy.Kinetic * HitRes.Loss * 500 * Bullet["ShovePower"] * (GetConVar("ace_kepush"):GetFloat() or 1), Bullet.Owner)
+	ACE.KEShove(Target, HitPos, Bullet["Flight"]:GetNormalized(), Energy.Kinetic * HitRes.Loss * 500 * Bullet["ShovePower"] * (GetConVar("ace_kepush"):GetFloat() or 1), Bullet.Owner)
 
 	return HitRes
 end
@@ -1014,7 +1014,7 @@ function ACE_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 
 		local Ricochet  = 0
 		local Speed	= Bullet.Flight:Length() / ACE.VelScale
-		local Angle	= ACE_GetHitAngle( HitNormal, Bullet.Flight )
+		local Angle	= ACE.GetHitAngle( HitNormal, Bullet.Flight )
 		local MinAngle  = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)  --Making the chance of a ricochet get higher as the speeds increase
 
 		if Angle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
@@ -1024,7 +1024,7 @@ function ACE_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then
 			Bullet.GroundRicos  = Bullet.GroundRicos + 1
 			Bullet.Pos		= HitPos + HitNormal * 1
-			Bullet.Flight	= (ACE_RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
+			Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
 			HitRes.Ricochet	= true
 		end
 
@@ -1057,13 +1057,13 @@ function ACE_KEShove(Target, Pos, Vec, KE, Inflictor)
 	if CanDo == false then return end
 
 	--Gets the baseplate of target
-	local parent	= ACE_GetPhysicalParent(Target)
+	local parent	= ACE.GetPhysicalParent(Target)
 	local phys	= parent:GetPhysicsObject()
 
 	if not IsValid(phys) then return end
 
 	if not Target.acflastupdatemass or ((Target.acflastupdatemass + 10) < CurTime()) then
-		ACE_CalcMassRatio(Target)
+		ACE.CalcMassRatio(Target)
 	end
 
 	--corner case error check
@@ -1096,7 +1096,7 @@ end
 local function KillChildProps( Entity, BlastPos, Energy )
 
 	if ACE.DebrisChance <= 0 then return end
-	local children = ACE_GetAllChildren(Entity)
+	local children = ACE.GetAllChildren(Entity)
 
 	--why should we make use of this for ONE prop?
 	if table.Count(children) > 1 then
@@ -1149,7 +1149,7 @@ local function KillChildProps( Entity, BlastPos, Energy )
 				-- ignore some of the debris props to save lag
 				if rand > ACE.DebrisChance then continue end
 
-				ACE_HEKill( child, (child:GetPos() - BlastPos):GetNormalized(), power )
+				ACE.HEKill( child, (child:GetPos() - BlastPos):GetNormalized(), power )
 
 				constraint.RemoveAll( child )
 				child:Remove()
@@ -1164,7 +1164,7 @@ local function KillChildProps( Entity, BlastPos, Energy )
 				if not IsValid(child) or child.Exploding then continue end
 
 				child.Exploding = true
-				ACE_ScaledExplosion( child, true ) -- explode any crates that are getting removed
+				ACE.ScaledExplosion( child, true ) -- explode any crates that are getting removed
 
 			end
 		end
@@ -1186,7 +1186,7 @@ function ACE_HEKill( Entity , HitVector , Energy , BlastPos )
 	do
 		--ERA props should not create debris
 		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
-		local MatData = ACE_GetMaterialData( Mat )
+		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
 
@@ -1212,7 +1212,7 @@ function ACE_HEKill( Entity , HitVector , Energy , BlastPos )
 			-- Applies force to this debris
 			local phys = Debris:GetPhysicsObject()
 			local physent = Entity:GetPhysicsObject()
-			local Parent = ACE_GetPhysicalParent( Entity )
+			local Parent = ACE.GetPhysicalParent( Entity )
 
 			if IsValid(phys) and IsValid(physent) then
 				phys:SetDragCoefficient( 5 )
@@ -1242,7 +1242,7 @@ function ACE_APKill( Entity , HitVector , Power )
 	do
 		--ERA props should not create debris
 		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
-		local MatData = ACE_GetMaterialData( Mat )
+		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
 
@@ -1265,7 +1265,7 @@ function ACE_APKill( Entity , HitVector , Power )
 			--Applies force to this debris
 			local phys = Debris:GetPhysicsObject()
 			local physent = Entity:GetPhysicsObject()
-			local Parent =  ACE_GetPhysicalParent( Entity )
+			local Parent =  ACE.GetPhysicalParent( Entity )
 
 			if IsValid(phys) and IsValid(physent) then
 				phys:SetDragCoefficient( 5 )
@@ -1301,7 +1301,7 @@ do
 		HVAP = true
 	}
 	local function IsMissileAmmoData( bullet )
-		local gunClass = ACE_GetAmmoGunClass(bullet)
+		local gunClass = ACE.GetAmmoGunClass(bullet)
 		if not gunClass then return false end
 
 		local classes = ACF and ACE.Classes and ACE.Classes.GunClass
@@ -1311,19 +1311,19 @@ do
 	end
 
 	local function ResolveCookoffRoundType(ent, bullet)
-		return ACE_ResolveAmmoType(ent, bullet)
+		return ACE.ResolveAmmoType(ent, bullet)
 	end
 
 	local function GetCookoffBlastMass(bullet, roundType)
-		return ACE_GetAmmoCookoffBlastMass(roundType, bullet)
+		return ACE.GetAmmoCookoffBlastMass(roundType, bullet)
 	end
 
 	local function GetCookoffAmmoCount(roundType, ammo, isMissile)
-		return ACE_GetAmmoCookoffAmmoCount(roundType, ammo, isMissile)
+		return ACE.GetAmmoCookoffAmmoCount(roundType, ammo, isMissile)
 	end
 
 	local function GetCookoffExplosionClass(roundType, isMissile)
-		return ACE_GetAmmoCookoffClass(roundType, isMissile)
+		return ACE.GetAmmoCookoffClass(roundType, isMissile)
 	end
 
 	--converts what would be multiple simultaneous cache detonations into one large explosion
@@ -1361,8 +1361,8 @@ do
 			local IsMissile = IsMissileAmmoData(ent.BulletData)
 			local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
 			local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
-			local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
-			local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
+			local PropScale = ACE.GetAmmoCookoffPropScale(CookClass)
+			local AmmoScale = ACE.GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
 			HEWeight = ( ( HE + Propel * PropScale * ( ACE.PBase / ACE.HEPower ) ) * AmmoCount ) * AmmoScale
 			DebugExplosion("AmmoCalc", "Type", RoundTypeCook, "HE", HE, "Propel", Propel, "Ammo", Ammo, "AmmoCount", AmmoCount, "PropScale", PropScale, "AmmoScale", AmmoScale, "HEWeight", HEWeight, "EntIndex", ent:EntIndex())
@@ -1391,7 +1391,7 @@ do
 			MaxGroup
 		)
 
-		local Radius    = ACE_CalculateHERadius( HEWeight )
+		local Radius    = ACE.CalculateHERadius( HEWeight )
 		local BasePos   = ent:LocalToWorld(ent:OBBCenter())
 		local Pos = BasePos
 
@@ -1519,8 +1519,8 @@ do
 							local IsMissile = IsMissileAmmoData(Found.BulletData)
 							local AmmoCount = GetCookoffAmmoCount(RoundTypeCook, Ammo, IsMissile)
 							local CookClass = GetCookoffExplosionClass(RoundTypeCook, IsMissile)
-							local PropScale = ACE_GetAmmoCookoffPropScale(CookClass)
-							local AmmoScale = ACE_GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
+							local PropScale = ACE.GetAmmoCookoffPropScale(CookClass)
+							local AmmoScale = ACE.GetAmmoCookoffStorageScale(CookClass, AmmoExplosionScale, MissileExplosionScale)
 
 							local AmmoHEWeight = ( HE + Propel * PropScale * ACE.APAmmoDetonateFactor * ( ACE.PBase / ACE.HEPower))
 							if AmmoHEWeight > HighestHEWeight then
@@ -1586,7 +1586,7 @@ do
 						DebugExplosion("ExplodePos:Add", "Found", Found:EntIndex(), "Pos", tostring(FoundPos), "FoundHE", FoundHEWeight, "TotalHE", HEWeight + FoundHEWeight)
 
 						HEWeight = HEWeight + FoundHEWeight
-						DebugExplosion("ExplodePos:Accum", "TotalHE", HEWeight, "Radius", ACE_CalculateHERadius(HEWeight))
+						DebugExplosion("ExplodePos:Accum", "TotalHE", HEWeight, "Radius", ACE.CalculateHERadius(HEWeight))
 
 						Found.IsExplosive   = false
 						Found.DamageAction  = false
@@ -1615,7 +1615,7 @@ do
 			if HEWeight > LastHE then
 				Search = true
 				LastHE = HEWeight
-				Radius = ACE_CalculateHERadius( HEWeight )
+				Radius = ACE.CalculateHERadius( HEWeight )
 				DebugExplosion("ExplodePos:RadiusUpdate", "TotalHE", HEWeight, "Radius", Radius)
 			else
 				Search = false
@@ -1652,7 +1652,7 @@ do
 			HEWeight = MaxHE
 		end
 
-		Radius	= ACE_CalculateHERadius( HEWeight )
+		Radius	= ACE.CalculateHERadius( HEWeight )
 
 		--Sets the ratio of HE blast pen so it no longer pens 300mm when 10 shells cookoff.
 		--Blastpen will use the HEpower of 2 of the biggest HE detonations or 1/10th the HE power. Whichever is bigger.
@@ -1674,7 +1674,7 @@ do
 			"HighestHEWeight",
 			HighestHEWeight
 		)
-		ACE_HE( AvgPos , vector_origin , HEWeight , HEWeight , Inflictor , ent, ent, BlastPenRatio )
+		ACE.HE( AvgPos , vector_origin , HEWeight , HEWeight , Inflictor , ent, ent, BlastPenRatio )
 
 		--util.Effect not working during MP workaround. Waiting a while fixes the issue.
 		local VisualRadius = math.min(Radius, 1000)
@@ -1737,17 +1737,17 @@ function ACE_LOSMultiTrace(StartVec, EndVec, PenetrationMax)
 	while UnResolved do
 		local TraceLine = util.TraceLine(TrTable)
 
-		if TraceLine.Hit and ACE_Check( TraceLine.Entity ) then
+		if TraceLine.Hit and ACE.Check( TraceLine.Entity ) then
 			local TraceEnt = TraceLine.Entity
 			local phys = TraceLine.Entity:GetPhysicsObject()
 
 			if IsValid(phys) then
-				if ACE_CheckClips( TraceEnt, TraceLine.HitPos ) then --Hit visclip. Skip straight to ignoring
+				if ACE.CheckClips( TraceEnt, TraceLine.HitPos ) then --Hit visclip. Skip straight to ignoring
 					table.insert( TrTable.filter , TraceEnt )
 				else
-					local Angle		= ACE_GetHitAngle( TraceLine.HitNormal , Normal )
+					local Angle		= ACE.GetHitAngle( TraceLine.HitNormal , Normal )
 					local Mat			= TraceEnt.ACF.Material or "RHA"	--very important thing
-					local MatData		= ACE_GetMaterialData( Mat )
+					local MatData		= ACE.GetMaterialData( Mat )
 					local armor = TraceEnt.ACF.Armour
 					local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor ) * MatData["effectiveness"]
 					TotalArmor = TotalArmor + losArmor

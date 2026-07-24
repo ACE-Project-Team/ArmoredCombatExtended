@@ -45,9 +45,9 @@ function ACE_Missile_BulletLaunch(BulletData)
 
 	BulletData.Index		= ACE.CurBulletIndex
 	BulletData.ActiveFrame = ACE.BallisticsFrame
-	local ActiveBullet = ACE_AcquireBullet(BulletData)
-	ACE_RegisterBullet(ACE.CurBulletIndex, ActiveBullet)
-	ACE_BulletClient( ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex], "Init" , 0 )
+	local ActiveBullet = ACE.AcquireBullet(BulletData)
+	ACE.RegisterBullet(ACE.CurBulletIndex, ActiveBullet)
+	ACE.BulletClient( ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex], "Init" , 0 )
 
 end
 
@@ -195,7 +195,7 @@ function ResetVelocity.HEAT(bdata)
 
 	bdata.Flight:Normalize()
 
-	local penmul = (bdata.penmul or ACE_GetGunValue(bdata, "penmul") or 1.2) * 0.77	--local penmul = (bdata.penmul or ACE_GetGunValue(bdata, "penmul") or 1.2) * 0.77
+	local penmul = (bdata.penmul or ACE.GetGunValue(bdata, "penmul") or 1.2) * 0.77	--local penmul = (bdata.penmul or ACE_GetGunValue(bdata, "penmul") or 1.2) * 0.77
 
 	bdata.Flight = bdata.Flight * (bdata.SlugMV * penmul) * 39.37
 	bdata.NotFirstPen = false
@@ -210,7 +210,7 @@ function ResetVelocity.THEAT(bdata)
 
 	bdata.Flight:Normalize()
 
-	local penmul = (bdata.penmul or ACE_GetGunValue(bdata, "penmul") or 1.2) * 0.77
+	local penmul = (bdata.penmul or ACE.GetGunValue(bdata, "penmul") or 1.2) * 0.77
 
 	if DetCount == 1 then
 		--print("Detonation1")

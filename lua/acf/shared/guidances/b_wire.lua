@@ -44,7 +44,7 @@ function this:Configure(missile)
 			local _, LauncherBoundsMax = missile.Launcher:GetCollisionBounds()
 			local OffsetLength = LauncherBoundsMax.x
 
-			self.GuidanceWire = ACE_CreateLinkRope( missile:GetPos(), missile, MissileOffset, launcher, Vector(OffsetLength,0,0) )
+			self.GuidanceWire = ACE.CreateLinkRope( missile:GetPos(), missile, MissileOffset, launcher, Vector(OffsetLength,0,0) )
 			end
 		end
 end

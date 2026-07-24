@@ -51,7 +51,7 @@ function EFFECT:Init( data )
 		if self.Id and self.Id == "FL" then self.Caliber = 0.01 end
 
 		local Mat = SurfaceTr.MatType
-		MatVal = ACE_GetMaterialName( Mat )
+		MatVal = ACE.GetMaterialName( Mat )
 
 		if SurfaceTr.HitNonWorld then --Overide with ACE prop material
 			local TEnt = SurfaceTr.Entity
@@ -91,7 +91,7 @@ function EFFECT:Init( data )
 		end
 
 	util.Decal(DecalMat, self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10 )
-	ACE_SRicochet( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
+	ACE.SRicochet( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
 
 	local Energy = (self.Mass * (self.Velocity / 39.37) ^2) / 1700000
 

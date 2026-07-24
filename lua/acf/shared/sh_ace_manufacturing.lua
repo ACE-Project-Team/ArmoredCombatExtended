@@ -161,7 +161,7 @@ end
 -- Returns 0, nil for unpriceable ents. Server-realm inputs (physics mass, BulletData) -- called
 -- from the armor tool's server-side popup path.
 function ACE.Manufacturing.EntCost(ent)
-	if not ACE_IsEnt(ent) then return 0, nil end
+	if not ACE.IsEnt(ent) then return 0, nil end
 
 	local cls = ent:GetClass() or ""
 

@@ -7,7 +7,7 @@ local Gear1LW = 40
 
 -- Inline
 
-ACE_DefineGearbox( "1Gear-L-S", {
+ACE.DefineGearbox( "1Gear-L-S", {
 	name = "Differential, Inline, Small",
 	desc = "Small differential, used to connect power from gearbox to wheels",
 	model = "models/engines/linear_s.mdl",
@@ -24,7 +24,7 @@ ACE_DefineGearbox( "1Gear-L-S", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-L-M", {
+ACE.DefineGearbox( "1Gear-L-M", {
 	name = "Differential, Inline, Medium",
 	desc = "Medium duty differential",
 	model = "models/engines/linear_m.mdl",
@@ -41,7 +41,7 @@ ACE_DefineGearbox( "1Gear-L-M", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-L-L", {
+ACE.DefineGearbox( "1Gear-L-L", {
 	name = "Differential, Inline, Large",
 	desc = "Heavy duty differential, for the heaviest of engines",
 	model = "models/engines/linear_l.mdl",
@@ -60,7 +60,7 @@ ACE_DefineGearbox( "1Gear-L-L", {
 
 -- Inline Dual Clutch
 
-ACE_DefineGearbox( "1Gear-LD-S", {
+ACE.DefineGearbox( "1Gear-LD-S", {
 	name = "Differential, Inline, Small, Dual Clutch",
 	desc = "Small differential, used to connect power from gearbox to wheels",
 	model = "models/engines/linear_s.mdl",
@@ -78,7 +78,7 @@ ACE_DefineGearbox( "1Gear-LD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-LD-M", {
+ACE.DefineGearbox( "1Gear-LD-M", {
 	name = "Differential, Inline, Medium, Dual Clutch",
 	desc = "Medium duty differential",
 	model = "models/engines/linear_m.mdl",
@@ -96,7 +96,7 @@ ACE_DefineGearbox( "1Gear-LD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-LD-L", {
+ACE.DefineGearbox( "1Gear-LD-L", {
 	name = "Differential, Inline, Large, Dual Clutch",
 	desc = "Heavy duty differential, for the heaviest of engines",
 	model = "models/engines/linear_l.mdl",
@@ -116,7 +116,7 @@ ACE_DefineGearbox( "1Gear-LD-L", {
 
 -- Transaxial
 
-ACE_DefineGearbox( "1Gear-T-S", {
+ACE.DefineGearbox( "1Gear-T-S", {
 	name = "Differential, Small",
 	desc = "Small differential, used to connect power from gearbox to wheels",
 	model = "models/engines/transaxial_s.mdl",
@@ -133,7 +133,7 @@ ACE_DefineGearbox( "1Gear-T-S", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-T-M", {
+ACE.DefineGearbox( "1Gear-T-M", {
 	name = "Differential, Medium",
 	desc = "Medium duty differential",
 	model = "models/engines/transaxial_m.mdl",
@@ -150,7 +150,7 @@ ACE_DefineGearbox( "1Gear-T-M", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-T-L", {
+ACE.DefineGearbox( "1Gear-T-L", {
 	name = "Differential, Large",
 	desc = "Heavy duty differential, for the heaviest of engines",
 	model = "models/engines/transaxial_l.mdl",
@@ -169,7 +169,7 @@ ACE_DefineGearbox( "1Gear-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE_DefineGearbox( "1Gear-TD-S", {
+ACE.DefineGearbox( "1Gear-TD-S", {
 	name = "Differential, Small, Dual Clutch",
 	desc = "Small differential, used to connect power from gearbox to wheels",
 	model = "models/engines/transaxial_s.mdl",
@@ -187,7 +187,7 @@ ACE_DefineGearbox( "1Gear-TD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-TD-M", {
+ACE.DefineGearbox( "1Gear-TD-M", {
 	name = "Differential, Medium, Dual Clutch",
 	desc = "Medium duty differential",
 	model = "models/engines/transaxial_m.mdl",
@@ -205,7 +205,7 @@ ACE_DefineGearbox( "1Gear-TD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "1Gear-TD-L", {
+ACE.DefineGearbox( "1Gear-TD-L", {
 	name = "Differential, Large, Dual Clutch",
 	desc = "Heavy duty differential, for the heaviest of engines",
 	model = "models/engines/transaxial_l.mdl",

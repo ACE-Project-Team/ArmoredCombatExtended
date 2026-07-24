@@ -15,7 +15,7 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Inline
 
-ACE_DefineGearbox( "9Gear-L-S", {
+ACE.DefineGearbox( "9Gear-L-S", {
 	name = "9-Speed, Inline, Small",
 	desc = "A small and light 9 speed gearbox.",
 	model = "models/engines/linear_s.mdl",
@@ -39,7 +39,7 @@ ACE_DefineGearbox( "9Gear-L-S", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-L-M", {
+ACE.DefineGearbox( "9Gear-L-M", {
 	name = "9-Speed, Inline, Medium",
 	desc = "A medium duty 9 speed gearbox .. ",
 	model = "models/engines/linear_m.mdl",
@@ -63,7 +63,7 @@ ACE_DefineGearbox( "9Gear-L-M", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-L-L", {
+ACE.DefineGearbox( "9Gear-L-L", {
 	name = "9-Speed, Inline, Large",
 	desc = "Heavy duty 9 speed gearbox, however rather heavy.",
 	model = "models/engines/linear_l.mdl",
@@ -89,7 +89,7 @@ ACE_DefineGearbox( "9Gear-L-L", {
 
 -- Inline Dual Clutch
 
-ACE_DefineGearbox( "9Gear-LD-S", {
+ACE.DefineGearbox( "9Gear-LD-S", {
 	name = "9-Speed, Inline, Small, Dual Clutch",
 	desc = "A small and light 9 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_s.mdl",
@@ -114,7 +114,7 @@ ACE_DefineGearbox( "9Gear-LD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-LD-M", {
+ACE.DefineGearbox( "9Gear-LD-M", {
 	name = "9-Speed, Inline, Medium, Dual Clutch",
 	desc = "A a medium duty 9 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_m.mdl",
@@ -139,7 +139,7 @@ ACE_DefineGearbox( "9Gear-LD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-LD-L", {
+ACE.DefineGearbox( "9Gear-LD-L", {
 	name = "9-Speed, Inline, Large, Dual Clutch",
 	desc = "Heavy duty 9 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_l.mdl",
@@ -166,7 +166,7 @@ ACE_DefineGearbox( "9Gear-LD-L", {
 
 -- Transaxial
 
-ACE_DefineGearbox( "9Gear-T-S", {
+ACE.DefineGearbox( "9Gear-T-S", {
 	name = "9-Speed, Transaxial, Small",
 	desc = "A small and light 9 speed gearbox .. ",
 	model = "models/engines/transaxial_s.mdl",
@@ -190,7 +190,7 @@ ACE_DefineGearbox( "9Gear-T-S", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-T-M", {
+ACE.DefineGearbox( "9Gear-T-M", {
 	name = "9-Speed, Transaxial, Medium",
 	desc = "A medium duty 9 speed gearbox .. ",
 	model = "models/engines/transaxial_m.mdl",
@@ -214,7 +214,7 @@ ACE_DefineGearbox( "9Gear-T-M", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-T-L", {
+ACE.DefineGearbox( "9Gear-T-L", {
 	name = "9-Speed, Transaxial, Large",
 	desc = "Heavy duty 9 speed gearbox, however rather heavy.",
 	model = "models/engines/transaxial_l.mdl",
@@ -240,7 +240,7 @@ ACE_DefineGearbox( "9Gear-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE_DefineGearbox( "9Gear-TD-S", {
+ACE.DefineGearbox( "9Gear-TD-S", {
 	name = "9-Speed, Transaxial, Small, Dual Clutch",
 	desc = "A small and light 9 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_s.mdl",
@@ -265,7 +265,7 @@ ACE_DefineGearbox( "9Gear-TD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-TD-M", {
+ACE.DefineGearbox( "9Gear-TD-M", {
 	name = "9-Speed, Transaxial, Medium, Dual Clutch",
 	desc = "A a medium duty 9 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_m.mdl",
@@ -290,7 +290,7 @@ ACE_DefineGearbox( "9Gear-TD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-TD-L", {
+ACE.DefineGearbox( "9Gear-TD-L", {
 	name = "9-Speed, Transaxial, Large, Dual Clutch",
 	desc = "Heavy duty 9 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_l.mdl",
@@ -317,7 +317,7 @@ ACE_DefineGearbox( "9Gear-TD-L", {
 
 -- Straight-through gearboxes
 
-ACE_DefineGearbox( "9Gear-ST-S", {
+ACE.DefineGearbox( "9Gear-ST-S", {
 	name = "9-Speed, Straight, Small",
 	desc = "A small and light 9 speed straight-through gearbox.",
 	model = "models/engines/t5small.mdl",
@@ -341,7 +341,7 @@ ACE_DefineGearbox( "9Gear-ST-S", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-ST-M", {
+ACE.DefineGearbox( "9Gear-ST-M", {
 	name = "9-Speed, Straight, Medium",
 	desc = "A medium 9 speed straight-through gearbox.",
 	model = "models/engines/t5med.mdl",
@@ -365,7 +365,7 @@ ACE_DefineGearbox( "9Gear-ST-M", {
 	}
 } )
 
-ACE_DefineGearbox( "9Gear-ST-L", {
+ACE.DefineGearbox( "9Gear-ST-L", {
 	name = "9-Speed, Straight, Large",
 	desc = "A large 9 speed straight-through gearbox.",
 	model = "models/engines/t5large.mdl",

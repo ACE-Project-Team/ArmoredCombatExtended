@@ -45,7 +45,7 @@ blurb = blurb .. "\n\nThe gearbox reads the contraption speed, that is obtained 
 -- 3 Speed
 -- Inline
 
-ACE_DefineGearbox( "3Gear-A-L-S", {
+ACE.DefineGearbox( "3Gear-A-L-S", {
 	name = "3-Speed Auto, Inline, Small",
 	desc = "A small, and light 3 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -65,7 +65,7 @@ ACE_DefineGearbox( "3Gear-A-L-S", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-L-M", {
+ACE.DefineGearbox( "3Gear-A-L-M", {
 	name = "3-Speed Auto, Inline, Medium",
 	desc = "A medium sized, 3 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -85,7 +85,7 @@ ACE_DefineGearbox( "3Gear-A-L-M", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-L-L", {
+ACE.DefineGearbox( "3Gear-A-L-L", {
 	name = "3-Speed Auto, Inline, Large",
 	desc = "A large, heavy and sturdy 3 speed inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -107,7 +107,7 @@ ACE_DefineGearbox( "3Gear-A-L-L", {
 
 -- Inline Dual Clutch
 
-ACE_DefineGearbox( "3Gear-A-LD-S", {
+ACE.DefineGearbox( "3Gear-A-LD-S", {
 	name = "3-Speed Auto, Inline, Small, Dual Clutch",
 	desc = "A small, and light 3 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -128,7 +128,7 @@ ACE_DefineGearbox( "3Gear-A-LD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-LD-M", {
+ACE.DefineGearbox( "3Gear-A-LD-M", {
 	name = "3-Speed Auto, Inline, Medium, Dual Clutch",
 	desc = "A medium sized, 3 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -149,7 +149,7 @@ ACE_DefineGearbox( "3Gear-A-LD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-LD-L", {
+ACE.DefineGearbox( "3Gear-A-LD-L", {
 	name = "3-Speed Auto, Inline, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 3 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -172,7 +172,7 @@ ACE_DefineGearbox( "3Gear-A-LD-L", {
 
 -- Transaxial
 
-ACE_DefineGearbox( "3Gear-A-T-S", {
+ACE.DefineGearbox( "3Gear-A-T-S", {
 	name = "3-Speed Auto, Transaxial, Small",
 	desc = "A small, and light 3 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -192,7 +192,7 @@ ACE_DefineGearbox( "3Gear-A-T-S", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-T-M", {
+ACE.DefineGearbox( "3Gear-A-T-M", {
 	name = "3-Speed Auto, Transaxial, Medium",
 	desc = "A medium sized, 3 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -212,7 +212,7 @@ ACE_DefineGearbox( "3Gear-A-T-M", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-T-L", {
+ACE.DefineGearbox( "3Gear-A-T-L", {
 	name = "3-Speed Auto, Transaxial, Large",
 	desc = "A large, heavy and sturdy 3 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -234,7 +234,7 @@ ACE_DefineGearbox( "3Gear-A-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE_DefineGearbox( "3Gear-A-TD-S", {
+ACE.DefineGearbox( "3Gear-A-TD-S", {
 	name = "3-Speed Auto, Transaxial, Small, Dual Clutch",
 	desc = "A small, and light 3 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -255,7 +255,7 @@ ACE_DefineGearbox( "3Gear-A-TD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-TD-M", {
+ACE.DefineGearbox( "3Gear-A-TD-M", {
 	name = "3-Speed Auto, Transaxial, Medium, Dual Clutch",
 	desc = "A medium sized, 3 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -276,7 +276,7 @@ ACE_DefineGearbox( "3Gear-A-TD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-TD-L", {
+ACE.DefineGearbox( "3Gear-A-TD-L", {
 	name = "3-Speed Auto, Transaxial, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 3 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -299,7 +299,7 @@ ACE_DefineGearbox( "3Gear-A-TD-L", {
 
 -- Straight-through gearboxes
 
-ACE_DefineGearbox( "3Gear-A-ST-S", {
+ACE.DefineGearbox( "3Gear-A-ST-S", {
 	name = "3-Speed Auto, Straight, Small",
 	desc = "A small straight-through automatic gearbox" .. blurb,
 	model = "models/engines/t5small.mdl",
@@ -319,7 +319,7 @@ ACE_DefineGearbox( "3Gear-A-ST-S", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-ST-M", {
+ACE.DefineGearbox( "3Gear-A-ST-M", {
 	name = "3-Speed Auto, Straight, Medium",
 	desc = "A medium sized, 3 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5med.mdl",
@@ -339,7 +339,7 @@ ACE_DefineGearbox( "3Gear-A-ST-M", {
 	}
 } )
 
-ACE_DefineGearbox( "3Gear-A-ST-L", {
+ACE.DefineGearbox( "3Gear-A-ST-L", {
 	name = "3-Speed Auto, Straight, Large",
 	desc = "A large sized, 3 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5large.mdl",
@@ -363,7 +363,7 @@ ACE_DefineGearbox( "3Gear-A-ST-L", {
 -- 5 Speed
 -- Inline
 
-ACE_DefineGearbox( "5Gear-A-L-S", {
+ACE.DefineGearbox( "5Gear-A-L-S", {
 	name = "5-Speed Auto, Inline, Small",
 	desc = "A small, and light 5 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -385,7 +385,7 @@ ACE_DefineGearbox( "5Gear-A-L-S", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-L-M", {
+ACE.DefineGearbox( "5Gear-A-L-M", {
 	name = "5-Speed Auto, Inline, Medium",
 	desc = "A medium sized, 5 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -407,7 +407,7 @@ ACE_DefineGearbox( "5Gear-A-L-M", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-L-L", {
+ACE.DefineGearbox( "5Gear-A-L-L", {
 	name = "5-Speed Auto, Inline, Large",
 	desc = "A large, heavy and sturdy 5 speed inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -431,7 +431,7 @@ ACE_DefineGearbox( "5Gear-A-L-L", {
 
 -- Inline Dual Clutch
 
-ACE_DefineGearbox( "5Gear-A-LD-S", {
+ACE.DefineGearbox( "5Gear-A-LD-S", {
 	name = "5-Speed Auto, Inline, Small, Dual Clutch",
 	desc = "A small, and light 5 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -454,7 +454,7 @@ ACE_DefineGearbox( "5Gear-A-LD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-LD-M", {
+ACE.DefineGearbox( "5Gear-A-LD-M", {
 	name = "5-Speed Auto, Inline, Medium, Dual Clutch",
 	desc = "A medium sized, 5 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -477,7 +477,7 @@ ACE_DefineGearbox( "5Gear-A-LD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-LD-L", {
+ACE.DefineGearbox( "5Gear-A-LD-L", {
 	name = "5-Speed Auto, Inline, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 5 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -502,7 +502,7 @@ ACE_DefineGearbox( "5Gear-A-LD-L", {
 
 -- Transaxial
 
-ACE_DefineGearbox( "5Gear-A-T-S", {
+ACE.DefineGearbox( "5Gear-A-T-S", {
 	name = "5-Speed Auto, Transaxial, Small",
 	desc = "A small, and light 5 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -524,7 +524,7 @@ ACE_DefineGearbox( "5Gear-A-T-S", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-T-M", {
+ACE.DefineGearbox( "5Gear-A-T-M", {
 	name = "5-Speed Auto, Transaxial, Medium",
 	desc = "A medium sized, 5 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -546,7 +546,7 @@ ACE_DefineGearbox( "5Gear-A-T-M", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-T-L", {
+ACE.DefineGearbox( "5Gear-A-T-L", {
 	name = "5-Speed Auto, Transaxial, Large",
 	desc = "A large, heavy and sturdy 5 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -570,7 +570,7 @@ ACE_DefineGearbox( "5Gear-A-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE_DefineGearbox( "5Gear-A-TD-S", {
+ACE.DefineGearbox( "5Gear-A-TD-S", {
 	name = "5-Speed Auto, Transaxial, Small, Dual Clutch",
 	desc = "A small, and light 5 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -593,7 +593,7 @@ ACE_DefineGearbox( "5Gear-A-TD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-TD-M", {
+ACE.DefineGearbox( "5Gear-A-TD-M", {
 	name = "5-Speed Auto, Transaxial, Medium, Dual Clutch",
 	desc = "A medium sized, 5 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -616,7 +616,7 @@ ACE_DefineGearbox( "5Gear-A-TD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-TD-L", {
+ACE.DefineGearbox( "5Gear-A-TD-L", {
 	name = "5-Speed Auto, Transaxial, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 5 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -641,7 +641,7 @@ ACE_DefineGearbox( "5Gear-A-TD-L", {
 
 -- Straight-through gearboxes
 
-ACE_DefineGearbox( "5Gear-A-ST-S", {
+ACE.DefineGearbox( "5Gear-A-ST-S", {
 	name = "5-Speed Auto, Straight, Small",
 	desc = "A small straight-through automatic gearbox" .. blurb,
 	model = "models/engines/t5small.mdl",
@@ -663,7 +663,7 @@ ACE_DefineGearbox( "5Gear-A-ST-S", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-ST-M", {
+ACE.DefineGearbox( "5Gear-A-ST-M", {
 	name = "5-Speed Auto, Straight, Medium",
 	desc = "A medium sized, 5 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5med.mdl",
@@ -685,7 +685,7 @@ ACE_DefineGearbox( "5Gear-A-ST-M", {
 	}
 } )
 
-ACE_DefineGearbox( "5Gear-A-ST-L", {
+ACE.DefineGearbox( "5Gear-A-ST-L", {
 	name = "5-Speed Auto, Straight, Large",
 	desc = "A large sized, 5 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5large.mdl",
@@ -711,7 +711,7 @@ ACE_DefineGearbox( "5Gear-A-ST-L", {
 -- 7 Speed
 -- Inline
 
-ACE_DefineGearbox( "7Gear-A-L-S", {
+ACE.DefineGearbox( "7Gear-A-L-S", {
 	name = "7-Speed Auto, Inline, Small",
 	desc = "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -735,7 +735,7 @@ ACE_DefineGearbox( "7Gear-A-L-S", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-L-M", {
+ACE.DefineGearbox( "7Gear-A-L-M", {
 	name = "7-Speed Auto, Inline, Medium",
 	desc = "A medium sized, 7 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -759,7 +759,7 @@ ACE_DefineGearbox( "7Gear-A-L-M", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-L-L", {
+ACE.DefineGearbox( "7Gear-A-L-L", {
 	name = "7-Speed Auto, Inline, Large",
 	desc = "A large, heavy and sturdy 7 speed inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -785,7 +785,7 @@ ACE_DefineGearbox( "7Gear-A-L-L", {
 
 -- Inline Dual Clutch
 
-ACE_DefineGearbox( "7Gear-A-LD-S", {
+ACE.DefineGearbox( "7Gear-A-LD-S", {
 	name = "7-Speed Auto, Inline, Small, Dual Clutch",
 	desc = "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/linear_s.mdl",
@@ -810,7 +810,7 @@ ACE_DefineGearbox( "7Gear-A-LD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-LD-M", {
+ACE.DefineGearbox( "7Gear-A-LD-M", {
 	name = "7-Speed Auto, Inline, Medium, Dual Clutch",
 	desc = "A medium sized, 7 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_m.mdl",
@@ -835,7 +835,7 @@ ACE_DefineGearbox( "7Gear-A-LD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-LD-L", {
+ACE.DefineGearbox( "7Gear-A-LD-L", {
 	name = "7-Speed Auto, Inline, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 7 speed automatic inline gearbox" .. blurb,
 	model = "models/engines/linear_l.mdl",
@@ -862,7 +862,7 @@ ACE_DefineGearbox( "7Gear-A-LD-L", {
 
 -- Transaxial
 
-ACE_DefineGearbox( "7Gear-A-T-S", {
+ACE.DefineGearbox( "7Gear-A-T-S", {
 	name = "7-Speed Auto, Transaxial, Small",
 	desc = "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -886,7 +886,7 @@ ACE_DefineGearbox( "7Gear-A-T-S", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-T-M", {
+ACE.DefineGearbox( "7Gear-A-T-M", {
 	name = "7-Speed Auto, Transaxial, Medium",
 	desc = "A medium sized, 7 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -910,7 +910,7 @@ ACE_DefineGearbox( "7Gear-A-T-M", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-T-L", {
+ACE.DefineGearbox( "7Gear-A-T-L", {
 	name = "7-Speed Auto, Transaxial, Large",
 	desc = "A large, heavy and sturdy 7 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -936,7 +936,7 @@ ACE_DefineGearbox( "7Gear-A-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACE_DefineGearbox( "7Gear-A-TD-S", {
+ACE.DefineGearbox( "7Gear-A-TD-S", {
 	name = "7-Speed Auto, Transaxial, Small, Dual Clutch",
 	desc = "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating" .. blurb,
 	model = "models/engines/transaxial_s.mdl",
@@ -961,7 +961,7 @@ ACE_DefineGearbox( "7Gear-A-TD-S", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-TD-M", {
+ACE.DefineGearbox( "7Gear-A-TD-M", {
 	name = "7-Speed Auto, Transaxial, Medium, Dual Clutch",
 	desc = "A medium sized, 7 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_m.mdl",
@@ -986,7 +986,7 @@ ACE_DefineGearbox( "7Gear-A-TD-M", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-TD-L", {
+ACE.DefineGearbox( "7Gear-A-TD-L", {
 	name = "7-Speed Auto, Transaxial, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 7 speed automatic gearbox" .. blurb,
 	model = "models/engines/transaxial_l.mdl",
@@ -1013,7 +1013,7 @@ ACE_DefineGearbox( "7Gear-A-TD-L", {
 
 -- Straight-through gearboxes
 
-ACE_DefineGearbox( "7Gear-A-ST-S", {
+ACE.DefineGearbox( "7Gear-A-ST-S", {
 	name = "7-Speed Auto, Straight, Small",
 	desc = "A small straight-through automatic gearbox" .. blurb,
 	model = "models/engines/t5small.mdl",
@@ -1037,7 +1037,7 @@ ACE_DefineGearbox( "7Gear-A-ST-S", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-ST-M", {
+ACE.DefineGearbox( "7Gear-A-ST-M", {
 	name = "7-Speed Auto, Straight, Medium",
 	desc = "A medium sized, 7 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5med.mdl",
@@ -1061,7 +1061,7 @@ ACE_DefineGearbox( "7Gear-A-ST-M", {
 	}
 } )
 
-ACE_DefineGearbox( "7Gear-A-ST-L", {
+ACE.DefineGearbox( "7Gear-A-ST-L", {
 	name = "7-Speed Auto, Straight, Large",
 	desc = "A large sized, 7 speed automatic straight-through gearbox." .. blurb,
 	model = "models/engines/t5large.mdl",

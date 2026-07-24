@@ -41,11 +41,11 @@ end
 function this:Configure(missile)
 
 	self:super().Configure(self, missile)
-	self.SeekCone = ACE_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
-	self.ViewCone = ACE_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.SeekCone = ACE.GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
-	self.HasIRCCM	= ACE_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
-	self.seekReduction	= ACE_GetGunValue(missile.BulletData, "seekreduction") or 1
+	self.HasIRCCM	= ACE.GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.seekReduction	= ACE.GetGunValue(missile.BulletData, "seekreduction") or 1
 
 	local ScanArray = ACE.radarEntities
 	local MyRadars = {}
@@ -219,7 +219,7 @@ function this:AcquireLock(missile)
 		DifSeek = missile:GetForward()
 	end
 
-	local CounterMeasures = ACE_Missile_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
+	local CounterMeasures = ACE.Missile_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
 	table.Merge(found,CounterMeasures)
 
 	for _, classifyent in pairs(found) do

@@ -60,7 +60,7 @@ function EFFECT:Init( data )
         Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
     util.Effect( "ACE_Scaled_Explosion", Flash )
 
-    ACE_SBlast( self.Origin, self.Magnitude, false, Ground.HitWorld ) --hitwater is false
+    ACE.SBlast( self.Origin, self.Magnitude, false, Ground.HitWorld ) --hitwater is false
 
     self.Emitter:Finish()
     DebugEffect("ace_smoke Init:Exit")

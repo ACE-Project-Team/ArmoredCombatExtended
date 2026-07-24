@@ -27,13 +27,13 @@ function Round.convert( _, PlayerData )
 	PlayerData.Data13		= math.max(PlayerData.Data13 or 0, 5) --ClusterMult
 	PlayerData.Data14		= math.max(PlayerData.Data14 or 2000, 500) --ExplodeDistance
 
-	PlayerData, Data, ServerData, GUIData = ACE_RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
+	PlayerData, Data, ServerData, GUIData = ACE.RoundBaseGunpowder( PlayerData, Data, ServerData, GUIData )
 
 	--Shell sturdiness calcs
 
 	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
 	Data.ProjMass		= math.max(GUIData.ProjVolume,0) * 7.9 / 1000 * 2 --Tungsten carbide is roughly twice as dense as steel.
-	Data.MuzzleVel		= ACE_MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
+	Data.MuzzleVel		= ACE.MuzzleVelocity( Data.PropMass, Data.ProjMass, Data.Caliber )
 
 	GUIData.ClusterMult = math.Clamp(PlayerData.Data13, 10, 100)
 	Data.ClusterMult = GUIData.ClusterMult
@@ -106,10 +106,10 @@ end
 
 function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
-	if ACE_Check( Target ) then
+	if ACE.Check( Target ) then
 		local Speed	= Bullet.Flight:Length() / ACE.VelScale
-		local Energy	= ACE_Kinetic( Speed , Bullet.ProjMass, Bullet.LimitVel )
-		local HitRes	= ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
+		local Energy	= ACE.Kinetic( Speed , Bullet.ProjMass, Bullet.LimitVel )
+		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.Ricochet then
 			return "Ricochet"
@@ -227,7 +227,7 @@ do
 
 	function Round.create( _, BulletData )
 
-		ACE_CreateBullet( BulletData )
+		ACE.CreateBullet( BulletData )
 
 		GenerateCluster(BulletData)
 
@@ -239,15 +239,15 @@ do
 
 		if tr.Hit and not (tr.HitSky or Bullet.SkyLvL) and Bullet.FlightTime > 0.5 then
 
-			ACE_BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
+			ACE.BulletClient( Index, Bullet, "Update" , 1 , Bullet.Pos  ) --Ends the bullet flight on the clientside
 
-			ACE_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.ProjMass / 100, Bullet.ProjMass - Bullet.ProjMass / 100, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+			ACE.HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.ProjMass / 100, Bullet.ProjMass - Bullet.ProjMass / 100, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
 			local GunEnt = Bullet.Gun
 			if IsValid(GunEnt) then
 				--print("Valid")
 				CreateCluster(Bullet,GunEnt.BulletData) --(bullet, bdata)
 			end
-			ACE_RemoveBullet( Index )
+			ACE.RemoveBullet( Index )
 
 
 		end
@@ -256,15 +256,15 @@ do
 	end
 
 	function Round.endflight(Index, Bullet)
-		ACE_BulletClient( Index, Bullet, "Update", 1, Bullet.Pos  ) --Ends the bullet flight on the clientside
+		ACE.BulletClient( Index, Bullet, "Update", 1, Bullet.Pos  ) --Ends the bullet flight on the clientside
 
-		ACE_HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.ProjMass / 100, Bullet.ProjMass - Bullet.ProjMass / 100, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
+		ACE.HE( Bullet.Pos - Bullet.Flight:GetNormalized() * 3, Bullet.Flight:GetNormalized(), Bullet.ProjMass / 100, Bullet.ProjMass - Bullet.ProjMass / 100, Bullet.Owner, nil, Bullet.Gun ) --Seperation airbursts. Fillermass reduced by 20 because it's the seperation charge.
 		local GunEnt = Bullet.Gun
 		if IsValid(GunEnt) then
 			--print("Valid")
 			CreateCluster(Bullet,GunEnt.BulletData) --(bullet, bdata)
 		end
-		ACE_RemoveBullet( Index )
+		ACE.RemoveBullet( Index )
 	end
 
 end
@@ -333,7 +333,7 @@ function Round.guicreate( Panel, Table )
 	acemenupanel:AmmoSlider("ClusterMult",0,0,100,1, "Cluster Multiplier (%)", "")
 	acemenupanel:AmmoSlider("FuseDistance",0,500,6000,2, "Cluster Fuse Distance", "")
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	Round.guiupdate( Panel, Table )
 
@@ -363,7 +363,7 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acemenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acemenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACE.VelScale) .. " m/s") --Proj muzzle velocity (Name, Desc)
 
@@ -373,7 +373,7 @@ function Round.guiupdate( Panel )
 	acemenupanel:AmmoSlider("ClusterMult",Data.ClusterMult,10,100,1, "Cluster Multiplier (%)", "Bomblets: " .. Data.BombletCount)	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FuseDistance",Data.FuseDistance,500,6000,2, "Cluster Fuse Distance", "")	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acemenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)

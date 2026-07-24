@@ -1,7 +1,7 @@
 
 -- Wankel engines
 
-ACE_DefineEngine( "900cc-R", {
+ACE.DefineEngine( "900cc-R", {
 	name = "0.9L Rotary",
 	desc = "Small 2-rotor Wankel; suited for yard use\n\nWankels have rather wide powerbands, but are very high strung",
 	model = "models/engines/wankel_2_small.mdl",
@@ -16,7 +16,7 @@ ACE_DefineEngine( "900cc-R", {
 	limitrpm = 9200,
 } )
 
-ACE_DefineEngine( "1.3L-R", {
+ACE.DefineEngine( "1.3L-R", {
 	name = "1.3L Rotary",
 	desc = "Medium 2-rotor Wankel\n\nWankels have rather wide powerbands, but are very high strung",
 	model = "models/engines/wankel_2_med.mdl",
@@ -31,7 +31,7 @@ ACE_DefineEngine( "1.3L-R", {
 	limitrpm = 9000,
 } )
 
-ACE_DefineEngine( "2.0L-R", {
+ACE.DefineEngine( "2.0L-R", {
 	name = "2.0L Rotary",
 	desc = "High performance 3-rotor Wankel\n\nWankels have rather wide powerbands, but are very high strung",
 	model = "models/engines/wankel_3_med.mdl",

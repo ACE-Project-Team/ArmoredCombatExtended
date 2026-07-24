@@ -91,7 +91,7 @@ do
 		local D0 = DragCoef * V0 ^ 2 / ACE.DragDiv -- initial drag
 		local K1 = (D0 / (V0 ^ (3 / 2))) ^ -1 -- estimated drag coefficient
 		local Vel = math.max(math.sqrt(V0) - ((Range * 39.37) / (2 * K1)), 0) ^ 2
-		local Pen = ACE_CalcPenetration(ACE_Kinetic(Vel, ProjMass, LimitVel), PenArea)
+		local Pen = ACE.CalcPenetration(ACE.Kinetic(Vel, ProjMass, LimitVel), PenArea)
 
 		return Vel * 0.0254, Pen
 	end
@@ -161,7 +161,7 @@ do
 			local Id		= acemenupanel.AmmoData.Id
 			local Dimensions = vector_origin
 
-			if not ACE_CheckAmmo( Id ) then
+			if not ACE.CheckAmmo( Id ) then
 				Dimensions = CreateRealScale(Id)
 			else
 				local AmmoData	= ACE.Weapons.Ammo[Id]
@@ -196,7 +196,7 @@ do
 		--General Ammo Capacity diplay shown on ammo config
 		function ACE_AmmoCapacityDisplay(Data)
 
-			local Cap, RoFNerf, TwoPiece = ACE_AmmoCapacity( Data )
+			local Cap, RoFNerf, TwoPiece = ACE.AmmoCapacity( Data )
 
 			local plur = "" .. Cap .. " " .. (Cap > 1 and "rounds" or "round")
 
@@ -220,7 +220,7 @@ do
 
 		for i = 1, 4 do
 			Range.Distance[i] = (2 ^ (i - 1)) * 100
-			Range.Vel[i], Range.Pen[i] = ACE_PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range.Distance[i])
+			Range.Vel[i], Range.Pen[i] = ACE.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range.Distance[i])
 
 			final_text[i] = "At " .. Range.Distance[i] .. "m pen: " .. Floor(Range.Pen[i]) .. "mm @ " .. Floor(Range.Vel[i]) .. "m\\s\n"
 		end
@@ -248,14 +248,14 @@ do
 
 				acemenupanel:CPanelText("BonusDisplay", "\n")
 				acemenupanel:CPanelText("Desc", "")
-				ACE_AmmoStats( 0, 0, 0, 0 )
+				ACE.AmmoStats( 0, 0, 0, 0 )
 
 			else
 				acemenupanel:CPanelText("CrateInfoBold", "Crate information:", "DermaDefaultBold")
 
-				ACE_AmmoCapacityDisplay( Data )
+				ACE.AmmoCapacityDisplay( Data )
 				acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc)
-				ACE_AmmoStats(Floor((Data.PropLength + Data.ProjLength + (Floor(Data.Tracer * 5) / 10)) * 100) / 100, Data.MaxTotalLength, Floor(Data.MuzzleVel * ACE.VelScale), Floor(Data.MaxPen))
+				ACE.AmmoStats(Floor((Data.PropLength + Data.ProjLength + (Floor(Data.Tracer * 5) / 10)) * 100) / 100, Data.MaxTotalLength, Floor(Data.MuzzleVel * ACE.VelScale), Floor(Data.MaxPen))
 			end
 
 		end
@@ -279,10 +279,10 @@ do
 				acemenupanel:AmmoCheckbox("Tracer", "Enable Tracer: " .. (Floor(Data.Tracer * 5) / 10) .. "cm\n", "", Trtip) --Tracer checkbox (Name, Title, Desc)
 				acemenupanel:AmmoCheckbox("TwoPiece", "Enable Two Piece Storage", "", TPtip )
 
-				local None, Mean, Max = ACE_RicoProbability(Data.Ricochet, Data.MuzzleVel * ACE.VelScale)
+				local None, Mean, Max = ACE.RicoProbability(Data.Ricochet, Data.MuzzleVel * ACE.VelScale)
 				acemenupanel:CPanelText("RicoDisplay", "0% chance of ricochet at: " .. None .. "°\n50% chance of ricochet at: " .. Mean .. "°\n100% chance of ricochet at: " .. Max .. "°")
 
-				ACE_AmmoRangeStats( Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel )
+				ACE.AmmoRangeStats( Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel )
 			end
 		end
 

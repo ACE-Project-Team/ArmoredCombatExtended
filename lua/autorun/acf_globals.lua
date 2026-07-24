@@ -380,7 +380,7 @@ if SERVER then
             ACE.LargeGunsThreshold = math.ceil(math.Clamp(New, 0, 10000))
         elseif CVar == "ace_enable_dp" then
             if ACE_SendDPStatus then
-                ACE_SendDPStatus()
+                ACE.SendDPStatus()
             end
         end
     end
@@ -427,7 +427,7 @@ local startupSync = {
 for _, name in ipairs(startupSync) do
     local convar = GetConVar(name)
     if convar then
-        ACE_CVarChangeCallback(name, nil, convar:GetString())
+        ACE.CVarChangeCallback(name, nil, convar:GetString())
     end
 end
 

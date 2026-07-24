@@ -18,7 +18,7 @@ function ACE_Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
 		end
 
 		slider.OnValueChanged = function()
-			ACE_Missiles_SetCommand(combo, controlGroup, conCmd)
+			ACE.Missiles_SetCommand(combo, controlGroup, conCmd)
 		end
 
 		controlGroup[#controlGroup + 1] = slider
@@ -60,7 +60,7 @@ ACE.Missiles_ConfigurationFactory =
 	number =	function(config, controlGroup, combo, conCmd, gundata)
 					--print(config.MinConfig, gundata.armdelay, config.Min, gundata[config.MinConfig], gundata.id)
 					local min = config.MinConfig and gundata.armdelay or config.Min
-					return ACE_Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, config.Max)
+					return ACE.Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, config.Max)
 				end
 }
 

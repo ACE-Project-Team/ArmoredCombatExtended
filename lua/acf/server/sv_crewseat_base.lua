@@ -40,7 +40,7 @@ end
 
 -- Print a crewseat debug line when enabled.
 function ACE_CrewseatDebugLog(ent, stage, info, extra)
-	if not ACE_CrewseatDebugEnabled() then return end
+	if not ACE.CrewseatDebugEnabled() then return end
 
 	local owner = "Unknown"
 	if ent.CPPIGetOwner then
@@ -107,12 +107,12 @@ function ACE_CrewseatDeferredModelSync(ent, info)
 		if ent.ACE_LegacyCrewseatModelLocked then return end
 		local beforeModel = ent:GetModel()
 		local beforeType = ent.ModelType
-		local modelType = ACE_CrewseatResolveModelType(ent, info)
+		local modelType = ACE.CrewseatResolveModelType(ent, info)
 		if modelType and (beforeModel ~= ent:GetModel() or beforeType ~= ent.ModelType) then
 			ent.ACE_DupeDeferredModel = ent:GetModel()
 			ent.ACE_DupeDeferredModelType = ent.ModelType
 			ent.ACE_DupeDeferredResolved = modelType
-			ACE_CrewseatDebugLog(ent, "DeferredSync", info, "resolved=" .. tostring(modelType))
+			ACE.CrewseatDebugLog(ent, "DeferredSync", info, "resolved=" .. tostring(modelType))
 		end
 	end)
 end
@@ -322,7 +322,7 @@ function ACE_InitializeCrewseat(ent, modelType)
 	ent.ACF.MaxHealth = ent.ACF.MaxHealth or 1
 	ent.ACF.Armour = ent.ACF.Armour or 1
 
-	ent.Name = ent.Name or ACE_GenerateCrewName()
+	ent.Name = ent.Name or ACE.GenerateCrewName()
 	ent.Weight = weight
 	ent.AnglePenalty = 0
 	ent.GForcePenalty = 0
@@ -366,7 +366,7 @@ end
 -- G-force penalty calculation (0..1)
 -- Penalties start at 2G and max out at 6G
 function ACE_UpdateGForcePenalty(ent)
-	local gTotal, gVec = ACE_CalcEntityGForce(ent) -- gVec is local-space felt G vector; rest ~= (0,0,1)
+	local gTotal, gVec = ACE.CalcEntityGForce(ent) -- gVec is local-space felt G vector; rest ~= (0,0,1)
 	ent.CurrentGForce = gTotal
 	ent.GForceVector = gVec
 
@@ -386,9 +386,9 @@ function ACE_CrewseatLegalCheck(ent)
 			ent.Model = currentModel
 		end
 
-		ent.Legal, ent.LegalIssues = ACE_CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
+		ent.Legal, ent.LegalIssues = ACE.CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
 
-		if ent.Legal and not (ACE_IsValidCrewseatModel and ACE_IsValidCrewseatModel(currentModel)) then
+		if ent.Legal and not (ACE_IsValidCrewseatModel and ACE.IsValidCrewseatModel(currentModel)) then
 			ent.Legal = false
 			ent.LegalIssues = "Invalid crewseat model"
 		end
@@ -411,7 +411,7 @@ end
 -- Shared damage function
 function ACE_CrewseatDamage(ent, Entity, Energy, FrArea, Inflictor)
 	ent.ACF.Armour = 3
-	local HitRes = ACE_PropDamage(Entity, Energy, FrArea, 0, Inflictor)
+	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, 0, Inflictor)
 	return HitRes
 end
 

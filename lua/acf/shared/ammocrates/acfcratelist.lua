@@ -649,7 +649,7 @@ AmmoTable["Shell170mm"] = Shell170mm
 ACE.Weapons.Ammo = AmmoTable --end ammo containers listing
 
 --Cube
-ACE_DefineModelData("Box",{
+ACE.DefineModelData("Box",{
 
 	Shape = "Box",
 	Model = "models/holograms/rcube_thin.mdl", --Note: The model can be used as ID if needed.
@@ -674,7 +674,7 @@ ACE_DefineModelData("Box",{
 })
 
 --Triangle / Wedge
-ACE_DefineModelData("Wedge",{
+ACE.DefineModelData("Wedge",{
 
 	Shape = "Wedge",
 	Model = "models/holograms/right_prism.mdl",
@@ -722,7 +722,7 @@ ACE_DefineModelData("Prism",{
 local PI = math.pi
 
 --Cylinder
-ACE_DefineModelData("Cylinder",{
+ACE.DefineModelData("Cylinder",{
 
 	Shape = "Cylinder",
 	Model = "models/holograms/hq_rcylinder_thin.mdl",
@@ -833,7 +833,7 @@ ACE_DefineModelData("Sphere",{
 })
 
 --Cone
-ACE_DefineModelData("Cone",{
+ACE.DefineModelData("Cone",{
 
 	Shape = "Cone",
 	Model = "models/holograms/hq_cone.mdl",

@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACE_DefineEngine( "4.6-V12", {
+ACE.DefineEngine( "4.6-V12", {
 	name = "4.6L V12 Petrol",
 	desc = "An elderly racecar engine; low on torque, but plenty of power",
 	model = "models/engines/v12s.mdl",
@@ -18,7 +18,7 @@ ACE_DefineEngine( "4.6-V12", {
 	limitrpm = 8000,
 } )
 
-ACE_DefineEngine( "7.0-V12", {
+ACE.DefineEngine( "7.0-V12", {
 	name = "7.0L V12 Petrol",
 	desc = "A high end V12; primarily found in very expensive cars",
 	model = "models/engines/v12s.mdl",
@@ -33,7 +33,7 @@ ACE_DefineEngine( "7.0-V12", {
 	limitrpm = 7500,
 } )
 
-ACE_DefineEngine( "23.0-V12", {
+ACE.DefineEngine( "23.0-V12", {
 	name = "23.0L V12 Petrol",
 	desc = "A large, thirsty gasoline V12, found in early cold war tanks",
 	model = "models/engines/v12l.mdl",
@@ -48,7 +48,7 @@ ACE_DefineEngine( "23.0-V12", {
 	limitrpm = 3250,
 } )
 
-ACE_DefineEngine( "25.0-V12", {
+ACE.DefineEngine( "25.0-V12", {
 	name = "25.0L V12 Petrol",
 	desc = "Best petrol V12 engine ever ",
 	model = "models/engines/v12l.mdl",
@@ -65,7 +65,7 @@ ACE_DefineEngine( "25.0-V12", {
 
 -- Diesel
 
-ACE_DefineEngine( "4.0-V12", {
+ACE.DefineEngine( "4.0-V12", {
 	name = "4.0L V12 Diesel",
 	desc = "Reliable truck-duty diesel; a lot of smooth torque",
 	model = "models/engines/v12s.mdl",
@@ -80,7 +80,7 @@ ACE_DefineEngine( "4.0-V12", {
 	limitrpm = 4000,
 } )
 
-ACE_DefineEngine( "9.2-V12", {
+ACE.DefineEngine( "9.2-V12", {
 	name = "9.2L V12 Diesel",
 	desc = "High torque light-tank V12, used mainly for vehicles that require balls",
 	model = "models/engines/v12m.mdl",
@@ -95,7 +95,7 @@ ACE_DefineEngine( "9.2-V12", {
 	limitrpm = 3500,
 } )
 
-ACE_DefineEngine( "21.0-V12", {
+ACE.DefineEngine( "21.0-V12", {
 	name = "21.0L V12 Diesel",
 	desc = "AVDS-1790-2 tank engine; massively powerful, but enormous and heavy",
 	model = "models/engines/v12l.mdl",
@@ -110,7 +110,7 @@ ACE_DefineEngine( "21.0-V12", {
 	limitrpm = 2500,
 } )
 
-ACE_DefineEngine( "13.0-V12", {
+ACE.DefineEngine( "13.0-V12", {
 	name = "13.0L V12 Petrol",
 	desc = "Thirsty gasoline v12, good torque and power for medium applications.",
 	model = "models/engines/v12m.mdl",
@@ -125,7 +125,7 @@ ACE_DefineEngine( "13.0-V12", {
 	limitrpm = 4250,
 } )
 
-ACE_DefineEngine( "16.5-V12", {
+ACE.DefineEngine( "16.5-V12", {
 	name = "16.5L V12 Diesel",
 	desc = "V-2-34. Pretty powerful but heavy with nice torque.",
 	model = "models/engines/v8l.mdl",
@@ -140,7 +140,7 @@ ACE_DefineEngine( "16.5-V12", {
 	limitrpm = 3500,
 } )
 
-ACE_DefineEngine( "24.8-V12", {
+ACE.DefineEngine( "24.8-V12", {
 	name = "24.8-V12 Diesel",
 	desc = "AVDS-1790-9A tank engine; massively powerful, but enormous and heavy",
 	model = "models/engines/v12l.mdl",
@@ -155,7 +155,7 @@ ACE_DefineEngine( "24.8-V12", {
 	limitrpm = 2800,
 } )
 
-ACE_DefineEngine( "27.0-V12", {
+ACE.DefineEngine( "27.0-V12", {
 	name = "27.0-V12 Diesel",
 	desc = "AVDS-1790-1500 tank engine; massively powerful, but enormous and heavy. Best diesel engine in V12",
 	model = "models/engines/v12lbig.mdl",

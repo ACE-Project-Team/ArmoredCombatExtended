@@ -122,7 +122,7 @@ return {
 						return { Overkill = 0, Loss = 1, Kill = false }
 					end
 
-					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(traceEnds[2].x).to.equal(0)
 					expect(traceEnds[2].y).to.beGreaterThan(traceEnds[2].x + 100)
 				end)
@@ -173,7 +173,7 @@ return {
 						return { Overkill = 10, Loss = 0.25, Kill = false }
 					end
 
-					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("repeated_visit")
 				end)
 
@@ -219,7 +219,7 @@ return {
 						return { Overkill = 10, Loss = 0.01, Kill = false }
 					end
 
-					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("depth_budget")
 				end)
 
@@ -254,7 +254,7 @@ return {
 					end
 					debugoverlay.Line = function() end
 
-					ACE_SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
 					expect(ACE.SpallTraces[1].TerminationReason).to.equal("invalid_entity")
 				end)
 
@@ -279,7 +279,7 @@ return {
 					_G.GetConVar = function() return { GetFloat = function() return 1 end } end
 					math.Rand = function() return 0.5 end
 
-					local result = ACE_RoundImpact({
+					local result = ACE.RoundImpact({
 						Ricochets = 5,
 						Caliber = 1,
 						Ricochet = 55,

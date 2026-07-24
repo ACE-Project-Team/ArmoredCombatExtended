@@ -57,11 +57,11 @@ if SERVER then
 		if breachProb > math.random() and maxPenetration > armor then
 
 			local HEWeight  = math.Min(maxPenetration * 0.001, 30) -- #nonukespls
-			local Radius	= ACE_CalculateHERadius( HEWeight )
+			local Radius	= ACE.CalculateHERadius( HEWeight )
 			local Owner	= (CPPI and Entity:CPPIGetOwner()) or NULL
 			local EntPos	= Entity:GetPos()
 
-			ACE_HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity ) --ERABOOM
+			ACE.HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity ) --ERABOOM
 
 			--util.Effect not working during MP workaround. Waiting a while fixes the issue.
 			timer.Simple(0.001, function()
@@ -86,11 +86,11 @@ if SERVER then
 			if maxPenetration > losArmor * effectiveness then
 
 				local HEWeight  = math.Min(maxPenetration * 0.001, 30) -- #nonukespls
-				local Radius	= ACE_CalculateHERadius( HEWeight )
+				local Radius	= ACE.CalculateHERadius( HEWeight )
 				local Owner	= (CPPI and Entity:CPPIGetOwner()) or NULL
 				local EntPos	= Entity:GetPos()
 
-				ACE_HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity ) --ERABOOM
+				ACE.HE( EntPos , vector_up , HEWeight , HEWeight , Owner , Entity, Entity ) --ERABOOM
 
 				--util.Effect not working during MP workaround. Waiting a while fixes the issue.
 				timer.Simple(0.001, function()

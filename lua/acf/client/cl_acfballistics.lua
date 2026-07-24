@@ -6,7 +6,7 @@ function ACE_ManageBulletEffects()
 	if next(ACE.BulletEffect) then
 
 		for Index,Bullet in pairs(ACE.BulletEffect) do
-			ACE_SimBulletFlight( Bullet, Index )			--This is the bullet entry in the table, the omnipresent Index var refers to this
+			ACE.SimBulletFlight( Bullet, Index )			--This is the bullet entry in the table, the omnipresent Index var refers to this
 		end
 	end
 end

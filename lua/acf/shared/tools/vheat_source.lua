@@ -1,4 +1,4 @@
-ACE_DefineVHeatSource("VHeatSrc", {
+ACE.DefineVHeatSource("VHeatSrc", {
     name = ACE.Translation.VHeatSource[1],
     ent = "ace_vheat_source",
     desc = ACE.Translation.VHeatSource[2],

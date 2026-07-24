@@ -8,7 +8,7 @@ include("acf/shared/sh_acfm_getters.lua")
 
 
 local function checkIfDataIsMissile(data)
-	return ACE_IsAmmoMissileType(data)
+	return ACE.IsAmmoMissileType(data)
 end
 
 
@@ -47,9 +47,9 @@ function ACE_Missile_ModifyRoundDisplayFuncs()
 				local slugMV2 = data.SlugMV2
 				local PenArea = data.PenArea
 
-				local PenMul = ACE_GetGunValue(data.Id, "penmul") or 1.2
-				local VelMul = ACE_GetGunValue(data.Id, "velmul") or 3
-				local CalMul = ACE_GetGunValue(data.Id, "calmul") or 1
+				local PenMul = ACE.GetGunValue(data.Id, "penmul") or 1.2
+				local VelMul = ACE.GetGunValue(data.Id, "velmul") or 3
+				local CalMul = ACE.GetGunValue(data.Id, "calmul") or 1
 
 				data.MuzzleVel = (MuzzleVel or 0) * VelMul
 				data.SlugMV = (slugMV or 0) * PenMul
@@ -124,7 +124,7 @@ function ACE_Missile_ModifyCrateTextFuncs()
 				local fuse	= IsValid(crate) and crate.RoundData8 or data.Data8
 
 				if guidance then
-					guidance = ACE_Missile_CreateConfigurable(guidance, ACE.Guidance, data, "guidance")
+					guidance = ACE.Missile_CreateConfigurable(guidance, ACE.Guidance, data, "guidance")
 					if guidance and guidance.Name ~= "Dumb" then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = guidance.Name
@@ -135,7 +135,7 @@ function ACE_Missile_ModifyCrateTextFuncs()
 				end
 
 				if fuse then
-					fuse = ACE_Missile_CreateConfigurable(fuse, ACE.Fuse, data, "fuses")
+					fuse = ACE.Missile_CreateConfigurable(fuse, ACE.Fuse, data, "fuses")
 					if fuse then
 						str[#str + 1] = "\n\n"
 						str[#str + 1] = fuse.Name

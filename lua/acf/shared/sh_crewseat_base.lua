@@ -93,7 +93,7 @@ function ACE_GetPoseModifiers(ent)
 
 	local class = ent:GetClass()
 	local modelType = ent.ModelType or "Sitting"
-	local isStanding = ACE_IsStandingPose(modelType)
+	local isStanding = ACE.IsStandingPose(modelType)
 	local poseKey = isStanding and "standing" or "sitting"
 
 	local classModifiers = ACE.CrewseatPoseModifiers[class]

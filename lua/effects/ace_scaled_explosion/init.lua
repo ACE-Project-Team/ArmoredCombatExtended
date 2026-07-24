@@ -42,7 +42,7 @@ function EFFECT:Init( data )
 
 	local Mat = Ground.MatType or 0
 	--print(Ground.MatType)
-	local Material = ACE_GetMaterialName( Mat )
+	local Material = ACE.GetMaterialName( Mat )
 
 	--Overide with ACE prop material
 	if Ground.HitNonWorld then
@@ -83,16 +83,16 @@ function EFFECT:Init( data )
 	--Main explosion
 	if self.Radius < 7 then
 		self:ExplosionSmall()
-		ACE_RenderLight( 0, self.Radius * 700, Color(255, 90, 15), self.Origin, 0.2) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 700, Color(255, 90, 15), self.Origin, 0.2) -- idx 0: world
 	elseif self.Radius < 15 then
 		self:ExplosionMedium()
-		ACE_RenderLight( 0, self.Radius * 1600, Color(255, 90, 15), self.Origin, 0.5) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 1600, Color(255, 90, 15), self.Origin, 0.5) -- idx 0: world
 	else
 		self:ExplosionMedium()
-		ACE_RenderLight( 0, self.Radius * 1800, Color(255, 90, 15), self.Origin, 1) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 1800, Color(255, 90, 15), self.Origin, 1) -- idx 0: world
 	end
 
-	ACE_SBlast( self.Origin, self.Radius, self.HitWater, Ground.HitWorld )
+	ACE.SBlast( self.Origin, self.Radius, self.HitWater, Ground.HitWorld )
 
 	local PlayerDist = (LocalPlayer():GetPos() - self.Origin):Length() / 20 + 0.001 --Divide by 0 is death, 20 is roughly 39.37 / 2
 	if PlayerDist < self.Radius * 10 and not LocalPlayer():HasGodMode() then

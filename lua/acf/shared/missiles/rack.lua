@@ -1,5 +1,5 @@
 --define the class
-ACE_DefineRackClass("RK", {
+ACE.DefineRackClass("RK", {
 	spread         = 1,
 	name           = "Munitions Rack",
 	desc           = "A lightweight rack for rockets and bombs which is vulnerable to shots and explosions.",
@@ -9,7 +9,7 @@ ACE_DefineRackClass("RK", {
 } )
 
 --add a gun to the class
-ACE_DefineRack("1xRK", {
+ACE.DefineRack("1xRK", {
 	name = "Single Universal Rack",
 	desc = "A lightweight rack for rockets and bombs which is vulnerable to shots and explosions.",
 	model	= "models/missiles/rkx1.mdl",
@@ -24,7 +24,7 @@ ACE_DefineRack("1xRK", {
 } )
 
 --add a gun to the class
-ACE_DefineRack("1xRK_small", {
+ACE.DefineRack("1xRK_small", {
 	name = "Single Small Universal Rack",
 	desc = "A lightweight rack for a single rocket or bomb which is vulnerable to shots and explosions.",
 	model	= "models/missiles/rkx1_sml.mdl",
@@ -38,7 +38,7 @@ ACE_DefineRack("1xRK_small", {
 	}
 } )
 
-ACE_DefineRack("2xRK", {
+ACE.DefineRack("2xRK", {
 	name = "Dual Universal Rack",
 	desc = "A lightweight rack for 2 rockets or bombs which is vulnerable to shots and explosions.",
 	model	= "models/missiles/rack_double.mdl",
@@ -52,7 +52,7 @@ ACE_DefineRack("2xRK", {
 	}
 } )
 
-ACE_DefineRack("3xRK", {
+ACE.DefineRack("3xRK", {
 	name = "BRU-42 Rack",
 	desc = "A lightweight rack for 3 rockets or bombs which is vulnerable to shots and explosions.",
 	model	= "models/missiles/bomb_3xrk.mdl",
@@ -69,7 +69,7 @@ ACE_DefineRack("3xRK", {
 	}
 } )
 
-ACE_DefineRack("4xRK", {
+ACE.DefineRack("4xRK", {
 	name = "Quad Universal Rack",
 	desc = "A lightweight rack for 4 rockets or bombs which is vulnerable to shots and explosions.",
 	model	= "models/missiles/rack_quad.mdl",
@@ -87,7 +87,7 @@ ACE_DefineRack("4xRK", {
 } )
 
 
-ACE_DefineRack("1x LMUR", {
+ACE.DefineRack("1x LMUR", {
 	name = "1x LMUR ATGM",
 	desc = "An LMUR rack designed to carry 1 missile.",
 	model    = "models/missiles/lmur_rack1x.mdl",
@@ -104,7 +104,7 @@ ACE_DefineRack("1x LMUR", {
 
 
 
-ACE_DefineRack("2x LMUR", {
+ACE.DefineRack("2x LMUR", {
 	name = "2x LMUR ATGM",
 	desc = "An LMUR rack designed to carry 2 missiles.",
 	model    = "models/missiles/lmur_rack2x.mdl",
@@ -119,7 +119,7 @@ ACE_DefineRack("2x LMUR", {
 	}
 } )
 
-ACE_DefineRack("2x AGM-114", {
+ACE.DefineRack("2x AGM-114", {
 	name = "Dual AGM-114 Rack",
 	desc = "An AGM-114 rack designed to carry 2 missiles.",
 	model	= "models/missiles/agm_114_2xrk.mdl",
@@ -134,7 +134,7 @@ ACE_DefineRack("2x AGM-114", {
 	}
 } )
 
-ACE_DefineRack("4x AGM-114", {
+ACE.DefineRack("4x AGM-114", {
 	name = "Quad AGM-114 Rack",
 	desc = "An AGM-114 rack designed to carry 4 missiles.",
 	model	= "models/missiles/agm_114_4xrk.mdl",
@@ -151,7 +151,7 @@ ACE_DefineRack("4x AGM-114", {
 	}
 } )
 
-ACE_DefineRack("1xAT3RK", {
+ACE.DefineRack("1xAT3RK", {
 	name = "Single AT-3 Missile Rack",
 	desc = "An AT-3 anti tank missile handheld rack",
 	model	= "models/missiles/at3rk.mdl",
@@ -166,7 +166,7 @@ ACE_DefineRack("1xAT3RK", {
 	}
 } )
 
-ACE_DefineRack("1xAT3RKS", {
+ACE.DefineRack("1xAT3RKS", {
 	name = "Single AT-3 Missile Rack designed for AFV",
 	desc = "An AT-3 anti tank missile handheld rack",
 	model	= "models/missiles/at3rs.mdl",
@@ -182,7 +182,7 @@ ACE_DefineRack("1xAT3RKS", {
 } )
 
 --TOR pod
-ACE_DefineRack("1x9M331 Pod", {
+ACE.DefineRack("1x9M331 Pod", {
 	name = "9M331 Pod",
 	desc = "Launch Pod for TOR misiles.",
 	model	= "models/missiles/arend/9m331_launcher_4_v2.mdl",

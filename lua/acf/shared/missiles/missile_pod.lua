@@ -1,6 +1,6 @@
 
 --define the class
-ACE_DefineGunClass("FFAR", {
+ACE.DefineGunClass("FFAR", {
 	type			= "missile",
 	spread		= 1,
 	name			= "[FFAR] - Folding-Fin Aerial Rockets",
@@ -17,7 +17,7 @@ ACE_DefineGunClass("FFAR", {
 
 
 
-ACE_DefineGun("40mmFFAR", { --id
+ACE.DefineGun("40mmFFAR", { --id
 
 	name		= "40mm Pod Rocket",
 	desc		= "A tiny, unguided rocket.  Useful for anti-infantry, smoke and suppression.  Folding fins allow the rocket to be stored in pods, which defend them from damage.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nMax Kinetic Pen: 122 mm",
@@ -85,7 +85,7 @@ ACE_DefineGun("40mmFFAR", { --id
 
 
 
-ACE_DefineGun("70mmFFAR", { --id
+ACE.DefineGun("70mmFFAR", { --id
 
 	name		= "70mm Pod Rocket",
 	desc		= "A small, optionally guided rocket.  Useful against light vehicles and infantry.  Folding fins allow the rocket to be stored in pods, which defend them from damage.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nMax Kinetic Pen: 284 mm",
@@ -157,7 +157,7 @@ ACE_DefineGun("70mmFFAR", { --id
 	armdelay	= 0.15	-- minimum fuse arming delay
 } )
 
-ACE_DefineGun("S8KO", { --id
+ACE.DefineGun("S8KO", { --id
 
 	name        = "S-8KO Unguided Rockets",
 	desc        = "The S-8 is a rocket weapon developed by the Soviet Air Force for use by military aircraft. It remains in service with the Russian Aerospace Forces and various export customers.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nMax Kinetic Pen: 194 mm",
@@ -226,7 +226,7 @@ ACE_DefineGun("S8KO", { --id
 
 } )
 
-ACE_DefineGun("Zuni ASR", { --id
+ACE.DefineGun("Zuni ASR", { --id
 	name             = "Zuni Rocket",
 	desc             = "A heavy 5in air to surface unguided rocket, able to provide heavy suppressive fire in a single pass.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nMax Kinetic Pen: 388 mm",
 	model            = "models/ghosteh/zuni.mdl",

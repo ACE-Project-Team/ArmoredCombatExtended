@@ -53,15 +53,15 @@ local function calcSubsystem(ents, subsystem)
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
 			local cls = ent:GetClass()
-			if ACE_GetPtsType(cls) == subsystem then
+			if ACE.GetPtsType(cls) == subsystem then
 				local pts
 				if subsystem == "Crew" then
-					pts = ACE_GetCrewSeatPointCost(ent)
+					pts = ACE.GetCrewSeatPointCost(ent)
 				elseif subsystem == "Firepower" and (cls == "acf_gun" or cls == "acf_rack") then
 					-- Never collapse by class or round ID: identical weapons bill independently.
-					pts = ACE_GetGunFirepowerPointsFor(ent, ents)
+					pts = ACE.GetGunFirepowerPointsFor(ent, ents)
 				else
-					pts = ACE_GetEntPoints(ent)
+					pts = ACE.GetEntPoints(ent)
 				end
 
 				if pts ~= 0 then
@@ -88,7 +88,7 @@ function ACE_CalcNonArmorPoints(con, baseEnt)
 
 	local totals = { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }
 
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
 	local subsystems = ACE.PointSubsystems or {
 		"Engines",
@@ -111,11 +111,11 @@ end
 
 function ACE_CalcContraptionArmorPoints(con, baseEnt)
 	local total = 0
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
-			local pts = ACE_GetArmorPoints(ent)
+			local pts = ACE.GetArmorPoints(ent)
 			if pts > 0 then
 				total = total + pts
 			end
@@ -137,7 +137,7 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	local totals = con.ACEPointsPerType or {}
 
 	if rebuildNonArmor then
-		local nonArmor, nonArmorTotals = ACE_CalcNonArmorPoints(con, base)
+		local nonArmor, nonArmorTotals = ACE.CalcNonArmorPoints(con, base)
 		totals = nonArmorTotals or {}
 
 		con.ACEPointsNonArmor = nonArmor or 0
@@ -145,7 +145,7 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	end
 
 	if rebuildArmor then
-		local armorPts = ACE_CalcContraptionArmorPoints(con, base)
+		local armorPts = ACE.CalcContraptionArmorPoints(con, base)
 
 		con.ACEArmorPoints = armorPts
 		con.ACEArmorDirty = false
@@ -176,9 +176,9 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	if con._ACEPointsEnsuring then return end
 
 	con._ACEPointsEnsuring = true
-	if ACE_EnsurePointsState then ACE_EnsurePointsState(con) end
+	if ACE_EnsurePointsState then ACE.EnsurePointsState(con) end
 
-	local cacheStale = ACE_EnsureCacheVersion and ACE_EnsureCacheVersion(con) or false
+	local cacheStale = ACE_EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
 	local needsInit = not con.ACEArmorCalculated
 	if not force and not needsInit and not con.ACEPointsDirty and not con.ACEArmorDirty
 		and not con.ACENonArmorDirty and not cacheStale then
@@ -189,7 +189,7 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	local rebuildArmor = force or needsInit or con.ACEArmorDirty or cacheStale
 	local rebuildNonArmor = force or con.ACENonArmorDirty or cacheStale or not con.ACEPointsPerType
 
-	ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+	ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
 	con._ACEPointsEnsuring = nil
 
 	-- Invalidation marks warning state dirty, but a cache-version invalidation can
@@ -197,7 +197,7 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	-- only after the new totals are available.
 	if ACE_CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
 		con._ACEWarningChecking = true
-		ACE_CheckLegalCont(con)
+		ACE.CheckLegalCont(con)
 		con._ACEWarningChecking = nil
 	end
 end

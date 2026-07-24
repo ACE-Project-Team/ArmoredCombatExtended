@@ -74,6 +74,7 @@ local TYPE_MAP = {      -- round type id -> damage family
 	HESH = "HESH",
 	SM = "SM", FLR = "SM", CHF = "SM", FL = "FL", Refill = "Refill",
 }
+local HE_PAYLOAD_FAMILY = { HE = true, APHE = true }
 -- HEAT jet family: the shaped-charge slug caliber (not the shell body) sets the area.
 local HEAT_FAMILY = { HEAT = true, HEATFS = true, THEAT = true, THEATFS = true, CHEAT = true, GLATGM = true }
 local UTILITY     = { SM = true, Refill = true }   -- smoke, chaff, flares, and refill carry no damage
@@ -124,7 +125,7 @@ end
 function ACE.Points_LethalityPen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
-	if fam == "HE" or fam == "HESH" then
+	if HE_PAYLOAD_FAMILY[fam] or fam == "HESH" then
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, HE_EQUIV * blast ^ (2.0 / 3.0))
 	end
@@ -144,7 +145,7 @@ end
 -- Intrinsic value beyond direct lethality terms; shared by billing and explanatory readouts.
 function ACE.Points_IntrinsicValueMul(round)
 	local fam = TYPE_MAP[round and round.Type or "AP"] or "AP"
-	return fam == "HE" and HE_INTRINSIC_VALUE_MULT or 1.0
+	return HE_PAYLOAD_FAMILY[fam] and HE_INTRINSIC_VALUE_MULT or 1.0
 end
 
 -- Intrinsic cost of one configured round. Inventory count is not billed, but every weapon
@@ -168,7 +169,7 @@ end
 function ACE.Points_GatePen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
-	if fam == "HE" then
+	if HE_PAYLOAD_FAMILY[fam] then
 		pen = max(pen, ACE.Points_LethalityPen(round))
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)

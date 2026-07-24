@@ -74,8 +74,6 @@ local TYPE_MAP = {      -- round type id -> damage family
 	HESH = "HESH",
 	SM = "SM", FLR = "SM", CHF = "SM", FL = "FL", Refill = "Refill",
 }
-local HE_PAYLOAD_FAMILY = { HE = true, APHE = true }
-
 local function hasHEPayload(round, fam)
 	if fam == "HE" then return true end
 	if fam ~= "APHE" then return false end
@@ -129,7 +127,6 @@ end
 
 -- Penetration used for lethality: raw maxPen, but HE/APHE/HESH payloads floor it at a
 -- blast-equivalent so big fillers still register a threat even with token stated pen.
--- big fillers still register a threat even with token stated pen.
 function ACE.Points_LethalityPen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"

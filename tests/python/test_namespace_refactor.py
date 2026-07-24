@@ -327,6 +327,13 @@ class NamespaceRefactorTests(unittest.TestCase):
                     r"\blocal\s+function\s+ACE_[A-Za-z_][A-Za-z0-9_]*\s*\(",
                 )
 
+    def test_ace_table_has_lazy_legacy_function_fallback(self):
+        source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn('return rawget(_G, "ACE_" .. Key)', source)
+        self.assertIn("setmetatable(ACE, Meta)", source)
+
     def test_non_entity_calls_do_not_use_legacy_acf_prefix(self):
         for path in non_entity_sources():
             source = code_without_comments_and_strings(

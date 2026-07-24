@@ -6,6 +6,31 @@ ACF = ACF or {}
 
 ACE               = ACE or {}
 
+-- Resolve the remaining legacy function symbols through ACE. without copying
+-- them into new globals. This keeps existing extensions working while callers
+-- migrate to the table namespace; functions that have already been moved take
+-- precedence over the fallback.
+do
+    local Meta = getmetatable(ACE) or {}
+    local PreviousIndex = Meta.__index
+
+    Meta.__index = function(Table, Key)
+        local Value
+
+        if type(PreviousIndex) == "function" then
+            Value = PreviousIndex(Table, Key)
+        elseif type(PreviousIndex) == "table" then
+            Value = PreviousIndex[Key]
+        end
+
+        if Value ~= nil then return Value end
+
+        return rawget(_G, "ACE_" .. Key)
+    end
+
+    setmetatable(ACE, Meta)
+end
+
 if ACECompatibilityView then
     rawset(ACF, "__ACECompatibilityView", true)
     setmetatable(ACF, {

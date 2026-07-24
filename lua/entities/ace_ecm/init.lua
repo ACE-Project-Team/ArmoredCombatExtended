@@ -52,7 +52,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value) and self.Legal)
 	elseif inp == "JamDirection" then
 		self.JamDirection = value
 		self.JamTargetPos = nil

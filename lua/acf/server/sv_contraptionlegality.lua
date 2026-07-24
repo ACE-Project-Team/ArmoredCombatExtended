@@ -4,7 +4,7 @@ include("acf/shared/sh_ace_functions.lua")
 include("acf/server/sv_pointshandling.lua")
 
 
-local IsEnt = ACE_IsEnt
+local IsEnt = ACE.IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
 ACE.PointsEventId = ACE.PointsEventId or 0
 ACE.PointContraptions = ACE.PointContraptions or {}
@@ -91,7 +91,7 @@ end
 function ACE_CheckLegalCont(con)
 	con.OTWarnings = con.OTWarnings or {}
 
-	if ACE_EnsureContraptionPoints then
+	if ACE.EnsureContraptionPoints then
 		ACE.EnsureContraptionPoints(con, nil, false)
 	end
 
@@ -186,14 +186,14 @@ do
 		if not ent then return end
 
 		local con
-		if ACE_GetContraptionFromEntity and IsEnt(ent) then
+		if ACE.GetContraptionFromEntity and IsEnt(ent) then
 			con = ACE.GetContraptionFromEntity(ent)
 		end
 		if not con and ent.CFW_GetContraption and IsEnt(ent) then
 			con = ent:CFW_GetContraption()
 		end
 
-		if not con and IsEnt(ent) and ACE_GetWeaponAnchorContraption then
+		if not con and IsEnt(ent) and ACE.GetWeaponAnchorContraption then
 			con = ACE.GetWeaponAnchorContraption(ent)
 		end
 		if not con then con = ent._ACEPointsConRef or ent._ACEPointsOwnerConRef end
@@ -259,7 +259,7 @@ do
 			con.ACENonArmorDirty = true
 		end
 
-		if categories.Armor and ACE_ClearArmorPointCache and IsEnt(ent) then
+		if categories.Armor and ACE.ClearArmorPointCache and IsEnt(ent) then
 			ACE.ClearArmorPointCache(ent)
 		end
 
@@ -316,7 +316,7 @@ do
 
 		-- Compatibility listeners receive the complete event, including every
 		-- affected contraption's post-invalidation cache generation.
-		if ACE_NotifyContraptionPointsInvalidated then
+		if ACE.NotifyContraptionPointsInvalidated then
 			for _, con in ipairs(affected) do
 				local nonArmorDirty = event.Categories.Ammo or event.Categories.Firepower or event.Categories.ReadyRack
 				ACE.NotifyContraptionPointsInvalidated(
@@ -334,11 +334,11 @@ do
 
 		-- Warning state is a derived consumer of the same event. Rebuild once per
 		-- affected contraption while the event's generations are still in scope.
-		if ACE_CheckLegalCont then
+		if ACE.CheckLegalCont then
 			for _, con in ipairs(affected) do
 				if con.ents and not con.ACERemoving and not con._ACEPointsEnsuring then
 					if (con.ACEPointsDirty or con.ACEArmorDirty or con.ACENonArmorDirty)
-						and ACE_EnsureContraptionPoints then
+						and ACE.EnsureContraptionPoints then
 						ACE.EnsureContraptionPoints(con, nil, false)
 					end
 
@@ -538,7 +538,7 @@ do
 		child.OTWarnings.WarnedOverPoints = true
 	end
 
-	hook.Add("cfw.contraption.split", "InheritPointWarning", function(parent, child)
+	hook.Add("cfw.contraption.split", "ACE_InheritPointWarning", function(parent, child)
 		local parentAlreadyNotified = ACE_PendingContraptionTransitions[parent] == PENDING_REMOVAL_NOTIFIED
 			and ACE_PendingRemovalGenerations[parent] == parent.ACEPointsGeneration
 		ClearContraptionTransition(parent)
@@ -748,7 +748,7 @@ do
 			return result
 		end
 
-		if ent.IsPrimitive and ACE_PrimitivePropertiesApplied then
+		if ent.IsPrimitive and ACE.PrimitivePropertiesApplied then
 			ACE.PrimitivePropertiesApplied(ent)
 		end
 
@@ -758,7 +758,7 @@ do
 
 		if ent:GetClass() ~= "prop_physics" and not ent.IsPrimitive then return result end
 
-		local con = ACE_GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
+		local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
 		ACE.MarkArmorDirty(con, ent, "mass-changed")
 
 		return result
@@ -774,7 +774,7 @@ local function ClearAllCaches()
 	ACE.ArmorPointCache = {}
 	ACE.CacheVersion = (ACE.CacheVersion or 1) + 1
 
-	if ACE_NotifyPointsInvalidated then
+	if ACE.NotifyPointsInvalidated then
 		local contraptions = {}
 		for con in pairs(ACE.PointContraptions or {}) do
 			if con and not con.ACERemoving then
@@ -801,7 +801,7 @@ end)
 -- Mark armor points dirty for callers that know only armor changed.
 function ACE_MarkArmorDirty(con, ent, reason)
 	if not con then
-		if ACE_ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
+		if ACE.ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
 		return
 	end
 
@@ -817,7 +817,7 @@ end
 local function ProperClippingPhysicsChanged(ent)
 	if not IsEnt(ent) then return end
 
-	local con = ACE_GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
+	local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
 	ACE.MarkArmorDirty(con, ent, "armor-clipped")
 end
 

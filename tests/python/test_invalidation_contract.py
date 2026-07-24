@@ -136,7 +136,7 @@ class InvalidationContractTests(unittest.TestCase):
                 self.assertTrue(call_with_reason(text, function_name, reason))
 
         primitive = source("lua/autorun/server/sv_ace_primitive_compat.lua")
-        self.assertIn("ACE_MarkArmorDirty", primitive)
+        self.assertIn("ACE.MarkArmorDirty", primitive)
         self.assertIn("ProperClippingPhysicsClipped", primitive)
         self.assertIn("ProperClippingPhysicsReset", primitive)
 

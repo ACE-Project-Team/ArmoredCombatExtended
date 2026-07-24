@@ -113,7 +113,7 @@ local function getMapSZs()
 	return true
 end
 
-hook.Add( "CleanUpMap", "RestoreSZsCleanup", function( _ )
+hook.Add( "CleanUpMap", "ACE_RestoreSZsCleanup", function( _ )
 	--getMapSZs()
 	this.visualizeSafeZones()
 end )
@@ -706,4 +706,3 @@ do
 	end
 
 end
-

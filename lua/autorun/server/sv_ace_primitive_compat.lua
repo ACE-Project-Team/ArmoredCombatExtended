@@ -80,10 +80,10 @@ local function ClearPrimitiveArmorState(ent)
 end
 
 local function MarkPrimitiveArmorDirty(ent, reason)
-	if ACE_ClearArmorPointCache then ACE.ClearArmorPointCache(ent) end
+	if ACE.ClearArmorPointCache then ACE.ClearArmorPointCache(ent) end
 
 	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
-	if ACE_MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
+	if ACE.MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
 end
 
 local function ClearInvalidLiveArmorValues(acf)
@@ -128,7 +128,7 @@ local function FinalizePrimitiveArmor(ent)
 		return
 	end
 
-	if not ApplyPrimitiveArmor(ent, phys) and ACE_Activate then
+	if not ApplyPrimitiveArmor(ent, phys) and ACE.Activate then
 		ACE.Activate(ent, true)
 	end
 

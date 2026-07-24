@@ -38,6 +38,11 @@ class EntityPipelineContractTests(unittest.TestCase):
             with self.subTest(family=family):
                 self.assertIn(f"function ACE_{family}", loader)
 
+    def test_crewseat_gui_loader_uses_migrated_menu_namespace(self):
+        loader = source("acf/shared/sh_ace_loader.lua")
+        self.assertIn("ACE.CrewMenuGUICreate", loader)
+        self.assertNotIn("ACECrewseatGUICreate", loader)
+
     def test_entity_load_contract_is_present_for_every_mounted_entity(self):
         entity_dirs = [
             path
@@ -129,6 +134,11 @@ class EntityPipelineContractTests(unittest.TestCase):
         for current in ("ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory"):
             with self.subTest(current=current):
                 self.assertIn(current, combined)
+        self.assertIn('"ACE_RestoreSZsCleanup"', source("acf/server/sv_acfpermission.lua"))
+        self.assertIn('"ACE_RenderDamageInitialSpawn"', globals_source)
+        missiles = source("autorun/server/sv_acf_missiles.lua")
+        self.assertIn('"ACE_Missiles_DupeDeny"', missiles)
+        self.assertIn('"ACE_Missiles_AddLinkable"', missiles)
 
     def test_backend_network_channels_are_ace_namespaced(self):
         backend = "\n".join(

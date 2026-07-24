@@ -447,7 +447,7 @@ do
 					if Bullet.ImpactCount and Bullet.ImpactCount > ACE.BallisticsLimits.Impacts then
 
 						ACE.BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
-						ACE_BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
+						ACE.BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
 						ACE.BulletEndFlight( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 					else
 
@@ -484,7 +484,7 @@ do
 				if Bullet.ImpactCount and Bullet.ImpactCount > ACE.BallisticsLimits.Impacts then
 
 					ACE.BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
-					ACE_BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
+					ACE.BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
 					ACE.BulletEndFlight( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 				else
 
@@ -505,7 +505,7 @@ do
 				end
 
 				ACE.BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
-				ACE_BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
+				ACE.BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
 				ACE.BulletEndFlight( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 
 			end
@@ -543,7 +543,7 @@ do
 			end -- nil was flightres, garbage data this early in code
 
 				ACE.BulletClient( Index, Bullet, "Update" , 1 , ScaledPos  ) -- defined at bottom
-				ACE_BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
+				ACE.BulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
 				ACE.BulletEndFlight( Index, Bullet, ScaledPos, Bullet.Flight:GetNormalized() )
 
 				if BallisticsDebug() then
@@ -556,8 +556,8 @@ do
 			return
 		end
 
-		ACE_DoOnBulletFlight = ACE.RoundTypes[Bullet.Type]["onbulletflight"]
-		if ACE_DoOnBulletFlight then
+		ACE.DoOnBulletFlight = ACE.RoundTypes[Bullet.Type]["onbulletflight"]
+		if ACE.DoOnBulletFlight then
 			ACE.DoOnBulletFlight( Index, Bullet)
 		end
 
@@ -599,7 +599,7 @@ do
 		elseif FlightRes.HitNonWorld then
 
 			--If we hit stuff then send the resolution to the bullets damage function
-			local ACE_BulletPropImpact = ACE.RoundTypes[Bullet.Type]["propimpact"]
+			ACE.BulletPropImpact = ACE.RoundTypes[Bullet.Type]["propimpact"]
 
 			--Added to calculate change in shell velocity through air gaps. Required for HEAT jet dissipation since a HEAT jet can move through most tanks in 1 tick.
 			local DTImpact = ((FlightRes.HitPos - Bullet.Pos):Length() / (Bullet.Flight * ACE.VelScale * engine.TickInterval()):Length()) * engine.TickInterval() --i would rather use tickinterval over deltatime
@@ -625,7 +625,7 @@ do
 			--If we hit the world then try to see if it's thin enough to penetrate
 			if not FlightRes.HitSky then
 
-				local ACE_BulletWorldImpact = ACE.RoundTypes[Bullet.Type]["worldimpact"]
+			ACE.BulletWorldImpact = ACE.RoundTypes[Bullet.Type]["worldimpact"]
 
 				local Retry = ACE.BulletWorldImpact( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 

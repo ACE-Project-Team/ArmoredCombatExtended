@@ -1409,7 +1409,7 @@ function ACE_CrewMenuGUICreate(Table)
 
 	local function GetCameraForPose(poseName)
 		-- Check if it's a standing pose
-		if ACE_IsStandingPose and ACE.IsStandingPose(poseName) then
+		if ACE.IsStandingPose and ACE.IsStandingPose(poseName) then
 			return CameraPresets.Standing
 		end
 

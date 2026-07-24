@@ -898,7 +898,7 @@ function ACE_GetArmorPoints(ent)
 	local primitiveArmorPending = ent.IsPrimitive and (
 		ent.ACE_PrimitiveRestoreSavedArmor or ent.ACE_PrimitiveArmorPending
 	)
-	if ACE_Check and not primitiveArmorPending then
+	if ACE.Check and not primitiveArmorPending then
 		ACE.Check(ent)
 	end
 

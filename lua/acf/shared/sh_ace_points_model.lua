@@ -376,7 +376,7 @@ function ACE.Points.PropArmor(ent)
 	if not ACE.IsEnt(ent) then return nil end
 
 	local cls = ent:GetClass() or ""
-	if cls:sub(1, 4) == "ACE_" or cls:sub(1, 4) == "ace_" or cls:sub(1, 5) == "gmod_"
+	if cls:sub(1, 4) == "acf_" or cls:sub(1, 4) == "ace_" or cls:sub(1, 5) == "gmod_"
 		or cls:find("pod", 1, true) then
 		return nil
 	end

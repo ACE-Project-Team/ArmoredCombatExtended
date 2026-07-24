@@ -122,7 +122,7 @@ if CLIENT then
 	vheat_source_base.guicreate  = function( _, Table ) ACE.VHeatSourceGUICreate( Table )	end or nil
 	vheat_source_base.guiupdate  = function() return end
 
-	crewseat_base.guicreate  = function( _, Table ) ACECrewseatGUICreate( Table ) end or nil
+	crewseat_base.guicreate  = function( _, Table ) ACE.CrewMenuGUICreate( Table ) end or nil
 	crewseat_base.guiupdate  = function() return end
 
 	extras_base.guicreate    = function( _, Table ) ACE.ExtrasGUICreate( Table ) end or nil

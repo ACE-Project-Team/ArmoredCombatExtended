@@ -480,6 +480,8 @@ class NamespaceRefactorTests(unittest.TestCase):
         )
         self.assertIn("ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost", points_model)
         self.assertIn("ACE_Manu_EntCost = ACE.Manufacturing.EntCost", manufacturing)
+        self.assertIn('cls:sub(1, 4) == "acf_"', points_model)
+        self.assertIn('cls:sub(1, 4) == "ace_"', points_model)
 
         consumers = (
             LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua",
@@ -690,6 +692,26 @@ class NamespaceRefactorTests(unittest.TestCase):
                     source,
                     r"(?m)^\s*function\s+(?!ACE_|ENT:|local\s)[A-Za-z_][A-Za-z0-9_]*\s*\(",
                 )
+
+    def test_ballistics_callback_assignments_match_dotted_calls(self):
+        source = (LUA_ROOT / "acf" / "server" / "sv_acfballistics.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertNotIn("ACE_BulletEndFlight =", source)
+        self.assertNotIn("ACE_DoOnBulletFlight =", source)
+        self.assertNotIn("local ACE_BulletPropImpact", source)
+        self.assertNotIn("local ACE_BulletWorldImpact", source)
+        self.assertIn("ACE.BulletEndFlight =", source)
+        self.assertIn("ACE.DoOnBulletFlight =", source)
+        self.assertIn("ACE.BulletPropImpact =", source)
+        self.assertIn("ACE.BulletWorldImpact =", source)
+
+    def test_client_menu_uses_dotted_pose_helper_guard(self):
+        source = (LUA_ROOT / "acf" / "client" / "cl_acemenu_gui.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("if ACE.IsStandingPose and ACE.IsStandingPose(poseName) then", source)
+        self.assertNotIn("if ACE_IsStandingPose and ACE.IsStandingPose(poseName) then", source)
 
     def test_entity_callers_use_the_ace_backend_prefix(self):
         self.assertTrue(any(ENTITY_ROOT.rglob("*.lua")))

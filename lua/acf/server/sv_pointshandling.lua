@@ -3,7 +3,7 @@ ACE = ACE or {}
 
 include("acf/shared/sh_ace_functions.lua")
 
-local IsEnt = ACE_IsEnt
+local IsEnt = ACE.IsEnt
 
 local function CopyPointTotals(totals)
 	local result = {}
@@ -176,9 +176,9 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	if con._ACEPointsEnsuring then return end
 
 	con._ACEPointsEnsuring = true
-	if ACE_EnsurePointsState then ACE.EnsurePointsState(con) end
+	if ACE.EnsurePointsState then ACE.EnsurePointsState(con) end
 
-	local cacheStale = ACE_EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
+	local cacheStale = ACE.EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
 	local needsInit = not con.ACEArmorCalculated
 	if not force and not needsInit and not con.ACEPointsDirty and not con.ACEArmorDirty
 		and not con.ACENonArmorDirty and not cacheStale then
@@ -195,7 +195,7 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 	-- Invalidation marks warning state dirty, but a cache-version invalidation can
 	-- arrive while this ensure is already rebuilding. Consume the warning state
 	-- only after the new totals are available.
-	if ACE_CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
+	if ACE.CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
 		con._ACEWarningChecking = true
 		ACE.CheckLegalCont(con)
 		con._ACEWarningChecking = nil

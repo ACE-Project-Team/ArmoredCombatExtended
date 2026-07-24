@@ -37,6 +37,12 @@ function ACE_BulletClient(_, Bullet)
 	clientBullet = Bullet
 end
 
+setmetatable(ACE, {
+	__index = function(_, key)
+		return _G["ACE_" .. key]
+	end,
+})
+
 local gun = {}
 local filterEnt = {}
 local original = {

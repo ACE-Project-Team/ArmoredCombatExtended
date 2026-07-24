@@ -398,7 +398,22 @@ function TOOL:Think()
 	local ent = trace.Entity
 	-- Primitive can expose a transient non-ACF state while it rebuilds. Do not cache that failed
 	-- observation forever: the client preview divides its zero area by zero and displays "nan".
-	if ent == self.AimEntity and self.AimEntityArmorReady then return end
+	if ent == self.AimEntity and self.AimEntityArmorReady then
+		local acf = ent.ACF
+		local phys = ent:GetPhysicsObject()
+
+		if istable(acf) and IsValid(phys)
+			and self.AimEntityPhysics == phys
+			and self.AimEntityMass == phys:GetMass()
+			and self.AimEntityArea == acf.Area
+			and self.AimEntityArmor == acf.Armour
+			and self.AimEntityMaxArmor == acf.MaxArmour
+			and self.AimEntityHealth == acf.Health
+			and self.AimEntityMaxHealth == acf.MaxHealth
+			and self.AimEntityMaterial == acf.Material then
+			return
+		end
+	end
 
 	if ACE_Check( ent ) then
 
@@ -419,6 +434,14 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
 		self.Weapon:SetNWFloat( "PointCostNonArmor", componentCost or 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
+		self.AimEntityPhysics = ent:GetPhysicsObject()
+		self.AimEntityMass = self.AimEntityPhysics:GetMass()
+		self.AimEntityArea = ent.ACF.Area
+		self.AimEntityArmor = ent.ACF.Armour
+		self.AimEntityMaxArmor = ent.ACF.MaxArmour
+		self.AimEntityHealth = ent.ACF.Health
+		self.AimEntityMaxHealth = ent.ACF.MaxHealth
+		self.AimEntityMaterial = ent.ACF.Material
 		self.AimEntityArmorReady = true
 
 	else
@@ -434,6 +457,14 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCost", 0 )
 		self.Weapon:SetNWFloat( "PointCostNonArmor", 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", "" )
+		self.AimEntityPhysics = nil
+		self.AimEntityMass = nil
+		self.AimEntityArea = nil
+		self.AimEntityArmor = nil
+		self.AimEntityMaxArmor = nil
+		self.AimEntityHealth = nil
+		self.AimEntityMaxHealth = nil
+		self.AimEntityMaterial = nil
 		-- Only Primitive is known to transition from a temporary failed ACF check to a valid
 		-- armor state without the player changing target. Cache all other failed targets normally.
 		self.AimEntityArmorReady = not ent.IsPrimitive
@@ -866,5 +897,4 @@ if CLIENT then
 
 	end
 end
-
 

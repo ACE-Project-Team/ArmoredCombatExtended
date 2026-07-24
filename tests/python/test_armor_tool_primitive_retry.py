@@ -31,10 +31,9 @@ class ArmorToolPrimitiveRetryTests(unittest.TestCase):
     def test_transient_failed_hover_retries_until_acf_is_ready(self):
         source = SOURCE.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "if ent == self.AimEntity and self.AimEntityArmorReady then return end",
-            source,
-        )
+        self.assertIn("if ent == self.AimEntity and self.AimEntityArmorReady then", source)
+        self.assertIn("self.AimEntityPhysics == phys", source)
+        self.assertIn("self.AimEntityMaxArmor == acf.MaxArmour", source)
         self.assertIn("self.AimEntityArmorReady = true", source)
         self.assertIn("self.AimEntityArmorReady = not ent.IsPrimitive", source)
         self.assertIn('displays "nan"', source)

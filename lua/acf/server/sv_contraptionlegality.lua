@@ -4,7 +4,7 @@ include("acf/shared/sh_ace_functions.lua")
 include("acf/server/sv_pointshandling.lua")
 
 
-local IsEnt = ACE.IsEnt
+local IsEnt = ACE_IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
 ACE.PointsEventId = ACE.PointsEventId or 0
 ACE.PointContraptions = ACE.PointContraptions or {}
@@ -68,7 +68,7 @@ end
 -- ------------------------------------------------------------
 
 -- Run a legality scan for a contraption.
-function ACE.DoContraptionLegalCheck(checkEnt)
+function ACE_DoContraptionLegalCheck(checkEnt)
 	checkEnt.CanLegalCheck = checkEnt.CanLegalCheck or false
 	if not checkEnt.CanLegalCheck then return end
 
@@ -80,26 +80,25 @@ function ACE.DoContraptionLegalCheck(checkEnt)
 	local con = checkEnt:CFW_GetContraption() or {}
 	if table.IsEmpty(con) then return end
 
-	ACE.CheckLegalCont(con)
+	ACE_CheckLegalCont(con)
 end
-ACE_DoContraptionLegalCheck = ACE.DoContraptionLegalCheck
 
 -- ------------------------------------------------------------
 -- Player warnings (over points, overweight, and dirty armor)
 -- ------------------------------------------------------------
 
 -- Evaluate legality for a contraption.
-function ACE.CheckLegalCont(con)
+function ACE_CheckLegalCont(con)
 	con.OTWarnings = con.OTWarnings or {}
 
-	if ACE.EnsureContraptionPoints then
-		ACE.EnsureContraptionPoints(con, nil, false)
+	if ACE_EnsureContraptionPoints then
+		ACE_EnsureContraptionPoints(con, nil, false)
 	end
 
 	local points = con.ACEPoints or 0
 	local pointsLimit = ACE.PointsLimit or math.huge
 	if points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
-		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
+		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
 		local above = points - pointsLimit
 		chatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "pts] over the limit costing [" ..
@@ -111,7 +110,7 @@ function ACE.CheckLegalCont(con)
 
 	local maxWeight = ACE.MaxWeight or math.huge
 	if (con.totalMass or 0) > maxWeight and not con.OTWarnings.WarnedOverWeight then
-		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
+		local name  = ACE_GetOwnerName(ACE_GetContraptionOwner(con))
 		local above = con.totalMass - maxWeight
 		chatMessageGlobal(
 			"[ACE] " .. name .. " has a vehicle [" .. math.ceil(above) .. "kg] over the limit, weighing [" ..
@@ -131,13 +130,13 @@ end
 
 do
 	-- Sync per-contraption cache version and invalidate stale local caches.
-	function ACE.EnsureCacheVersion(con)
+	function ACE_EnsureCacheVersion(con)
 		if not con then return false end
 
 		if con.ACECacheVersion == ACE.CacheVersion then return false end
 
 		con.ACECacheVersion = ACE.CacheVersion
-		ACE.MarkContraptionPointsDirty(con, nil, true, true, "cache-version-changed")
+		ACE_MarkContraptionPointsDirty(con, nil, true, true, "cache-version-changed")
 
 		return true
 	end
@@ -187,15 +186,15 @@ do
 		if not ent then return end
 
 		local con
-		if ACE.GetContraptionFromEntity and IsEnt(ent) then
-			con = ACE.GetContraptionFromEntity(ent)
+		if ACE_GetContraptionFromEntity and IsEnt(ent) then
+			con = ACE_GetContraptionFromEntity(ent)
 		end
 		if not con and ent.CFW_GetContraption and IsEnt(ent) then
 			con = ent:CFW_GetContraption()
 		end
 
-		if not con and IsEnt(ent) and ACE.GetWeaponAnchorContraption then
-			con = ACE.GetWeaponAnchorContraption(ent)
+		if not con and IsEnt(ent) and ACE_GetWeaponAnchorContraption then
+			con = ACE_GetWeaponAnchorContraption(ent)
 		end
 		if not con then con = ent._ACEPointsConRef or ent._ACEPointsOwnerConRef end
 
@@ -260,8 +259,8 @@ do
 			con.ACENonArmorDirty = true
 		end
 
-		if categories.Armor and ACE.ClearArmorPointCache and IsEnt(ent) then
-			ACE.ClearArmorPointCache(ent)
+		if categories.Armor and ACE_ClearArmorPointCache and IsEnt(ent) then
+			ACE_ClearArmorPointCache(ent)
 		end
 
 	end
@@ -270,7 +269,7 @@ do
 	-- endpoints of a link or several linked weapons. Contraptions are deduplicated
 	-- before their generations advance, so one logical mutation produces one rebuild
 	-- revision per affected contraption, including cross-contraption link anchors.
-	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions)
+	function ACE_NotifyPointsInvalidated(sources, reason, categories, explicitContraptions)
 		local sourceList
 		if type(sources) == "table" and next(sources) == nil then
 			sourceList = {}
@@ -317,10 +316,10 @@ do
 
 		-- Compatibility listeners receive the complete event, including every
 		-- affected contraption's post-invalidation cache generation.
-		if ACE.NotifyContraptionPointsInvalidated then
+		if ACE_NotifyContraptionPointsInvalidated then
 			for _, con in ipairs(affected) do
 				local nonArmorDirty = event.Categories.Ammo or event.Categories.Firepower or event.Categories.ReadyRack
-				ACE.NotifyContraptionPointsInvalidated(
+				ACE_NotifyContraptionPointsInvalidated(
 					con,
 					event.Entity,
 					event.Reason,
@@ -335,17 +334,17 @@ do
 
 		-- Warning state is a derived consumer of the same event. Rebuild once per
 		-- affected contraption while the event's generations are still in scope.
-		if ACE.CheckLegalCont then
+		if ACE_CheckLegalCont then
 			for _, con in ipairs(affected) do
 				if con.ents and not con.ACERemoving and not con._ACEPointsEnsuring then
 					if (con.ACEPointsDirty or con.ACEArmorDirty or con.ACENonArmorDirty)
-						and ACE.EnsureContraptionPoints then
-						ACE.EnsureContraptionPoints(con, nil, false)
+						and ACE_EnsureContraptionPoints then
+						ACE_EnsureContraptionPoints(con, nil, false)
 					end
 
 					if con.ACEWarningsDirty and not con._ACEWarningChecking then
 						con._ACEWarningChecking = true
-						ACE.CheckLegalCont(con)
+						ACE_CheckLegalCont(con)
 						con._ACEWarningChecking = nil
 					end
 				end
@@ -355,10 +354,9 @@ do
 		return event
 	end
 
-	_G.ACE_NotifyPointsInvalidated = ACE.NotifyPointsInvalidated
 
 	-- Initialize per-contraption points state.
-	function ACE.EnsurePointsState(con)
+	function ACE_EnsurePointsState(con)
 		if not con then return false end
 		if con.ACEInitDone and con.ACEPointsStateVersion == POINTS_STATE_VERSION then return false end
 
@@ -423,7 +421,7 @@ do
 				-- cfw.contraption.removed. Recover the cache state once before
 				-- preserving CFW's original error.
 				if removedEntity and not finalized then
-					ACE.NotifyPointsInvalidated(self, "contraption-defuse-aborted")
+					ACE_NotifyPointsInvalidated(self, "contraption-defuse-aborted")
 				end
 				error(result[2], 0)
 			end
@@ -435,9 +433,9 @@ do
 
 	local function ACE_InitPts(con)
 		ACE_WrapCFWDefuse()
-		local initialized = ACE.EnsurePointsState(con)
+		local initialized = ACE_EnsurePointsState(con)
 		if initialized then
-			ACE.NotifyPointsInvalidated(con, "contraption-created", {
+			ACE_NotifyPointsInvalidated(con, "contraption-created", {
 				Armor = true,
 				Ammo = true,
 				Firepower = true,
@@ -449,13 +447,13 @@ do
 	end
 
 	-- Compatibility wrapper for callers that already resolved a contraption.
-	function ACE.MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
+	function ACE_MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
 		if not con then return end
 
 		if armorDirty == nil then armorDirty = true end
 		if nonArmorDirty == nil then nonArmorDirty = true end
 
-		ACE.NotifyPointsInvalidated(ent or con, reason, {
+		ACE_NotifyPointsInvalidated(ent or con, reason, {
 			Armor = armorDirty,
 			Ammo = nonArmorDirty,
 			Firepower = nonArmorDirty,
@@ -465,7 +463,7 @@ do
 	end
 
 	-- Orphan weapons invalidate the link-anchor contraption that owns their cost.
-	function ACE.PointsInputChanged(sources, reason, categories, explicitContraptions)
+	function ACE_PointsInputChanged(sources, reason, categories, explicitContraptions)
 		local sourceList
 		if type(sources) == "table" and next(sources) == nil then
 			sourceList = {}
@@ -509,7 +507,7 @@ do
 			}
 		end
 
-		local event = ACE.NotifyPointsInvalidated(sourceList, reason, categories, explicit)
+		local event = ACE_NotifyPointsInvalidated(sourceList, reason, categories, explicit)
 		if event and reason and string.find(reason, "removed", 1, true) then
 			local ent = sourceList[1]
 			if IsEnt(ent) then ent._ACEPointsRemovalNotified = true end
@@ -549,9 +547,9 @@ do
 		ACE.PointContraptions[parent] = true
 		ACE.PointContraptions[child] = true
 		if parentAlreadyNotified then
-			ACE.NotifyPointsInvalidated(child, "contraption-split")
+			ACE_NotifyPointsInvalidated(child, "contraption-split")
 		else
-			ACE.NotifyPointsInvalidated({ parent, child }, "contraption-split")
+			ACE_NotifyPointsInvalidated({ parent, child }, "contraption-split")
 		end
 	end)
 
@@ -562,7 +560,7 @@ do
 		if merged.OTWarnings then merged.OTWarnings.WarnedModified = true end
 		ACE.PointContraptions[merged] = nil
 		if target then ACE.PointContraptions[target] = true end
-		ACE.NotifyPointsInvalidated({ merged, target }, "contraption-merged")
+		ACE_NotifyPointsInvalidated({ merged, target }, "contraption-merged")
 	end)
 
 	-- Flag contraptions that are being removed to suppress dirty warnings.
@@ -595,7 +593,7 @@ do
 		con.ACERemoving = true
 		if con.OTWarnings then con.OTWarnings.WarnedModified = true end
 		if pending ~= PENDING_REMOVAL_NOTIFIED then
-			ACE.NotifyPointsInvalidated(con, "contraption-removed")
+			ACE_NotifyPointsInvalidated(con, "contraption-removed")
 		end
 		if con._ACEPointsDefusing then con._ACEPointsDefuseFinalized = true end
 		ACE_ClearContraptionTransition(con)
@@ -603,7 +601,7 @@ do
 	end)
 
 	-- Refresh orphan-weapon ownership after a linked crate changes contraptions.
-	function ACE.NotifyCrateWeapons(ent, reason)
+	function ACE_NotifyCrateWeapons(ent, reason)
 		if not ent or not ent.GetClass or ent:GetClass() ~= "acf_ammo" then return end
 		if type(ent.Master) ~= "table" then return end
 
@@ -612,11 +610,11 @@ do
 			if IsEnt(weapon) then sources[#sources + 1] = weapon end
 		end
 
-		ACE.PointsInputChanged(sources, reason or "linked-crate-moved")
+		ACE_PointsInputChanged(sources, reason or "linked-crate-moved")
 	end
 
 	-- Handle entity addition and update point totals.
-	function ACE.AddPts(con, ent)
+	function ACE_AddPts(con, ent)
 		if not IsEnt(ent) then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, nil, ent)
 		ACE.PointContraptions[con] = true
@@ -647,7 +645,7 @@ do
 			end
 		end
 
-		ACE.PointsInputChanged(sources, "entity-added", {
+		ACE_PointsInputChanged(sources, "entity-added", {
 			Armor = true,
 			Ammo = true,
 			Firepower = true,
@@ -657,7 +655,7 @@ do
 	end
 
 	-- Handle entity removal and update point totals.
-	function ACE.RemPts(con, ent)
+	function ACE_RemPts(con, ent)
 		if not con then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 		ACE.PointContraptions[con] = true
@@ -705,7 +703,7 @@ do
 			end
 		end
 
-		ACE.PointsInputChanged(sources, "entity-removed", {
+		ACE_PointsInputChanged(sources, "entity-removed", {
 			Armor = true,
 			Ammo = true,
 			Firepower = true,
@@ -716,10 +714,10 @@ do
 	end
 
 	-- Track point totals when entities are added.
-	hook.Add("cfw.contraption.entityAdded", "ACE_AddPoints", ACE.AddPts)
+	hook.Add("cfw.contraption.entityAdded", "ACE_AddPoints", ACE_AddPts)
 
 	-- Track point totals when entities are removed.
-	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE.RemPts)
+	hook.Add("cfw.contraption.entityRemoved", "ACE_RemPoints", ACE_RemPts)
 end
 
 -- ------------------------------------------------------------
@@ -750,8 +748,8 @@ do
 			return result
 		end
 
-		if ent.IsPrimitive and ACE.PrimitivePropertiesApplied then
-			ACE.PrimitivePropertiesApplied(ent)
+		if ent.IsPrimitive and ACE_PrimitivePropertiesApplied then
+			ACE_PrimitivePropertiesApplied(ent)
 		end
 
 		if math.abs(mass - currentMass) < 0.01 then
@@ -760,8 +758,8 @@ do
 
 		if ent:GetClass() ~= "prop_physics" and not ent.IsPrimitive then return result end
 
-		local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
-		ACE.MarkArmorDirty(con, ent, "mass-changed")
+		local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+		ACE_MarkArmorDirty(con, ent, "mass-changed")
 
 		return result
 	end
@@ -776,7 +774,7 @@ local function ACE_ClearAllCaches()
 	ACE.ArmorPointCache = {}
 	ACE.CacheVersion = (ACE.CacheVersion or 1) + 1
 
-	if ACE.NotifyPointsInvalidated then
+	if ACE_NotifyPointsInvalidated then
 		local contraptions = {}
 		for con in pairs(ACE.PointContraptions or {}) do
 			if con and not con.ACERemoving then
@@ -785,7 +783,7 @@ local function ACE_ClearAllCaches()
 			end
 		end
 
-		ACE.NotifyPointsInvalidated(contraptions, "cache-reset", {
+		ACE_NotifyPointsInvalidated(contraptions, "cache-reset", {
 			Armor = true,
 			Ammo = true,
 			Firepower = true,
@@ -803,25 +801,24 @@ end)
 -- Mark armor points dirty for callers that know only armor changed.
 function ACE_MarkArmorDirty(con, ent, reason)
 	if not con then
-		if ACE.ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
+		if ACE_ClearArmorPointCache and IsEnt(ent) then ACE_ClearArmorPointCache(ent) end
 		return
 	end
 
-	ACE.NotifyPointsInvalidated(ent or con, reason or "armor-updated", {
+	ACE_NotifyPointsInvalidated(ent or con, reason or "armor-updated", {
 		Armor = true,
 		Warning = true,
 	}, { con })
 end
 
 -- Keep the dotted ACE table entry for the E2/Starfall compatibility boundary.
-ACE.MarkArmorDirty = ACE_MarkArmorDirty
 
 -- Reprice clipped armor after Proper Clipping replaces its physics object.
 local function ACE_ProperClippingPhysicsChanged(ent)
 	if not IsEnt(ent) then return end
 
-	local con = ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(ent)
-	ACE.MarkArmorDirty(con, ent, "armor-clipped")
+	local con = ACE_GetContraptionFromEntity and ACE_GetContraptionFromEntity(ent)
+	ACE_MarkArmorDirty(con, ent, "armor-clipped")
 end
 
 hook.Add("ProperClippingPhysicsClipped", "ACE_ProperClippingArmorChanged", ACE_ProperClippingPhysicsChanged)
@@ -845,7 +842,7 @@ local function ACE_NotifyPhysicsTransition(ent, reason, frozen)
 		ent._ACEPointsFrozen = false
 	end
 
-	ACE.PointsInputChanged(ent, reason)
+	ACE_PointsInputChanged(ent, reason)
 end
 
 -- These are emitted after the base gamemode actually changes the physics state.
@@ -866,7 +863,7 @@ hook.Add("PlayerEnteredVehicle", "ACE_PointsVehicleUnfreezeInvalidation", functi
 		-- point inputs. Once recorded false, repeated entry hooks are no-ops.
 		if con and vehicle._ACEPointsFrozen ~= false then
 			vehicle._ACEPointsFrozen = false
-			ACE.NotifyPointsInvalidated(con, "unfreeze-on-entry")
+			ACE_NotifyPointsInvalidated(con, "unfreeze-on-entry")
 		end
 	end
 end)

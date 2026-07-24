@@ -122,7 +122,7 @@ end
 function Round.getDisplayData(Data)
 	local GUIData = {}
 	local Energy = ACE_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
-	GUIData.MaxPen = ACE.CalcPenetration(Energy, Data.PenArea)
+	GUIData.MaxPen = ACE_CalcPenetration(Energy, Data.PenArea)
 	return GUIData
 end
 
@@ -251,7 +251,7 @@ function Round.guicreate( Panel, Table )
 
 	acemenupanel:AmmoSelect( ACE.AmmoBlacklist.APDS )
 
-	ACE.UpperCommonDataDisplay()
+	ACE_UpperCommonDataDisplay()
 
 	acemenupanel:AmmoSlider("PropLength",0,0,1000,3, "Propellant Length", "")	--Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
@@ -292,8 +292,8 @@ function Round.guiupdate( Panel )
 	acemenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g" .. "/ " .. (math.Round(Data.ProjMass, 1)) .. " kg")  --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("SCalMult",Data.SCalMult,Data.MinCalMult,Data.MaxCalMult,2, "Subcaliber Size Multiplier", "Caliber : " .. math.floor(Data.Caliber * math.min(PlayerData.Data5,Data.MaxCalMult) * 10) .. " mm") --Subcaliber round slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE.UpperCommonDataDisplay( Data, PlayerData )
-	ACE.CommonDataDisplay( Data )
+	ACE_UpperCommonDataDisplay( Data, PlayerData )
+	ACE_CommonDataDisplay( Data )
 
 end
 

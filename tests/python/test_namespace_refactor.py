@@ -542,15 +542,14 @@ class NamespaceRefactorTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(f"ACE.{name} = ACE_{name}", globals_source)
 
-    def test_reloadable_ace_aliases_replace_stale_function_values(self):
+    def test_ace_does_not_auto_register_flat_function_exports(self):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         functions_source = (LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        self.assertIn("ACE[Method] = Value", globals_source)
-        self.assertNotIn("ACE[Method] = ACE[Method] or Value", globals_source)
+        self.assertNotIn("ACE[Method] = Value", globals_source)
         self.assertIn("ACE.IsEnt = ACE_IsEnt", functions_source)
 
     def test_missile_radar_registries_are_initialized_before_scans(self):
@@ -606,6 +605,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             self.assertTrue(path.exists(), f"renamed non-entity asset is missing: {path}")
 
         for path in non_entity_sources():
+            if path.name == "ace_legacy_convars.lua":
+                continue
             source = path.read_text(encoding="utf-8", errors="replace")
             with self.subTest(source=path.relative_to(REPO)):
                 self.assertNotRegex(
@@ -717,6 +718,8 @@ class NamespaceRefactorTests(unittest.TestCase):
                     rf'CreateConVar\(\s*"ace_{re.escape(name)}"',
                 )
         for path in non_entity_sources():
+            if path.name == "ace_legacy_convars.lua":
+                continue
             source = path.read_text(encoding="utf-8", errors="replace")
             for name in ACE_CONVARS:
                 with self.subTest(source=path.relative_to(REPO), name=name):

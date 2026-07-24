@@ -71,7 +71,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(ACE.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 end
 
@@ -93,7 +93,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -163,7 +163,7 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACE.GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
 
 	Owner:AddCount( "_ace_missileradar", Radar )
 	Owner:AddCleanup( "acemenu", Radar )
@@ -229,7 +229,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

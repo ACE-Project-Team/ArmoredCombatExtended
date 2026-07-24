@@ -189,9 +189,6 @@ class EntityPipelineContractTests(unittest.TestCase):
         exported = set(re.findall(r"(?:function\s+|\b)ACE_([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
         explicitly_dotted = set(re.findall(r"function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
         explicitly_assigned = set(re.findall(r"\bACE\.([A-Za-z_][A-Za-z0-9_]*)\s*=", backend_sources))
-        bridged = "string.StartWith(Name, \"ACE_\")" in backend_sources
-
-        self.assertTrue(bridged)
         missing = sorted(
             name for name in called
             if name not in exported and name not in explicitly_dotted and name not in explicitly_assigned

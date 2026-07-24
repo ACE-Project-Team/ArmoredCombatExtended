@@ -35,11 +35,11 @@ ACE.BallisticsStats = ACE.BallisticsStats or {
 	Impacts = 0,
 }
 
-function ACE.GetBallisticsStats()
+function ACE_GetBallisticsStats()
 	return table.Copy(ACE.BallisticsStats)
 end
 
-function ACE.ResetBallisticsStats()
+function ACE_ResetBallisticsStats()
 	for Key in pairs(ACE.BallisticsStats) do
 		ACE.BallisticsStats[Key] = 0
 	end
@@ -511,7 +511,7 @@ do
 			end
 		}
 
-		function ACE.PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
+		function ACE_PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
 			Hit_Resolutions[Retry or "Hit"](Index, Bullet, FlightRes, Type)
 		end
 	end
@@ -617,7 +617,7 @@ do
 			end
 
 			--If we should do the same trace again, then do so
-			ACE.PerformHitResolution(Index, Bullet, FlightRes, Retry, "propimpact")
+			ACE_PerformHitResolution(Index, Bullet, FlightRes, Retry, "propimpact")
 
 		--bullet hit the world
 		elseif FlightRes.HitWorld then
@@ -630,7 +630,7 @@ do
 				local Retry = ACE_BulletWorldImpact( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 
 				--If we should do the same trace again, then do so
-				ACE.PerformHitResolution(Index, Bullet, FlightRes, Retry, "worldimpact")
+				ACE_PerformHitResolution(Index, Bullet, FlightRes, Retry, "worldimpact")
 
 			--hit skybox
 			else

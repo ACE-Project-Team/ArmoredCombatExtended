@@ -133,7 +133,7 @@ function Round.getDisplayData(Data)
 
 	local SlugEnergy	= ACE_Kinetic( Data.SlugMV * 39.37 , Data.SlugMass, 999999 )
 
-	GUIData.MaxPen = ACE.CalcPenetration(SlugEnergy, Data.SlugPenArea)
+	GUIData.MaxPen = ACE_CalcPenetration(SlugEnergy, Data.SlugPenArea)
 	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
 	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACE.HEFrag), 2)
 	GUIData.FragMass = Data.CasingMass / GUIData.Fragments
@@ -364,7 +364,7 @@ function Round.guicreate( Panel, Table )
 	acemenupanel:AmmoSlider("ConeAng",0,0,1000,3, "HEAT Cone Angle", "")
 	acemenupanel:AmmoSlider("FillerVol",0,0,1000,3, "Total HEAT Warhead volume", "")
 
-	ACE.Checkboxes()
+	ACE_Checkboxes()
 
 	acemenupanel:CPanelText("VelocityDisplay", "")  --Proj muzzle velocity (Name, Desc)
 	acemenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
@@ -401,14 +401,14 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acemenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE.AmmoCapacityDisplay( Data )
+	ACE_AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acemenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. math.floor(Data.PropMass * 1000) .. " g" .. "/ " .. math.Round(Data.PropMass, 1) .. " kg") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. math.floor(Data.ProjMass * 1000) .. " g" .. "/ " .. math.Round(Data.ProjMass, 1) .. " kg") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ConeAng", Data.ConeAng, Data.MinConeAng, Data.MaxConeAng, 0, "Crush Cone Angle", "") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "HE Filler Volume", "HE Filler Mass : " .. math.floor(Data.FillerMass * 1000) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE.Checkboxes( Data )
+	ACE_Checkboxes( Data )
 
 	acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acemenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
@@ -425,15 +425,15 @@ function Round.guiupdate( Panel )
 	--HEAT doesnt lose Pen by distance, so its ok to say MaxPen on every value below
 
 	local R1V, R1P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 100)
-	R1P = ACE.CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	R1P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R2V, R2P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 200)
-	R2P = ACE.CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	R2P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R3V, R3P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 400)
-	R3P = ACE.CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	R3P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R4V, R4P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
-	R4P = ACE.CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
+	R4P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea)
 	local R5V, R5P = ACE_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea * ACE.HEATPlungingReduction, Data.LimitVel, 100)
-	R5P = ACE.CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea * ACE.HEATPlungingReduction)
+	R5P = ACE_CalcPenetration(ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999), Data.SlugPenArea * ACE.HEATPlungingReduction)
 
 	acemenupanel:CPanelText("SlugDisplay", "Penetrator Mass : " .. (math.floor(Data.SlugMass * 10000) / 10) .. " g \nPenetrator Caliber : " .. (math.floor(Data.SlugCaliber * 100) / 10) .. " mm \nPenetrator Velocity : " .. math.floor(Data.MuzzleVel + Data.SlugMV) .. " m/s \nMax Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n100m pen: " .. math.floor(R1P, 0) .. "mm @ " .. math.floor(R1V, 0) .. " m\\s\n200m pen: " .. math.floor(R2P, 0) .. "mm @ " .. math.floor(R2V, 0) .. " m\\s\n400m pen: " .. math.floor(R3P, 0) .. "mm @ " .. math.floor(R3V, 0) .. " m\\s\n800m pen: " .. math.floor(R4P, 0) .. "mm @" .. math.floor(R4V, 0) .. " m\\s\n\nIf using Plunging Fuse: " .. math.floor(R5P, 0) .. "mm @ " .. math.floor(R5V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.\n") --Proj muzzle penetration (Name, Desc)
 end

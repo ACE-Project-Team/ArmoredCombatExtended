@@ -697,13 +697,13 @@ local function GetDefaultActiveInput(ent, inputName)
 	return input
 end
 
-function ACE.IsDefaultActiveInputWired(ent, inputName)
+function ACE_IsDefaultActiveInputWired(ent, inputName)
 	local input = GetDefaultActiveInput(ent, inputName)
 
 	return input and input.Src ~= nil
 end
 
-function ACE.GetDefaultActiveInputState(ent, value, inputName)
+function ACE_GetDefaultActiveInputState(ent, value, inputName)
 	if not IsValid(ent) then return false end
 
 	local legal = ent.Legal ~= false

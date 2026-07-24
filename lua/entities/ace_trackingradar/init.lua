@@ -55,7 +55,7 @@ function ENT:Initialize()
 	}
 
 	self.TargetDetected = false
-	self:SetActive(ACE.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 end
 
@@ -105,7 +105,7 @@ function ACE_MakeTrackingRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACE.GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -140,9 +140,9 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 
-		if ACE.IsDefaultActiveInputWired(self) then
+		if ACE_IsDefaultActiveInputWired(self) then
 			local curTime = CurTime()
 			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
 		end
@@ -425,7 +425,7 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

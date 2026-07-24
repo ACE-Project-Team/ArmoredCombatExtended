@@ -83,7 +83,7 @@ local function MarkPrimitiveArmorDirty(ent, reason)
 	if ACE_ClearArmorPointCache then ACE_ClearArmorPointCache(ent) end
 
 	local con = ent.CFW_GetContraption and ent:CFW_GetContraption()
-	if ACE_MarkArmorDirty then ACE.MarkArmorDirty(con, ent, reason) end
+	if ACE_MarkArmorDirty then ACE_MarkArmorDirty(con, ent, reason) end
 end
 
 local function ClearInvalidLiveArmorValues(acf)
@@ -157,7 +157,6 @@ function ACE_PrimitivePropertiesApplied(ent)
 	FinalizePrimitiveArmor(ent)
 end
 
-ACE.PrimitivePropertiesApplied = ACE_PrimitivePropertiesApplied
 
 hook.Add("Primitive_PreRebuildPhysics", "ACE_RememberPrimitiveCollisionGroup", function(ent)
 	RememberCollisionGroup(ent)

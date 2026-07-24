@@ -40,7 +40,7 @@ local function GetGunReloadTime(Gun, BulletData, RoFMul)
 		* FireRateModifier
 	local LowestReloadTime = MaxRof > 0 and 60 / MaxRof or DefaultReloadTime
 	local Loader = Gun:ChooseLoader()
-	local CanUseLoader = not ACE.table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
+	local CanUseLoader = not ACE_table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
 		and Gun.maxrof and Gun.LoaderCount > 0 and IsValid(Loader)
 
 	if CanUseLoader then
@@ -116,7 +116,7 @@ function ENT:Initialize()
 	self.CanLegalCheck		= true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "gun-removed") end
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "gun-removed") end
 	end)
 end
 
@@ -196,12 +196,12 @@ do
 		HMG = true
 	}
 
-	function ACE.MakeGun(Owner, Pos, Angle, Id)
+	function ACE_MakeGun(Owner, Pos, Angle, Id)
 
 		local Gun = ents.Create("acf_gun")
 		if not IsValid(Gun) then return false end
 
-		if not ACE.CheckGun( Id ) then
+		if not ACE_CheckGun( Id ) then
 			Id = BackComp[Id] or "100mmC"
 		end
 
@@ -338,7 +338,7 @@ do
 
 		Owner:AddCleanup("acemenu", Gun)
 
-		ACE.Activate(Gun, 0)
+		ACE_Activate(Gun, 0)
 
 		return Gun
 
@@ -346,7 +346,6 @@ do
 end
 
 list.Set( "ACFCvars", "acf_gun", {"id"} )
-ACE_MakeGun = ACE.MakeGun
 duplicator.RegisterEntityClass("acf_gun", ACE_MakeGun, "Pos", "Angle", "Id")
 
 function ENT:UpdateOverlayText()
@@ -368,17 +367,17 @@ function ENT:UpdateOverlayText()
 
 	text = text .. "\nRounds Per Minute: " .. math.Round( self.RateOfFire or 0, 2 )
 
-	if ACE.GetGunFirepowerReadout then
-		local readout = ACE.GetGunFirepowerReadout(self)
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
 			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE.GetRoundLethalityLine
-				and ACE.GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round, true)
 			if roundLine then text = text .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then text = text .. "\n" .. floorLine end
 		end
 	end
@@ -405,7 +404,7 @@ end
 
 local function IsInRetDist( enta, entb, Distance )
 	if not IsValid(enta) or not IsValid(entb) then return end
-	return ACE.InDist( enta:GetPos(), entb:GetPos(), Distance )
+	return ACE_InDist( enta:GetPos(), entb:GetPos(), Distance )
 end
 
 local BreakSoundTbl = {
@@ -457,8 +456,8 @@ function ENT:Link( Target )
 		Target.LinkedGun = self
 		RefreshGunRateOfFire(self)
 
-		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-			ACE.PointsInputChanged({ self, Target }, "gunner-linked")
+		if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE_PointsInputChanged({ self, Target }, "gunner-linked")
 		end
 		return true, "Link successful!"
 
@@ -492,8 +491,8 @@ function ENT:Link( Target )
 		Target.LinkedGun = self
 		RefreshGunRateOfFire(self)
 
-		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-			ACE.PointsInputChanged({ self, Target }, "loader-linked")
+		if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE_PointsInputChanged({ self, Target }, "loader-linked")
 		end
 		return true, "Link successful!"
 
@@ -542,8 +541,8 @@ function ENT:Link( Target )
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACE.VelScale ) )
 
-		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-			ACE.PointsInputChanged({ self, Target }, "gun-ammo-linked")
+		if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE_PointsInputChanged({ self, Target }, "gun-ammo-linked")
 		end
 		return true, "Link successful!"
 
@@ -579,8 +578,8 @@ function ENT:Unlink( Target )
 
 	if Success then
 		RefreshGunRateOfFire(self)
-		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-			ACE.PointsInputChanged({ self, Target }, "gun-unlinked")
+		if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE_PointsInputChanged({ self, Target }, "gun-unlinked")
 		end
 		return true, "Unlink successful!"
 	else
@@ -618,7 +617,7 @@ function ENT:TriggerInput(iname, value)
 		-- Triggered to fire if conditions are met
 		if self.NextFire < CurTime() then
 			-- Check if it's time to fire
-			self.User = ACE.GetWeaponUser(self, self.Inputs.Fire.Src)
+			self.User = ACE_GetWeaponUser(self, self.Inputs.Fire.Src)
 			if not IsValid(self.User) then
 				self.User = self:CPPIGetOwner()
 			end
@@ -654,8 +653,8 @@ function ENT:TriggerInput(iname, value)
 
 		if oldLimit ~= self.ROFLimit then
 			RefreshGunRateOfFire(self)
-			if ACE.PointsInputChanged then
-				ACE.PointsInputChanged(self, "gun-rof-limit")
+			if ACE_PointsInputChanged then
+				ACE_PointsInputChanged(self, "gun-rof-limit")
 			end
 		end
 	end
@@ -667,7 +666,7 @@ function ENT:Heat_Function()
 
 	--print(DeltaTime)
 
-	self.Heat = ACE.HeatFromGun( self , self.Heat, self.DeltaTime )
+	self.Heat = ACE_HeatFromGun( self , self.Heat, self.DeltaTime )
 	Wire_TriggerOutput(self, "Heat", math.Round(self.Heat))
 
 	-- TODO: instead of breaking the gun by heat, decrease accurancy and jam it
@@ -681,14 +680,14 @@ function ENT:Heat_Function()
 		--local Mass = phys:GetMass()
 
 		--[[
-		HitRes = ACE.Damage(self, {
+		HitRes = ACE_Damage(self, {
 			Kinetic = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1)),
 			Momentum = 0,
 			Penetration = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1))
 		}, 2, 0, self:CPPIGetOwner())
 
 		if HitRes.Kill then
-			ACE.HEKill( self, VectorRand() , 0)
+			ACE_HEKill( self, VectorRand() , 0)
 		end
 		]]--
 
@@ -744,14 +743,14 @@ function ENT:Think()
 	if ACE.CurTime > self.NextLegalCheck then
 
 		-- check gun is legal
-		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
 		-- check the seat is legal
 		local seat = IsValid(self.User) and self.User:GetVehicle() or nil
 
 		if IsValid(seat) then
-			local legal, issues = ACE.CheckLegal(seat, nil, nil, nil, nil, false)
+			local legal, issues = ACE_CheckLegal(seat, nil, nil, nil, nil, false)
 			if not legal then
 				self.Legal = false
 				self.LegalIssues = self.LegalIssues .. "\nSeat not legal: " .. issues
@@ -846,7 +845,7 @@ function ENT:Think()
 		--local MuzzlePos		= self:LocalToWorld(self.Muzzle)
 		--local MuzzlePos		= self:GetForward() * self.Muzzle.x + self:GetRight()  * self.Muzzle.y + self:GetUp() * self.Muzzle.z
 		--local MuzzlePos		= self:GetPos()
-		ACE.KEShove(self, self:GetPos() , Dir , self.KERecoil * self.CurrentRecoil )
+		ACE_KEShove(self, self:GetPos() , Dir , self.KERecoil * self.CurrentRecoil )
 
 		self.CurrentRecoil = math.max(self.CurrentRecoil - self.DeltaTime / 0.5,0) --Divided by time to dissipate recoil. Currently 0.5
 		--self.CurrentRecoil = 0
@@ -957,13 +956,13 @@ do
 			--self.OTWarnings
 			if not HasWarned then
 				--print("No")
-				ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACE.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
+				ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACE.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
 				self.OTWarnings.WarnedGunner = true
 			end
 			return
 		end
 
-		ACE.DoContraptionLegalCheck(self)
+		ACE_DoContraptionLegalCheck(self)
 
 		local bool = true
 
@@ -997,7 +996,7 @@ do
 				self:MuzzleEffect( MuzzlePos, MuzzleVec )
 
 				local GPos = self:GetPos()
-				local TestVel = self:WorldToLocal(ACE.GetPhysicalParent(self):GetVelocity() + GPos)
+				local TestVel = self:WorldToLocal(ACE_GetPhysicalParent(self):GetVelocity() + GPos)
 
 				--Traceback component
 				TestVel = self:LocalToWorld(Vector(math.max(TestVel.x,-0.1),TestVel.y,TestVel.z)) - GPos
@@ -1247,7 +1246,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste( self, Player, Ent, CreatedEntities )
-	if ACE.PointsInputChanged then
-		ACE.PointsInputChanged(pointSources, "gun-links-pasted")
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged(pointSources, "gun-links-pasted")
 	end
 end

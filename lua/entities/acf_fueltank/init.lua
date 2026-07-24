@@ -48,7 +48,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
-		ACE.GetDefaultActiveInputState(self)
+		ACE_GetDefaultActiveInputState(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -414,7 +414,7 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		self.Active = ACE.GetDefaultActiveInputState(self, value)
+		self.Active = ACE_GetDefaultActiveInputState(self, value)
 
 		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
@@ -429,7 +429,7 @@ end
 
 function ENT:Think()
 
-	if not ACE.IsDefaultActiveInputWired(self) then
+	if not ACE_IsDefaultActiveInputWired(self) then
 		self.Active = true
 	end
 

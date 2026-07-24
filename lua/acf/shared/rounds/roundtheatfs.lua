@@ -145,8 +145,8 @@ function Round.getDisplayData(Data)
 
 	local SlugEnergy = ACE_Kinetic(Data.SlugMV * 39.37, Data.SlugMass, 999999)
 	local SlugEnergy2 = ACE_Kinetic(Data.SlugMV2 * 39.37, Data.SlugMass2, 999999)
-	GUIData.MaxPen = ACE.CalcPenetration(SlugEnergy, Data.SlugPenArea)
-	GUIData.MaxPen2 = ACE.CalcPenetration(SlugEnergy2, Data.SlugPenArea2)
+	GUIData.MaxPen = ACE_CalcPenetration(SlugEnergy, Data.SlugPenArea)
+	GUIData.MaxPen2 = ACE_CalcPenetration(SlugEnergy2, Data.SlugPenArea2)
 	--GUIData.BlastRadius = (Data.FillerMass/2) ^ 0.33 * 5*10
 	GUIData.BlastRadius = Data.BoomFillerMass ^ 0.33 * 8 -- * 39.37
 	GUIData.Fragments = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACE.HEFrag), 2)
@@ -410,7 +410,7 @@ function Round.guicreate( Panel, Table )
 	acemenupanel:AmmoSlider("HEAllocation",0,0,1000,2, "HE Filler Allocation", "")
 	acemenupanel:AmmoSlider("FillerVol",0,0,1000,3, "Total HEAT Warhead volume", "")
 
-	ACE.Checkboxes()
+	ACE_Checkboxes()
 
 	acemenupanel:CPanelText("VelocityDisplay", "")  --Proj muzzle velocity (Name, Desc)
 	acemenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
@@ -452,7 +452,7 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acemenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE.AmmoCapacityDisplay( Data )
+	ACE_AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acemenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength + (Data.Caliber * 3.9), Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. math.floor(Data.PropMass * 1000) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. math.floor(Data.ProjMass * 1000) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
@@ -461,7 +461,7 @@ function Round.guiupdate( Panel )
 	acemenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "HE Filler Volume", "HE Filler Mass : " .. math.floor(Data.FillerMass * 1000) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("HEAllocation", Data.HEAllocation, 0.05, 0.95, 2, "HE Filler Distribution", "HE Filler Ratio : " .. math.floor((1 - Data.HEAllocation) * 100) .. "% (1st), " .. math.floor(Data.HEAllocation * 100) .. "% (2nd)") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 
-	ACE.Checkboxes( Data )
+	ACE_Checkboxes( Data )
 
 	acemenupanel:CPanelText("Desc", ACE.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acemenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)

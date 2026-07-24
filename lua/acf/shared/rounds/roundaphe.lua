@@ -80,7 +80,7 @@ function Round.getDisplayData(Data)
 	local Energy		= ACE_Kinetic( Data.MuzzleVel * 39.37 , Data.ProjMass, Data.LimitVel )
 	local FragMass	= Data.ProjMass - Data.FillerMass
 
-	GUIData.MaxPen	= ACE.CalcPenetration(Energy, Data.PenArea)
+	GUIData.MaxPen	= ACE_CalcPenetration(Energy, Data.PenArea)
 	GUIData.BlastRadius = Data.FillerMass ^ 0.33 * 8
 	GUIData.Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACE.HEFrag),2)
 	GUIData.FragMass	= FragMass / GUIData.Fragments
@@ -219,7 +219,7 @@ function Round.guicreate( Panel, Table )
 
 	acemenupanel:AmmoSelect( ACE.AmmoBlacklist.APHE )
 
-	ACE.UpperCommonDataDisplay()
+	ACE_UpperCommonDataDisplay()
 
 	acemenupanel:AmmoSlider("PropLength",0,0,1000,3, "Propellant Length", "")	--Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acemenupanel:AmmoSlider("ProjLength",0,0,1000,3, "Projectile Length", "")	--Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
@@ -270,8 +270,8 @@ function Round.guiupdate( Panel )
 	acemenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m")	--Proj muzzle velocity (Name, Desc)
 	acemenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
 
-	ACE.UpperCommonDataDisplay( Data, PlayerData )
-	ACE.CommonDataDisplay( Data )
+	ACE_UpperCommonDataDisplay( Data, PlayerData )
+	ACE_CommonDataDisplay( Data )
 
 end
 

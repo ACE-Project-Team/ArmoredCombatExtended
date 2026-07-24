@@ -245,7 +245,7 @@ function ENT:Update( ArgsTable )
 	self:UpdateOverlayText()
 
 	ACE_Activate( self, 1 )
-	if ACE.PointsInputChanged then ACE.PointsInputChanged( self, "engine-updated" ) end
+	if ACE_PointsInputChanged then ACE_PointsInputChanged( self, "engine-updated" ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end

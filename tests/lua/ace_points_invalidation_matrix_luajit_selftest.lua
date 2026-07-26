@@ -492,7 +492,7 @@ assert(family.totalMass == 25, "family removal did not recover mass")
 
 -- Armor/clipping/mass sources all use armor-only categories.
 local massEntity = newEntity(conB, "prop_physics", { mass = 10 })
-local phys = setmetatable({ entity = massEntity, mass = 10 }, { __index = physMeta })
+local phys = setmetatable({ valid = true, entity = massEntity, mass = 10 }, { __index = physMeta })
 assertEvent("mass-change", function()
 	return phys:SetMass(20)
 end, { conB }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "mass-changed")

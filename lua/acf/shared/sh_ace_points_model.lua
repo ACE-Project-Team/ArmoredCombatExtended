@@ -379,6 +379,10 @@ end
 -- Uses MAX armour/health (static design). Material ke/chem via the curated MATERIAL_EFF above.
 function ACE.Points_PropArmor(ent)
 	if not ACE.IsEnt(ent) then return nil end
+	if ent.ACE_PrimitiveArmorPending or ent.ACE_PrimitivePropertiesPending
+		or ent.ACE_PrimitiveRestoreSavedArmor then
+		return nil
+	end
 
 	local cls = ent:GetClass() or ""
 	if cls:sub(1, 4) == "acf_" or cls:sub(1, 4) == "ace_" or cls:sub(1, 5) == "gmod_"

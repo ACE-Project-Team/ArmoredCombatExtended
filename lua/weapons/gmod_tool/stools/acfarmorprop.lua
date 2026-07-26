@@ -50,25 +50,29 @@ local function ApplySettings( _, ent, data )
 	if not SERVER then return end
 
 
+	ent.ACF = ent.ACF or {}
+	if data.Ductility then
+		ent.ACF.Ductility = data.Ductility / 100
+		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
+	end
+
+	if data.Material then
+		ent.ACF.Material = data.Material
+		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
+	end
+
 	if data.Mass then
 		local phys = ent:GetPhysicsObject()
 		if IsValid( phys ) then phys:SetMass( data.Mass ) end
 		duplicator.StoreEntityModifier( ent, "mass", { Mass = data.Mass } )
 	end
 
-	if data.Ductility then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Ductility = data.Ductility / 100
-		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
-	end
+	-- Material changes do not make ACF_Check recalculate by themselves. Rebuild
+	-- the derived armor fields after all tool inputs have been applied.
+	local phys = ent:GetPhysicsObject()
+	if ACF_Activate and IsValid( phys ) then ACF_Activate( ent, true ) end
 
 	local con = ent:CFW_GetContraption()
-
-	if data.Material then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Material = data.Material
-		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
-	end
 
 	ACE.MarkArmorDirty(con, ent, "armor-tool")
 
@@ -396,10 +400,29 @@ function TOOL:Think()
 	local trace = util.TraceHull(tr)
 
 	local ent = trace.Entity
+	local acf = ent.ACF
+	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject()
+	local mass = IsValid( phys ) and phys:GetMass() or 0
+	local primitivePending = ent.ACE_PrimitiveArmorPending
+		or ent.ACE_PrimitivePropertiesPending
+		or ent.ACE_PrimitiveRestoreSavedArmor
+
+	-- Keep the hover path cached, but invalidate it when a clip, material, mass, or
+	-- armor rebuild changes the values that feed the readout.
+	if ent == self.AimEntity and self.AimEntityArmorReady and not primitivePending
+		and acf and self.AimEntityArmorArea == acf.Area
+		and self.AimEntityArmor == acf.Armour
+		and self.AimEntityMaxArmor == acf.MaxArmour
+		and self.AimEntityHealth == acf.Health
+		and self.AimEntityMaxHealth == acf.MaxHealth
+		and self.AimEntityDuctility == acf.Ductility
+		and self.AimEntityMaterial == acf.Material
+		and self.AimEntityMass == mass then
+		return
+	end
+
 	-- Primitive can expose a transient non-ACF state while it rebuilds. Do not cache that failed
 	-- observation forever: the client preview divides its zero area by zero and displays "nan".
-	if ent == self.AimEntity and self.AimEntityArmorReady then return end
-
 	if ACF_Check( ent ) then
 
 		local Mat = ent.ACF.Material or "RHA"
@@ -409,7 +432,7 @@ function TOOL:Think()
 		if not MatData then return end
 
 		ply:ConCommand( "acfarmorprop_area " .. ent.ACF.Area )
-		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
+		self.Weapon:SetNWFloat( "WeightMass", mass )
 		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
 		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
 		self.Weapon:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
@@ -420,6 +443,14 @@ function TOOL:Think()
 		self.Weapon:SetNWFloat( "PointCostNonArmor", componentCost or 0 )
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
 		self.AimEntityArmorReady = true
+		self.AimEntityArmorArea = ent.ACF.Area
+		self.AimEntityArmor = ent.ACF.Armour
+		self.AimEntityMaxArmor = ent.ACF.MaxArmour
+		self.AimEntityHealth = ent.ACF.Health
+		self.AimEntityMaxHealth = ent.ACF.MaxHealth
+		self.AimEntityDuctility = ent.ACF.Ductility
+		self.AimEntityMaterial = ent.ACF.Material
+		self.AimEntityMass = mass
 
 	else
 
@@ -791,8 +822,11 @@ if CLIENT then
 
 		local MatData	= ACE.GetMaterialData( mat )
 
-		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
-		mass = math.min( mass, 50000 )
+		local mass, armor, health = 0, 0, 0
+		if area > 0 and MatData then
+			mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
+			mass = math.min( mass, 50000 )
+		end
 		-- Preserve non-armor component cost when previewing an armor change.
 		local afterCost = ACE_GetArmorPointPreview(armor, health, mat, MatData) + nonArmorCost
 
@@ -866,6 +900,3 @@ if CLIENT then
 
 	end
 end
-
-
-

@@ -28,15 +28,14 @@ class ArmorToolPrimitiveRetryTests(unittest.TestCase):
     def test_zero_area_preview_is_not_a_valid_cached_state(self):
         self.assertTrue(math.isnan(preview_armor(0.0, 0.0, 10.0)))
 
-    def test_transient_failed_hover_retries_until_acf_is_ready(self):
+    def test_hover_refreshes_after_transient_or_external_armor_changes(self):
         source = SOURCE.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "if ent == self.AimEntity and self.AimEntityArmorReady then return end",
-            source,
-        )
-        self.assertIn("self.AimEntityArmorReady = true", source)
-        self.assertIn("self.AimEntityArmorReady = not ent.IsPrimitive", source)
+        self.assertIn("if ent == self.AimEntity and self.AimEntityArmorReady and not primitivePending", source)
+        self.assertIn("or ent.ACE_PrimitiveRestoreSavedArmor", source)
+        self.assertIn("self.AimEntityArmorArea == acf.Area", source)
+        self.assertIn("self.AimEntityMass == mass", source)
+        self.assertIn("if area > 0 and MatData then", source)
         self.assertIn('displays "nan"', source)
 
 

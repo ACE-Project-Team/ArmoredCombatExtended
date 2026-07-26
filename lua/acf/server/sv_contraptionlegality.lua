@@ -733,6 +733,10 @@ do
 
 	-- Override PhysObj:SetMass to mark armor dirty when needed.
 	function PHYS:SetMass(mass)
+		-- CFW's SetMass extension calls GetEntity, which errors for a NULL
+		-- physics object. This can happen while a missile/rack is rebuilding.
+		if not IsValid(self) then return end
+
 		local ent = self:GetEntity()
 		local currentMass = self:GetMass()
 		if IsEnt(ent) then

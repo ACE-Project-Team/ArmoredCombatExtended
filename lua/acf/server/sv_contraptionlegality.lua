@@ -658,7 +658,6 @@ do
 	-- Handle entity removal and update point totals.
 	function ACE.RemPts(con, ent)
 		if not con then return end
-		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 		ACE.PointContraptions[con] = true
 
 		-- CFW Defuse emits entity removals before its final contraption-removal
@@ -670,6 +669,11 @@ do
 			if ent and ent._ACEPointsOwnerConRef == con then ent._ACEPointsOwnerConRef = nil end
 			return
 		end
+
+		-- Do not recover the aggregate during a contraption-wide deletion. CFW emits one
+		-- entityRemoved event per member before the single contraption-removed event; the
+		-- fallback scan would otherwise walk the shrinking entity set once per member.
+		ACE_EnsureCFWMassTotal(con, con.ents, ent)
 
 		if ent and ent._ACEPointsRemovalNotified then
 			ent._ACEPointsRemovalNotified = nil

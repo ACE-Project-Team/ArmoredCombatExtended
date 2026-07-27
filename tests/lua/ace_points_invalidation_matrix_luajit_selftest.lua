@@ -360,11 +360,21 @@ end, { conA }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, 
 
 local defuseCon = newContraption("defuse")
 local defuseEnt = newEntity(defuseCon, "prop_physics")
+local defuseRemaining = newEntity(defuseCon, "prop_physics")
 defuseCon.ents[defuseEnt] = true
+defuseCon.ents[defuseRemaining] = true
 defuseCon._ACEPointsDefusing = true
+local defuseMassReads = 0
+local defuseGetPhysicsObject = defuseRemaining.GetPhysicsObject
+defuseRemaining.GetPhysicsObject = function(self)
+	defuseMassReads = defuseMassReads + 1
+	return defuseGetPhysicsObject(self)
+end
+defuseCon.totalMass = nil
 assertNoEvent("defuse-intermediate-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)
 end)
+assert(defuseMassReads == 0, "defuse removal performed a full mass recovery scan")
 defuseCon.ents[defuseEnt] = nil
 assertNoEvent("defuse-final-entity-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)

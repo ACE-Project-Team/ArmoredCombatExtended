@@ -1,10 +1,10 @@
 VertexLitGeneric
 {
 	$basetexture "models/missiles/agm84/AGM_84_mat_redtip_rgb"
-	$bumpmap "models/missiles/agm84/AGM_84_mat_redtip_n"
+	$bumpmap "models/missiles/agm84/AGM_84_mat_n"
 
 	$phong 1
-	$phongexponenttexture "models/missiles/agm84/AGM_84_mat_redtip_e"
+	$phongexponenttexture "models/missiles/agm84/AGM_84_mat_e"
 	$phongfresnelranges "[1 0.1 0]"
 	$phongalbedotint 1
 	$phongalbedoboost 10

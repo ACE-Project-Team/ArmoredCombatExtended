@@ -996,7 +996,7 @@ function ENT:Think()
 
 		for _,Ammo in pairs( ACE.AmmoCrates ) do
 
-			if Ammo.BulletData.Type ~= "Refill" then
+			if IsValid(Ammo) and istable(Ammo.BulletData) and Ammo.BulletData.Type ~= "Refill" then
 
 				local distsqrt = self:GetPos():DistToSqr( Ammo:GetPos() )
 

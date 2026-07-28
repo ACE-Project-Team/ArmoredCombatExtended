@@ -201,3 +201,5 @@ function ACE_EnsureContraptionPoints(con, baseEnt, force)
 		con._ACEWarningChecking = nil
 	end
 end
+
+_G.ACE_FlushQueuedPointChanges = ACE.FlushQueuedPointChanges

@@ -17,7 +17,21 @@ SHARED_ROOT = REPO / "lua" / "acf" / "shared"
 ROUND_ROOT = SHARED_ROOT / "rounds"
 COMPATIBILITY_SOURCE = REPO / "lua" / "autorun" / "acf_globals.lua"
 PREEXISTING_NAMESPACE_FUNCTIONS = {"GetHeadPos"}
-ACE_ONLY_NAMESPACE_FUNCTIONS = {"GetBallisticsStats", "ResetBallisticsStats"}
+# These are ACE-internal APIs introduced directly under the ACE namespace. They
+# never replaced an ACE_* global, so requiring a legacy alias would create a
+# new public compatibility surface instead of preserving one.
+ACE_ONLY_NAMESPACE_FUNCTIONS = {
+    "GetBallisticsStats",
+    "ResetBallisticsStats",
+    "ClearContraptionPointLedger",
+    "DropContraptionPointLedger",
+    "FlushQueuedPointChanges",
+    "HasQueuedPointChanges",
+    "QueueContraptionPointRebuild",
+    "QueueContraptionPointWarning",
+    "QueuePointEntityChange",
+    "RebuildContraptionPointLedger",
+}
 LATE_LOADED_ALIASES = {
     "CalcVehicleView": "lua/autorun/sh_ace_workarounds.lua",
     "PrimitivePropertiesApplied": "lua/autorun/server/sv_ace_primitive_compat.lua",

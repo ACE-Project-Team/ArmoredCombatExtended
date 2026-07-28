@@ -146,7 +146,14 @@ class InvalidationContractTests(unittest.TestCase):
 
         self.assertIn("function ACE_NotifyPointsInvalidated", legality)
 
-        self.assertIn("local POINTS_STATE_VERSION = 3", legality)
+        version = re.search(r"local\s+POINTS_STATE_VERSION\s*=\s*(\d+)", legality)
+        self.assertIsNotNone(version, "points-state schema version is missing")
+        self.assertGreaterEqual(
+            int(version.group(1)),
+            4,
+            "the deferred contraption-deletion ledger requires points-state schema v4 or newer",
+        )
+        self.assertIn("ACE.PointsStateVersion = POINTS_STATE_VERSION", legality)
         self.assertIn("ACE.PointContraptions[con] = true", legality)
         self.assertIn("ACE_OnContraptionsPointsInvalidated", legality)
         self.assertIn("ACE_NotifyContraptionPointsInvalidated", pointshandling)
@@ -178,6 +185,12 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertIn('glob("*_selftest.lua")', runner)
         matrix = REPO / "tests" / "lua" / "ace_points_invalidation_matrix_luajit_selftest.lua"
         self.assertTrue(matrix.is_file())
+
+    def test_primitive_armor_lifecycle_selftest_is_discovered_by_the_offline_runner(self):
+        runner = source("tests/run_luajit_tests.py")
+        self.assertIn('glob("*_selftest.lua")', runner)
+        lifecycle = REPO / "tests" / "lua" / "ace_primitive_armor_luajit_selftest.lua"
+        self.assertTrue(lifecycle.is_file())
 
 
 if __name__ == "__main__":

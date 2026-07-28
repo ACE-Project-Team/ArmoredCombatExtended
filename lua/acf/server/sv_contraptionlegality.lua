@@ -11,7 +11,7 @@ ACE.PointContraptions = ACE.PointContraptions or {}
 -- Version 3 adds invalidation generations and the active-contraption registry.
 -- Bump this whenever the per-contraption invalidation schema changes so live
 -- contraptions cannot skip initialization after a hot reload.
-local POINTS_STATE_VERSION = 3
+local POINTS_STATE_VERSION = 4
 ACE.PointsStateVersion = POINTS_STATE_VERSION
 
 -- CFW's mass extension assumes its aggregate was initialized before a physics rebuild or

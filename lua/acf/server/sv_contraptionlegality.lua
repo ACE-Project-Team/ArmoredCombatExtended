@@ -8,10 +8,10 @@ local IsEnt = ACE.IsEnt
 ACE.CacheVersion = ACE.CacheVersion or 1
 ACE.PointsEventId = ACE.PointsEventId or 0
 ACE.PointContraptions = ACE.PointContraptions or {}
--- Version 3 adds invalidation generations and the active-contraption registry.
+-- Version 4 adds the deferred entity contribution ledger.
 -- Bump this whenever the per-contraption invalidation schema changes so live
 -- contraptions cannot skip initialization after a hot reload.
-local POINTS_STATE_VERSION = 3
+local POINTS_STATE_VERSION = 4
 ACE.PointsStateVersion = POINTS_STATE_VERSION
 
 -- CFW's mass extension assumes its aggregate was initialized before a physics rebuild or
@@ -89,6 +89,7 @@ end
 
 -- Evaluate legality for a contraption.
 function ACE.CheckLegalCont(con)
+	if not con or con._removed or con.ACERemoving then return end
 	con.OTWarnings = con.OTWarnings or {}
 
 	if ACE.EnsureContraptionPoints then
@@ -131,7 +132,7 @@ end
 do
 	-- Sync per-contraption cache version and invalidate stale local caches.
 	function ACE.EnsureCacheVersion(con)
-		if not con then return false end
+		if not con or con._removed or con.ACERemoving then return false end
 
 		if con.ACECacheVersion == ACE.CacheVersion then return false end
 
@@ -143,6 +144,10 @@ do
 
 	local function ACE_IsContraption(value)
 		return value and type(value) == "table" and value.valid == nil
+	end
+
+	local function ACE_IsLiveContraption(value)
+		return ACE_IsContraption(value) and not value._removed and not value.ACERemoving
 	end
 
 	local function ACE_AddAffectedContraption(affected, seen, con)
@@ -269,7 +274,7 @@ do
 	-- endpoints of a link or several linked weapons. Contraptions are deduplicated
 	-- before their generations advance, so one logical mutation produces one rebuild
 	-- revision per affected contraption, including cross-contraption link anchors.
-	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions)
+	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
 		local sourceList
 		if type(sources) == "table" and next(sources) == nil then
 			sourceList = {}
@@ -314,6 +319,20 @@ do
 			}
 		end
 
+		-- Queue before public callbacks so an immediate ACE.EnsureContraptionPoints call
+		-- consumes this work instead of leaving a second rebuild for the next Think.
+		for _, con in ipairs(affected) do
+			if ACE_IsLiveContraption(con) then
+				if (event.Categories.Armor or event.Categories.Ammo or event.Categories.Firepower or event.Categories.ReadyRack)
+					and ACE.QueueContraptionPointRebuild and not ledgerKnown then
+					ACE.QueueContraptionPointRebuild(con)
+				end
+				if event.Categories.Warning and ACE.QueueContraptionPointWarning then
+					ACE.QueueContraptionPointWarning(con)
+				end
+			end
+		end
+
 		-- Compatibility listeners receive the complete event, including every
 		-- affected contraption's post-invalidation cache generation.
 		if ACE.NotifyContraptionPointsInvalidated then
@@ -332,25 +351,6 @@ do
 
 		if hook and hook.Run then hook.Run("ACE_OnContraptionsPointsInvalidated", event) end
 
-		-- Warning state is a derived consumer of the same event. Rebuild once per
-		-- affected contraption while the event's generations are still in scope.
-		if ACE.CheckLegalCont then
-			for _, con in ipairs(affected) do
-				if con.ents and not con.ACERemoving and not con._ACEPointsEnsuring then
-					if (con.ACEPointsDirty or con.ACEArmorDirty or con.ACENonArmorDirty)
-						and ACE.EnsureContraptionPoints then
-						ACE.EnsureContraptionPoints(con, nil, false)
-					end
-
-					if con.ACEWarningsDirty and not con._ACEWarningChecking then
-						con._ACEWarningChecking = true
-						ACE.CheckLegalCont(con)
-						con._ACEWarningChecking = nil
-					end
-				end
-			end
-		end
-
 		return event
 	end
 
@@ -358,7 +358,7 @@ do
 
 	-- Initialize per-contraption points state.
 	function ACE.EnsurePointsState(con)
-		if not con then return false end
+		if not ACE_IsLiveContraption(con) then return false end
 		if con.ACEInitDone and con.ACEPointsStateVersion == POINTS_STATE_VERSION then return false end
 
 		con.ACEInitDone = true
@@ -396,6 +396,7 @@ do
 		con.ACEReadyRackGeneration = 0
 		con.ACEWarningGeneration = 0
 		con.ACEWarningsDirty = true
+		con.ACEPointLedger = {}
 		ACE.PointContraptions[con] = true
 
 		return true
@@ -449,7 +450,7 @@ do
 
 	-- Compatibility wrapper for callers that already resolved a contraption.
 	function ACE.MarkContraptionPointsDirty(con, ent, armorDirty, nonArmorDirty, reason)
-		if not con then return end
+		if not ACE_IsLiveContraption(con) then return end
 
 		if armorDirty == nil then armorDirty = true end
 		if nonArmorDirty == nil then nonArmorDirty = true end
@@ -476,17 +477,23 @@ do
 		local explicit = {}
 		local primaryCurrent
 		local primaryPrevious
+		local ledgerKnown = false
 		if ACE_IsContraption(sourceList[1]) then primaryCurrent = sourceList[1] end
 
 		for index, ent in ipairs(sourceList) do
 			if IsEnt(ent) then
-				local previous = ent._ACEPointsOwnerConRef
+				local ledger = ACE.PointEntityLedger and ACE.PointEntityLedger[ent]
+				local previous = ent._ACEPointsOwnerConRef or (ledger and ledger.Owner)
 				local current = ACE_GetPointContraption(ent)
 				if index == 1 then
 					primaryCurrent = current
 					primaryPrevious = previous
 				end
 				ent._ACEPointsOwnerConRef = current
+				if ACE.QueuePointEntityChange then
+					ACE.QueuePointEntityChange(ent, current)
+					ledgerKnown = true
+				end
 
 				if previous and previous ~= current then explicit[#explicit + 1] = previous end
 			end
@@ -508,7 +515,7 @@ do
 			}
 		end
 
-		local event = ACE.NotifyPointsInvalidated(sourceList, reason, categories, explicit)
+		local event = ACE.NotifyPointsInvalidated(sourceList, reason, categories, explicit, ledgerKnown)
 		if event and reason and string.find(reason, "removed", 1, true) then
 			local ent = sourceList[1]
 			if IsEnt(ent) then ent._ACEPointsRemovalNotified = true end
@@ -548,9 +555,10 @@ do
 		ACE.PointContraptions[parent] = true
 		ACE.PointContraptions[child] = true
 		if parentAlreadyNotified then
-			ACE.NotifyPointsInvalidated(child, "contraption-split")
+			ACE.NotifyPointsInvalidated(child, "contraption-split", nil, nil, ACE.HasQueuedPointChanges(child))
 		else
-			ACE.NotifyPointsInvalidated({ parent, child }, "contraption-split")
+			ACE.NotifyPointsInvalidated({ parent, child }, "contraption-split", nil, nil,
+				ACE.HasQueuedPointChanges(parent) and ACE.HasQueuedPointChanges(child))
 		end
 	end)
 
@@ -558,10 +566,12 @@ do
 		ACE_ClearContraptionTransition(merged)
 		ACE_ClearContraptionTransition(target)
 		merged.ACERemoving = true
+		if ACE.DropContraptionPointLedger then ACE.DropContraptionPointLedger(merged, true) end
 		if merged.OTWarnings then merged.OTWarnings.WarnedModified = true end
 		ACE.PointContraptions[merged] = nil
 		if target then ACE.PointContraptions[target] = true end
-		ACE.NotifyPointsInvalidated({ merged, target }, "contraption-merged")
+		ACE.NotifyPointsInvalidated({ merged, target }, "contraption-merged", nil, nil,
+			ACE.HasQueuedPointChanges(target))
 	end)
 
 	-- Flag contraptions that are being removed to suppress dirty warnings.
@@ -592,6 +602,7 @@ do
 			pending = nil
 		end
 		con.ACERemoving = true
+		if ACE.DropContraptionPointLedger then ACE.DropContraptionPointLedger(con) end
 		if con.OTWarnings then con.OTWarnings.WarnedModified = true end
 		if pending ~= PENDING_REMOVAL_NOTIFIED then
 			ACE.NotifyPointsInvalidated(con, "contraption-removed")
@@ -616,7 +627,7 @@ do
 
 	-- Handle entity addition and update point totals.
 	function ACE.AddPts(con, ent)
-		if not IsEnt(ent) then return end
+		if not ACE_IsLiveContraption(con) or not IsEnt(ent) then return end
 		ACE_EnsureCFWMassTotal(con, con.ents, nil, ent)
 		ACE.PointContraptions[con] = true
 
@@ -634,6 +645,7 @@ do
 			ACE_DeferContraptionTransition(con)
 			ent._ACEPointsConRef = con
 			ent._ACEPointsOwnerConRef = con
+			if ACE.QueuePointEntityChange then ACE.QueuePointEntityChange(ent, con) end
 			return
 		end
 
@@ -653,6 +665,7 @@ do
 			ReadyRack = true,
 			Warning = true,
 		}, movedContraptions)
+		if ACE.QueuePointEntityChange then ACE.QueuePointEntityChange(ent, con) end
 	end
 
 	-- Handle entity removal and update point totals.
@@ -691,6 +704,9 @@ do
 			return
 		end
 
+		-- Mark removal before clearing ownership references so the invalidation event
+		-- sees queued point work and does not fall back to a full contraption scan.
+		if ent and ACE.QueuePointEntityChange then ACE.QueuePointEntityChange(ent, nil) end
 		if valid and ent._ACEPointsConRef == con then ent._ACEPointsConRef = nil end
 		if valid and previous == con then ent._ACEPointsOwnerConRef = nil end
 
@@ -711,6 +727,7 @@ do
 			ReadyRack = true,
 			Warning = true,
 		}, movedContraptions)
+		if ent and ACE.QueuePointEntityChange then ACE.QueuePointEntityChange(ent, nil) end
 		if ent and ent._ACEPointsRemovalNotified then ent._ACEPointsRemovalNotified = nil end
 	end
 
@@ -782,8 +799,9 @@ local function ACE_ClearAllCaches()
 	if ACE.NotifyPointsInvalidated then
 		local contraptions = {}
 		for con in pairs(ACE.PointContraptions or {}) do
-			if con and not con.ACERemoving then
+			if con and not con._removed and not con.ACERemoving then
 				con.ACECacheVersion = ACE.CacheVersion
+				if ACE.ClearContraptionPointLedger then ACE.ClearContraptionPointLedger(con) end
 				contraptions[#contraptions + 1] = con
 			end
 		end
@@ -805,15 +823,18 @@ end)
 
 -- Mark armor points dirty for callers that know only armor changed.
 function ACE.MarkArmorDirty(con, ent, reason)
-	if not con then
+	if not con or con._removed or con.ACERemoving then
 		if ACE.ClearArmorPointCache and IsEnt(ent) then ACE.ClearArmorPointCache(ent) end
 		return
 	end
 
+	local ledgerKnown = ACE.QueuePointEntityChange and IsEnt(ent)
+	if ledgerKnown then ACE.QueuePointEntityChange(ent, con) end
+
 	ACE.NotifyPointsInvalidated(ent or con, reason or "armor-updated", {
 		Armor = true,
 		Warning = true,
-	}, { con })
+	}, { con }, ledgerKnown)
 end
 
 -- Reprice clipped armor after Proper Clipping replaces its physics object.

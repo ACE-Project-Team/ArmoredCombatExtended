@@ -89,6 +89,8 @@ return {
 				expect(second.ACEPointsGeneration).to.equal(1)
 				expect(batches).to.equal(1)
 				expect(compatibility).to.equal(2)
+				expect(recalculations).to.equal(0)
+				ACE.FlushQueuedPointChanges()
 				expect(recalculations).to.equal(2)
 
 				hook.Remove("ACE_OnContraptionsPointsInvalidated", hookName)

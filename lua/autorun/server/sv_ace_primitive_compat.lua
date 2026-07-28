@@ -31,11 +31,28 @@ local function CaptureSavedArmor(ent)
 	ent.ACE_PrimitiveSavedArmor = CopyArmorValues(ent.ACF)
 end
 
+local function CopyLegacyArmorSettings(modifiers)
+	local settings = istable(modifiers) and modifiers.acfsettings
+	if not istable(settings) then return end
+
+	local material = settings.Material
+	local ductility = settings.Ductility
+	if material ~= nil and not isstring(material) then return end
+	if ductility ~= nil and not IsFiniteNumber(ductility) then return end
+	if material == nil and ductility == nil then return end
+
+	return {
+		Material = material,
+		Ductility = ductility,
+	}
+end
+
 local function RestoreSavedArmor(ent, phys)
 	local saved = CopyArmorValues(ent.ACE_PrimitiveSavedArmor)
-	if not saved or not istable(ent.ACF) then return false end
+	if not saved then return false end
 
-	local acf = ent.ACF
+	local acf = ent.ACF or {}
+	ent.ACF = acf
 	acf.Area = saved.Area
 	acf.Armour = saved.Armour
 	acf.MaxArmour = saved.MaxArmour
@@ -49,6 +66,25 @@ local function RestoreSavedArmor(ent, phys)
 	return true
 end
 
+local function RestoreLegacyArmorSettings(ent)
+	local settings = ent.ACE_PrimitiveLegacyArmorSettings
+	if not istable(settings) then return false end
+
+	local acf = ent.ACF or {}
+	ent.ACF = acf
+	if settings.Material ~= nil then acf.Material = settings.Material end
+	if settings.Ductility ~= nil then acf.Ductility = math.Clamp(settings.Ductility, -80, 80) * 0.01 end
+
+	-- A legacy dupe has no derived ACF values to restore. Force ACF_Activate to derive
+	-- fresh armor from the final Primitive mesh and already-restored mass modifier.
+	acf.Area = nil
+	acf.PhysObj = nil
+	acf.Health = nil
+	acf.MaxHealth = nil
+
+	return true
+end
+
 local function RememberCollisionGroup(ent)
 	if not IsValid(ent) then return end
 
@@ -57,6 +93,7 @@ end
 
 local function CapturePendingPrimitiveArmor(ent)
 	if not IsValid(ent) or not ent.ACE_PrimitiveRestoreSavedArmor then return end
+	if ent.ACE_PrimitiveLegacyArmorSettings then return end
 
 	CaptureSavedArmor(ent)
 end
@@ -77,6 +114,7 @@ local function ClearPrimitiveArmorState(ent)
 	ent.ACE_PrimitiveClippingHandled = nil
 	ent.ACE_PrimitiveRestoreSavedArmor = nil
 	ent.ACE_PrimitiveSavedArmor = nil
+	ent.ACE_PrimitiveLegacyArmorSettings = nil
 end
 
 local function MarkPrimitiveArmorDirty(ent, reason)
@@ -128,7 +166,14 @@ local function FinalizePrimitiveArmor(ent)
 		return
 	end
 
-	if not ApplyPrimitiveArmor(ent, phys) and ACF_Activate then
+	local restored = ApplyPrimitiveArmor(ent, phys)
+	if not restored then restored = RestoreLegacyArmorSettings(ent) end
+
+	if not restored and ent.ACF then
+		ClearInvalidLiveArmorValues(ent.ACF)
+	end
+
+	if not RestoreSavedArmor(ent, phys) and ACF_Activate then
 		ACF_Activate(ent, true)
 	end
 
@@ -143,7 +188,9 @@ local function ReconcilePrimitiveArmor(ent)
 	local phys = ent:GetPhysicsObject()
 	if not IsValid(phys) then return end
 
-	ApplyPrimitiveArmor(ent, phys)
+	if not ApplyPrimitiveArmor(ent, phys) and not RestoreLegacyArmorSettings(ent) and ent.ACF then
+		ClearInvalidLiveArmorValues(ent.ACF)
+	end
 	MarkPrimitiveArmorDirty(ent, "primitive-physics-rebuilt")
 end
 
@@ -210,7 +257,16 @@ hook.Add("AdvDupe_FinishPasting", "ACE_CapturePrimitiveArmor", function(data)
 			ent.ACE_PrimitiveRestoreSavedArmor = true
 			local source = paste.EntityList and paste.EntityList[sourceId]
 			ent.ACE_PrimitiveSavedArmor = CopyArmorValues(source and source.ACF)
-			if not ent.ACE_PrimitiveSavedArmor then CaptureSavedArmor(ent) end
+			ent.ACE_PrimitiveLegacyArmorSettings = CopyLegacyArmorSettings(source and source.EntityMods)
+				or CopyLegacyArmorSettings(ent.EntityMods)
+			if not ent.ACE_PrimitiveSavedArmor and not ent.ACE_PrimitiveLegacyArmorSettings then
+				CaptureSavedArmor(ent)
+			end
+
+			-- AdvDupe fires after duplicator.Paste returns. Some Primitive revisions have
+			-- already completed their final SetMass callback by then, so this is the only
+			-- lifecycle point that can restore their serialized armor state.
+			FinalizePrimitiveArmor(ent)
 		end
 	end
 end)

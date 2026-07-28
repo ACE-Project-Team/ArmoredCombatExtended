@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
+import re
 import unittest
 
 from lua_source import (
@@ -14,17 +15,43 @@ from lua_source import (
 REPO = Path(__file__).resolve().parents[2]
 SHARED_ROOT = REPO / "lua" / "acf" / "shared"
 ROUND_ROOT = SHARED_ROOT / "rounds"
+COMPATIBILITY_SOURCE = REPO / "lua" / "autorun" / "acf_globals.lua"
+PREEXISTING_NAMESPACE_FUNCTIONS = {"GetHeadPos"}
+# These are ACE-internal APIs introduced directly under the ACE namespace. They
+# never replaced an ACE_* global, so requiring a legacy alias would create a
+# new public compatibility surface instead of preserving one.
+ACE_ONLY_NAMESPACE_FUNCTIONS = {
+    "GetBallisticsStats",
+    "ResetBallisticsStats",
+    "ClearContraptionPointLedger",
+    "DropContraptionPointLedger",
+    "FlushQueuedPointChanges",
+    "HasQueuedPointChanges",
+    "QueueContraptionPointRebuild",
+    "QueueContraptionPointWarning",
+    "QueuePointEntityChange",
+    "RebuildContraptionPointLedger",
+}
+LATE_LOADED_ALIASES = {
+    "CalcVehicleView": "lua/autorun/sh_ace_workarounds.lua",
+    "PrimitivePropertiesApplied": "lua/autorun/server/sv_ace_primitive_compat.lua",
+    "CreateMine": "lua/entities/ace_mine/init.lua",
+    "RemoveBulletClient": "lua/effects/acf_bulleteffect/init.lua",
+    "EngineGUI_Update": "lua/entities/acf_engine/cl_init.lua",
+    "GetExplosiveMasses": "lua/entities/ace_explosive/init.lua",
+    "MakePrebuiltExplosive": "lua/entities/ace_explosive_prebuilt/init.lua",
+}
 
 DEFINITION_FUNCTIONS = {
     "ACF_DefineEntity",
-    "ACE_DefineCrewseat",
-    "ACE_DefineExtras",
-    "ACE_DefineMuzzleFlash",
-    "ACE_DefineGunFireSound",
+    "ACE.DefineCrewseat",
+    "ACE.DefineExtras",
+    "ACE.DefineMuzzleFlash",
+    "ACE.DefineGunFireSound",
     "ACF_defineGunClass",
     "ACF_defineGun",
-    "ACE_DefineAmmoCrate",
-    "ACE_DefineLegacyAmmoCrate",
+    "ACE.DefineAmmoCrate",
+    "ACE.DefineLegacyAmmoCrate",
     "ACF_DefineRack",
     "ACF_DefineRackClass",
     "ACF_DefineEngine",
@@ -40,8 +67,8 @@ DEFINITION_FUNCTIONS = {
     "ACF_DefineIRST",
     "ACF_DefineIRSTClass",
     "ACF_DefineVHeatSource",
-    "ACE_DefineExplosive",
-    "ACE_DefineMine",
+    "ACE.DefineExplosive",
+    "ACE.DefineMine",
 }
 
 
@@ -89,6 +116,48 @@ class RegistryDefinitionTests(unittest.TestCase):
             for identifier, path in entries:
                 with self.subTest(function=function, source=path):
                     self.assertTrue(identifier.strip())
+
+    def test_migrated_namespace_functions_have_legacy_aliases(self):
+        namespace_functions = set()
+        legacy_globals = set()
+
+        for path in (REPO / "lua").rglob("*.lua"):
+            source = code_without_comments_and_strings(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+            namespace_functions.update(
+                re.findall(r"(?m)^\s*function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)
+            )
+            self.assertNotRegex(
+                source,
+                r"(?m)^\s*function\s+ACE_[A-Za-z_][A-Za-z0-9_]*\s*\(",
+                f"legacy global function definition remains in {path.relative_to(REPO)}",
+            )
+
+        compatibility_source = COMPATIBILITY_SOURCE.read_text(encoding="utf-8")
+        table = re.search(
+            r"local legacyACEFunctions = \{(.*?)\n\}",
+            compatibility_source,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(table, "legacy compatibility table is missing")
+        legacy_globals.update(re.findall(r'"([A-Za-z_][A-Za-z0-9_]*)"', table.group(1)))
+        self.assertIn(
+            '_G["ACE_" .. name] = func',
+            compatibility_source,
+            "legacy compatibility loop is missing",
+        )
+
+        migrated = namespace_functions - PREEXISTING_NAMESPACE_FUNCTIONS - ACE_ONLY_NAMESPACE_FUNCTIONS
+        self.assertTrue(migrated <= legacy_globals)
+
+        for name, relative_path in LATE_LOADED_ALIASES.items():
+            source = (REPO / relative_path).read_text(encoding="utf-8")
+            self.assertIn(
+                f"ACE_{name} = ACE.{name}",
+                source,
+                f"late-loaded function {name} is missing its direct alias",
+            )
 
     def test_definition_scanner_ignores_comments_and_strings(self):
         source = '''

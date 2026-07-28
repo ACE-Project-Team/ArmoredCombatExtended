@@ -241,7 +241,7 @@ function ENT:ScanForContraptions()
 		local BaseTemp = 0
 
 		if IsValid(BasePhys) and BasePhys:IsMoveable() then
-			BaseTemp = ACE_InfraredHeatFromProp(Base, self.HeatAboveAmbient)
+			BaseTemp = ACE.InfraredHeatFromProp(Base, self.HeatAboveAmbient)
 		end
 
 		local Pos
@@ -293,7 +293,7 @@ function ENT:ScanForContraptions()
 
 			self.TargetDetected = true
 
-			local Index = ACE_GetContraptionIndex(Contraption)
+			local Index = ACE.GetContraptionIndex(Contraption)
 
 			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 2.5,ClampMin,self.MaxInaccuracy)
 
@@ -308,7 +308,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -370,7 +370,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)

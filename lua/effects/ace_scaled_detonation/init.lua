@@ -84,7 +84,7 @@ function EFFECT:Init( data )
 	end
 
 	local Mat = Ground.MatType or 0
-	local Material = ACE_GetMaterialName( Mat )
+	local Material = ACE.GetMaterialName( Mat )
 
 	if Ground.HitNonWorld then --Overide with ACE prop material
 		Mat = Mat

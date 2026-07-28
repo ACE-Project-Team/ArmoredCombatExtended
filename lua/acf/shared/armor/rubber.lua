@@ -10,7 +10,7 @@ Material.year		= 1955
 Material.massMod		= 0.2
 Material.curve		= 0.93
 
-Material.specialeffect  = 20 --Caliber to divide HEAT and spall caliber by when rubber catches the shells taking more of the energy. A caliber above this number results in a damage multiplier. ex 60mm/30 -> 2x
+Material.specialeffect  = 20 --Caliber to divide HEAT caliber by when rubber catches the shells taking more of the energy. A caliber above this number results in a damage multiplier. ex 60mm/30 -> 2x
 
 --All effectiveness values multiply the Line of Sight armor values of armor.
 --All Resiliance values are damage multipliers. Higher = more damage. Lower = less damage.
@@ -25,7 +25,9 @@ Material.HEATresiliance = 2
 
 Material.HEresiliance	= 6
 
-Material.spallresist = 0.75
+-- Spall uses the ordinary kinetic resolver below. This keeps rubber's response thickness-based
+-- and lets ACF_SpallTrace carry the resolver's remaining energy through layered armor.
+Material.spallresist = 0.15
 
 Material.spallmult	= 0.01 --While spall can pierce rubber, Rubber itself should not really spall.
 Material.ArmorMul	= 0.05
@@ -42,6 +44,10 @@ if SERVER then
 		local effectiveness = Material.effectiveness
 		local resiliance	= Material.resiliance
 
+		if Type == "Spall" then
+			effectiveness = Material.spallresist
+		end
+
 		local ductilityvalue = (Entity.ACF.Ductility or 0) * 1.25 --The ductility value of the armor. Outputs 1 to -1 depending on max ductility
 		local ductilitymult    = 2 / (2 + ductilityvalue * 1.5) -- Direct damage multiplier based on ductility.
 
@@ -50,26 +56,19 @@ if SERVER then
 
 
 		--=========================================================================================================\
-		--------------------------------------------------------- For HEAT shells & Spall -------------------------->
+		--------------------------------------------------------- For HEAT shells ---------------------------------->
 		--=========================================================================================================/
 		local validTypes = {
 			["HEAT"] = true,
 			["THEAT"] = true,
 			["HEATFS"] = true,
-			["THEATFS"] = true,
-			["Spall"] = true
+			["THEATFS"] = true
 		}
 
 		if validTypes[Type] then
 
 			local specialeffectiveness  = Material.HEATeffectiveness
 			local specialresiliance	= Material.HEATresiliance
-
-
-			if Type == "Spall" then --Overrides effectiveness values if deflecting spall
-				specialeffectiveness = Material.spallresist
-				specialresiliance = Material.spallresist
-			end
 
 			local DmgResist = 0.01 + math.min(caliber * 10 / Material.specialeffect, 5) * 10 --Caliber in mm / specialeffect. Makes HEAT shells with a larger jet shred rubber more.
 
@@ -169,9 +168,12 @@ if SERVER then
 		--------------------------------------------------------- For AP shells -------------------------->
 		--===============================================================================================/
 		else
+			-- Preserve rubber's existing kinetic overmatch behavior while matching the default
+			-- RHA/spall caliber convention for fragments.
+			local breachCaliber = Type == "Spall" and caliber or caliber * 10
 
 			-- Breach probability, chance of a shell to shoot clean through without doing much structural damage ignoring richochet and LOS armor.
-			local breachProb = math.Clamp( (caliber * 10 / armor / effectiveness - 1.3) / 5.7 , 0, 1) -- If the caliber in mm is at least 1.3x the effective armor there is a chance to overmatch. At 7x the effective armor, 100% chance to overmatch.
+			local breachProb = math.Clamp( (breachCaliber / armor / effectiveness - 1.3) / 5.7 , 0, 1) -- If the caliber in mm is at least 1.3x the effective armor there is a chance to overmatch. At 7x the effective armor, 100% chance to overmatch.
 
 
 			-- Penetration probability

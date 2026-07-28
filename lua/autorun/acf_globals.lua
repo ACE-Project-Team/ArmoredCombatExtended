@@ -313,8 +313,8 @@ if SERVER then
         elseif CVar == "acf_legality_largegunthreshold" then
             ACF.LargeGunsThreshold = math.ceil(math.Clamp(New, 0, 10000))
         elseif CVar == "acf_enable_dp" then
-            if ACE_SendDPStatus then
-                ACE_SendDPStatus()
+            if ACE.SendDPStatus then
+                ACE.SendDPStatus()
             end
         end
     end
@@ -522,7 +522,7 @@ end )
 
 if SERVER then
 
-    function ACE_SendDPStatus()
+    function ACE.SendDPStatus()
 
         local Cvar = GetConVar("acf_enable_dp"):GetInt()
         local bool = tobool(Cvar)
@@ -597,5 +597,39 @@ cleanup.Register( "aceexplosives" )
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")
+
+-- Keep only the former names of migrated functions available to older entities and extensions.
+local legacyACEFunctions = {
+    "AddPts", "AmmoCapacity", "AmmoCapacityDisplay", "AmmoRangeStats", "AmmoStats", "Approaching", "BroadcastMsg", "CalcContraptionArmorPoints",
+    "CalcEntityGForce", "CalcNonArmorPoints", "CalcPenetration", "CalcVehicleView", "CalculateHERadius", "CheckAmmo", "CheckEngine", "CheckFuelTank",
+    "CheckGearbox", "CheckGun", "CheckLegalCont", "CheckMaterial", "CheckRack", "CheckRound", "Checkboxes", "ClearArmorPointCache",
+    "ClearContraptionIndex", "CommonDataDisplay", "ConVarHelp", "CreateLinkRope", "CreateMine", "CreateSZRope", "CrewseatApplyDupeModel", "CrewseatDamage",
+    "CrewseatDeathSound", "CrewseatDebugEnabled", "CrewseatDebugLog", "CrewseatDeferredModelSync", "CrewseatLegalCheck", "CrewseatOnRemove", "CrewseatResolveModelType", "DefineAmmoCrate",
+    "DefineCrewseat", "DefineExplosive", "DefineExtras", "DefineGunFireSound", "DefineLegacyAmmoCrate", "DefineMine", "DefineModelData", "DefineMuzzleFlash",
+    "DoContraptionLegalCheck", "Dupes_Refresh", "EmitSound", "EngineGUI_Update", "EnsureCacheVersion", "EnsureContraptionPoints", "EnsurePointsState", "FindReplacementLoader",
+    "GenerateCrewName", "GetAmmoBlastMass", "GetAmmoCookoffAmmoCount", "GetAmmoCookoffBlastMass", "GetAmmoCookoffClass", "GetAmmoCookoffPropScale", "GetAmmoCookoffStorageScale", "GetAmmoGunClass",
+    "GetAmmoMaxPen", "GetArmorPoints", "GetBinaryInsertIndex", "GetConfigurableName", "GetContraptionEntities", "GetContraptionFromEntity", "GetContraptionIndex", "GetContraptionOwner",
+    "GetCrewSeatPointCost", "GetDistanceTime", "GetEntPoints", "GetExplosiveMasses", "GetGunConfiguredRps", "GetGunFirepowerPoints", "GetGunFirepowerPointsFor", "GetGunFirepowerPricingLine",
+    "GetGunFirepowerReadout", "GetMaterialData", "GetMaterialName", "GetMissileWarheadType", "GetOwnerName", "GetPoseModifiers", "GetPtsType", "GetRackConfiguredReloadTime",
+    "GetRateFloorLine", "GetRoundLethalityLine", "GetSurvivabilityIndex", "GetWeaponAnchorContraption", "GetWeaponUser", "HeatFromEngine", "HeatFromGearbox", "HeatFromGun",
+    "HeatFromRadar", "InDist", "InfraredHeatFromProp", "InitializeCrewseat", "IsAmmoMissileType", "IsEnt", "IsGLATGMAmmoType", "IsMissileEntity",
+    "IsStandingPose", "IsValidCrewseatModel", "IsWireEntity", "LOSMultiTrace", "MakePrebuiltExplosive", "Manu_ArmorCost", "Manu_ContraptionCost", "Manu_CrewCost",
+    "Manu_ElectronicsCost", "Manu_EngineCost", "Manu_EntCost", "Manu_GunCost", "Manu_RackCost", "Manu_RefillCost", "Manu_RoundCost", "MarkArmorDirty",
+    "MarkContraptionPointsDirty", "NetworkMPEffects", "NetworkSPEffects", "NotifyContraptionPointsInvalidated", "NotifyPointsInvalidated", "NotifyCrateWeapons", "PerformHitResolution", "PointsInputChanged",
+    "Points_ArmorProp", "Points_BaseRoundCost", "Points_ChargeCost", "Points_ChargeEntCost", "Points_CrewCost", "Points_EffectiveMm", "Points_EngineCost", "Points_Gate",
+    "Points_GatePen", "Points_GuidanceMul", "Points_GunCost", "Points_GunSustainedRps", "Points_IntrinsicValueMul", "Points_IsBetterCandidate", "Points_LethalityPen", "Points_MaterialEff",
+    "Points_PostPenMult", "Points_PostPenParts", "Points_PropArmor", "Points_RackCost", "Points_RackCostFromRate", "Points_RackRate", "Points_RateFloor", "Points_RoundFromBullet",
+    "Points_RoundScore", "Points_SustainedRps", "PrimitivePropertiesApplied", "RebuildContraptionPoints", "ReceiveDPStatus", "RemPts", "RemoveBulletClient", "ResolveAmmoType",
+    "SBlast", "SBulletCrack", "SBulletImpact", "SBulletWhistle", "SGetHearingEntity", "SGunFire", "SHasLOS", "SInDistance",
+    "SIsInDoor", "SPenetration", "SRicochet", "SendDPStatus", "SendMsg", "SendNotification", "SimpleSound", "UpdateCrewseatAnglePenalty",
+    "UpdateGForcePenalty", "UpperCommonDataDisplay", "VisualizeSZ", "refreshdata", "table_contains",
+}
+
+for _, name in ipairs(legacyACEFunctions) do
+    local func = ACE[name]
+    if type(func) == "function" then
+        _G["ACE_" .. name] = func
+    end
+end
 
 print("[ACE | INFO]- Done!")

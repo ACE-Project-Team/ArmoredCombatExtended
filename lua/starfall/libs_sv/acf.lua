@@ -47,7 +47,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 
 	Mat = Mat or "RHA"
 
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
@@ -80,7 +80,7 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 	ent.ACF.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
-	ACE_MarkArmorDirty(con, ent, "armor-starfall")
+	ACE.MarkArmorDirty(con, ent, "armor-starfall")
 
 end
 
@@ -465,9 +465,9 @@ do
 
 		local Heat
 		if isGun(this) then
-			Heat = ACE_HeatFromGun(this, this.Heat, this.DeltaTime)
+			Heat = ACE.HeatFromGun(this, this.Heat, this.DeltaTime)
 		elseif isEngine(this) then
-			Heat = ACE_HeatFromEngine(this)
+			Heat = ACE.HeatFromEngine(this)
 		else
 			Heat = ACE.AmbientTemp
 		end
@@ -1069,7 +1069,7 @@ do
 		local this = getent(self)
 		if not (isAmmo(this) or isGun(this)) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		return ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
 	end

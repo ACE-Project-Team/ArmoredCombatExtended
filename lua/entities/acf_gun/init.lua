@@ -23,6 +23,55 @@ local function AttemptFirstLoad(Gun, Crate)
 	Gun:LoadAmmo(false, true)
 end
 
+-- Compute the next-shot reload time without mutating ammo, stamina, or the active
+-- reload timer. Link changes and ROFLimit use this same calculation as LoadAmmo so
+-- the visible Fire Rate cannot lag behind the configured weapon state.
+local function GetGunReloadTime(Gun, BulletData, RoFMul)
+	if not BulletData then return end
+
+	local Adj = BulletData.LengthAdj or 1
+	local MaxRof = Gun.ROFLimit
+	if Gun.maxrof then
+		MaxRof = MaxRof ~= 0 and math.min(Gun.maxrof, MaxRof) or Gun.maxrof
+	end
+
+	local FireRateModifier = Gun.RoFmod * Gun.PGRoFmod * ((RoFMul or 0) + 1)
+	local DefaultReloadTime = ((math.max(BulletData.RoundVolume, Gun.MinLengthBonus / Adj) / 500) ^ 0.60)
+		* FireRateModifier
+	local LowestReloadTime = MaxRof > 0 and 60 / MaxRof or DefaultReloadTime
+	local Loader = Gun:ChooseLoader()
+	local CanUseLoader = not ACE.table_contains({ "AC", "MG", "RAC", "HMG", "GL", "SA" }, Gun.Class)
+		and Gun.maxrof and Gun.LoaderCount > 0 and IsValid(Loader)
+
+	if CanUseLoader then
+		local CrewReload = Loader.Stamina / 100
+		return math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, DefaultReloadTime), Loader
+	end
+
+	return math.max(DefaultReloadTime, LowestReloadTime)
+end
+
+local function RefreshGunRateOfFire(Gun, AmmoEnt)
+	local BulletData
+	local RoFMul
+	if IsValid(AmmoEnt) and AmmoEnt.BulletData then
+		BulletData = AmmoEnt.BulletData
+		RoFMul = AmmoEnt.RoFMul
+	elseif Gun.BulletData and Gun.BulletData.Type ~= "Empty" then
+		BulletData = Gun.BulletData
+		local Crate = BulletData.Crate and Entity(BulletData.Crate)
+		RoFMul = IsValid(Crate) and Crate.RoFMul or 0
+	end
+
+	local ReloadTime = GetGunReloadTime(Gun, BulletData, RoFMul)
+	if not ReloadTime then return false end
+
+	Gun.RateOfFire = 60 / ReloadTime
+	Wire_TriggerOutput(Gun, "Fire Rate", Gun.RateOfFire)
+
+	return true
+end
+
 function ENT:Initialize()
 
 	self.ReloadTime          = 1
@@ -67,7 +116,7 @@ function ENT:Initialize()
 	self.CanLegalCheck		= true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "gun-removed") end
+		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "gun-removed") end
 	end)
 end
 
@@ -152,7 +201,7 @@ do
 		local Gun = ents.Create("acf_gun")
 		if not IsValid(Gun) then return false end
 
-		if not ACE_CheckGun( Id ) then
+		if not ACE.CheckGun( Id ) then
 			Id = BackComp[Id] or "100mmC"
 		end
 
@@ -318,17 +367,17 @@ function ENT:UpdateOverlayText()
 
 	text = text .. "\nRounds Per Minute: " .. math.Round( self.RateOfFire or 0, 2 )
 
-	if ACE_GetGunFirepowerReadout then
-		local readout = ACE_GetGunFirepowerReadout(self)
+	if ACE.GetGunFirepowerReadout then
+		local readout = ACE.GetGunFirepowerReadout(self)
 		if readout then
 			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine
-				and ACE_GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE.GetRoundLethalityLine
+				and ACE.GetRoundLethalityLine(readout.Round, true)
 			if roundLine then text = text .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
+			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
 			if floorLine then text = text .. "\n" .. floorLine end
 		end
 	end
@@ -355,7 +404,7 @@ end
 
 local function IsInRetDist( enta, entb, Distance )
 	if not IsValid(enta) or not IsValid(entb) then return end
-	return ACE_InDist( enta:GetPos(), entb:GetPos(), Distance )
+	return ACE.InDist( enta:GetPos(), entb:GetPos(), Distance )
 end
 
 local BreakSoundTbl = {
@@ -405,10 +454,10 @@ function ENT:Link( Target )
 
 		self.HasGunner = true
 		Target.LinkedGun = self
+		RefreshGunRateOfFire(self)
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gunner-linked" )
-			ACE_PointsInputChanged( Target, "gunner-linked" )
+		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE.PointsInputChanged({ self, Target }, "gunner-linked")
 		end
 		return true, "Link successful!"
 
@@ -440,10 +489,10 @@ function ENT:Link( Target )
 
 		self.LoaderCount = self.LoaderCount + 1
 		Target.LinkedGun = self
+		RefreshGunRateOfFire(self)
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "loader-linked" )
-			ACE_PointsInputChanged( Target, "loader-linked" )
+		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE.PointsInputChanged({ self, Target }, "loader-linked")
 		end
 		return true, "Link successful!"
 
@@ -488,22 +537,12 @@ function ENT:Link( Target )
 			end)
 		end
 
-		local ReloadBuff = 1
-		if not (self.Class == "AC" or self.Class == "MG" or self.Class == "RAC" or self.Class == "HMG" or self.Class == "GL" or self.Class == "SA") then
-			ReloadBuff = 1.25-(self.LoaderCount * 0.25)
-		end
-
-
-		self.ReloadTime = math.max(( ( math.max(Target.BulletData.RoundVolume,self.MinLengthBonus) / 500 ) ^ 0.60 ) * self.RoFmod * self.PGRoFmod * ReloadBuff, self.ROFLimit)
-		self.RateOfFire = 60 / self.ReloadTime
-
-		Wire_TriggerOutput( self, "Fire Rate", self.RateOfFire )
+		RefreshGunRateOfFire(self, Target)
 		Wire_TriggerOutput( self, "Muzzle Weight", math.floor( Target.BulletData.ProjMass * 1000 ) )
 		Wire_TriggerOutput( self, "Muzzle Velocity", math.floor( Target.BulletData.MuzzleVel * ACF.VelScale ) )
 
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-ammo-linked" )
-			ACE_PointsInputChanged( Target, "gun-ammo-linked" )
+		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE.PointsInputChanged({ self, Target }, "gun-ammo-linked")
 		end
 		return true, "Link successful!"
 
@@ -538,9 +577,9 @@ function ENT:Unlink( Target )
 	end
 
 	if Success then
-		if ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-unlinked" )
-			ACE_PointsInputChanged( Target, "gun-unlinked" )
+		RefreshGunRateOfFire(self)
+		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE.PointsInputChanged({ self, Target }, "gun-unlinked")
 		end
 		return true, "Unlink successful!"
 	else
@@ -578,7 +617,7 @@ function ENT:TriggerInput(iname, value)
 		-- Triggered to fire if conditions are met
 		if self.NextFire < CurTime() then
 			-- Check if it's time to fire
-			self.User = ACE_GetWeaponUser(self, self.Inputs.Fire.Src)
+			self.User = ACE.GetWeaponUser(self, self.Inputs.Fire.Src)
 			if not IsValid(self.User) then
 				self.User = self:CPPIGetOwner()
 			end
@@ -612,8 +651,11 @@ function ENT:TriggerInput(iname, value)
 			self.ROFLimit = 0
 		end
 
-		if oldLimit ~= self.ROFLimit and ACE_PointsInputChanged then
-			ACE_PointsInputChanged( self, "gun-rof-limit" )
+		if oldLimit ~= self.ROFLimit then
+			RefreshGunRateOfFire(self)
+			if ACE.PointsInputChanged then
+				ACE.PointsInputChanged(self, "gun-rof-limit")
+			end
 		end
 	end
 end
@@ -624,7 +666,7 @@ function ENT:Heat_Function()
 
 	--print(DeltaTime)
 
-	self.Heat = ACE_HeatFromGun( self , self.Heat, self.DeltaTime )
+	self.Heat = ACE.HeatFromGun( self , self.Heat, self.DeltaTime )
 	Wire_TriggerOutput(self, "Heat", math.Round(self.Heat))
 
 	-- TODO: instead of breaking the gun by heat, decrease accurancy and jam it
@@ -920,7 +962,7 @@ do
 			return
 		end
 
-		ACE_DoContraptionLegalCheck(self)
+		ACE.DoContraptionLegalCheck(self)
 
 		local bool = true
 
@@ -1035,53 +1077,9 @@ function ENT:LoadAmmo( AddTime, Reload )
 		self.BulletData = AmmoEnt.BulletData
 		self.BulletData.Crate = AmmoEnt:EntIndex()
 
-		local Adj = not self.BulletData.LengthAdj and 1 or self.BulletData.LengthAdj --FL firerate bonus adjustment
-		local curLoaderStamina = 100
-
-		local curLoader = self:ChooseLoader()
-		if IsValid(curLoader) then
-			curLoaderStamina = curLoader.Stamina
-		end
-
-		local maxRof = self.ROFLimit
-
-		if self.maxrof and self.ROFLimit ~= 0  then
-			maxRof = math.min(self.maxrof, self.ROFLimit)
-		elseif self.maxrof and self.ROFLimit == 0 then
-			maxRof = self.maxrof
-		end
-
-		-- Define a table of valid classes
-		local invalidClasses = {"AC", "MG", "RAC", "HMG", "GL", "SA"}
-
-		local fireRateModifier = self.RoFmod * self.PGRoFmod * (AmmoEnt.RoFMul + 1)
-		local defaultReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus / Adj) / 500) ^ 0.60) * fireRateModifier
-		local lowestReloadTime = defaultReloadTime
-
-		if maxRof > 0 then
-			lowestReloadTime = 60 / maxRof
-		end
-
-		--print(maxRof)
-
-		-- Check if self.Class is in the invalidClasses table
-		if not ACE_table_contains(invalidClasses, self.Class) and self.maxrof then
-
-			if self.LoaderCount > 0 and IsValid(curLoader) then -- if loaders are linked then
-
-				local CrewReload = curLoaderStamina / 100
-				local reloadTime = lowestReloadTime / CrewReload -- in seconds!!!!
-
-				self.ReloadTime = math.Clamp(reloadTime, lowestReloadTime, defaultReloadTime)
-
-				--print(lowestReloadTime, defaultReloadTime)
-				curLoader:DecreaseStamina()
-			else --no loader
-				self.ReloadTime = math.max(defaultReloadTime, lowestReloadTime)
-			end
-		else -- gun cannot have loader
-			self.ReloadTime = math.max(defaultReloadTime, lowestReloadTime)
-		end
+		local ReloadTime, Loader = GetGunReloadTime(self, AmmoEnt.BulletData, AmmoEnt.RoFMul)
+		self.ReloadTime = ReloadTime
+		if IsValid(Loader) then Loader:DecreaseStamina() end
 
 		Wire_TriggerOutput(self, "Loaded", self.BulletData.Type)
 
@@ -1212,6 +1210,8 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
+	local pointSources = { self }
+	self._ACEPointsSuppress = true
 
 	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
 
@@ -1224,6 +1224,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 				local Ammo = CreatedEntities[ AmmoID ]
 
 				if IsValid(Ammo) then
+					pointSources[#pointSources + 1] = Ammo
 
 					if Ammo:GetClass() == "acf_ammo" then
 						self:Link( Ammo )
@@ -1241,6 +1242,11 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 		Ent.EntityMods.ACFAmmoLink = nil
 	end
 
+	self._ACEPointsSuppress = nil
+
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste( self, Player, Ent, CreatedEntities )
+	if ACE.PointsInputChanged then
+		ACE.PointsInputChanged(pointSources, "gun-links-pasted")
+	end
 end

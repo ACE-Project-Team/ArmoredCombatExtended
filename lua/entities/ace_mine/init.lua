@@ -107,7 +107,7 @@ do
 
 		local HEWeight = self.HEWeight
 		local FragMass = self.FragMass
-		local Radius = ACE_CalculateHERadius( HEWeight )
+		local Radius = ACE.CalculateHERadius( HEWeight )
 		local ExplosionOrigin = self:LocalToWorld(Vector(0,0,5))
 
 		ACF_HE( ExplosionOrigin, Vector(0,0,1), HEWeight, FragMass, self.DamageOwner, self, self) --0.5 is standard antipersonal mine
@@ -183,7 +183,7 @@ do
 
 	local MineTable = ACE.MineData
 
-	function ACE_CreateMine( MineId, Pos, Angle, Owner )
+	function ACE.CreateMine( MineId, Pos, Angle, Owner )
 		if not IsValid(Owner) then return end
 
 		VerifyMineLimits(Owner)
@@ -241,3 +241,5 @@ do
 		end
 	end
 end
+
+ACE_CreateMine = ACE.CreateMine

@@ -52,7 +52,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 
 	Mat = Mat or "RHA"
 
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
@@ -85,7 +85,7 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 	ent.ACF.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
-	ACE_MarkArmorDirty(con, ent, "armor-expression2")
+	ACE.MarkArmorDirty(con, ent, "armor-expression2")
 
 end
 
@@ -1221,7 +1221,7 @@ do
 	e2function number entity:acfPenetration()
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		return ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
 	end
@@ -1231,7 +1231,7 @@ do
 	e2function number entity:acfPenetration(number index)
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		local displayData = ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData)
 
@@ -1249,7 +1249,7 @@ do
 	e2function number entity:acfBlastRadius()
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		local type = this.BulletData.Type
 

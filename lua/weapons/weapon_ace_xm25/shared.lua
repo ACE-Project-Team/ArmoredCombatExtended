@@ -120,7 +120,7 @@ function SWEP:SecondaryAttack()
 				self:SetPg(GetConVar("sv_gravity"):GetInt() * -1)
 			end
 
-			ACE_SendNotification(owner, "Fuse Delay: " .. (self.FuseDelay > 0 and (math.Round(self.FuseDelay * 184.871) .. " m") or "None"), 2)
+			ACE.SendNotification(owner, "Fuse Delay: " .. (self.FuseDelay > 0 and (math.Round(self.FuseDelay * 184.871) .. " m") or "None"), 2)
 			return
 
 	end

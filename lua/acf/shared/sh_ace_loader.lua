@@ -99,7 +99,7 @@ if CLIENT then
 	gun_base.guicreate           = function( _, Table ) ACFGunGUICreate( Table )		end or nil
 	gun_base.guiupdate           = function() return end
 
-	engine_base.guicreate        = function( _, tbl ) ACE_EngineGUI_Update( tbl )		end or nil
+	engine_base.guicreate        = function( _, tbl ) ACE.EngineGUI_Update( tbl )		end or nil
 
 	gearbox_base.guicreate       = function( _, tbl ) ACFGearboxGUICreate( tbl )		end or nil
 	gearbox_base.guiupdate       = function() return end
@@ -144,14 +144,14 @@ function ACF_defineGunClass( id, data )
 end
 
 -- Crewseat definition
-function ACE_DefineCrewseat( id, data )
+function ACE.DefineCrewseat( id, data )
 	data.id = id
 	table.Inherit( data, crewseat_base )
 	Crewseats[ id ] = data
 end
 
 -- Extras definition (wind sensor, gforce meter, etc.)
-function ACE_DefineExtras( id, data )
+function ACE.DefineExtras( id, data )
 	data.id = id
 	table.Inherit( data, extras_base )
 	Extras[ id ] = data
@@ -168,12 +168,12 @@ function ACF_defineGun( id, data )
 end
 
 -- Muzzleflash definition. The definitions are likely to be placed at the same location as the gun itself
-function ACE_DefineMuzzleFlash(id, data)
+function ACE.DefineMuzzleFlash(id, data)
 	data.id = id
 	MuzzleFlashTable[ id ] = data
 end
 
-function ACE_DefineAmmoCrate( id, data )
+function ACE.DefineAmmoCrate( id, data )
 	data.id = id
 
 	-- Backwards/forwards compatibility for legacy typo key.
@@ -191,7 +191,7 @@ function ACE_DefineAmmoCrate( id, data )
 end
 
 -- Legacy Ammo crate definition
-function ACE_DefineLegacyAmmoCrate( id, data )
+function ACE.DefineLegacyAmmoCrate( id, data )
 	data.id = id
 	LegacyAmmoTable[ id ] = data
 end
@@ -259,7 +259,7 @@ function ACF_DefineRadar( id, data )
 end
 
 -- Explosive charge definition
-function ACE_DefineExplosive( id, data )
+function ACE.DefineExplosive( id, data )
 	data.id = id
 	table.Inherit( data, explosive_base )
 	ExplosiveTable[ id ] = data
@@ -319,20 +319,20 @@ function ACF_DefineVHeatSource( id, data )
 end
 
 --Step 2: gather specialized sounds. Normally sounds that have associated sounds into it. Literally using the string path as id.
-function ACE_DefineGunFireSound( id, data )
+function ACE.DefineGunFireSound( id, data )
 	data.id = id
 	GSoundData[id] = data
 end
 
 -- The model definition. This is where you can "add" scalable models.
-function ACE_DefineModelData( id, data )
+function ACE.DefineModelData( id, data )
 	data.id = id
 	ModelData[id] = data
 	ModelData[data.Model] = data -- I will allow both model or fast name as id.
 end
 
 -- Where you define a new Mine
-function ACE_DefineMine(id, data)
+function ACE.DefineMine(id, data)
 	data.id = id
 	MineData[id] = data
 end

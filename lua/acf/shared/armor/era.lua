@@ -114,7 +114,7 @@ if SERVER then
 			--print("----------------------------------------Boom")
 
 			local HEWeight  = math.Min(armor * 0.2, 200) -- #nonukespls
-			local Radius	= ACE_CalculateHERadius( HEWeight )
+			local Radius	= ACE.CalculateHERadius( HEWeight )
 			local Owner	= (CPPI and Entity:CPPIGetOwner()) or NULL
 			local EntPos	= Entity:GetPos()
 

@@ -397,8 +397,8 @@ function ENT:Think()
 
 				OutputPosition = BasePos + BaseInaccuracy
 
-				local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
-				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+				local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
+				local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
 
 
 				tableInsert(Owners, InsertionIndex, Owner:Nick())

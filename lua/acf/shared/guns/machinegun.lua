@@ -83,7 +83,7 @@ ACF_defineGun("20mmMG", {
 } )
 
 do
-	ACE_DefineMuzzleFlash("MG", {
+	ACE.DefineMuzzleFlash("MG", {
 
 		muzzlefunc = function( Effect )
 

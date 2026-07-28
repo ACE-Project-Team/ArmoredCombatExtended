@@ -290,7 +290,7 @@ function SWEP:AcquireLock()
 				end
 
 				dist = difpos:Length()
-				Heat = ACE_InfraredHeatFromProp(scanEnt, dist)
+				Heat = ACE.InfraredHeatFromProp(scanEnt, dist)
 			end
 
 			--Skip if not Hotter than AmbientTemp in deg C.

@@ -2,28 +2,22 @@ name: GLuaFixer
 
 on:
   push:
+    branches:
+      - dev
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
-      - 'tests/**'
-      - 'test.py'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
-      - 'tests/**'
-      - 'test.py'
       - '.glualint.json'
       - '.github/workflows/glualint.yml'
 
 permissions:
   contents: read
-
-concurrency:
-  group: ace-quality-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
 
 jobs:
   Lint:
@@ -33,6 +27,7 @@ jobs:
 
   OfflineTests:
     name: Offline definition tests
+    needs: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out ACE
@@ -41,8 +36,30 @@ jobs:
       - name: Run Python tests
         run: python -m unittest discover -s tests/python -p 'test_*.py' -v
 
+      - name: Emit static safety warnings
+        run: python tests/run_static_safety.py --report static_safety_report.json
+
+      - name: Validate headless scenario contracts
+        run: python tests/run_headless_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci --dry-run
+
+      - name: Validate performance scenario contracts
+        run: python tests/run_perf_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci-smoke
+
+      - name: Upload static safety report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: static-safety-report
+          path: static_safety_report.json
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install --yes luajit
+
+      - name: Run LuaJIT tests
+        run: python tests/run_luajit_tests.py .
+
   GLuaTest:
     name: Native GMod server tests
+    needs: Lint
     uses: CFC-Servers/GLuaTest/.github/workflows/run_tests.yml@735e52d20c69d14c9a2a8d42f3d6428d1af0936b # main, 2026-07-17
     with:
       branch: public

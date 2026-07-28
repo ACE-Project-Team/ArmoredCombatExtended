@@ -13,7 +13,7 @@ function EFFECT:Init( data )
 			Sound = ACFM.DefaultRadarSound
 		end
 
-		ACE_SimpleSound( Sound, Radar:WorldSpaceCenter(), SoundPitch, 1000 )
+		ACE.SimpleSound( Sound, Radar:WorldSpaceCenter(), SoundPitch, 1000 )
 	end
 end
 

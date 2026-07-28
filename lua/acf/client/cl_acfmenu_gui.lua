@@ -439,7 +439,7 @@ function PANEL:UpdateRoundCostPreview()
 
 	local DisplayTable = self.ActiveDisplayTable
 	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
-	if not ACF_GetRoundFromCVars or not ACE_Points_RoundFromBullet or not ACE_Points_BaseRoundCost then return end
+	if not ACF_GetRoundFromCVars or not ACE.Points_RoundFromBullet or not ACE.Points_BaseRoundCost then return end
 	if not IsValid(self.CustomDisplay) then return end
 
 	local RoundType = ACF.RoundTypes[DisplayTable.Type or ""]
@@ -452,10 +452,10 @@ function PANEL:UpdateRoundCostPreview()
 	BulletData.Type = DisplayTable.Type or RawData.Type
 	BulletData.Data7 = RawData.Data7
 
-	local Round = ACE_Points_RoundFromBullet(BulletData)
+	local Round = ACE.Points_RoundFromBullet(BulletData)
 	if not Round then return end
 
-	local Cost = string.Comma(math.Round(ACE_Points_BaseRoundCost(Round)))
+	local Cost = string.Comma(math.Round(ACE.Points_BaseRoundCost(Round)))
 	self:CPanelText("ACEBaseRoundCost", "Base Round Cost: " .. Cost .. "\nCrate Inventory Points: 0", "DermaDefaultBold")
 	self.CustomDisplay:PerformLayout()
 
@@ -1409,7 +1409,7 @@ function ACFCrewMenuGUICreate(Table)
 
 	local function GetCameraForPose(poseName)
 		-- Check if it's a standing pose
-		if ACE_IsStandingPose and ACE_IsStandingPose(poseName) then
+		if ACE.IsStandingPose and ACE.IsStandingPose(poseName) then
 			return CameraPresets.Standing
 		end
 
@@ -1718,7 +1718,7 @@ function ACEExplosiveGUICreate(Table)
 		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
 		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
 		local radius     = fillerMass ^ 0.33 * 8
-		local points = ACE_Points_ChargeCost and math.Round(ACE_Points_ChargeCost(fillerMass), 1) or 0
+		local points = ACE.Points_ChargeCost and math.Round(ACE.Points_ChargeCost(fillerMass), 1) or 0
 		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
 			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
 			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"

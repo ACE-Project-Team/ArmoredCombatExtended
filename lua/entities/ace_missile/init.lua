@@ -2,6 +2,7 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
+local TraceMissileLOS = include("acf/shared/sh_ace_missiletrace.lua")
 
 DEFINE_BASECLASS("acf_explosive")
 
@@ -481,7 +482,11 @@ function ENT:Think()
 		--Detonation by fuse, if available
 
 		if self.CanDetonate == true then
-			local tr = util.QuickTrace(Pos + self.Flight * DeltaTime * -30, self.Flight * DeltaTime * 79, {self})
+			local tr = TraceMissileLOS(
+				Pos + self.Flight * DeltaTime * -30,
+				Pos + self.Flight * DeltaTime * 49,
+				{self}
+			)
 
 			--[[
 			self.LOSTraceData.start = Pos + self.Flight * DeltaTime * -30

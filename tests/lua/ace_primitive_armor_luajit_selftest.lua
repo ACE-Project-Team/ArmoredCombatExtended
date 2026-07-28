@@ -107,8 +107,32 @@ rebuilt.ACF = {
 }
 local beforeRebuildActivations = activations
 hook.Stored.Primitive_PreRebuildPhysics.ACE_RememberPrimitiveCollisionGroup(rebuilt)
-hook.Stored.Primitive_PostRebuildPhysics.ACE_PrimitiveArmorRecalc(rebuilt, {})
+hook.Stored.Primitive_PostRebuildPhysics.ACE_PrimitiveArmorRecalc(rebuilt, { mass = 100 })
+assert(activations == beforeRebuildActivations, "ordinary Primitive rebuild finalized before final mass was applied")
+assert(rebuilt.ACE_PrimitiveSavedArmor == nil, "ordinary Primitive rebuild captured stale armor")
+assert(type(ACE.PrimitivePropertiesApplied) == "function", "final physics callback is not exposed")
+ACE.PrimitivePropertiesApplied(rebuilt)
 assert(activations == beforeRebuildActivations + 1, "ordinary Primitive rebuild did not recalculate armor")
 assert(rebuilt.ACF.Area == 100, "ordinary Primitive rebuild preserved stale geometry")
+
+-- AdvDupe finishes after Primitive's ordinary lifecycle has already completed.
+-- That ordering is what legacy config-only dupes used to lose.
+local delayedLegacy = newPrimitive()
+hook.Stored.Primitive_PreRebuildPhysics.ACE_RememberPrimitiveCollisionGroup(delayedLegacy)
+hook.Stored.Primitive_PostRebuildPhysics.ACE_PrimitiveArmorRecalc(delayedLegacy, { mass = 100 })
+ACE.PrimitivePropertiesApplied(delayedLegacy)
+local beforeDelayedPaste = activations
+pasted({ {
+	CreatedEntities = { [3] = delayedLegacy },
+	EntityList = {
+		[3] = {
+			EntityMods = { acfsettings = { Material = "RHA", Ductility = -40 } },
+		},
+	},
+} })
+
+assert(activations == beforeDelayedPaste + 1, "late AdvDupe Primitive armor did not reapply")
+assert(delayedLegacy.ACF.Material == "RHA", "late legacy material was not restored")
+assert(delayedLegacy.ACF.Ductility == -0.4, "late legacy ductility was not restored")
 
 print("ACE Primitive armor LuaJIT self-test: PASS")

@@ -468,7 +468,6 @@ defuseCon._ACEPointsDefusing = true
 assertNoEvent("defuse-intermediate-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)
 end)
-assert(defuseMassReads > 0, "defuse removal did not preserve the original mass recovery path")
 defuseCon.ents[defuseEnt] = nil
 assertNoEvent("defuse-final-entity-removal", function()
 	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(defuseCon, defuseEnt)

@@ -59,7 +59,7 @@ return {
 				ACE.EnsurePointsState(second)
 				local batches = 0
 				local compatibility = 0
-				local recalculations = 0
+				local recalculations = {}
 				local hookName = "ACE_GLuaTest_Invalidation_" .. tostring(SysTime())
 
 				hook.Add("ACE_OnContraptionsPointsInvalidated", hookName, function(event)
@@ -72,8 +72,8 @@ return {
 				hook.Add("ACE_OnContraptionPointsInvalidated", hookName .. "_compat", function()
 					compatibility = compatibility + 1
 				end)
-				hook.Add("ACE_OnContraptionPointsRecalculated", hookName .. "_recalc", function()
-					recalculations = recalculations + 1
+				hook.Add("ACE_OnContraptionPointsRecalculated", hookName .. "_recalc", function(con)
+					recalculations[con] = (recalculations[con] or 0) + 1
 				end)
 
 				local event = ACE.NotifyPointsInvalidated({ first, second }, "native-cross-link", {
@@ -89,9 +89,11 @@ return {
 				expect(second.ACEPointsGeneration).to.equal(1)
 				expect(batches).to.equal(1)
 				expect(compatibility).to.equal(2)
-				expect(recalculations).to.equal(0)
+				expect(recalculations[first]).to.equal(nil)
+				expect(recalculations[second]).to.equal(nil)
 				ACE.FlushQueuedPointChanges()
-				expect(recalculations).to.equal(2)
+				expect(recalculations[first]).to.equal(1)
+				expect(recalculations[second]).to.equal(1)
 
 				hook.Remove("ACE_OnContraptionsPointsInvalidated", hookName)
 				hook.Remove("ACE_OnContraptionPointsInvalidated", hookName .. "_compat")

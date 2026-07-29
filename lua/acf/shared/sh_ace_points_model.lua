@@ -75,6 +75,12 @@ local TYPE_MAP = {      -- round type id -> damage family
 	HESH = "HESH",
 	SM = "SM", FLR = "SM", CHF = "SM", FL = "FL", Refill = "Refill",
 }
+local function hasHEPayload(round, fam)
+	if fam == "HE" then return true end
+	if fam ~= "APHE" then return false end
+
+	return (tonumber(round.blastMass) or 0) > 0
+end
 -- HEAT jet family: the shaped-charge slug caliber (not the shell body) sets the area.
 local HEAT_FAMILY = { HEAT = true, HEATFS = true, THEAT = true, THEATFS = true, CHEAT = true, GLATGM = true }
 local UTILITY     = { SM = true, Refill = true }   -- smoke, chaff, flares, and refill carry no damage
@@ -120,12 +126,12 @@ function ACE.Points.PostPenMult(round)
 	return base + hole + blast
 end
 
--- Penetration used for lethality: raw maxPen, but HE/HESH floor it at a blast-equivalent so
--- big fillers still register a threat even with token stated pen.
+-- Penetration used for lethality: raw maxPen, but HE/APHE/HESH payloads floor it at a
+-- blast-equivalent so big fillers still register a threat even with token stated pen.
 function ACE.Points.LethalityPen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
-	if fam == "HE" or fam == "HESH" then
+	if hasHEPayload(round, fam) or fam == "HESH" then
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, HE_EQUIV * blast ^ (2.0 / 3.0))
 	end
@@ -145,7 +151,7 @@ end
 -- Intrinsic value beyond direct lethality terms; shared by billing and explanatory readouts.
 function ACE.Points.IntrinsicValueMul(round)
 	local fam = TYPE_MAP[round and round.Type or "AP"] or "AP"
-	return fam == "HE" and HE_INTRINSIC_VALUE_MULT or 1.0
+	return hasHEPayload(round, fam) and HE_INTRINSIC_VALUE_MULT or 1.0
 end
 
 -- Intrinsic cost of one configured round. Inventory count is not billed, but every weapon
@@ -163,13 +169,13 @@ function ACE.Points.Gate(pen)
 	return pen / (pen + Model.P50)
 end
 
--- Penetration the GATE judges a round by. HE uses its blast lethality reach because splash,
+-- Penetration the GATE judges a round by. HE/APHE payloads use their blast lethality reach because splash,
 -- module damage, and soft-target effects create combat value without literal armor penetration;
 -- HESH retains only the damage code's literal blast-penetration channel.
 function ACE.Points.GatePen(round)
 	local pen = tonumber(round.maxPen) or 0.0
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
-	if fam == "HE" then
+	if hasHEPayload(round, fam) then
 		pen = max(pen, ACE.Points.LethalityPen(round))
 		local blast = tonumber(round.blastMass) or 0.0
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
@@ -374,6 +380,10 @@ end
 -- Uses MAX armour/health (static design). Material ke/chem via the curated MATERIAL_EFF above.
 function ACE.Points.PropArmor(ent)
 	if not ACE.IsEnt(ent) then return nil end
+	if ent.ACE_PrimitiveArmorPending or ent.ACE_PrimitivePropertiesPending
+		or ent.ACE_PrimitiveRestoreSavedArmor then
+		return nil
+	end
 
 	local cls = ent:GetClass() or ""
 	if cls:sub(1, 4) == "acf_" or cls:sub(1, 4) == "ace_" or cls:sub(1, 5) == "gmod_"
@@ -420,3 +430,8 @@ ACE_Points_RateFloor = ACE.Points.RateFloor
 ACE_Points_RoundFromBullet = ACE.Points.RoundFromBullet
 ACE_Points_RoundScore = ACE.Points.RoundScore
 ACE_Points_SustainedRps = ACE.Points.SustainedRps
+
+-- A few older consumers still address the migrated API as ACE.Points_<Name>.
+for name, fn in pairs(ACE.Points) do
+	ACE["Points_" .. name] = fn
+end

@@ -3,6 +3,7 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 ACE = {}
 function istable(value) return type(value) == "table" end
+function ACE.IsEnt(value) return value ~= nil end
 
 dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
 
@@ -19,5 +20,14 @@ assert(ACE.Points_GatePen(loaded) > ACE.Points_GatePen(empty),
 	"loaded APHE filler must add HE-equivalent threat reach")
 assert(ACE.Points_BaseRoundCost(loaded) > ACE.Points_BaseRoundCost(empty),
 	"loaded APHE filler must add round cost")
+
+local primitive = {
+	GetClass = function() return "prop_physics" end,
+	ACF = { MaxArmour = 100, MaxHealth = 100 },
+}
+assert(ACE.Points.PropArmor(primitive) ~= nil, "ordinary prop armor must remain priced")
+primitive.ACE_PrimitivePropertiesPending = true
+assert(ACE.Points.PropArmor(primitive) == nil,
+	"Primitive armor must stay out of pricing while its properties are pending")
 
 print("ACE points model LuaJIT self-test: PASS")

@@ -75,7 +75,7 @@ local function RestoreLegacyArmorSettings(ent)
 	if settings.Material ~= nil then acf.Material = settings.Material end
 	if settings.Ductility ~= nil then acf.Ductility = math.Clamp(settings.Ductility, -80, 80) * 0.01 end
 
-	-- A legacy dupe has no derived ACE values to restore. Force ACE.Activate to derive
+	-- A legacy dupe has no derived ACF values to restore. Force ACE.Activate to derive
 	-- fresh armor from the final Primitive mesh and already-restored mass modifier.
 	acf.Area = nil
 	acf.PhysObj = nil

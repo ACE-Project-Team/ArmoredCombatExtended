@@ -347,7 +347,8 @@ do
 
 	-- Re-apply a gun in place when the ACF menu tool is used on an existing one, mirroring the
 	-- gearbox/engine/ammo behaviour. Clicking the same gun refreshes it without a respawn (wire
-	-- and ammo/crew links are kept); switching to another same-model gun swaps the stats over.
+	-- and ammo/crew links are kept); picking a different gun swaps the stats and, when needed, the
+	-- model over, keeping welds/parents intact so the gun stays mounted (see ACE.SaveEntity).
 	function ENT:Update( ArgsTable )
 		-- ArgsTable is the ACFCvars payload with the firing player, trace pos and angle prepended,
 		-- so the gun id lives at index 4 (matching the "id" entry registered above).
@@ -362,14 +363,12 @@ do
 			return false, "Invalid gun id!"
 		end
 
-		if Lookup.model ~= self.Model then
-			return false, "The new gun must use the same model!"
-		end
-
 		if self.Id ~= Id then
 			local ClassData = GunClasses[Lookup.gunclass]
+			local OldModel    = self.Model
 
 			self.Id           = Id
+			self.Model        = Lookup.model
 			self.Caliber      = Lookup.caliber
 			self.Mass         = Lookup.weight
 			self.Class        = Lookup.gunclass
@@ -424,9 +423,46 @@ do
 			self:SetNWString( "Sound", self.Sound )
 			self:SetNWInt( "SoundPitch", self.SoundPitch )
 
+			-- Switching gun id can also switch model (e.g. 100mm -> 120mm). Rebuild the model and
+			-- physics in place, preserving welds/parents so the gun stays on its mount, then refresh
+			-- the muzzle attachment and cached inertia the way a fresh spawn does. Mirrors ACF-3.
+			if self.Model ~= OldModel then
+				ACE.SaveEntity( self )
+
+				self:SetModel( self.Model )
+				self:PhysicsInit( SOLID_VPHYSICS )
+				self:SetMoveType( MOVETYPE_VPHYSICS )
+				self:SetSolid( SOLID_VPHYSICS )
+
+				ACE.RestoreEntity( self )
+
+				local Muzzle = self:GetAttachment( self:LookupAttachment( "muzzle" ) )
+				if Muzzle then self.Muzzle = self:WorldToLocal( Muzzle.Pos ) end
+
+				local longbarrel = ClassData.longbarrel
+				if longbarrel ~= nil then
+					timer.Simple( 0.25, function()
+						if not IsValid( self ) then return end
+						if self:GetBodygroup( longbarrel.index ) == longbarrel.submodel then
+							local LongMuzzle = self:GetAttachment( self:LookupAttachment( longbarrel.newpos ) )
+							if LongMuzzle then self.Muzzle = self:WorldToLocal( LongMuzzle.Pos ) end
+						end
+					end )
+				end
+			end
+
 			local phys = self:GetPhysicsObject()
 			if IsValid( phys ) then
 				phys:SetMass( self.Mass )
+				self.ModelInertia = 0.99 * phys:GetInertia() / phys:GetMass() -- giving a little wiggle room
+			end
+
+			-- The new model's hull may differ in size, so rebuild the ACF health/armor for it.
+			-- ACF_Activate caches ACF.Area, so clear it to force a recompute; Recalc keeps the
+			-- current damage as a percentage rather than resetting the gun to full health.
+			if self.Model ~= OldModel then
+				self.ACF.Area = nil
+				ACF_Activate( self, 1 )
 			end
 
 			-- Ammo crates are keyed to the old gun id, so any that no longer match are dropped

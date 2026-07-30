@@ -497,6 +497,102 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 end
 
 ----------------------------------------------------------
+-- Entity constraint/physics save & restore.
+--
+-- Some ACF components rebuild their physics object when updated in place
+-- (guns switching model, scalable crates, etc). Re-initialising physics drops
+-- every constraint attached to the old physics object, so a welded/roped gun
+-- would fall off its hull. Saving the constraints first and rebuilding them
+-- after keeps the contraption intact across the model swap.
+--
+-- Adapted from ACF-3's ACF.SaveEntity/RestoreEntity (lua/acf/core/utilities/util_sv.lua).
+----------------------------------------------------------
+do
+	local ConstraintTypes = duplicator.ConstraintType
+	local Saved = {}
+
+	local function ResetCollisions( Entity )
+		if not IsValid( Entity ) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+		if not IsValid( PhysObj ) then return end
+
+		PhysObj:EnableCollisions( true )
+	end
+
+	-- Similar to constraint.RemoveAll, but leaves Entity.Constraints for the caller.
+	local function ClearConstraints( Constraints )
+		for _, Constraint in pairs( Constraints ) do
+			if IsValid( Constraint ) then
+				ResetCollisions( Constraint.Ent1 )
+				ResetCollisions( Constraint.Ent2 )
+
+				Constraint:Remove()
+			end
+		end
+	end
+
+	local function RestoreConstraint( Data )
+		local Factory = ConstraintTypes[ Data.Type ]
+		if not Factory then return end
+
+		local Args = {}
+		for Index, Name in ipairs( Factory.Args ) do
+			Args[ Index ] = Data[ Name ]
+		end
+
+		Factory.Func( unpack( Args ) )
+	end
+
+	-- Snapshot an entity's constraints and physics state, then strip the
+	-- constraints so a following PhysicsInit doesn't leave dangling welds.
+	function ACE.SaveEntity( Entity )
+		if not IsValid( Entity ) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+		if not IsValid( PhysObj ) then return end
+
+		local Constraints = constraint.GetTable( Entity )
+
+		Saved[ Entity ] = {
+			Constraints = Constraints,
+			Gravity     = PhysObj:IsGravityEnabled(),
+			Motion      = PhysObj:IsMotionEnabled(),
+			Material    = PhysObj:GetMaterial(),
+		}
+
+		ClearConstraints( Constraints )
+
+		-- If the entity dies before RestoreEntity runs, drop the snapshot.
+		Entity:CallOnRemove( "ACE_RestoreEntity", function()
+			Saved[ Entity ] = nil
+		end )
+	end
+
+	-- Rebuild the constraints and physics state saved by ACE.SaveEntity.
+	function ACE.RestoreEntity( Entity )
+		if not IsValid( Entity ) then return end
+
+		local Data = Saved[ Entity ]
+		if not Data then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+		if IsValid( PhysObj ) then
+			PhysObj:EnableGravity( Data.Gravity )
+			PhysObj:EnableMotion( Data.Motion )
+			PhysObj:SetMaterial( Data.Material )
+		end
+
+		for _, Constraint in ipairs( Data.Constraints ) do
+			RestoreConstraint( Constraint )
+		end
+
+		Saved[ Entity ] = nil
+		Entity:RemoveCallOnRemove( "ACE_RestoreEntity" )
+	end
+end
+
+----------------------------------------------------------
 -- Returns a table of all physically connected entities
 -- ignoring ents attached by only nocollides
 ----------------------------------------------------------

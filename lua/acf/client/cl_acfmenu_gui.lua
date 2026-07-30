@@ -901,7 +901,9 @@ do
 			local Y = math.Round(acfmenupanel.AmmoPanelConfig["Crate_Width"], 1 )
 			local Z = math.Round(acfmenupanel.AmmoPanelConfig["Crate_Height"], 1)
 
+			local Shape = acfmenupanel.AmmoPanelConfig["Crate_Shape"] or "Box"
 			local Id = X .. ":" .. Y .. ":" .. Z
+			if Shape ~= "Box" then Id = Id .. ":" .. Shape end
 
 			acfmenupanel.AmmoData["Id"] = Id
 			RunConsoleCommand( "acfmenu_id", Id )
@@ -937,6 +939,7 @@ do
 		acfmenupanel.AmmoPanelConfig["Crate_Length"]  = 10
 		acfmenupanel.AmmoPanelConfig["Crate_Width"]	= 10
 		acfmenupanel.AmmoPanelConfig["Crate_Height"]  = 10
+		acfmenupanel.AmmoPanelConfig["Crate_Shape"]   = "Box"
 
 	end
 
@@ -1030,6 +1033,24 @@ do
 			CreateIdForCrate( MainPanel )
 		end
 		CrateNewPanel:AddItem(HeightSlider)
+
+		acfmenupanel:CPanelText("Crate_shape_desc", "\nCrate shape. Non-box shapes hold fewer rounds, matching the volume they fill.", nil, CrateNewPanel)
+
+		-- Keep this list in sync with the CrateShapes table in acf_ammo/init.lua.
+		local ShapeChoices = { "Box", "Cylinder" }
+
+		local ShapeCombo = vgui.Create( "DComboBox" )
+		ShapeCombo:SetSortItems( false )
+		for _, ShapeName in ipairs( ShapeChoices ) do
+			ShapeCombo:AddChoice( ShapeName )
+		end
+		ShapeCombo:SetValue( acfmenupanel.AmmoPanelConfig["Crate_Shape"] or "Box" )
+
+		function ShapeCombo:OnSelect( _, value )
+			acfmenupanel.AmmoPanelConfig["Crate_Shape"] = value
+			CreateIdForCrate( MainPanel )
+		end
+		CrateNewPanel:AddItem(ShapeCombo)
 
 	end
 

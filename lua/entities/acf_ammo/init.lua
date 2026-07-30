@@ -143,6 +143,8 @@ function ENT:Initialize()
 	self.AmmoMassMax         = 1
 	self.Caliber             = 1
 	self.RoFMul              = 1
+	self.CrateShape          = "Box"	-- Scalable crate shape; overwritten on spawn for shaped crates
+	self.VolumeRatio         = 1		-- Fraction of the bounding box the shape fills (Box = 1)
 	self.LastMass            = 1
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
@@ -298,11 +300,38 @@ end
 
 do
 
+	-- Shapes a scalable crate is allowed to take. Box is the default; Cylinder packs the
+	-- same bounding box but only holds the round count its volume allows (see VolumeRatio).
+	-- Keep this in sync with the shape list offered in the crate menu (cl_acfmenu_gui.lua).
+	local CrateShapes = {
+		Box      = true,
+		Cylinder = true,
+	}
+
 	-- Parses + clamps an "L:W:H" string into a Vector. Shared with fuel tanks and
 	-- scalable explosives (see ACE.Scalable.ParseScale); crates pass the crate size
 	-- limits as their bounds.
 	local function ConvertStringScale( ScaleId )
 		return ACE.Scalable.ParseScale( ScaleId, { min = ACE.CrateMinimumSize, max = ACE.CrateMaximumSize } )
+	end
+
+	-- A scalable crate id is "L:W:H" or "L:W:H:Shape". Splits off the optional shape token
+	-- (defaulting to Box), validates it, and returns the clamped size Vector plus the shape.
+	-- A Vector id (from an older dupe) is passed straight through as a Box crate.
+	local function ParseCrateScale( Id )
+		if isvector( Id ) then return ConvertStringScale( Id ), "Box" end
+		if not isstring( Id ) then return nil, "Box" end
+
+		local Shape = "Box"
+		local parts = string.Explode( ":", Id )
+		if #parts >= 4 then
+			Shape = parts[4]
+			Id = parts[1] .. ":" .. parts[2] .. ":" .. parts[3]
+		end
+
+		if not CrateShapes[Shape] then Shape = "Box" end
+
+		return ConvertStringScale( Id ), Shape
 	end
 
 	-- If the incoming Id belongs to an invalid ammo crate, but belongs to the legacy crates list, convert it into its scalable counterpart.
@@ -334,20 +363,32 @@ do
 			if not ACE_CheckAmmo( Id ) then
 
 				local Scale
+				local Shape = "Box"
 
 				if isstring(Id) and LegacyAmmoTable[Id] then
 					Scale = CreateLegacyScale(Id, Ammo)
 				else
-					Scale = ConvertStringScale(Id)
+					Scale, Shape = ParseCrateScale(Id)
 				end
 
 				if isvector(Scale) then
 
-					local ModelData = ACE.ModelData["Box"]
+					local ModelData = ACE.ModelData[Shape] or ACE.ModelData["Box"]
 
-					Id = Scale
+					local BoxVolume   = Scale.x * Scale.y * Scale.z
+					local ShapeVolume = ModelData.volumefunction(Scale.x, Scale.y, Scale.z)
+
+					Ammo.CrateShape  = Shape
+					-- Fraction of the bounding box this shape actually fills, used to scale round
+					-- capacity so a cylinder holds less than the box it fits inside.
+					Ammo.VolumeRatio = BoxVolume > 0 and (ShapeVolume / BoxVolume) or 1
+
+					-- Store the normalized id so a dupe keeps the shape (Box stays "L:W:H" for back-compat).
+					Id = Shape == "Box"
+						and (Scale.x .. ":" .. Scale.y .. ":" .. Scale.z)
+						or (Scale.x .. ":" .. Scale.y .. ":" .. Scale.z .. ":" .. Shape)
 					Model = ModelData.Model
-					Weight = (Scale.x * Scale.y * Scale.z) / 200
+					Weight = ShapeVolume / 200
 					Dimensions = Scale
 
 					local DefaultSize    = ModelData.DefaultSize
@@ -528,6 +569,9 @@ function ENT:UpdateOverlayText()
 
 			local dims = x .. "x" .. y .. "x" .. z
 			text = text .. "\n\n Size: " .. dims
+			if self.CrateShape and self.CrateShape ~= "Box" then
+				text = text .. "\n Shape: " .. self.CrateShape
+			end
 		end
 
 		if self.IsTwoPiece then
@@ -684,6 +728,13 @@ do
 			if AmmoGunData.caliber >= 5 and WeaponType ~= "missile" and FpieceCap > FCap and self.BulletData.TwoPiece > 0 then
 				FCap = FpieceCap
 				self.IsTwoPiece = true
+			end
+
+			-- Shells are packed into the bounding box above; scale the count down to the fraction
+			-- the actual shape fills (Box = 1). Keep at least one round so a shaped crate is usable.
+			local Ratio = self.VolumeRatio or 1
+			if Ratio < 1 and FCap > 0 then
+				FCap = MaxValue(Floor(FCap * Ratio), 1)
 			end
 
 			Capacity	= FCap

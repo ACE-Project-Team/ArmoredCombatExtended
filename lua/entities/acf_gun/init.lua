@@ -114,6 +114,7 @@ function ENT:Initialize()
 	self.LastThink           = 0
 
 	self.CanLegalCheck		= true
+	self.CanUpdate			= true		-- Lets the ACF menu tool re-apply this gun in place instead of respawning it
 
 	self:CallOnRemove("ACE_Points", function(ent)
 		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "gun-removed") end
@@ -342,6 +343,117 @@ do
 
 		return Gun
 
+	end
+
+	-- Re-apply a gun in place when the ACF menu tool is used on an existing one, mirroring the
+	-- gearbox/engine/ammo behaviour. Clicking the same gun refreshes it without a respawn (wire
+	-- and ammo/crew links are kept); switching to another same-model gun swaps the stats over.
+	function ENT:Update( ArgsTable )
+		-- ArgsTable is the ACFCvars payload with the firing player, trace pos and angle prepended,
+		-- so the gun id lives at index 4 (matching the "id" entry registered above).
+		local Id = ArgsTable[4]
+
+		if not ACE.CheckGun( Id ) then
+			Id = BackComp[Id] or "100mmC"
+		end
+
+		local Lookup = GunTable[Id]
+		if not Lookup then
+			return false, "Invalid gun id!"
+		end
+
+		if Lookup.model ~= self.Model then
+			return false, "The new gun must use the same model!"
+		end
+
+		if self.Id ~= Id then
+			local ClassData = GunClasses[Lookup.gunclass]
+
+			self.Id           = Id
+			self.Caliber      = Lookup.caliber
+			self.Mass         = Lookup.weight
+			self.Class        = Lookup.gunclass
+			self.LinkRangeMul = math.max(Lookup.caliber / 10, 1) ^ 1.2
+			self.noloaders    = ClassData.noloader or nil
+			self.Inaccuracy   = ClassData.spread
+
+			self.RequiresGunner = false
+			local GunnerExcluded = Lookup.gunnerexception or false
+			if not GunnerExcluded and (self.Caliber * 10) > ACF.LargeGunsThreshold and ACF.LargeGunsRequireGunners ~= 0 then
+				self.RequiresGunner = true
+			end
+
+			if ClassData.color then
+				self:SetColor(Color(ClassData.color[1], ClassData.color[2], ClassData.color[3], 255))
+			end
+
+			self.PGRoFmod = Lookup.rofmod and math.max(0.01, Lookup.rofmod) or 1
+			self.maxrof   = Lookup.maxrof
+			self.MagSize  = 1
+
+			local Cal = self.Caliber
+			if Lookup.magsize then
+				self.MagSize = math.max(self.MagSize, Lookup.magsize)
+				self.Inputs  = WireLib.CreateInputs( self, Cal >= 3 and Inputs_Fuse or Inputs_NoFuse )
+			else
+				self.Inputs  = WireLib.CreateInputs( self, Cal >= 3 and Inputs_Fuse_noreload or Inputs_NoFuse_noreload )
+			end
+
+			self.Outputs = WireLib.CreateOutputs( self, Outputs_Default )
+			Wire_TriggerOutput(self, "Entity", self)
+
+			self.MagReload = 0
+			if Lookup.magreload then
+				self.MagReload = math.max(self.MagReload, Lookup.magreload)
+			end
+
+			self.MinLengthBonus = 0.5 * 3.1416 * (self.Caliber / 2) ^ 2 * Lookup.round.maxlength
+
+			self.Muzzleflash  = Lookup.muzzleflash or ClassData.muzzleflash
+			self.RoFmod       = ClassData.rofmod
+			self.Sound        = Lookup.sound or ClassData.sound
+			self.DefaultSound = self.Sound
+			self.SoundPitch   = 100
+			self.AutoSound    = ClassData.autosound and (Lookup.autosound or ClassData.autosound) or nil
+
+			self:SetNWInt( "Caliber", self.Caliber )
+			self:SetNWString( "WireName", Lookup.name )
+			self:SetNWString( "Class", self.Class )
+			self:SetNWString( "ID", self.Id )
+			self:SetNWString( "Muzzleflash", self.Muzzleflash )
+			self:SetNWString( "Sound", self.Sound )
+			self:SetNWInt( "SoundPitch", self.SoundPitch )
+
+			local phys = self:GetPhysicsObject()
+			if IsValid( phys ) then
+				phys:SetMass( self.Mass )
+			end
+
+			-- Ammo crates are keyed to the old gun id, so any that no longer match are dropped
+			-- rather than left silently feeding a mismatched gun.
+			local Dropped = 0
+			for _, Crate in ipairs( table.Copy( self.AmmoLink ) ) do
+				if IsValid( Crate ) and Crate.BulletData and Crate.BulletData.Id ~= self.Id then
+					self:Unlink( Crate )
+					if Crate.Unlink then Crate:Unlink( self ) end
+					Dropped = Dropped + 1
+				end
+			end
+
+			self:UpdateOverlayText()
+			RefreshGunRateOfFire(self)
+
+			if Dropped > 0 then
+				return true, "Gun updated. " .. Dropped .. " incompatible ammo crate(s) were unlinked."
+			end
+
+			return true, "Gun updated!"
+		end
+
+		self:UpdateOverlayText()
+		RefreshGunRateOfFire(self)
+
+		return true, "Gun refreshed!"
 	end
 end
 

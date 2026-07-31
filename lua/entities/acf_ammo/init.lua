@@ -788,11 +788,14 @@ function ENT:Think()
 	if not self.BulletData then return false end
 
 	if not ACF.IsDefaultActiveInputWired(self) then
-		self.Active = true
+		local active = ACF.GetDefaultActiveInputState(self)
+		self.Active = active
 
-		if self.Legal and not self.Load then
+		if active and self.Legal and not self.Load then
 			self.Load = true
 			self:FirstLoad()
+		elseif not active then
+			self.Load = false
 		end
 	end
 

@@ -682,10 +682,33 @@ local function GetDefaultActiveInput(ent, inputName)
 	local input = inputs and inputs[inputName or "Active"]
 
 	if input and input.Src == nil then
-		input.Value = 1
+		input.ACFDefaultValue = input.ACFDefaultValue or 1
+		input.Value = input.ACFDefaultValue
 	end
 
 	return input
+end
+
+function ACF.SetDefaultActiveInputState(ent, value, inputName)
+	local input = GetDefaultActiveInput(ent, inputName)
+
+	if input and input.Src == nil then
+		input.ACFDefaultValue = value ~= 0 and 1 or 0
+		input.Value = input.ACFDefaultValue
+
+		return true
+	end
+
+	return false
+end
+
+function ACF.HasDefaultActiveInputState(ent, inputName)
+	if not IsValid(ent) then return false end
+
+	local inputs = ent.Inputs
+	local input = inputs and inputs[inputName or "Active"]
+
+	return input and input.ACFDefaultValue ~= nil or false
 end
 
 function ACF.IsDefaultActiveInputWired(ent, inputName)
@@ -700,7 +723,8 @@ function ACF.GetDefaultActiveInputState(ent, value, inputName)
 	local legal = ent.Legal ~= false
 	local input = GetDefaultActiveInput(ent, inputName)
 
-	if not input or input.Src == nil then return legal end
+	if not input then return legal end
+	if input.Src == nil then return input.ACFDefaultValue ~= 0 and legal end
 
 	local wireValue = value
 	if wireValue == nil then wireValue = input.Value or 0 end
@@ -1458,5 +1482,3 @@ function ACE.GetEntPoints(ent)
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
 	return (tonumber(ent.ACEPoints) or 0) * scale
 end
-
-

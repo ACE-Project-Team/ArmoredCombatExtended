@@ -430,7 +430,7 @@ end
 function ENT:Think()
 
 	if not ACF.IsDefaultActiveInputWired(self) then
-		self.Active = true
+		self.Active = ACF.GetDefaultActiveInputState(self)
 	end
 
 	if ACF.CurTime > self.NextLegalCheck then

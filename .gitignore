@@ -1,2 +1,8 @@
 .vscode/
 static_safety_report.json
+
+# Source-engine model variants not loaded by GMod
+*.dx80.vtx
+*.sw.vtx
+*.xbox.vtx
+*.360.vtx

@@ -22,6 +22,7 @@ function ENT:Initialize()
 	self.StatusUpdateDelay	= 0.5
 	self.LastStatusUpdate	= ACF.CurTime
 	self.Active				= false
+	self.AnimationRate		= self.AnimationRate or 1
 
 	self.Heat				= 21
 	self.IsJammed			= 0
@@ -49,6 +50,7 @@ function ENT:Initialize()
 		IsJammed        = 0,
 		JamDirection    = vector_origin
 	}
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 end
 
@@ -98,6 +100,7 @@ function MakeACE_SearchRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
+	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -132,11 +135,13 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 
-		local curTime = CurTime()
-		self.LastThink = ACF.CurTime
-		self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		if ACF.IsDefaultActiveInputWired(self) then
+			local curTime = CurTime()
+			self.LastThink = ACF.CurTime
+			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		end
 	elseif inp == "Cone" then
 		if value > 0 then
 
@@ -154,11 +159,23 @@ function ENT:TriggerInput( inp, value )
 	end
 end
 
-function ENT:SetActive(active)
+function ENT:SetActive(active, forceVisual)
+
+	active = active and true or false
+
+	if self.Active == active and not forceVisual then
+		self.Status = active and "On" or "Off"
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
+	self.Status = active and "On" or "Off"
 
 	if active  then
+		self.LastThink = ACF.CurTime
+
 		local sequence = self:LookupSequence("active") or 0
 		self:ResetSequence(sequence)
 		self:SetPlaybackRate( self.AnimationRate )
@@ -184,6 +201,8 @@ function ENT:SetActive(active)
 
 		self.Heat = 21
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -259,9 +278,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end
@@ -269,7 +289,9 @@ function ENT:Think()
 	if self.Active and self.Legal then
 
 		self.CurrentScanAngle = self.CurrentScanAngle + self.Cone * DeltaTime
-		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = math.min(self.CurrentScanAngle - 360, 360) end
+		-- Modulo, not math.min(x-360, 360): a single step that overshoots by >=360 deg (large DeltaTime
+		-- on a hibernating/laggy server) would otherwise clamp to 360 and stick the sweep there forever.
+		if self.CurrentScanAngle >= 360 then self.CurrentScanAngle = self.CurrentScanAngle % 360 end
 
 		--local radID = ACE.radarIDs[self]
 
@@ -375,8 +397,8 @@ function ENT:Think()
 
 				OutputPosition = BasePos + BaseInaccuracy
 
-				local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
-				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+				local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
+				local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
 
 
 				tableInsert(Owners, InsertionIndex, Owner:Nick())

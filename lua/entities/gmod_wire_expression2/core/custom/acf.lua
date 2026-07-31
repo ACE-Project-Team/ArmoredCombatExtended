@@ -52,7 +52,7 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 
 	Mat = Mat or "RHA"
 
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
@@ -81,24 +81,42 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
 	local con = ent:CFW_GetContraption()
-	if con then ACE_RemPts(con, ent) end --Stupid roundabout fix. But only executed when the mat is changed. Hey if it works.
 
 	ent.ACF.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
-	if con then ACE_AddPts(con, ent) end
+	ACE.MarkArmorDirty(con, ent, "armor-expression2")
 
 end
 
 local radarTypes = {
 	acf_missileradar = true,
 	ace_irst = true,
+	ace_searchradar = true,
+	ace_sonar = true,
+	ace_trackingradar = true,
+}
+
+local activeInputTypes = {
+	acf_missileradar = true,
+	ace_irst = true,
+	ace_rwr_dir = true,
+	ace_rwr_sphere = true,
+	ace_searchradar = true,
+	ace_sonar = true,
 	ace_trackingradar = true,
 }
 
 local function isRadar(ent)
 	if not validPhysics(ent) then return false end
 	return radarTypes[ent:GetClass()]
+end
+
+local function hasActiveInput(ent)
+	if not validPhysics(ent) then return false end
+	if isEngine(ent) or isAmmo(ent) or isFuel(ent) then return true end
+
+	return activeInputTypes[ent:GetClass()] or false
 end
 
 local function restrictInfo(ply, ent)
@@ -222,11 +240,11 @@ do
 		return this.Capacity or 0
 	end
 
-	-- Returns 1 if an ACF engine, ammo crate, or fuel tank is on
+	-- Returns 1 if an ACF engine, ammo crate, fuel tank, radar, or sensor is on
 	[nodiscard]
 	e2function number entity:acfActive()
 		local isAmmoCrate = isAmmo(this)
-		if not (isEngine(this) or isAmmoCrate or isFuel(this)) then return self:throw("Entity is not a valid ACF engine, ammo crate, or fuel tank", 0) end
+		if not hasActiveInput(this) then return self:throw("Entity is not a valid active-capable ACF entity", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
 		if isAmmoCrate then
@@ -238,9 +256,9 @@ do
 
 	__e2setcost(5)
 
-	-- Turns an ACF engine, ammo crate, or fuel tank on or off
+	-- Turns an ACF engine, ammo crate, fuel tank, radar, or sensor on or off
 	e2function void entity:acfActive(number on)
-		if not (isEngine(this) or isAmmo(this) or isFuel(this)) then return self:throw("Entity is not a valid ACF engine, ammo crate, or fuel tank") end
+		if not hasActiveInput(this) then return self:throw("Entity is not a valid active-capable ACF entity") end
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot control this entity") end
 
 		this:TriggerInput("Active", on)
@@ -1203,7 +1221,7 @@ do
 	e2function number entity:acfPenetration()
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		return ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
 	end
@@ -1213,7 +1231,7 @@ do
 	e2function number entity:acfPenetration(number index)
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		local displayData = ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData)
 
@@ -1231,7 +1249,7 @@ do
 	e2function number entity:acfBlastRadius()
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not ACE_CheckRound(this.BulletData.Type) then return 0 end
+		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
 		local type = this.BulletData.Type
 
@@ -1560,47 +1578,30 @@ do
 
 		if not isRadar(this) then return self:throw("Entity is not a valid ACF radar", ret) end
 		if restrictInfo(self, this) then return ret end
-		local radarType = this:GetClass()
 
-		ret.s.Detected = this.OutputData.Detected
-		ret.stypes.Detected = "n"
+		for key, value in pairs(this.OutputData or {}) do
+			local valueType = type(value)
 
-		ret.s.Position = table.Copy(this.OutputData.Position)
-		ret.stypes.Position = "r"
-
-		if radarType == "acf_missileradar" then
-			ret.s.ClosestDistance = this.OutputData.ClosestDistance
-			ret.stypes.ClosestDistance = "n"
-
-			ret.s.Entities = table.Copy(this.OutputData.Entities)
-			ret.stypes.Entities = "r"
-
-			ret.s.Velocity = table.Copy(this.OutputData.Velocity)
-			ret.stypes.Velocity = "r"
-
-			ret.size = 5
-		elseif radarType == "ace_trackingradar" or "ace_irst" then
-			ret.s.Owner = table.Copy(this.OutputData.Owner)
-			ret.stypes.Owner = "r"
-
-			ret.s.ClosestToBeam = this.OutputData.ClosestToBeam
-			ret.stypes.ClosestToBeam = "n"
-
-			if radarType == "ace_trackingradar" then
-				ret.s.Velocity = table.Copy(this.OutputData.Velocity)
-				ret.stypes.Velocity = "r"
-
-				ret.s.IsJammed = this.OutputData.IsJammed
-				ret.stypes.IsJammed = "n"
-			elseif radarType == "ace_irst" then
-				ret.s.Angle = table.Copy(this.OutputData.Angle)
-				ret.stypes.Angle = "r"
-
-				ret.s.EffHeat = table.Copy(this.OutputData.EffHeat)
-				ret.stypes.EffHeat = "r"
+			if valueType == "number" then
+				ret.s[key] = value
+				ret.stypes[key] = "n"
+			elseif valueType == "string" then
+				ret.s[key] = value
+				ret.stypes[key] = "s"
+			elseif isvector(value) then
+				ret.s[key] = value
+				ret.stypes[key] = "v"
+			elseif istable(value) then
+				ret.s[key] = table.Copy(value)
+				ret.stypes[key] = "r"
+			elseif IsValid(value) then
+				ret.s[key] = value
+				ret.stypes[key] = "e"
+			else
+				continue
 			end
 
-			ret.size = 6
+			ret.size = ret.size + 1
 		end
 
 		return ret

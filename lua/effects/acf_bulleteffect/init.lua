@@ -1,8 +1,9 @@
 
 --This is a fully loaded bullet removal
-function ACE_RemoveBulletClient( Bullet, Index )
+function ACE.RemoveBulletClient( Bullet, Index )
 
 	if Bullet then
+		if IsValid(Bullet.Tracer) then Bullet.Tracer:Finish() end
 
 		local BulletEnt = Bullet.Effect
 		if IsValid(BulletEnt) then
@@ -119,8 +120,6 @@ do
 			end
 
 
-			BulletData.ShellParticles         = ParticleEmitter( BulletData.SimPos )
-
 			--Add all that data to the bullet table, overwriting if needed
 			ACF.BulletEffect[self.Index] = BulletData
 
@@ -177,8 +176,8 @@ local function CanBulletCrack( Bullet )
 
 	if Bullet.IsMissile then return false end
 	if Bullet.CrackCreated then return false end
-	if ACE_SInDistance( Bullet.InitialPos, 750 ) then return false end
-	if not ACE_SInDistance( Bullet.SimPos, math.max(Bullet.Caliber * 100 * ACE.CrackDistanceMultipler,250) ) then return false end
+	if ACE.SInDistance( Bullet.InitialPos, 750 ) then return false end
+	if not ACE.SInDistance( Bullet.SimPos, math.max(Bullet.Caliber * 100 * ACE.CrackDistanceMultipler,250) ) then return false end
 	if Bullet.Impacted then return false end
 
 	local SqrtSpeed = (Bullet.SimPos - Bullet.SimPosLast):LengthSqr()
@@ -199,9 +198,9 @@ local function CanWhistle( Bullet )
 	local BulSpeed = Bullet.SimFlight:Length()
 
 	if BulSpeed < 50 then return false end
-	if not ACE_SInDistance( Bullet.SimPos, math.min(BulSpeed, 5000)) then return false end
+	if not ACE.SInDistance( Bullet.SimPos, math.min(BulSpeed, 5000)) then return false end
 
-	if ACE_Approaching( Bullet.SimPos, Bullet.SimFlight ) > 0 then return false end --Shell is moving away.
+	if ACE.Approaching( Bullet.SimPos, Bullet.SimFlight ) > 0 then return false end --Shell is moving away.
 
 
 	return true
@@ -222,7 +221,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 
 	local setPos = Bullet.SimPos
 	if (math.abs(setPos.x) > 16380) or (math.abs(setPos.y) > 16380) or (setPos.z < -16380) then -- the bullet will never come back to the map.
-		ACE_RemoveBulletClient( Bullet, Index )
+		ACE.RemoveBulletClient( Bullet, Index )
 
 		return
 	end
@@ -232,12 +231,12 @@ function EFFECT:ApplyMovement( Bullet, Index )
 
 		--sonic crack sound
 		if CanBulletCrack( Bullet ) then
-			ACE_SBulletCrack(Bullet, Bullet.Caliber)
+			ACE.SBulletCrack(Bullet, Bullet.Caliber)
 		end
 
 		--incoming shell whistle
 		if CanWhistle( Bullet ) then
-			ACE_SBulletWhistle(Bullet, Bullet.Caliber)
+			ACE.SBulletWhistle(Bullet, Bullet.Caliber)
 		end
 
 		local WaterTr = { }
@@ -255,7 +254,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 	else
 		--We don't need small bullets to stay outside of skybox. This is meant for large calibers only.
 		if Bullet.Caliber < 5 then
-			ACE_RemoveBulletClient( Bullet, Index )
+			ACE.RemoveBulletClient( Bullet, Index )
 			return
 		end
 	end
@@ -316,7 +315,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 			Sparks:SetScale( Bullet.Caliber * 10 )
 			util.Effect( "watersplash", Sparks )
 
-			ACE_EmitSound( "ambient/water/water_splash" .. math.random(1,3) .. ".wav" , Water.HitPos, 100, 100 / Bullet.Caliber * 4, 300 )
+			ACE.EmitSound( "ambient/water/water_splash" .. math.random(1,3) .. ".wav" , Water.HitPos, 100, 100 / Bullet.Caliber * 4, 300 )
 
 			Bullet.HasSplashed = true
 		end
@@ -383,3 +382,5 @@ function EFFECT:Render()
 	end
 
 end
+
+ACE_RemoveBulletClient = ACE.RemoveBulletClient

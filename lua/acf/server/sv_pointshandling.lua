@@ -3,411 +3,379 @@ ACE = ACE or {}
 
 include("acf/shared/sh_ace_functions.lua")
 
-local IsEnt = ACE_IsEnt
+local IsEnt = ACE.IsEnt
 
-local pointCfg = ACE.PointCostConfig or {}
-local MIN_DETAIL_PTS = tonumber(pointCfg.MinDetailPoints) or 300
+ACE.PointEntityLedger = ACE.PointEntityLedger or setmetatable({}, { __mode = "k" })
+ACE.PendingPointEntityChanges = ACE.PendingPointEntityChanges or {}
+ACE.PendingPointRebuilds = ACE.PendingPointRebuilds or setmetatable({}, { __mode = "k" })
+ACE.PendingPointWarnings = ACE.PendingPointWarnings or setmetatable({}, { __mode = "k" })
 
--- Build a readable label for detail entries.
-local function ACE_GetEntityLabel(ent)
-	local label = ent:GetNWString("WireName")
-	if label and label ~= "" then return label end
-	if ent.Name and ent.Name ~= "" then return ent.Name end
-	return ent:GetClass()
+local function CopyPointTotals(totals)
+	local result = {}
+	for key, value in pairs(totals or {}) do result[key] = value end
+	return result
 end
 
--- Add a high-cost item to the detail list.
-local function ACE_AddDetailItem(detailItems, category, label, pts, ent, minDetailPts)
-	if not pts or pts < (minDetailPts or 0) then return end
-	detailItems[#detailItems + 1] = {
-		category = category,
-		label = label,
-		pts = pts,
-		idx = IsEnt(ent) and ent:EntIndex() or 0
+local function IsLiveContraption(con)
+	return con and not con.ACERemoving and not con._removed
+end
+
+local function GetPointContribution(ent)
+	if not IsEnt(ent) or not ent.GetClass then return "Ignore", 0 end
+
+	local class = ent:GetClass()
+	local category = ACE.GetPtsType(class) or "Ignore"
+
+	if category == "Armor" then
+		return category, ACE.GetArmorPoints(ent)
+	end
+
+	if category == "Crew" then
+		return category, ACE.GetCrewSeatPointCost(ent)
+	end
+
+	if category == "Firepower" and (class == "acf_gun" or class == "acf_rack") then
+		return category, ACE.GetGunFirepowerPointsFor(ent)
+	end
+
+	return category, ACE.GetEntPoints(ent)
+end
+
+local function ApplyPointDelta(con, category, points)
+	if not con or category == "Ignore" or points == 0 then return end
+
+	local totals = con.ACEPointsPerType or {}
+	totals[category] = (totals[category] or 0) + points
+
+	if category == "Armor" then
+		con.ACEArmorPoints = (con.ACEArmorPoints or 0) + points
+	else
+		con.ACEPointsNonArmor = (con.ACEPointsNonArmor or 0) + points
+	end
+
+	totals.Armor = con.ACEArmorPoints or totals.Armor or 0
+	con.ACEPointsPerType = totals
+	con.ACEPoints = (con.ACEPointsNonArmor or 0) + (con.ACEArmorPoints or 0)
+end
+
+local function MarkQueuedContraption(con)
+	if not IsLiveContraption(con) then return end
+
+	con._ACEPointEntityChangesQueued = true
+end
+
+local function GetFlushState(states, con)
+	if not IsLiveContraption(con) then return end
+
+	local state = states[con]
+	if state then return state end
+
+	state = {
+		OldPoints = con.ACEPoints or 0,
+		OldTotals = CopyPointTotals(con.ACEPointsPerType),
+		Armor = false,
+		NonArmor = false,
 	}
+	states[con] = state
+
+	return state
 end
 
--- Sort and trim detail entries for the readout.
-local function ACE_TrimDetailItems(detailItems, minDetailPts)
-	table.sort(detailItems, function(a, b)
-		if a.pts == b.pts then return a.idx < b.idx end
-		return a.pts > b.pts
-	end)
+-- Queue an entity's final point owner for the next server tick. Repeated CFW callbacks
+-- replace the same entry, so a split's Sub/Add pair becomes one ledger transfer.
+function ACE.QueuePointEntityChange(ent, owner)
+	if not ent then return end
 
-	local trimmed = {}
-	for _, entry in ipairs(detailItems) do
-		if entry.pts >= minDetailPts then
-			trimmed[#trimmed + 1] = {
-				Category = entry.category,
-				Label = entry.label,
-				Points = math.Round(entry.pts, 1)
-			}
+	ACE.PendingPointEntityChanges[ent] = { Owner = owner, Remove = owner == nil }
+	MarkQueuedContraption(owner)
+
+	local old = ACE.PointEntityLedger[ent]
+	if old then MarkQueuedContraption(old.Owner) end
+end
+
+-- Queue a full scan only when a caller cannot identify the changed entity.
+function ACE.QueueContraptionPointRebuild(con)
+	if not IsLiveContraption(con) then return end
+
+	ACE.PendingPointRebuilds[con] = true
+end
+
+function ACE.QueueContraptionPointWarning(con)
+	if IsLiveContraption(con) then ACE.PendingPointWarnings[con] = true end
+end
+
+function ACE.HasQueuedPointChanges(con)
+	return con and con._ACEPointEntityChangesQueued or false
+end
+
+function ACE.ClearContraptionPointLedger(con)
+	if not con then return end
+
+	for ent, record in pairs(con.ACEPointLedger or {}) do
+		if ACE.PointEntityLedger[ent] == record then ACE.PointEntityLedger[ent] = nil end
+	end
+
+	con.ACEPointLedger = {}
+end
+
+function ACE.RebuildContraptionPointLedger(con, baseEnt)
+	if not con then return end
+
+	ACE.ClearContraptionPointLedger(con)
+	local ledger = con.ACEPointLedger
+
+	for _, ent in ipairs(ACE.GetContraptionEntities(con, baseEnt)) do
+		local category, points = GetPointContribution(ent)
+		if category ~= "Ignore" then
+			local record = { Owner = con, Category = category, Points = points }
+			ledger[ent] = record
+			ACE.PointEntityLedger[ent] = record
+		end
+	end
+end
+
+function ACE.DropContraptionPointLedger(con, preserveOutgoingTransfers)
+	if not con then return end
+
+	for ent, change in pairs(ACE.PendingPointEntityChanges) do
+		local old = ACE.PointEntityLedger[ent]
+		local outgoingTransfer = preserveOutgoingTransfers and old and old.Owner == con
+			and change.Owner and change.Owner ~= con
+		if not outgoingTransfer and ((old and old.Owner == con) or change.Owner == con) then
+			ACE.PendingPointEntityChanges[ent] = nil
 		end
 	end
 
-	return trimmed
+	ACE.ClearContraptionPointLedger(con)
+	ACE.PendingPointRebuilds[con] = nil
+	ACE.PendingPointWarnings[con] = nil
+	con._ACEPointEntityChangesQueued = nil
 end
 
--- Aggregate ammo counts for the readout.
-local function ACE_AddAmmoLine(ammoLines, state, caliber, ammoType, count, points)
-	if not count or count <= 0 then return end
-	local calKey = caliber and math.floor(caliber + 0.5) or 0
-	if calKey <= 0 then return end
+local function NotifyPointFlush(con, state)
+	con.ACEArmorDirty = false
+	con.ACENonArmorDirty = false
+	con.ACEArmorCalculated = true
+	con.ACEPointsDirty = false
 
-	local typeKey = (ammoType ~= "" and ammoType) or "Ammo"
-	local key = string.format("%s|%d|%s", state, calKey, typeKey)
-
-	ammoLines[key] = ammoLines[key] or {
-		State = state,
-		Caliber = calKey,
-		Type = typeKey,
-		Count = 0,
-		Points = 0
-	}
-	ammoLines[key].Count = ammoLines[key].Count + count
-	ammoLines[key].Points = ammoLines[key].Points + (points or 0)
+	if hook and hook.Run then hook.Run("ACE_OnContraptionPointsRecalculated", con, {
+		Revision = con.ACEPointsRevision or 0,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision or 0,
+		OldTotal = state.OldPoints,
+		Total = con.ACEPoints or 0,
+		OldByType = state.OldTotals,
+		ByType = CopyPointTotals(con.ACEPointsPerType),
+		Armor = state.Armor,
+		NonArmor = state.NonArmor,
+	}) end
 end
 
--- Convert ammo line buckets into a sorted list.
-local function ACE_BuildAmmoLineList(ammoLines)
-	local ammoList = {}
-	for _, entry in pairs(ammoLines) do
-		if entry.Count and entry.Count > 0 then
-			ammoList[#ammoList + 1] = {
-				State = entry.State,
-				Caliber = entry.Caliber,
-				Type = entry.Type,
-				Count = math.floor(entry.Count + 0.5),
-				Points = math.Round(entry.Points or 0, 1)
-			}
-		end
+-- Apply the point stack once per tick. This is deliberately separate from public
+-- invalidation events: listeners still see every mutation, while scans and warnings coalesce.
+function ACE.FlushQueuedPointChanges()
+	local changes = ACE.PendingPointEntityChanges
+	local rebuilds = ACE.PendingPointRebuilds
+	local warnings = ACE.PendingPointWarnings
+	ACE.PendingPointEntityChanges = {}
+	ACE.PendingPointRebuilds = setmetatable({}, { __mode = "k" })
+	ACE.PendingPointWarnings = setmetatable({}, { __mode = "k" })
+
+	local states = {}
+	for ent, change in pairs(changes) do
+		local old = ACE.PointEntityLedger[ent]
+		if old and old.Owner then old.Owner._ACEPointEntityChangesQueued = nil end
+		if change.Owner then change.Owner._ACEPointEntityChangesQueued = nil end
 	end
+	for ent, change in pairs(changes) do
+		local old = ACE.PointEntityLedger[ent]
+		local oldOwner = old and old.Owner
+		local newOwner = change.Remove and nil or change.Owner
+		local oldState = GetFlushState(states, oldOwner)
+		local newState = GetFlushState(states, newOwner)
 
-	table.sort(ammoList, function(a, b)
-		if a.State ~= b.State then return a.State < b.State end
-		if a.Caliber ~= b.Caliber then return a.Caliber < b.Caliber end
-		return a.Type < b.Type
-	end)
+		if old then
+			if oldState then
+				ApplyPointDelta(oldOwner, old.Category, -old.Points)
+				oldState.Armor = oldState.Armor or old.Category == "Armor"
+				oldState.NonArmor = oldState.NonArmor or old.Category ~= "Armor"
+			end
+			if oldOwner and oldOwner.ACEPointLedger then oldOwner.ACEPointLedger[ent] = nil end
+			ACE.PointEntityLedger[ent] = nil
+		end
 
-	return ammoList
-end
-
-
--- Build per-contraption ammo cache inputs. Order matters: the ready-rack alloc
--- weights each crate by its effective rounds, and "effective rounds" includes
--- the rack pre-load reserve -- so build the reserve first, then feed it in.
-local function ACE_BuildAmmoCache(ents)
-	local gunRpsById, racks = ACE_BuildGunRpsAndRacks(ents)
-	local rackReserve = ACE_BuildRackReserveAlloc(ents, racks)
-	local readyAlloc  = ACE_BuildAmmoReadyAlloc(ents, rackReserve)
-
-	return {
-		GunRpsById  = gunRpsById,
-		Racks       = racks,
-		ReadyAlloc  = readyAlloc,
-		RackReserve = rackReserve
-	}
-end
-
--- Calculate ammo totals and readout data for a contraption.
-local function ACE_CalcAmmoSubsystem(ents, minDetailPts)
-	local totals = {
-		Ammo = 0,
-		Firepower = 0,
-		AmmoReady = 0,
-		AmmoReadyRounds = 0
-	}
-
-	local detailItems = {}
-	local ammoLines = {}
-
-	local ammoCache = ACE_BuildAmmoCache(ents)
-	local gunRpsById = ammoCache.GunRpsById
-	local racks = ammoCache.Racks
-	local readyAlloc = ammoCache.ReadyAlloc
-	local rackReserve = ammoCache.RackReserve
-
-	for _, ent in ipairs(ents) do
-		if IsEnt(ent) and ent:GetClass() == "acf_ammo" then
-			local _, detail = ACE_CalcAmmoCratePoints(ent, gunRpsById, racks, readyAlloc, rackReserve)
-			if detail then
-				local rawCost = detail.RawAmmoCost or 0
-				local dpsCost = detail.DPSCost or 0
-				if rawCost <= 0 and dpsCost <= 0 then continue end
-
-				totals.Ammo = totals.Ammo + rawCost
-				totals.Firepower = totals.Firepower + dpsCost
-
-				totals.AmmoReady = totals.AmmoReady + rawCost
-				totals.AmmoReadyRounds = totals.AmmoReadyRounds + (detail.ReadyCount or 0)
-
-				local ammoType = detail.Type ~= "" and detail.Type or "Ammo"
-				local readyCount = math.floor((detail.ReadyCount or 0) + 0.5)
-
-				if readyCount > 0 and rawCost > 0 then
-					ACE_AddDetailItem(
-						detailItems,
-						"Ammo",
-						string.format("%s x%d", ammoType, readyCount),
-						rawCost,
-						ent,
-						minDetailPts
-					)
-				end
-
-				ACE_AddAmmoLine(ammoLines, "READY", detail.Caliber, ammoType, readyCount, rawCost)
+		if newState and IsEnt(ent) then
+			local category, points = GetPointContribution(ent)
+			if category ~= "Ignore" then
+				local record = { Owner = newOwner, Category = category, Points = points }
+				newOwner.ACEPointLedger = newOwner.ACEPointLedger or {}
+				newOwner.ACEPointLedger[ent] = record
+				ACE.PointEntityLedger[ent] = record
+				ApplyPointDelta(newOwner, category, points)
+				newState.Armor = newState.Armor or category == "Armor"
+				newState.NonArmor = newState.NonArmor or category ~= "Armor"
 			end
 		end
 	end
 
-	return totals, detailItems, ammoLines, ammoCache
+	for con in pairs(rebuilds) do
+		if IsLiveContraption(con) then
+			ACE.RebuildContraptionPoints(con, nil, true, true)
+			states[con] = nil
+		end
+	end
+
+	for con, state in pairs(states) do
+		if IsLiveContraption(con) then NotifyPointFlush(con, state) end
+	end
+
+	for con in pairs(warnings) do
+		if con.ents and IsLiveContraption(con) and con.ACEWarningsDirty and not con._ACEWarningChecking then
+			con._ACEWarningChecking = true
+			ACE.CheckLegalCont(con)
+			con._ACEWarningChecking = nil
+		end
+	end
 end
 
--- Calculate non-ammo points for a single subsystem.
-local function ACE_CalcNonAmmoSubsystem(ents, subsystem, minDetailPts)
+-- Public point lifecycle hooks:
+-- ACE_OnContraptionPointsInvalidated(con, change) reports every known pricing-input mutation,
+-- even when the cache is already dirty or the resulting point delta is zero. change contains
+-- Revision, Entity, Reason, Armor, and NonArmor. Consumers can call ACE.EnsureContraptionPoints
+-- from this hook when they need the updated total immediately.
+-- ACE_OnContraptionPointsRecalculated(con, change) reports Revision, OldTotal, Total, OldByType,
+-- ByType, Armor, and NonArmor as detached snapshots after a rebuild.
+function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, nonArmorDirty, event)
+	if not con then return end
+
+	con.ACEPointsRevision = (con.ACEPointsRevision or 0) + 1
+
+	if not hook or not hook.Run then return end
+
+	hook.Run("ACE_OnContraptionPointsInvalidated", con, {
+		EventId = event and event.EventId or con.ACEPointsRevision,
+		Revision = con.ACEPointsRevision,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision,
+		CacheGeneration = con.ACECacheGeneration or con.ACEPointsGeneration or con.ACEPointsRevision,
+		Entity = ent,
+		Reason = reason or "entity-updated",
+		Armor = armorDirty and true or false,
+		NonArmor = nonArmorDirty and true or false,
+		Categories = event and event.Categories or nil,
+		AffectedContraptions = event and event.AffectedContraptions or { con },
+		CacheGenerations = {
+			Points = con.ACEPointsGeneration or con.ACEPointsRevision,
+			Armor = con.ACEArmorGeneration or 0,
+			Ammo = con.ACEAmmoGeneration or 0,
+			Firepower = con.ACEFirepowerGeneration or 0,
+			ReadyRack = con.ACEReadyRackGeneration or 0,
+			Warning = con.ACEWarningGeneration or 0,
+		},
+	})
+end
+
+local function ACE_CalcSubsystem(ents, subsystem)
 	local total = 0
-	local detailItems = {}
 
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
 			local cls = ent:GetClass()
-			local eclass = ACE_GetPtsType(cls)
-			if eclass == subsystem then
+			if ACE.GetPtsType(cls) == subsystem then
 				local pts
 				if subsystem == "Crew" then
-					pts = ACE_GetCrewSeatPointCost(ent)
+					pts = ACE.GetCrewSeatPointCost(ent)
 				elseif subsystem == "Firepower" and (cls == "acf_gun" or cls == "acf_rack") then
-					pts = ACE_GetGunFirepowerPoints(ent)
+					-- Never collapse by class or round ID: identical weapons bill independently.
+					pts = ACE.GetGunFirepowerPointsFor(ent, ents)
 				else
-					pts = ACE_GetEntPoints(ent)
+					pts = ACE.GetEntPoints(ent)
 				end
+
 				if pts ~= 0 then
 					total = total + pts
-					ACE_AddDetailItem(
-						detailItems,
-						subsystem,
-						ACE_GetEntityLabel(ent),
-						pts,
-						ent,
-						minDetailPts
-					)
 				end
 			end
 		end
 	end
 
-	return total, detailItems
+	return total
 end
 
 -- ============================================================
 -- Point and armor calculation logic for contraption scans
 -- ============================================================
 
--- Calculate the points value for an ammo crate.
-function ACE_CalcAmmoCratePoints(crate, gunRpsById, racks, readyAlloc, rackReserve)
-	if not IsEnt(crate) then return 0 end
-	local bdata = crate.BulletData
-	if not bdata then return 0 end
-
-	-- Effective rounds = loose rounds in this crate + missiles pre-loaded into
-	-- linked rack tubes that this crate could feed. The reserve portion comes
-	-- from ACE_BuildRackReserveAlloc, which distributes each rack's MaxMissile
-	-- across its compatible crates using the same rule that credits rack RPS
-	-- to a crate below. Without the reserve, an 8-tube rack primed from a
-	-- 2-round crate would price as if only those 2 loose rounds existed.
-	local crateCapacity = crate.Capacity or 0
-	local reserveRounds = (rackReserve and rackReserve[crate]) or 0
-	local rounds = crateCapacity + reserveRounds
-	if rounds <= 0 then return 0 end
-
-	local maxPen = ACE_GetAmmoMaxPen(bdata)
-	local blastMass = ACE_GetAmmoBlastMass(bdata)
-	if maxPen <= 0 and blastMass <= 0 then return 0 end
-
-	local calMm = ACE_GetAmmoCaliberMm(bdata)
-	if calMm <= 0 then return 0 end
-
-	local ammoId = bdata.Id
-	if not ammoId then return 0 end
-
-	local rpsTotal = gunRpsById[ammoId] or 0
-	if racks and ACF_CanLinkRack then
-		for _, rack in ipairs(racks) do
-			if IsEnt(rack) and rack.Id and ACF_CanLinkRack(rack.Id, ammoId, bdata, rack) then
-				rpsTotal = rpsTotal + ACE_GetEntRps(rack)
-			end
-		end
-	end
-	if rpsTotal <= 0 then return 0 end
-
-	local cfg = ACE.AmmoCostConfig or {}
-	local rpsFactor = ACE_GetRofThreatFactor(rpsTotal, cfg)
-	if rpsFactor <= 0 then return 0 end
-	local roundPts = ACE_GetAmmoRoundPoints(bdata)
-	if roundPts <= 0 then return 0 end
-
-	local readyCap = ACE_GetReadyRackCap(calMm)
-	local readyCount = rounds
-
-	if readyCap > 0 then
-		readyCount = math.min(readyCap, rounds)
-	end
-
-	if readyAlloc and readyAlloc[crate] then
-		readyCount = math.min(readyAlloc[crate], rounds)
-	end
-
-	local rawAmmoCost = roundPts * readyCount * rpsFactor
-
-	local name = ACF_GetGunValue(ammoId, "name") or tostring(ammoId)
-	local detail = {
-		Name = name,
-		Type = bdata.Type or "",
-		Caliber = calMm,
-		Capacity = rounds,
-		MaxPen = maxPen,
-		Rps = rpsTotal,
-		Rpm = rpsTotal * 60,
-		RofFactor = rpsFactor,
-		ReadyCount = readyCount,
-		RawAmmoCost = rawAmmoCost,
-		DPSCost = 0,
-		FirepowerCost = rawAmmoCost
-	}
-
-	return rawAmmoCost, detail
-end
-
-
--- Calculate non-armor points and readout details.
-function ACE_CalcNonArmorPoints(con, baseEnt)
+-- Calculate non-armor points and readout details. Ammo is free (crates contribute nothing),
+-- so the categories are Engines, Firepower (guns AND racks), Crew and Electronics. The
+-- contraption entity list is resolved ONCE and shared across guns.
+function ACE.CalcNonArmorPoints(con, baseEnt)
 	if not con then
-		return 0, { Engines = 0, Firepower = 0, Ammo = 0, Crew = 0, Electronics = 0 }, { Items = {} }
+		return 0, { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }
 	end
 
-	local totals = {
-		Engines = 0,
-		Firepower = 0,
-		Ammo = 0,
-		AmmoReady = 0,
-		AmmoReadyRounds = 0,
-		Crew = 0,
-		Electronics = 0
-	}
+	local totals = { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }
 
-	local detailItems = {}
-	local ammoLines = {}
-	local ammoCache
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
 	local subsystems = ACE.PointSubsystems or {
 		"Engines",
 		"Firepower",
-		"Ammo",
 		"Crew",
 		"Electronics"
 	}
 
 	for _, subsystem in ipairs(subsystems) do
-		if subsystem == "Ammo" then
-			local ammoTotals, ammoDetails, ammoLineMap, builtAmmoCache = ACE_CalcAmmoSubsystem(ents, MIN_DETAIL_PTS)
-
-			totals.Ammo = ammoTotals.Ammo or 0
-			totals.Firepower = (totals.Firepower or 0) + (ammoTotals.Firepower or 0)
-			totals.AmmoReady = ammoTotals.AmmoReady or 0
-			totals.AmmoReadyRounds = ammoTotals.AmmoReadyRounds or 0
-
-			ammoLines = ammoLineMap or {}
-			ammoCache = builtAmmoCache
-
-			for _, item in ipairs(ammoDetails) do
-				detailItems[#detailItems + 1] = item
-			end
-		else
-			local pts, items = ACE_CalcNonAmmoSubsystem(ents, subsystem, MIN_DETAIL_PTS)
-			totals[subsystem] = pts or 0
-
-			for _, item in ipairs(items) do
-				detailItems[#detailItems + 1] = item
-			end
-		end
+		totals[subsystem] = ACE_CalcSubsystem(ents, subsystem) or 0
 	end
-
-	totals.RawFirepower = totals.Firepower or 0
-	totals.Firepower = math.max((totals.RawFirepower or 0) - (totals.Ammo or 0), 0)
 
 	local nonArmor = (totals.Engines or 0)
 		+ (totals.Firepower or 0)
-		+ (totals.Ammo or 0)
 		+ (totals.Crew or 0)
 		+ (totals.Electronics or 0)
 
-	local trimmed = ACE_TrimDetailItems(detailItems, MIN_DETAIL_PTS)
-	local ammoList = ACE_BuildAmmoLineList(ammoLines)
-
-	return nonArmor, totals, { Items = trimmed, AmmoLines = ammoList }, ammoCache
+	return nonArmor, totals
 end
 
--- Calculate armor points and per-entity readout lines.
-function ACE_CalcContraptionArmorPoints(con, baseEnt)
+function ACE.CalcContraptionArmorPoints(con, baseEnt)
 	local total = 0
-	local details = {}
-	local ents = ACE_GetContraptionEntities(con, baseEnt)
+	local ents = ACE.GetContraptionEntities(con, baseEnt)
 
 	for _, ent in ipairs(ents) do
 		if IsEnt(ent) then
-			local pts = ACE_GetArmorPoints(ent)
+			local pts = ACE.GetArmorPoints(ent)
 			if pts > 0 then
 				total = total + pts
-				details[#details + 1] = {
-					Label = ACE_FormatDetailLabel(ent),
-					Points = ACE_SafeRound1(pts),
-					EntIndex = ent:EntIndex()
-				}
 			end
 		end
 	end
 
-	table.sort(details, function(a, b)
-		if a.Points == b.Points then
-			if a.EntIndex == b.EntIndex then return tostring(a.Label) < tostring(b.Label) end
-			return a.EntIndex < b.EntIndex
-		end
-		return a.Points > b.Points
-	end)
-
-	return total, details
+	return total
 end
 
 -- Rebuild requested point totals for a contraption from entity state.
-function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
-	if not con then return end
+function ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+	if not IsLiveContraption(con) then return end
 
+	local oldPoints = con.ACEPoints or 0
+	local oldTotals = CopyPointTotals(con.ACEPointsPerType)
 	local base = baseEnt
 	if (not IsEnt(base)) and con.GetACEBaseplate then base = con:GetACEBaseplate() end
 
 	local totals = con.ACEPointsPerType or {}
 
 	if rebuildNonArmor then
-		local nonArmor, nonArmorTotals, details, ammoCache = ACE_CalcNonArmorPoints(con, base)
+		local nonArmor, nonArmorTotals = ACE.CalcNonArmorPoints(con, base)
 		totals = nonArmorTotals or {}
 
 		con.ACEPointsNonArmor = nonArmor or 0
-		con.ACEPointsDetails = details or { Items = {}, AmmoLines = {} }
-		con.ACEAmmoCache = ammoCache
 		con.ACENonArmorDirty = false
 	end
 
 	if rebuildArmor then
-		local armorPts, armorDetails = ACE_CalcContraptionArmorPoints(con, base)
+		local armorPts = ACE.CalcContraptionArmorPoints(con, base)
 
 		con.ACEArmorPoints = armorPts
-		con.ACEArmorFront = 0
-		con.ACEArmorSide = 0
-		con.ACEArmorDetails = armorDetails or {}
 		con.ACEArmorDirty = false
 		con.ACEArmorCalculated = true
-		con.ACEArmorLastCalc = CurTime()
 	end
 
 	local armorPts = con.ACEArmorPoints or totals.Armor or 0
@@ -415,29 +383,53 @@ function ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmo
 	con.ACEPointsPerType = totals
 	con.ACEPoints = (con.ACEPointsNonArmor or 0) + armorPts
 	con.ACEPointsDirty = con.ACEArmorDirty or con.ACENonArmorDirty or false
+	ACE.RebuildContraptionPointLedger(con, base)
 
-	if not con.ACEPointsDirty then
-		con.OTWarnings = con.OTWarnings or {}
-		con.OTWarnings.WarnedModified = false
-	end
+	if hook and hook.Run then hook.Run("ACE_OnContraptionPointsRecalculated", con, {
+		Revision = con.ACEPointsRevision or 0,
+		Generation = con.ACEPointsGeneration or con.ACEPointsRevision or 0,
+		OldTotal = oldPoints,
+		Total = con.ACEPoints,
+		OldByType = oldTotals,
+		ByType = CopyPointTotals(totals),
+		Armor = rebuildArmor and true or false,
+		NonArmor = rebuildNonArmor and true or false,
+	}) end
 end
 
 -- Ensure point data is initialized and current.
-function ACE_EnsureContraptionPoints(con, baseEnt, force)
-	if not con then return end
+function ACE.EnsureContraptionPoints(con, baseEnt, force)
+	if not IsLiveContraption(con) then return end
+	if con._ACEPointsEnsuring then return end
 
-	local cacheStale = ACE_EnsureCacheVersion and ACE_EnsureCacheVersion(con) or false
-	local needsInit = not con.ACEArmorCalculated or (con.ACEArmorLastCalc or 0) <= 0
+	con._ACEPointsEnsuring = true
+	if ACE.EnsurePointsState then ACE.EnsurePointsState(con) end
+	ACE.FlushQueuedPointChanges()
+
+	local cacheStale = ACE.EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
+	local needsInit = not con.ACEArmorCalculated
 	if not force and not needsInit and not con.ACEPointsDirty and not con.ACEArmorDirty
 		and not con.ACENonArmorDirty and not cacheStale then
+		con._ACEPointsEnsuring = nil
 		return
 	end
 
 	local rebuildArmor = force or needsInit or con.ACEArmorDirty or cacheStale
 	local rebuildNonArmor = force or con.ACENonArmorDirty or cacheStale or not con.ACEPointsPerType
 
-	ACE_RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+	ACE.RebuildContraptionPoints(con, baseEnt, rebuildArmor, rebuildNonArmor)
+	con._ACEPointsEnsuring = nil
+
+	-- Invalidation marks warning state dirty, but a cache-version invalidation can
+	-- arrive while this ensure is already rebuilding. Consume the warning state
+	-- only after the new totals are available.
+	if ACE.CheckLegalCont and con.ACEWarningsDirty and not con._ACEWarningChecking then
+		con._ACEWarningChecking = true
+		ACE.CheckLegalCont(con)
+		con._ACEWarningChecking = nil
+	end
 end
 
-_G.ACE_EnsureContraptionPoints = ACE_EnsureContraptionPoints
+_G.ACE_EnsureContraptionPoints = ACE.EnsureContraptionPoints
 
+hook.Add("Think", "ACE_FlushQueuedPointChanges", ACE.FlushQueuedPointChanges)

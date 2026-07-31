@@ -116,6 +116,9 @@ function ENT:Initialize()
 
 	self.CanLegalCheck = true
 
+	self:CallOnRemove("ACE_Points", function(ent)
+		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "rack-removed") end
+	end)
 end
 
 
@@ -135,7 +138,7 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 	Owner:AddCount("_acf_rack", Rack)
 	Owner:AddCleanup( "acfmenu", Rack )
 
-	if not ACE_CheckRack( Id ) then
+	if not ACE.CheckRack( Id ) then
 		Id = "1xRK"
 	end
 
@@ -165,8 +168,6 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 
 	Rack.MaxMissile = table.Count(gundef.mountpoints) or 1
 	Rack.ReloadTime = gundef.magreload or 1 --Replace with fixed time delay rather than multiplier
-	Rack.ACEPoints	= 0
-
 	local gunclass = RackClasses[Rack.Class] or ErrorNoHalt("Couldn't find the " .. tostring(Rack.Class) .. " gun-class!")
 
 	Rack.Muzzleflash       = gundef.muzzleflash	or gunclass.muzzleflash	or ""
@@ -425,7 +426,7 @@ function ENT:ShootMissile()
 
 	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
 
-	ACE_DoContraptionLegalCheck(self)
+	ACE.DoContraptionLegalCheck(self)
 
 	self.NextReload = CT + self.ReloadTime
 
@@ -476,6 +477,14 @@ function ENT:ShootMissile()
 
 	self.Ready = false
 	self.NextFire = CT + self.FireDelay
+	if ACE.PointsInputChanged then
+		ACE.PointsInputChanged(self, "rack-missile-fired", {
+			Ammo = true,
+			Firepower = true,
+			ReadyRack = true,
+			Warning = true,
+		})
+	end
 end
 
 function ENT:Reload() --
@@ -523,6 +532,14 @@ function ENT:Reload() --
 		self.CurMissile = ValidCount + 1
 
 		Wire_TriggerOutput(self, "Shots Left", self.CurMissile)
+		if ACE.PointsInputChanged then
+			ACE.PointsInputChanged(self, "rack-missile-reloaded", {
+				Ammo = true,
+				Firepower = true,
+				ReadyRack = true,
+				Warning = true,
+			})
+		end
 	else
 		self.NextReload = CT + 5
 
@@ -671,8 +688,6 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	self.ReloadDelay = ACF_GetRackValue(BulletData, "reloaddelay") or ACF_GetGunValue(BulletData.Id, "reloaddelay") or 1
 	self.Inaccuracy = ACF_GetRackValue(BulletData, "inaccuracy") or ACF_GetGunValue(BulletData.Id, "inaccuracy") or 0
 
-	missile.ACEPoints = CalculateMissileCost(Crate.BulletData)
-
 	if missile:IsValid() then
 		self:EmitSound("acf_extra/tankfx/gnomefather/reload12.wav", 500, 110)
 		return true
@@ -776,6 +791,14 @@ function ENT:LoadAmmo()
 	self:GetOverlayText()
 
 	self:Think()
+	if missile and ACE.PointsInputChanged then
+		ACE.PointsInputChanged(self, "rack-preloaded", {
+			Ammo = true,
+			Firepower = true,
+			ReadyRack = true,
+			Warning = true,
+		})
+	end
 	return true
 
 end
@@ -803,6 +826,8 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
+	local pointSources = { self }
+	self._ACEPointsSuppress = true
 
 	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
 		local AmmoLink = Ent.EntityMods.ACFAmmoLink
@@ -810,6 +835,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 			for _,AmmoID in pairs(AmmoLink.entities) do
 				local Ammo = CreatedEntities[ AmmoID ]
 				if Ammo and Ammo:IsValid() and Ammo:GetClass() == "acf_ammo" then
+					pointSources[#pointSources + 1] = Ammo
 					self:Link( Ammo )
 				end
 			end
@@ -817,8 +843,13 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 		Ent.EntityMods.ACFAmmoLink = nil
 	end
 
+	self._ACEPointsSuppress = nil
+
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste( self, Player, Ent, CreatedEntities )
+	if ACE.PointsInputChanged then
+		ACE.PointsInputChanged(pointSources, "rack-links-pasted")
+	end
 
 end
 
@@ -830,15 +861,14 @@ function ENT:OnRestore()
 	Wire_Restored(self)
 end
 
---New Overlay text that is shown when you are looking at the rack.
 function ENT:GetOverlayText()
 
-	local Ammo		= self.CurMissile	-- Ammo count
-	local FireRate	= self.FireDelay or 1	-- How many time take one lauch from another. in secs
-	local Reload		= self.ReloadTime		-- reload time. in secs
+	local Ammo		= self.CurMissile
+	local FireRate	= self.FireDelay or 1
+	local Reload		= self.ReloadTime
 	local ReloadDelay   = self.ReloadDelay
-	local ReloadBonus	= 1-self.ReloadMultiplierBonus  -- the word explains by itself
-	local Status		= self.RackStatus				-- this was used to show ilegality issues before. Now this shows about rack state (reloading?, ready?, empty and so on...)
+	local ReloadBonus	= 1-self.ReloadMultiplierBonus
+	local Status		= self.RackStatus
 	local txt = ""
 
 	txt = "-  " .. Status
@@ -879,6 +909,21 @@ function ENT:GetOverlayText()
 
 	if not self.Legal then
 		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
+
+	if ACE.GetGunFirepowerReadout then
+		local readout = ACE.GetGunFirepowerReadout(self)
+		if readout then
+			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			local roundLine = readout.Round and ACE.GetRoundLethalityLine
+				and ACE.GetRoundLethalityLine(readout.Round, true)
+			if roundLine then txt = txt .. "\nBest Round: " .. roundLine end
+			if readout.MinimumApplied then
+				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
+			end
+			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
+			if floorLine then txt = txt .. "\n" .. floorLine end
+		end
 	end
 
 	self:SetOverlayText(txt)
@@ -962,6 +1007,9 @@ function ENT:Link( Target )
 
 	self:SetOverlayText(txt)
 
+	if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+		ACE.PointsInputChanged({ self, Target }, "rack-ammo-linked")
+	end
 	return true, "Link successful!"
 
 end
@@ -980,6 +1028,9 @@ function ENT:Unlink( Target )
 
 		self:GetOverlayText()
 
+		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE.PointsInputChanged({ self, Target }, "rack-unlinked")
+		end
 		return true, "Unlink successful!"
 	else
 		return false, "That entity is not linked to this gun!"
@@ -1290,12 +1341,4 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 
 	return HitRes --This function needs to return HitRes
 
-end
-
-do
-	-- Calculates per-missile points for rack/ammo entities.
-	-- ATGMs use the same performance model as gun ammo.
-	function CalculateMissileCost(BulletData)
-		return ACE_CalcMissileRoundPoints(BulletData)
-	end
 end

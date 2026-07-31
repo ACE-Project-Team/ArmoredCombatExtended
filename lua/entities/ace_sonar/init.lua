@@ -110,11 +110,12 @@ function ENT:Initialize()
 	self.SonarLastTracked = {}
 
 
-	self:SetActive(false)
-
 	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
 	self.LegalIssues        = ""
+
+	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 	self.TargetDetected		= false
 
@@ -201,7 +202,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "ActiveSonar" then
 		if value > 0 then
 			self.ActiveTransmitting = true
@@ -243,6 +244,14 @@ end
 
 function ENT:SetActive(active)
 
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
+
 	self.Active = active
 
 	--if active  then
@@ -276,6 +285,8 @@ function ENT:SetActive(active)
 		self.OutputData.Washout = 0
 
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -461,7 +472,7 @@ function ENT:activeSonar()
 	----------------------------------------
 
 	local SelfContraption = self.SelfContraption
-	local MyID = ACE_GetContraptionIndex(SelfContraption) or -1
+	local MyID = ACE.GetContraptionIndex(SelfContraption) or -1
 
 
 	local CacheTime = ACF.CurTime + 5 --Time in seconds to remove a sonar ping
@@ -579,7 +590,7 @@ function ENT:activeSonar()
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE_GetContraptionIndex(Contraption)
+				local ID = ACE.GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 
@@ -702,7 +713,7 @@ function ENT:passiveSonar() --Subject to rework
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE_GetContraptionIndex(Contraption)
+				local ID = ACE.GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 				local WashOutErrorMul = 1 + self.WashOut * 4
@@ -923,7 +934,7 @@ function ENT:UpdateSonarTracks() --Step the track forward by velocity? Or let pl
 			--print("SonoDist: " .. math.Round(Dist / 39.37,2))
 			debugoverlay.Cross(OutputPosition,35,self.PulseDuration,Color( 183, 0, 255), true)
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, OutputDistance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, OutputDistance)
 			tableInsert(SonoBearings, InsertionIndex, Bearing)
 			tableInsert(SonoDepths, InsertionIndex, Depth)
 			tableInsert(SonoDistances, InsertionIndex, Dist)
@@ -990,9 +1001,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, nil, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

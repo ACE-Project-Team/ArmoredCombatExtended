@@ -8,10 +8,9 @@ local round, ceil = math.Round, math.ceil
 local CrewseatTable = ACF.Weapons.Crewseats
 
 function ENT:Initialize()
-	ACE_InitializeCrewseat(self, self.ModelType)
+	ACE.InitializeCrewseat(self, self.ModelType)
 
 	self.LinkedGun = nil
-	self.ACEPoints = 1
 
 	self.Inputs = WireLib.CreateInputs(self, {})
 
@@ -65,7 +64,7 @@ list.Set("ACFCvars", "ace_crewseat_gunner", {"id", "entitydata"})
 duplicator.RegisterEntityClass("ace_crewseat_gunner", MakeACE_Crewseat_Gunner, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
-	return ACE_GetPoseModifiers(self) or { gforce = 1, tilt = 1, accuracy = 1 }
+	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1, accuracy = 1 }
 end
 
 function ENT:GetAccuracyPenalty()
@@ -85,9 +84,9 @@ function ENT:GetAccuracyPenalty()
 end
 
 function ENT:Think()
-	ACE_UpdateCrewseatAnglePenalty(self)
-	ACE_UpdateGForcePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	ACE.UpdateCrewseatAnglePenalty(self)
+	ACE.UpdateGForcePenalty(self)
+	ACE.CrewseatLegalCheck(self)
 
 	local gun = self.LinkedGun
 	if not self.Legal and IsValid(gun) then
@@ -99,7 +98,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	ACE_CrewseatOnRemove(self)
+	ACE.CrewseatOnRemove(self)
 end
 
 function ENT:UpdateWireOutputs()
@@ -115,7 +114,7 @@ end
 function ENT:UpdateOverlayText()
 	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
 	local pose = self:GetPoseModifiers()
-	local isStanding = ACE_IsStandingPose(self.ModelType)
+	local isStanding = ACE.IsStandingPose(self.ModelType)
 
 	local str = self.Name
 	str = str .. "\n\nHealth: " .. hp .. "%"
@@ -155,7 +154,7 @@ function ENT:UpdateOverlayText()
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
-	local HitRes = ACE_CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
+	local HitRes = ACE.CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
 
 	if HitRes.Kill or HitRes.Overkill > 1 then
 		self:ConsumeCrewseats()
@@ -166,7 +165,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
 end
 
 function ENT:ConsumeCrewseats()
-	ACE_CrewseatDeathSound(self)
+	ACE.CrewseatDeathSound(self)
 
 	self.Legal = false
 	self.LegalIssues = "Apparently He Died"
@@ -180,7 +179,7 @@ function ENT:ConsumeCrewseats()
 		end
 	end
 
-	local ReplaceEnt, ClosestDist = ACE_FindReplacementLoader(self)
+	local ReplaceEnt, ClosestDist = ACE.FindReplacementLoader(self)
 
 	if IsValid(ReplaceEnt) then
 		self.Name = ReplaceEnt.Name
@@ -226,8 +225,8 @@ function ENT:ApplyDupeInfo(ply, ent, info, GetEntByID)
 	local class = self:GetClass()
 	local defaultModelType = (ACE.CrewseatDefaults and ACE.CrewseatDefaults[class]) or "Sitting"
 
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
-	local modelType, _, reason = ACE_CrewseatApplyDupeModel(self, info, defaultModelType, false)
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
-	ACE_CrewseatDeferredModelSync(self, info)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
+	local modelType, _, reason = ACE.CrewseatApplyDupeModel(self, info, defaultModelType, false)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
+	ACE.CrewseatDeferredModelSync(self, info)
 end

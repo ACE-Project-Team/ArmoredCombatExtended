@@ -131,9 +131,9 @@ function SWEP:SecondaryAttack()
 	if CLIENT then return end
 
 	if self.Primary.Automatic then
-		ACE_SendNotification(owner, "<<Automatic>>", 2)
+		ACE.SendNotification(owner, "<<Automatic>>", 2)
 	else
-		ACE_SendNotification(owner, "<<Semi>>", 2)
+		ACE.SendNotification(owner, "<<Semi>>", 2)
 	end
 	end
 

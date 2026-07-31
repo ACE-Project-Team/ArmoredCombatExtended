@@ -267,7 +267,7 @@ function Round.guicreate( Panel, Table )
 	acfmenupanel:AmmoSlider("WPVol",0,0,1000,3, "WP Filler", "")			--Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FuseLength",0,0,1000,3, "Timed Fuse", "")
 
-	ACE_Checkboxes()
+	ACE.Checkboxes()
 
 	acfmenupanel:CPanelText("VelocityDisplay", "")	--Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("BlastDisplay", "")	--HE Blast data (Name, Desc)
@@ -303,7 +303,7 @@ function Round.guiupdate( Panel )
 	RunConsoleCommand( "acfmenu_data11", Data.TwoPiece )
 
 	---------------------------Ammo Capacity-------------------------------------
-	ACE_AmmoCapacityDisplay( Data )
+	ACE.AmmoCapacityDisplay( Data )
 	-------------------------------------------------------------------------------
 	acfmenupanel:AmmoSlider("PropLength",Data.PropLength,Data.MinPropLength,Data.MaxTotalLength,3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g" )	--Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength",Data.ProjLength,Data.MinProjLength,Data.MaxTotalLength,3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g")	--Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
@@ -311,7 +311,7 @@ function Round.guiupdate( Panel )
 	acfmenupanel:AmmoSlider("WPVol",Data.WPVol,Data.MinFillerVol,Data.MaxFillerVol,3, "WP Filler Volume", "WP Filler Mass : " .. (math.floor(Data.WPMass * 1000)) .. " g")	--HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FuseLength",Data.FuseLength,0,10,1, "Fuse Time", Data.FuseLength .. " s")
 
-	ACE_Checkboxes( Data )
+	ACE.Checkboxes( Data )
 
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc)	--Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + (math.floor(Data.Tracer * 5) / 10)) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm")	--Total round length (Name, Desc)

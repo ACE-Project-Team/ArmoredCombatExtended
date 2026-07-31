@@ -55,6 +55,7 @@ function ENT:Initialize()
 	}
 
 	self.TargetDetected = false
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 
 end
 
@@ -104,6 +105,7 @@ function MakeACE_TrackingRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
+	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -138,10 +140,12 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 
-		local curTime = CurTime()
-		self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		if ACF.IsDefaultActiveInputWired(self) then
+			local curTime = CurTime()
+			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
+		end
 	elseif inp == "Cone" then
 		if value > 0 then
 
@@ -159,9 +163,19 @@ function ENT:TriggerInput( inp, value )
 	end
 end
 
-function ENT:SetActive(active)
+function ENT:SetActive(active, forceVisual)
+
+	active = active and true or false
+
+	if self.Active == active and not forceVisual then
+		self.Status = active and "On" or "Off"
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
+	self.Status = active and "On" or "Off"
 	self.AcquiredTargets		= {}
 
 	if active  then
@@ -189,6 +203,8 @@ function ENT:SetActive(active)
 
 		self.Heat = 21
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -349,8 +365,8 @@ function ENT:ScanForContraptions()
 
 					OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
 
-					local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
-					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+					local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
+					local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
 
 					tableInsert(Owners, InsertionIndex, Owner:Nick())
 					tableInsert(Distances, InsertionIndex, BaseDistance)
@@ -409,9 +425,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

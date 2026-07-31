@@ -588,7 +588,9 @@ ACF_defineGun("Kh-39 LMUR", {
 						["4xRK"] = true,
 						["1xRK_small"] = true,
 						["2x AGM-114"] = true,
-						["4x AGM-114"] = true
+						["4x AGM-114"] = true,
+						["1x LMUR"] = true,
+						["2x LMUR"] = true
 					},
 
 	armdelay	= 0.15,										-- minimum fuse arming delay

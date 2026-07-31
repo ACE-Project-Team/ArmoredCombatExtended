@@ -88,7 +88,7 @@ do
 		local Engine = ents.Create( "acf_engine" )
 		if not IsValid( Engine ) then return false end
 
-		if not ACE_CheckEngine( Id ) then
+		if not ACE.CheckEngine( Id ) then
 			Id = BackComp[Id] or "5.7-V8"
 		end
 
@@ -128,16 +128,6 @@ do
 		Engine.FuelTank         = 0
 		Engine.Heat             = ACE.AmbientTemp
 
-
-		local FuelCostMul = {
-			Petrol				= 1.0,
-			Diesel				= 1.2, --Due to generally higher torques
-			Multifuel			= 1.2, --Due to generally higher torques
-			Electric			= 0.8 --Due to odd power outputs
-		}
-		local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
-		local FallBackCost = (Engine.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[Engine.FuelType] or 1)
-		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointCostMultiplier)
 
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
 
@@ -233,16 +223,6 @@ function ENT:Update( ArgsTable )
 	self.SpecialDamage     = true
 	self.TorqueMult        = self.TorqueMult or 1
 	self.FuelTank          = 0
-	local FuelCostMul = {
-		Petrol			= 1.0,
-		Diesel			= 1.2, --Due to generally higher torques
-		Multifuel		= 1.2, --Due to generally higher torques
-		Electric		= 0.8 --Due to odd power outputs
-	}
-	local PtsPerHP = 2.33 / 1.5 --Added 1.5 mul from torque boost antics for any engines without a defined hp cost.
-	local FallBackCost = (self.peakkw / 0.7457) * PtsPerHP * (FuelCostMul[self.FuelType] or 1)
-	self.ACEPoints			= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointCostMultiplier)
-
 	self.TorqueScale		= ACF.TorqueScale[self.EngineType]
 
 	--calculate base fuel usage
@@ -265,6 +245,7 @@ function ENT:Update( ArgsTable )
 	self:UpdateOverlayText()
 
 	ACF_Activate( self, 1 )
+	if ACE.PointsInputChanged then ACE.PointsInputChanged( self, "engine-updated" ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end
@@ -439,7 +420,7 @@ function ENT:TriggerInput( iname, value )
 				end
 
 			end
-			ACE_DoContraptionLegalCheck(self)
+			ACE.DoContraptionLegalCheck(self)
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
 			self.FlyRPM = 0
@@ -551,7 +532,7 @@ function ENT:Think()
 		self.NextUpdate = ACF.CurTime + 1
 	end
 
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 	Wire_TriggerOutput(self, "EngineHeat", self.Heat)
 
 	if ACF.CurTime > self.NextUpdate then
@@ -707,7 +688,7 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
-	ACE_DoContraptionLegalCheck(self)
+	ACE.DoContraptionLegalCheck(self)
 
 	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it
@@ -764,7 +745,7 @@ function ENT:CalcRPM()
 
 
 	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 
 	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
 	if HealthRatio < 0.995 then
@@ -959,7 +940,7 @@ do
 
 		local Rope = nil
 		if self:CPPIGetOwner():GetInfoNum( "ACF_MobilityRopeLinks", 1) == 1 then
-			Rope = ACE_CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
+			Rope = ACE.CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
 		end
 
 		local Link = {

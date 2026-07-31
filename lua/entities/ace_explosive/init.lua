@@ -15,7 +15,7 @@ local STEEL_DENS  = 7.9      -- g/cm^3 (casing)
 -- not tens). Returns: fillerMass (HE), fragMass (casing, for blast frag),
 -- physMass (what the prop actually weighs - much lighter than solid steel, since
 -- a charge is mostly filler + thin casing, not a billet).
-function ACE_GetExplosiveMasses(volCuIn, fillerFraction)
+function ACE.GetExplosiveMasses(volCuIn, fillerFraction)
 	local f         = fillerFraction or ACF.ExplosiveFillerFraction or 0.65
 	local mul       = ACF.ExplosiveHEMul or 0.12
 	local cm3       = volCuIn * CUIN_TO_CM3
@@ -28,6 +28,8 @@ function ACE_GetExplosiveMasses(volCuIn, fillerFraction)
 
 	return fillerMass, fragMass, math.max(physMass, 1)
 end
+
+ACE_GetExplosiveMasses = ACE.GetExplosiveMasses
 
 function ENT:Initialize()
 	self.Detonated     = false
@@ -70,7 +72,7 @@ function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
 	local info = Scalable.ApplyShape(Charge, scaleVec, Data2, def)
 	if not info then Charge:Remove() return false end
 
-	local fillerMass, fragMass, physMass = ACE_GetExplosiveMasses(info.volume, def.FillerFraction)
+	local fillerMass, fragMass, physMass = ACE.GetExplosiveMasses(info.volume, def.FillerFraction)
 
 	Charge.Id          = Id
 	Charge.SizeId      = Data1
@@ -78,9 +80,8 @@ function MakeACE_Explosive(Owner, Pos, Angle, Id, Data1, Data2)
 	Charge.Dimensions  = info.dims
 	Charge.FillerMass  = fillerMass
 	Charge.FragMass    = fragMass
-	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37   -- metres
+	Charge.BlastRadius = ACE.CalculateHERadius(fillerMass) / 39.37   -- metres
 	Charge.Mass        = physMass
-	Charge.ACEPoints   = fillerMass * (ACF.ExplosivePointsPerKg or 28)
 	Charge.DamageOwner = Owner
 
 	Scalable.FinishSpawn(Charge, Owner, "_ace_explosive", def.name or "Explosive Charge")
@@ -105,7 +106,7 @@ function ENT:Detonate()
 	-- Identical to how HE rounds deal their blast.
 	ACF_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
-	local radiusIn = ACE_CalculateHERadius(self.FillerMass or 0)
+	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
 		Flash:SetOrigin(origin)
 		Flash:SetNormal(Vector(0, 0, -1))
@@ -177,6 +178,15 @@ function ENT:UpdateOverlayText()
 	txt = txt .. "\nBlast Radius: " .. math.Round(self.BlastRadius or 0, 1) .. " m"
 	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACF.HEPower or 8000), 0) .. " KJ"
 	txt = txt .. "\nMass: " .. math.Round(self.Mass or 0, 1) .. " kg"
+
+	if ACE.GetRoundLethalityLine then
+		local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = self.FillerMass or 0, guidance = "Dumb" }
+		local lethality = ACE.GetRoundLethalityLine(round)
+		if lethality then
+			txt = txt .. "\nLethality: " .. lethality
+		end
+	end
+
 	txt = txt .. "\nWire 'Detonate', or shoot it to cook off"
 	self:SetOverlayText(txt)
 end

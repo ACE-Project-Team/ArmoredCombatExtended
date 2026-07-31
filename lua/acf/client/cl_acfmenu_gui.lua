@@ -1,4 +1,3 @@
-
 --[[------------------------
 	1.- This is the file that displays the main menu, such as guns, ammo, mobility and subfolders.
 
@@ -436,6 +435,44 @@ function PANEL:Init( )
 
 end
 
+function PANEL:UpdateRoundCostPreview()
+
+	local DisplayTable = self.ActiveDisplayTable
+	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
+	if not ACF_GetRoundFromCVars or not ACE.Points_RoundFromBullet or not ACE.Points_BaseRoundCost then return end
+	if not IsValid(self.CustomDisplay) then return end
+
+	local RoundType = ACF.RoundTypes[DisplayTable.Type or ""]
+	if not RoundType or not isfunction(RoundType.convert) then return end
+
+	local RawData = ACF_GetRoundFromCVars()
+	local Success, BulletData = pcall(RoundType.convert, self, RawData)
+	if not Success or not istable(BulletData) then return end
+	BulletData.Id = RawData.Id
+	BulletData.Type = DisplayTable.Type or RawData.Type
+	BulletData.Data7 = RawData.Data7
+
+	local Round = ACE.Points_RoundFromBullet(BulletData)
+	if not Round then return end
+
+	local Cost = string.Comma(math.Round(ACE.Points_BaseRoundCost(Round)))
+	self:CPanelText("ACEBaseRoundCost", "Base Round Cost: " .. Cost .. "\nCrate Inventory Points: 0", "DermaDefaultBold")
+	self.CustomDisplay:PerformLayout()
+
+end
+
+function PANEL:QueueRoundCostPreview()
+
+	local DisplayTable = self.ActiveDisplayTable
+	self.RoundCostPreviewToken = (self.RoundCostPreviewToken or 0) + 1
+	local Token = self.RoundCostPreviewToken
+	timer.Simple(0, function()
+		if not IsValid(self) or self.ActiveDisplayTable ~= DisplayTable or self.RoundCostPreviewToken ~= Token then return end
+		self:UpdateRoundCostPreview()
+	end)
+
+end
+
 function PANEL:UpdateDisplay( Table )
 
 	RunConsoleCommand( "acfmenu_id", Table.id or 0 )
@@ -458,9 +495,22 @@ function PANEL:UpdateDisplay( Table )
 	acfmenupanel["CData"] = {}
 	end
 
+	acfmenupanel.ActiveDisplayTable = Table
 	acfmenupanel.CreateAttribs = Table.guicreate
-	acfmenupanel.UpdateAttribs = Table.guiupdate
+
+	local UpdateAttribs = Table.guiupdate
+	if Table.type == "Ammo" and isfunction(UpdateAttribs) then
+		acfmenupanel.UpdateAttribs = function(Panel, ...)
+			local Result = UpdateAttribs(Panel, ...)
+			Panel:QueueRoundCostPreview()
+			return Result
+		end
+	else
+		acfmenupanel.UpdateAttribs = UpdateAttribs
+	end
+
 	acfmenupanel:CreateAttribs( Table )
+	acfmenupanel:QueueRoundCostPreview()
 
 	acfmenupanel:PerformLayout()
 
@@ -509,7 +559,7 @@ function ACFHomeGUICreate()
 	color = Color(225,0,0,255)
 	end
 
-	versiontext = "GitHub Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
+	local versiontext = "GitHub Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
 
 	acfmenupanel["CData"]["VersionInit"] = vgui.Create( "DLabel" )
 	acfmenupanel["CData"]["VersionInit"]:SetText(versiontext)
@@ -1168,6 +1218,10 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 
 	acfmenupanel["CData"][Name].OnValueChanged = function( _, val )
 
+	--Programmatic SetMin/SetMax/SetValue (below) fire DNumSlider:ValueChanged, which calls
+	--this handler; skip re-entry during those so UpdateAttribs can't recurse into a stack overflow.
+	if acfmenupanel["CData"][Name].ACEProgrammatic then return end
+
 	if acfmenupanel.AmmoData[Name] ~= val then
 
 		acfmenupanel.AmmoData[Name] = val
@@ -1180,9 +1234,11 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 
 	end
 
+	acfmenupanel["CData"][Name].ACEProgrammatic = true
 	acfmenupanel["CData"][Name]:SetMin( Min )
 	acfmenupanel["CData"][Name]:SetMax( Max )
 	acfmenupanel["CData"][Name]:SetValue( Value )
+	acfmenupanel["CData"][Name].ACEProgrammatic = false
 
 	if not acfmenupanel["CData"][Name .. "_text"] and Desc then
 
@@ -1204,8 +1260,6 @@ end
 function PANEL:AmmoCheckbox(Name, Title, Desc, Tooltip )
 
 	if not acfmenupanel["CData"][Name] then
-
-	acfmenupanel["CData"][Name] = acfmenupanel["CData"][Name]
 
 	acfmenupanel["CData"][Name] = vgui.Create( "DCheckBoxLabel" )
 	acfmenupanel["CData"][Name]:SetText( Title or "" )
@@ -1254,7 +1308,7 @@ end
 
 	1-Name: Identifier of this text
 	2-Desc: The content of this text
-	3-Font: The Font to be used in this text. Leave it empty or nil to use the default one
+	3-Font: The font to be used in this text. Leave it empty or nil to use the default one
 	4-
 ]]---------------------------------------
 function PANEL:CPanelText(Name, Desc, Font, Panel)
@@ -1355,7 +1409,7 @@ function ACFCrewMenuGUICreate(Table)
 
 	local function GetCameraForPose(poseName)
 		-- Check if it's a standing pose
-		if ACE_IsStandingPose and ACE_IsStandingPose(poseName) then
+		if ACE.IsStandingPose and ACE.IsStandingPose(poseName) then
 			return CameraPresets.Standing
 		end
 
@@ -1664,11 +1718,12 @@ function ACEExplosiveGUICreate(Table)
 		local fragMass   = vol * CM3 * (1 - f) * 7.9 / 1000
 		local physMass   = fillerMass + fragMass * (ACF.ExplosiveCasingMul or 0.08)
 		local radius     = fillerMass ^ 0.33 * 8
+		local points = ACE.Points_ChargeCost and math.Round(ACE.Points_ChargeCost(fillerMass), 1) or 0
 		return "HE Filler: " .. math.Round(fillerMass, 2) .. " kg"
 			.. "\nBlast Radius: " .. math.Round(radius, 1) .. " m"
 			.. "\nBlast Energy: " .. math.Round(fillerMass * (ACF.HEPower or 8000), 0) .. " KJ"
 			.. "\nMass: " .. math.Round(physMass, 1) .. " kg"
-			.. "\nPoints: " .. math.Round(fillerMass * (ACF.ExplosivePointsPerKg or 28), 0)
+			.. "\nPoints: " .. points .. " (mounted ordnance)"
 	end)
 end
 function ACEExplosiveGUIUpdate() end

@@ -6,8 +6,8 @@ E2Helper.Descriptions["acfIsRack"] = "Returns 1 if the entity is an ACF rack."
 E2Helper.Descriptions["acfIsAmmo"] = "Returns 1 if the entity is an ACF ammo crate."
 E2Helper.Descriptions["acfIsFuel"] = "Returns 1 if the entity is an ACF fuel tank."
 E2Helper.Descriptions["acfIsRadar"] = "Returns 1 if the entity is an ACF radar."
-E2Helper.Descriptions["acfActive(e:)"] = "Returns whether an ACF engine, ammo crate, or fuel tank is active."
-E2Helper.Descriptions["acfActive(e:n)"] = "Sets whether an ACF engine, ammo crate, or fuel tank is active."
+E2Helper.Descriptions["acfActive(e:)"] = "Returns whether an ACF engine, ammo crate, fuel tank, radar, or sensor is active."
+E2Helper.Descriptions["acfActive(e:n)"] = "Sets whether an ACF engine, ammo crate, fuel tank, radar, or sensor is active."
 E2Helper.Descriptions["acfHitClip"] = "Returns 1 if hitpos is on a clipped part of prop."
 E2Helper.Descriptions["acfNameShort"] = "Returns the short name of an ACF entity."
 E2Helper.Descriptions["acfName"] = "Returns the full name of an ACF entity."
@@ -126,4 +126,4 @@ E2Helper.Descriptions["acfFuelUse"] = "Returns the current fuel consumption of a
 E2Helper.Descriptions["acfPeakFuelUse"] = "Returns the peak fuel consumption of an engine in liters per minute or kilowatts."
 
 --radars
-E2Helper.Descriptions["acfRadarData"] = "Returns a table containing the outputs you'd get from an ACF tracking radar, missile radar, or IRST.\nCheck radar wire outputs for key names."
+E2Helper.Descriptions["acfRadarData"] = "Returns a table containing the available outputs from an ACF radar or sensor.\nCheck radar wire outputs for key names."

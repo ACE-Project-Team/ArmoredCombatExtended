@@ -9,11 +9,10 @@ local clamp = math.Clamp
 local CrewseatTable = ACF.Weapons.Crewseats
 
 function ENT:Initialize()
-	ACE_InitializeCrewseat(self, self.ModelType)
+	ACE.InitializeCrewseat(self, self.ModelType)
 
 	self.Stamina = 100
 	self.LinkedGun = nil
-	self.ACEPoints = 400
 
 	self.Inputs = WireLib.CreateInputs(self, {})
 
@@ -71,7 +70,7 @@ list.Set("ACFCvars", "ace_crewseat_loader", {"id", "entitydata"})
 duplicator.RegisterEntityClass("ace_crewseat_loader", MakeACE_Crewseat_Loader, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
-	return ACE_GetPoseModifiers(self) or { gforce = 1, tilt = 1, stamina = 1 }
+	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1, stamina = 1 }
 end
 
 function ENT:DecreaseStamina()
@@ -127,9 +126,9 @@ function ENT:IncreaseStamina()
 end
 
 function ENT:Think()
-	ACE_UpdateCrewseatAnglePenalty(self)
-	ACE_UpdateGForcePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	ACE.UpdateCrewseatAnglePenalty(self)
+	ACE.UpdateGForcePenalty(self)
+	ACE.CrewseatLegalCheck(self)
 
 	if self.Legal then
 		self:IncreaseStamina()
@@ -145,7 +144,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	ACE_CrewseatOnRemove(self)
+	ACE.CrewseatOnRemove(self)
 end
 
 function ENT:UpdateWireOutputs()
@@ -162,7 +161,7 @@ function ENT:UpdateOverlayText()
 	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
 	local stamina = round(self.Stamina)
 	local pose = self:GetPoseModifiers()
-	local isStanding = ACE_IsStandingPose(self.ModelType)
+	local isStanding = ACE.IsStandingPose(self.ModelType)
 
 	local str = self.Name
 	str = str .. "\n\nHealth: " .. hp .. "%"
@@ -202,10 +201,10 @@ function ENT:UpdateOverlayText()
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
-	local HitRes = ACE_CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
+	local HitRes = ACE.CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
 
 	if HitRes.Kill or HitRes.Overkill > 1 then
-		ACE_CrewseatDeathSound(self)
+		ACE.CrewseatDeathSound(self)
 		ACF_HEKill(self, VectorRand(), 0)
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
@@ -226,8 +225,8 @@ function ENT:ApplyDupeInfo(ply, ent, info, GetEntByID)
 	local class = self:GetClass()
 	local defaultModelType = (ACE.CrewseatDefaults and ACE.CrewseatDefaults[class]) or "Sitting"
 
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
-	local modelType, _, reason = ACE_CrewseatApplyDupeModel(self, info, defaultModelType, true)
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
-	ACE_CrewseatDeferredModelSync(self, info)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
+	local modelType, _, reason = ACE.CrewseatApplyDupeModel(self, info, defaultModelType, true)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
+	ACE.CrewseatDeferredModelSync(self, info)
 end

@@ -2,16 +2,69 @@ name: GLuaFixer
 
 on:
   push:
+    branches:
+      - dev
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
+
+permissions:
+  contents: read
 
 jobs:
   Lint:
-    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
+    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@7d26f3a416e6174991c21c962aaf295ff3e17f52 # master, 2026-07-17
     with:
       config: .glualint.json
+
+  OfflineTests:
+    name: Offline definition tests
+    needs: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out ACE
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Run Python tests
+        run: python -m unittest discover -s tests/python -p 'test_*.py' -v
+
+      - name: Emit static safety warnings
+        run: python tests/run_static_safety.py --report static_safety_report.json
+
+      - name: Validate headless scenario contracts
+        run: python tests/run_headless_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci --dry-run
+
+      - name: Validate performance scenario contracts
+        run: python tests/run_perf_scenarios.py --manifest tests/fixtures/general_use_manifest.json --ci-smoke
+
+      - name: Upload static safety report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: static-safety-report
+          path: static_safety_report.json
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install --yes luajit
+
+      - name: Run LuaJIT tests
+        run: python tests/run_luajit_tests.py .
+
+  GLuaTest:
+    name: Native GMod server tests
+    needs: Lint
+    uses: CFC-Servers/GLuaTest/.github/workflows/run_tests.yml@735e52d20c69d14c9a2a8d42f3d6428d1af0936b # main, 2026-07-17
+    with:
+      branch: public
+      gluatest-ref: 735e52d20c69d14c9a2a8d42f3d6428d1af0936b
+      dockerbuild: 'true'
+      additional-setup: bash project/tests/prepare_gluatest_dependencies.sh
+      timeout: '5'
+      logs-as-artifact: 'true'

@@ -27,7 +27,7 @@ end
 -- the model + filler fraction through its ENT table (read off the created
 -- entity), and we read the model's REAL physics volume at its natural size -
 -- no model scaling on these props.
-function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
+function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_explosive") then return false end
 
 	local stored = scripted_ents.GetStored(class)
@@ -46,13 +46,12 @@ function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	local phys    = Charge:GetPhysicsObject()
 	local volCuIn = (IsValid(phys) and phys:GetVolume()) or 1000   -- model's true volume
-	local fillerMass, fragMass, physMass = ACE_GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
+	local fillerMass, fragMass, physMass = ACE.GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
 
 	Charge.FillerMass  = fillerMass
 	Charge.FragMass    = fragMass
-	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37
+	Charge.BlastRadius = ACE.CalculateHERadius(fillerMass) / 39.37
 	Charge.Mass        = physMass
-	Charge.ACEPoints   = fillerMass * (ACF.ExplosivePointsPerKg or 28)
 	Charge.DamageOwner = Owner
 
 	if IsValid(phys) then
@@ -75,6 +74,8 @@ function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	return Charge
 end
 
+ACE_MakePrebuiltExplosive = ACE.MakePrebuiltExplosive
+
 -- Shared by every variant's SpawnFunction (sandbox Q-menu). GMod passes the
 -- concrete class name as the third argument, which is exactly the variant we
 -- want to spawn.
@@ -83,7 +84,7 @@ function ENT:SpawnFunction(ply, tr, ClassName)
 	local class = ClassName or self.ClassName or "ace_bomb_satchel"
 	local pos = tr.HitPos + tr.HitNormal * 16
 	local ang = Angle(0, IsValid(ply) and ply:EyeAngles().yaw or 0, 0)
-	return ACE_MakePrebuiltExplosive(ply, class, pos, ang)
+	return ACE.MakePrebuiltExplosive(ply, class, pos, ang)
 end
 
 function ENT:Detonate()
@@ -96,7 +97,7 @@ function ENT:Detonate()
 
 	ACF_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
-	local radiusIn = ACE_CalculateHERadius(self.FillerMass or 0)
+	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
 		Flash:SetOrigin(origin)
 		Flash:SetNormal(Vector(0, 0, -1))
@@ -163,6 +164,15 @@ function ENT:UpdateOverlayText()
 	txt = txt .. "\nBlast Radius: " .. math.Round(self.BlastRadius or 0, 1) .. " m"
 	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACF.HEPower or 8000), 0) .. " KJ"
 	txt = txt .. "\nMass: " .. math.Round(self.Mass or 0, 1) .. " kg"
+
+	if ACE.GetRoundLethalityLine then
+		local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = self.FillerMass or 0, guidance = "Dumb" }
+		local lethality = ACE.GetRoundLethalityLine(round)
+		if lethality then
+			txt = txt .. "\nLethality: " .. lethality
+		end
+	end
+
 	txt = txt .. "\nWire 'Detonate', or shoot it to cook off"
 	self:SetOverlayText(txt)
 end

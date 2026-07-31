@@ -42,7 +42,7 @@ function EFFECT:Init( data )
 
 	local Mat = Ground.MatType or 0
 	--print(Ground.MatType)
-	local Material = ACE_GetMaterialName( Mat )
+	local Material = ACE.GetMaterialName( Mat )
 
 	--Overide with ACE prop material
 	if Ground.HitNonWorld then
@@ -92,7 +92,7 @@ function EFFECT:Init( data )
 		ACF_RenderLight( 0, self.Radius * 1800, Color(255, 90, 15), self.Origin, 1) -- idx 0: world
 	end
 
-	ACE_SBlast( self.Origin, self.Radius, self.HitWater, Ground.HitWorld )
+	ACE.SBlast( self.Origin, self.Radius, self.HitWater, Ground.HitWorld )
 
 	local PlayerDist = (LocalPlayer():GetPos() - self.Origin):Length() / 20 + 0.001 --Divide by 0 is death, 20 is roughly 39.37 / 2
 	if PlayerDist < self.Radius * 10 and not LocalPlayer():HasGodMode() then

@@ -30,7 +30,6 @@ ACF_defineGun("50mmAL", { --id
 		maxlength = 63,
 		propweight = 2.1
 	},
-	acepoints = 2000
 } )
 
 --add a gun to the class
@@ -51,7 +50,6 @@ ACF_defineGun("75mmAL", { --id
 		maxlength = 78,
 		propweight = 3.8
 	},
-	acepoints = 2350
 } )
 
 ACF_defineGun("100mmAL", {
@@ -71,7 +69,6 @@ ACF_defineGun("100mmAL", {
 		maxlength = 93,
 		propweight = 20
 	},
-	acepoints = 3200
 } )
 
 ACF_defineGun("120mmAL", {
@@ -91,7 +88,6 @@ ACF_defineGun("120mmAL", {
 		maxlength = 115,
 		propweight = 30
 	},
-	acepoints = 3700
 } )
 
 ACF_defineGun("140mmAL", {
@@ -111,7 +107,6 @@ ACF_defineGun("140mmAL", {
 		maxlength = 140,
 		propweight = 60
 	},
-	acepoints = 4500
 } )
 
 
@@ -132,12 +127,27 @@ ACF_defineGun("170mmAL", {
 		maxlength = 154,
 		propweight = 34
 	},
-	acepoints = 6000
 } )
 
 
 
 --PLACEHOLDERS until we get an actual autoloader system.
+
+ACF_defineGun("50mmBAL", {
+	name = "50mm Breech Autoloader",
+	desc = "PLACEHOLDER. 50mm Breech Autoloader. Autoloading giving it a consistent rate of fire in all conditions.",
+	model = "models/tankgun_new/tankgun_50mm.mdl",
+	sound = "ace_weapons/multi_sound/50mm_multi.mp3",
+	gunclass = "AL",
+	caliber = 5,
+	weight = 900,
+	year = 1960,
+	rofmod = 1.2,
+	round = {
+		maxlength = 63,
+		propweight = 2.1
+	},
+} )
 
 ACF_defineGun("75mmBAL", {
 	name = "75mm Breech Autoloader",
@@ -153,7 +163,6 @@ ACF_defineGun("75mmBAL", {
 		maxlength = 78,
 		propweight = 3.8
 	},
-	acepoints = 2400
 } )
 
 ACF_defineGun("100mmBAL", {
@@ -170,7 +179,6 @@ ACF_defineGun("100mmBAL", {
 		maxlength = 93,
 		propweight = 20
 	},
-	acepoints = 3000
 } )
 
 ACF_defineGun("120mmBAL", {
@@ -187,7 +195,6 @@ ACF_defineGun("120mmBAL", {
 		maxlength = 115,
 		propweight = 30
 	},
-	acepoints = 3700
 } )
 
 ACF_defineGun("140mmBAL", {
@@ -204,7 +211,6 @@ ACF_defineGun("140mmBAL", {
 		maxlength = 140,
 		propweight = 60
 	},
-	acepoints = 4100
 } )
 
 ACF_defineGun("170mmBAL", {
@@ -221,5 +227,4 @@ ACF_defineGun("170mmBAL", {
 		maxlength = 180,
 		propweight = 34
 	},
-	acepoints = 5200
 } )

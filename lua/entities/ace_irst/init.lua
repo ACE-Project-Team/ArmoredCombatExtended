@@ -36,8 +36,6 @@ function ENT:Initialize()
 		ID				= {}
 	}
 
-	self:SetActive(false)
-
 	self.Heat               = ACE.AmbientTemp
 	self.HeatAboveAmbient   = 10 -- Targets below this temperature above ambient will be ignored
 
@@ -69,6 +67,7 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 4
 
 	self.IRResolution = {}
+	self:SetActive(ACF.GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
@@ -140,7 +139,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive((value ~= 0) and self.Legal)
+		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -153,6 +152,14 @@ function ENT:TriggerInput( inp, value )
 end
 
 function ENT:SetActive(active)
+
+	active = active and true or false
+
+	if self.Active == active then
+		self:UpdateOverlayText()
+
+		return
+	end
 
 	self.Active = active
 
@@ -171,6 +178,8 @@ function ENT:SetActive(active)
 
 		self.Heat = ACE.AmbientTemp
 	end
+
+	self:UpdateOverlayText()
 
 end
 
@@ -232,7 +241,7 @@ function ENT:ScanForContraptions()
 		local BaseTemp = 0
 
 		if IsValid(BasePhys) and BasePhys:IsMoveable() then
-			BaseTemp = ACE_InfraredHeatFromProp(Base, self.HeatAboveAmbient)
+			BaseTemp = ACE.InfraredHeatFromProp(Base, self.HeatAboveAmbient)
 		end
 
 		local Pos
@@ -254,13 +263,15 @@ function ENT:ScanForContraptions()
 		local HeatMulFromDist = 1 - min(Distance / 94488, 1) -- 39.37 * 2400 = 94488
 		Heat = Heat * HeatMulFromDist
 
-		LOSTraceData.start = SelfPos
-		LOSTraceData.endpos = Pos
-		local LOSTrace = TraceHull(LOSTraceData)
-
 		local AngleFromTarget = GetAngleBetweenVectors(PosDiff:GetNormalized(), SelfForward)
 
-		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not LOSTrace.Hit then
+		LOSTraceData.start = SelfPos
+		LOSTraceData.endpos = Pos
+
+		-- Gate the LOS trace behind the cheap cone/heat check (as ace_trackingradar/ace_searchradar
+		-- do): the `and` short-circuits, so only in-cone, hot-enough contraptions get a TraceHull
+		-- instead of tracing every contraption on the server each think.
+		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not TraceHull(LOSTraceData).Hit then
 
 			local RegionMul = Heat / 100 * self.HeatRegionMul
 			local ResolveMul = Heat / 100 * self.HeatResolveMul
@@ -282,7 +293,7 @@ function ENT:ScanForContraptions()
 
 			self.TargetDetected = true
 
-			local Index = ACE_GetContraptionIndex(Contraption)
+			local Index = ACE.GetContraptionIndex(Contraption)
 
 			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 2.5,ClampMin,self.MaxInaccuracy)
 
@@ -297,7 +308,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -317,13 +328,14 @@ function ENT:ScanForContraptions()
 
 		local Heat = 38 --A bit hotter than a person but it helps the optics
 
-		LOSTraceData.start = SelfPos
-		LOSTraceData.endpos = Pos
-		local LOSTrace = TraceHull(LOSTraceData)
-
 		local AngleFromTarget = GetAngleBetweenVectors(PosDiff:GetNormalized(), SelfForward)
 
-		if AngleFromTarget < self.Cone and not LOSTrace.Hit then
+		LOSTraceData.start = SelfPos
+		LOSTraceData.endpos = Pos
+
+		-- Gate the LOS trace behind the cone check (see the contraption loop above): the `and`
+		-- short-circuits, so only players within the view cone get a TraceHull.
+		if AngleFromTarget < self.Cone and not TraceHull(LOSTraceData).Hit then
 
 			local RegionMul = Heat / 100 * self.HeatRegionMul
 			local ResolveMul = Heat / 100 * self.HeatResolveMul
@@ -358,7 +370,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -410,9 +422,10 @@ function ENT:Think()
 		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
 
-		if not self.Legal then
-			self.Active = false
-			self:SetActive(false)
+		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+
+		if self.Active ~= shouldBeActive then
+			self:SetActive(shouldBeActive)
 		end
 
 	end

@@ -15,7 +15,7 @@ function SWEP:DoAmmoStatDisplay()
 	local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACF.KEtoRHA
 	sendInfo = sendInfo .. string.format(", %.1fmm pen", MaxPen)
 
-	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
 end
 
 function SWEP:Equip()

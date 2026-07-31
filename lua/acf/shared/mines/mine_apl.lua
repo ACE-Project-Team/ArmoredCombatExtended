@@ -1,6 +1,6 @@
 --[[
 
-    ACE_DefineMine( "Example-ID", {
+    ACE.DefineMine( "Example-ID", {
 
         name               = "Im a Mine", --The full name of the mine.
         model              = "models/cyborgmatt/capacitor_small.mdl", -- The in-game model
@@ -30,7 +30,7 @@
     } )
 ]]
 
-ACE_DefineMine( "APL", {
+ACE.DefineMine( "APL", {
 
     name           = "Conventional Anti-Personnel Landmine",
     model          = "models/jaanus/wiretool/wiretool_range.mdl",
@@ -50,7 +50,7 @@ ACE_DefineMine( "APL", {
     digdepth       = 1.05,
 
 } )
-ACE_DefineMine( "Bounding-APL", {
+ACE.DefineMine( "Bounding-APL", {
 
     name               = "Bounding Anti-Personnel Landmine",
     model              = "models/cyborgmatt/capacitor_small.mdl",

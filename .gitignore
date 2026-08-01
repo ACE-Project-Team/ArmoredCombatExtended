@@ -1,4 +1,5 @@
 .vscode/
+.vs/
 static_safety_report.json
 
 # Source-engine model variants not loaded by GMod

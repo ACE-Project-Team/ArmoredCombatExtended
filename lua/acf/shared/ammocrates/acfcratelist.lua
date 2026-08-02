@@ -751,9 +751,15 @@ ACE.DefineModelData("Cylinder",{
 			Vector(4.24, 4.24, 6),
 		}
 	},
+	-- Constant cross-section swept along Z. Declaring the axis lets
+	-- ACE.Scalable derive the section polygon straight from CustomMesh above,
+	-- so packing and volume both describe the hull the game really builds.
+	ExtrudeAxis = "z",
 	volumefunction = function( L, W, H )
-		local volume = PI * (L / 2) * (W / 2) * H
-		return volume
+		-- The hull is an octagon, not a circle: PI/4 of the bounding box would
+		-- overstate it by ~11%. Ask the mesh instead of hardcoding either one.
+		local ratio = ACE.Scalable.SectionAreaRatio( ACE.ModelData["Cylinder"] )
+		return L * W * H * ratio
 	end
 })
 

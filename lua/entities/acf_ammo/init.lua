@@ -144,7 +144,6 @@ function ENT:Initialize()
 	self.Caliber             = 1
 	self.RoFMul              = 1
 	self.CrateShape          = "Box"	-- Scalable crate shape; overwritten on spawn for shaped crates
-	self.VolumeRatio         = 1		-- Fraction of the bounding box the shape fills (Box = 1)
 	self.LastMass            = 1
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
@@ -300,8 +299,8 @@ end
 
 do
 
-	-- Shapes a scalable crate is allowed to take. Box is the default; Cylinder packs the
-	-- same bounding box but only holds the round count its volume allows (see VolumeRatio).
+	-- Shapes a scalable crate is allowed to take. Box is the default; a shaped crate keeps
+	-- the same bounding box but packs shells against its real cross-section instead.
 	-- Keep this in sync with the shape list offered in the crate menu (cl_acfmenu_gui.lua).
 	local CrateShapes = {
 		Box      = true,
@@ -379,9 +378,6 @@ do
 					local ShapeVolume = ModelData.volumefunction(Scale.x, Scale.y, Scale.z)
 
 					Ammo.CrateShape  = Shape
-					-- Fraction of the bounding box this shape actually fills, used to scale round
-					-- capacity so a cylinder holds less than the box it fits inside.
-					Ammo.VolumeRatio = BoxVolume > 0 and (ShapeVolume / BoxVolume) or 1
 
 					-- Store the normalized id so a dupe keeps the shape (Box stays "L:W:H" for back-compat).
 					Id = Shape == "Box"
@@ -710,31 +706,37 @@ do
 
 			end
 
-			-- Calculate the capacity based on the dimensions of the entity and the dimensions of the ammo
-			local cap1 = Floor(Dimensions.x / shellLength) * Floor(Dimensions.y / width) * Floor(Dimensions.z / width)
-			local cap2 = Floor(Dimensions.y / shellLength) * Floor(Dimensions.x / width) * Floor(Dimensions.z / width)
-			local cap3 = Floor(Dimensions.z / shellLength) * Floor(Dimensions.x / width) * Floor(Dimensions.y / width)
+			-- Calculate the capacity based on the dimensions of the entity and the dimensions of the ammo.
+			-- Shells are packed on a grid in all three orientations and the best one wins. For a
+			-- shaped crate the grid is clipped to the real cross-section, so a shell overhanging a
+			-- cylinder's wall is lost outright rather than discounted -- see ACE.Scalable.SectionFit.
+			local ShapeData = ACE.ModelData[self.CrateShape or "Box"]
+			local SectionFit = ACE.Scalable.SectionFit
+
+			-- The three orientations the box packer has always tried: the shell's long side
+			-- laid along X, along Y, or standing up Z. Listed as the (X, Y, Z) extents of one
+			-- shell. A shaped crate is a prism extruded along Z, so the X and Y extents are
+			-- the ones a rounded wall can clip; the Z extent just stacks.
+			local function BestFit( a, b, c )
+				local best = 0
+				for _, side in ipairs({ {a, b, c}, {b, a, c}, {b, c, a} }) do
+					local count = SectionFit(ShapeData, Dimensions.x, Dimensions.y, side[1], side[2])
+						* Floor(Dimensions.z / side[3])
+					if count > best then best = count end
+				end
+				return best
+			end
+
+			local FCap = BestFit(shellLength, width, width)
 
 			--Split the shell in 2, leave the other piece next to it.
-			local piececap1 = Floor(Dimensions.x / (shellLength / 2)) * Floor(Dimensions.y / (width * 2)) * Floor(Dimensions.z / width)
-			local piececap2 = Floor(Dimensions.y / (shellLength / 2)) * Floor(Dimensions.x / (width * 2)) * Floor(Dimensions.z / width)
-			local piececap3 = Floor(Dimensions.z / (shellLength / 2)) * Floor(Dimensions.x / (width * 2)) * Floor(Dimensions.y / width)
-
-			local FCap	= MaxValue(cap1,cap2,cap3)
-			local FpieceCap = MaxValue(piececap1,piececap2,piececap3)
+			local FpieceCap = BestFit(shellLength / 2, width * 2, width)
 
 			--Why would you need the 2 piece for rounds below 50mm? Unless you want legos there....
 			--Missiles & bombs are excluded from using this method...
 			if AmmoGunData.caliber >= 5 and WeaponType ~= "missile" and FpieceCap > FCap and self.BulletData.TwoPiece > 0 then
 				FCap = FpieceCap
 				self.IsTwoPiece = true
-			end
-
-			-- Shells are packed into the bounding box above; scale the count down to the fraction
-			-- the actual shape fills (Box = 1). Keep at least one round so a shaped crate is usable.
-			local Ratio = self.VolumeRatio or 1
-			if Ratio < 1 and FCap > 0 then
-				FCap = MaxValue(Floor(FCap * Ratio), 1)
 			end
 
 			Capacity	= FCap

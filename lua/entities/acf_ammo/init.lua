@@ -511,12 +511,12 @@ function ENT:UpdateOverlayText()
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
 		end
 
-		if ACE_Points_RoundFromBullet and ACE_Points_BaseRoundCost then
-			local round = ACE_Points_RoundFromBullet( self.BulletData )
+		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost then
+			local round = ACE.Points.RoundFromBullet( self.BulletData )
 			if round then
 				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine( round )
 				if roundLine then text = text .. "\nLethality: " .. roundLine end
-				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE_Points_BaseRoundCost(round)))
+				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE.Points.BaseRoundCost(round)))
 				text = text .. "\nCrate Inventory Points: 0"
 			end
 		end

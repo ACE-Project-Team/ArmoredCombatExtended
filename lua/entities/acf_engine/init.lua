@@ -255,7 +255,7 @@ function ENT:UpdateOverlayText()
 	local pbmin = self.PeakMinRPM
 	local pbmax = self.PeakMaxRPM
 
-	local DriverBoost = self.HasDriver and ACF.DriverTorqueBoost or 1
+	local DriverBoost = self:HasLegalDriver() and ACF.DriverTorqueBoost or 1
 
 	local PowerKW = math.Round( self.peakkw * DriverBoost )
 	local PowerHP = math.Round( self.peakkw * DriverBoost * 1.34 )
@@ -273,12 +273,16 @@ function ENT:UpdateOverlayText()
 		text = text .. "\nSupplied with " .. (self.EngineType == "Electric" and "Batteries" or "Fuel")
 	end
 
-	if self.HasDriver then
+	if self:HasLegalDriver() then
 		text = text .. "\nDriver Provided (" .. (ACF.DriverTorqueBoost * 100 - 100) .. "% boost)"
 	end
 
 	if not self.Legal then
 		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
+
+	if not self.Active and self.ActivationIssue then
+		text = text .. "\n" .. self.ActivationIssue
 	end
 
 	self:SetOverlayText( text )
@@ -376,7 +380,7 @@ function ENT:TriggerInput( iname, value )
 			if not self.RequiresDriver then
 				HasDriver = true
 			else
-				if self.HasDriver or self.HasSeatDriver then
+				if self:HasLegalDriver() or self.HasSeatDriver then
 					HasDriver = true
 				elseif self.CanUseSeatDriver then
 					self:FindSeatForDriver()
@@ -388,6 +392,7 @@ function ENT:TriggerInput( iname, value )
 			--RequiresDriver
 			if (HasFuel or ACF.EnginesRequireFuel == 0) and HasDriver then
 				self.Active = true
+				self.ActivationIssue = nil
 				if self.SoundPath ~= "" then
 
 					--stupid workaround for the engine sound. THANK YOU garry
@@ -401,28 +406,24 @@ function ENT:TriggerInput( iname, value )
 				self:ACFInit()
 			else
 
+				-- Instead of spamming the owner's chat, record why the engine stayed off so the
+				-- reason shows up on the engine's look-at overlay. The engine simply doesn't activate.
+				local Missing = {}
 				if not HasFuel then
-					local HasWarned = self.OTWarnings.WarnedFuel or false
-					--self.OTWarnings
-					if not HasWarned then
-						chatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine requires fuel to work and that it be activated BEFORE the engine.", Color( 255, 0, 0 ))
-						self.OTWarnings.WarnedFuel = true
-					end
+					Missing[#Missing + 1] = "an active fuel source"
+				end
+				if not HasDriver then
+					Missing[#Missing + 1] = "a driver "
 				end
 
-				if not HasDriver then
-					local HasWarned = self.OTWarnings.WarnedDriver or false
-					--self.OTWarnings
-					if not HasWarned then
-						chatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine is above [" .. ACF.LargeEngineThreshold .. " hp] requiring a driver to work.", Color( 255, 0, 0 ))
-						self.OTWarnings.WarnedDriver = true
-					end
-				end
+				self.ActivationIssue = "Won't activate: needs " .. table.concat(Missing, " and ") .. "."
+				self:UpdateOverlayText()
 
 			end
 			ACE.DoContraptionLegalCheck(self)
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
+			self.ActivationIssue = nil
 			self.FlyRPM = 0
 			self.RPM = {}
 			self.RPM[1] = self.IdleRPM
@@ -492,12 +493,10 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 	return HitRes --This function needs to return HitRes
 end
 
-function ENT:IllegalCrewSeatRemove(crewEntities)
-	for _, crewEnt in ipairs(crewEntities) do
-		if not crewEnt.Legal then
-			self:Unlink(crewEnt)
-		end
-	end
+-- A linked driver seat that has gone illegal stays linked (so it recovers once legal again), so
+-- the torque boost and driver requirement ask for a *legal* driver rather than the link flag alone.
+function ENT:HasLegalDriver()
+	return self.HasDriver and IsValid(self.LinkedDriver) and self.LinkedDriver.Legal and true or false
 end
 
 function ENT:Think()
@@ -511,8 +510,6 @@ function ENT:Think()
 
 		self:UpdateOverlayText()
 		self.NextUpdate = ACF.CurTime + 1
-
-		self:IllegalCrewSeatRemove(self.CrewLink)
 
 		if not self.Legal and self.Active then
 			self:TriggerInput("Active",0) -- disable if not legal and active
@@ -690,7 +687,7 @@ function ENT:CalcRPM()
 
 	ACE.DoContraptionLegalCheck(self)
 
-	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
+	if self.RequiresDriver and not (self:HasLegalDriver() or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it
 		return 0
 	end
@@ -700,7 +697,7 @@ function ENT:CalcRPM()
 	--adjusting performance based on damage
 	-- TorqueMult is a mutipler that affects the final Torque an engine can offer at its max.
 	-- PeakTorque is the final possible torque to get.
-	local DriverBoost = self.HasDriver and ACF.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
+	local DriverBoost = self:HasLegalDriver() and ACF.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
 	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 	self.PeakTorque = self.BaseTorque * self.TorqueMult * DriverBoost
 

@@ -70,11 +70,8 @@ function ENT:Think()
 	ACE.UpdateCrewseatAnglePenalty(self)
 	ACE.CrewseatLegalCheck(self)
 
-	local eng = self.LinkedEngine
-	if not self.Legal and IsValid(eng) then
-		eng:Unlink(self)
-	end
-
+	-- An illegal crewseat stays linked: the engine only counts a legal driver for its torque boost
+	-- and driver requirement, so the link recovers on its own once the seat is legal again.
 	self:UpdateWireOutputs()
 	self:UpdateOverlayText()
 end

@@ -397,6 +397,10 @@ function ENT:UpdateOverlayText()
 		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
+	if self.RequiresGunner and not self:HasLegalGunner() then
+		text = text .. "\n\n" .. (self.CrewIssue or ("Won't fire: needs a gunner (gun is above " .. ACF.LargeGunsThreshold .. " mm)."))
+	end
+
 	self:SetOverlayText( text )
 
 
@@ -898,7 +902,7 @@ do
 		end
 
 		-- No gunner = more inaccuracy
-		if not self.HasGunner then
+		if not self:HasLegalGunner() then
 			IaccMult = IaccMult * 1.5
 		end
 
@@ -929,6 +933,20 @@ do
 		return highestStaminaLoader
 	end
 
+	-- A gunner that has gone illegal stays linked (so it recovers on its own once legal again),
+	-- so the operational checks ask for a *legal* gunner rather than trusting the link flag alone.
+	function ENT:HasLegalGunner()
+		if not self.HasGunner then return false end
+
+		for _, crewEnt in ipairs(self.CrewLink) do
+			if crewEnt:GetClass() == "ace_crewseat_gunner" and crewEnt.Legal then
+				return true
+			end
+		end
+
+		return false
+	end
+
 
 	local FusedRounds = {
 		HE	= true,
@@ -951,15 +969,19 @@ do
 			self.IsUnderWeight = true
 		end
 
-		if self.RequiresGunner and not self.HasGunner then
-			local HasWarned = self.OTWarnings.WarnedGunner or false
-			--self.OTWarnings
-			if not HasWarned then
-				--print("No")
-				chatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACF.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
-				self.OTWarnings.WarnedGunner = true
+		if self.RequiresGunner and not self:HasLegalGunner() then
+			-- No chat spam: surface the reason on the gun's look-at overlay and just don't fire.
+			local Issue = "Won't fire: needs a gunner (gun is above " .. ACF.LargeGunsThreshold .. " mm)."
+			if self.CrewIssue ~= Issue then
+				self.CrewIssue = Issue
+				self:UpdateOverlayText()
 			end
 			return
+		end
+
+		if self.CrewIssue then
+			self.CrewIssue = nil
+			self:UpdateOverlayText()
 		end
 
 		ACE.DoContraptionLegalCheck(self)

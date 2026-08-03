@@ -1,9 +1,9 @@
 --define the class
-ACF_defineGunClass("C", {
+ACE.DefineGunClass("C", {
 	type = "Gun",
 	spread = 0.1,
 	name = "Cannon",
-	desc = ACFTranslation.GunClasses[4],
+	desc = ACE.Translation.GunClasses[4],
 	muzzleflash = "C",
 	rofmod = 1.5,
 	maxrof = 19, -- maximum rounds per minute
@@ -12,7 +12,7 @@ ACF_defineGunClass("C", {
 } )
 
 --add a gun to the class
-ACF_defineGun("37mmC", { --id
+ACE.DefineGun("37mmC", { --id
 	name = "37mm Cannon",
 	desc = "A light and fairly weak cannon with good accuracy.",
 	model = "models/tankgun/tankgun_37mm.mdl",
@@ -29,7 +29,7 @@ ACF_defineGun("37mmC", { --id
 	},
 } )
 
-ACF_defineGun("50mmC", {
+ACE.DefineGun("50mmC", {
 	name = "50mm Cannon",
 	desc = "The 50mm is surprisingly fast-firing, with good effectiveness against light armor, but a pea-shooter compared to its bigger cousins",
 	model = "models/tankgun/tankgun_50mm.mdl",
@@ -45,7 +45,7 @@ ACF_defineGun("50mmC", {
 	},
 } )
 
-ACF_defineGun("75mmC", {
+ACE.DefineGun("75mmC", {
 	name = "75mm Cannon",
 	desc = "The 75mm is still rather respectable in rate of fire, but has only modest payload.  Often found on the Eastern Front, and on cold war light tanks.",
 	model = "models/tankgun/tankgun_75mm.mdl",
@@ -61,7 +61,7 @@ ACF_defineGun("75mmC", {
 	},
 } )
 
-ACF_defineGun("85mmC", {
+ACE.DefineGun("85mmC", {
 	name = "85mm Cannon",
 	desc = "Slightly better than 75, however may introduce problems to tanks, whose armor could stop 75mm. T-34-85 gun.",
 	model = "models/tankgun/tankgun_85mm.mdl",
@@ -77,7 +77,7 @@ ACF_defineGun("85mmC", {
 	},
 } )
 
-ACF_defineGun("100mmC", {
+ACE.DefineGun("100mmC", {
 	name = "100mm Cannon",
 	desc = "The 100mm was a benchmark for the early cold war period, and has great muzzle velocity and hitting power, while still boasting a respectable, if small, payload.",
 	model = "models/tankgun/tankgun_100mm.mdl",
@@ -93,7 +93,7 @@ ACF_defineGun("100mmC", {
 	},
 } )
 
-ACF_defineGun("120mmC", {
+ACE.DefineGun("120mmC", {
 	name = "120mm Cannon",
 	desc = "Often found in MBTs, the 120mm shreds lighter armor with utter impunity, and is formidable against even the big boys.",
 	model = "models/tankgun/tankgun_120mm.mdl",
@@ -109,7 +109,7 @@ ACF_defineGun("120mmC", {
 	},
 } )
 
-ACF_defineGun("140mmC", {
+ACE.DefineGun("140mmC", {
 	name = "140mm Cannon",
 	desc = "The 140mm fires a massive shell with enormous penetrative capability, but has a glacial reload speed and a very hefty weight.",
 	model = "models/tankgun/tankgun_140mm.mdl",
@@ -125,7 +125,7 @@ ACF_defineGun("140mmC", {
 	},
 } )
 
-ACF_defineGun("170mmC", {
+ACE.DefineGun("170mmC", {
 	name = "170mm Cannon",
 	desc = "The 170mm fires a gigantic shell with ginormous penetrative capability, but has a glacial reload speed and an extremely hefty weight.",
 	model = "models/tankgun/tankgun_170mm.mdl",

@@ -16,7 +16,7 @@ function SWEP:UpdateFakeCrate()
 end
 
 function SWEP:ACEFireBullet(Position, Direction)
-	if not GetConVar("acf_gunfire"):GetBool() then return end
+	if not GetConVar("ace_gunfire"):GetBool() then return end
 
 	self.BulletData.Pos = Position
 	self.BulletData.Flight = Direction * self.BulletData.MuzzleVel * 39.37
@@ -36,7 +36,7 @@ function SWEP:ACEFireBullet(Position, Direction)
 		self:BeforeFire()
 	end
 
-	ACF_CreateBullet(self.BulletData)
+	ACE_CreateBullet(self.BulletData)
 end
 
 local nosplode = {
@@ -81,8 +81,8 @@ function SWEP:DoAmmoStatDisplay()
 	local sendInfo = string.format("%smm %s ammo: %im/s speed", tostring(bdata.Caliber * 10), roundType, self.ThrowVel or bdata.MuzzleVel)
 
 	if not nopen[bdata.Type] then
-		local Energy = ACF_Kinetic(bdata.MuzzleVel * 39.37, bdata.ProjMass, bdata.LimitVel)
-		local MaxPen = (Energy.Penetration / bdata.PenArea) * ACF.KEtoRHA
+		local Energy = ACE_Kinetic(bdata.MuzzleVel * 39.37, bdata.ProjMass, bdata.LimitVel)
+		local MaxPen = (Energy.Penetration / bdata.PenArea) * ACE.KEtoRHA
 		sendInfo = sendInfo .. string.format(", %.1fmm pen", MaxPen)
 	end
 
@@ -92,24 +92,24 @@ function SWEP:DoAmmoStatDisplay()
 
 	if heat[bdata.Type] then
 		sendInfo = sendInfo .. string.format(", %.1fm blast", bdata.BoomFillerMass ^ 0.33 * 8)
-		local Energy = ACF_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
-		local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACF.KEtoRHA
+		local Energy = ACE_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
+		local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACE.KEtoRHA
 		sendInfo = sendInfo .. string.format(", %.1fmm pen", MaxPen)
 	end
 
 	if heatt[bdata.Type] then
 		sendInfo = sendInfo .. string.format(", %.1fm blast", bdata.BoomFillerMass ^ 0.33 * 8)
 
-		local Energy = ACF_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
-		local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACF.KEtoRHA
+		local Energy = ACE_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
+		local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACE.KEtoRHA
 		sendInfo = sendInfo .. string.format(", (1)%.1fmm pen", MaxPen)
 
-		Energy = ACF_Kinetic(bdata.SlugMV2 * 39.37, bdata.SlugMass2, 999999)
-		MaxPen = (Energy.Penetration / bdata.SlugPenArea2) * ACF.KEtoRHA
+		Energy = ACE_Kinetic(bdata.SlugMV2 * 39.37, bdata.SlugMass2, 999999)
+		MaxPen = (Energy.Penetration / bdata.SlugPenArea2) * ACE.KEtoRHA
 		sendInfo = sendInfo .. string.format(", (2)%.1fmm pen", MaxPen)
 	end
 
-	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
 end
 
 function SWEP:Equip()

@@ -1,8 +1,8 @@
 
-local cat = ((ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction");
+local cat = ((ACE.CustomToolCategory and ACE.CustomToolCategory:GetBool()) and "ACF" or "Construction");
 
 TOOL.Category		= cat
-TOOL.Name			= "#tool.acfmenu.name"
+TOOL.Name			= "#tool.acemenu.name"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
 
@@ -28,7 +28,7 @@ TOOL.ClientConVar[ "entitydata" ] = ""
 
 TOOL.SelectedEntities = {}
 
-cleanup.Register( "acfmenu" )
+cleanup.Register( "acemenu" )
 
 if CLIENT then
 	TOOL.Information = {
@@ -46,10 +46,10 @@ if CLIENT then
 	--------------------------------------]]
 	function TOOL.BuildCPanel( CPanel )
 
-		local pnldef_ACFmenu = vgui.RegisterFile( "acf/client/cl_acfmenu_gui.lua" )
+		local pnldef_ACEmenu = vgui.RegisterFile( "acf/client/cl_acemenu_gui.lua" )
 
 		-- create
-		local DPanel = vgui.CreateFromTable( pnldef_ACFmenu )
+		local DPanel = vgui.CreateFromTable( pnldef_ACEmenu )
 		CPanel:AddPanel( DPanel )
 
 	end
@@ -65,13 +65,13 @@ function TOOL:LeftClick( trace )
 	local Type	= self:GetClientInfo( "type" )
 	local Id	= self:GetClientInfo( "id" )
 	local entClass
-	local TypeId = ACF.Weapons[Type][Id]
+	local TypeId = ACE.Weapons[Type][Id]
 
 	if not TypeId then
 		if Type == "Ammo" then
 			entClass = "acf_ammo"
 		elseif Type == "FuelTanks" then
-			entClass = "acf_fueltanks"
+			entClass = "acf_fueltank"
 		end
 	else
 		entClass = TypeId["ent"]
@@ -98,11 +98,11 @@ function TOOL:LeftClick( trace )
 		if trace.Entity:GetClass() == entClass and trace.Entity.CanUpdate then
 			table.insert( ArgTable, 1, ply )
 			local success, msg = trace.Entity:Update( ArgTable )
-			ACF_SendNotify( ply, success, msg )
+			ACE_SendNotify( ply, success, msg )
 		else
 			-- Using the Duplicator entity register to find the right factory function
 			local Ent = DupeClass.Func( ply, unpack( ArgTable ) ) --aka function like MakeACF_Ammo
-			if not IsValid(Ent) then ACF_SendNotify(ply, false, "#tool.acfmenu.creationfailed") return false end
+			if not IsValid(Ent) then ACE_SendNotify(ply, false, "#tool.acemenu.creationfailed") return false end
 
 			Ent:Activate()
 			Ent:DropToFloor()
@@ -197,7 +197,7 @@ function TOOL:RightClick( trace )
 					if ent ~= selected and validEnt and IsValid(selected) then
 						local success, msg = linkEnts(ent, selected, holdingUse)
 
-						ACF_SendNotify(ply, success, msg)
+						ACE_SendNotify(ply, success, msg)
 					end
 				end
 			end

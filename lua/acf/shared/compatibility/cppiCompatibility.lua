@@ -90,7 +90,7 @@ timer.Simple(1, function()
         Entity:CPPISetOwner(Player)
     end
 
-    hook.Add("PlayerAuthed", "ACF_CPPI", function(Player, SteamID)
+    hook.Add("PlayerAuthed", "ACE_CPPI", function(Player, SteamID)
         if not IsValid(Player) then return end
         if not Player:IsPlayer() then return end
 
@@ -111,7 +111,7 @@ timer.Simple(1, function()
             Backup[SteamID] = nil
         end
 
-        Player:CallOnRemove("ACF_CPPI", function()
+        Player:CallOnRemove("ACE_CPPI", function()
             Entities[Player] = nil
 
             if not next(New) then return end
@@ -128,14 +128,14 @@ timer.Simple(1, function()
         end)
     end)
 
-    hook.Add("PlayerSpawnedNPC", "ACF_CPPI", SetOwner)
-    hook.Add("PlayerSpawnedSENT", "ACF_CPPI", SetOwner)
-    hook.Add("PlayerSpawnedSWEP", "ACF_CPPI", SetOwner)
-    hook.Add("PlayerSpawnedVehicle", "ACF_CPPI", SetOwner)
+    hook.Add("PlayerSpawnedNPC", "ACE_CPPI", SetOwner)
+    hook.Add("PlayerSpawnedSENT", "ACE_CPPI", SetOwner)
+    hook.Add("PlayerSpawnedSWEP", "ACE_CPPI", SetOwner)
+    hook.Add("PlayerSpawnedVehicle", "ACE_CPPI", SetOwner)
 
-    hook.Add("PlayerSpawnedEffect", "ACF_CPPI", SetOwnerTheReturn)
-    hook.Add("PlayerSpawnedProp", "ACF_CPPI", SetOwnerTheReturn)
-    hook.Add("PlayerSpawnedRagdoll", "ACF_CPPI", SetOwnerTheReturn)
+    hook.Add("PlayerSpawnedEffect", "ACE_CPPI", SetOwnerTheReturn)
+    hook.Add("PlayerSpawnedProp", "ACE_CPPI", SetOwnerTheReturn)
+    hook.Add("PlayerSpawnedRagdoll", "ACE_CPPI", SetOwnerTheReturn)
 
     MsgC(Color(255, 0, 0), "[ACE Warning] ", Color(255, 255, 255), "Couldn't find a CPPI-compliant prop protection addon, using fallback methods.\n")
     MsgC(Color(255, 255, 255), "Please consider giving the README file a look in the Github repository.\n")

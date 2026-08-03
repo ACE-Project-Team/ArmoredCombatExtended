@@ -273,6 +273,9 @@ function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, no
 	})
 end
 
+-- Keep the historical hook-facing symbol available while consumers migrate to ACE.*.
+ACE_NotifyContraptionPointsInvalidated = ACE.NotifyContraptionPointsInvalidated
+
 local function ACE_CalcSubsystem(ents, subsystem)
 	local total = 0
 

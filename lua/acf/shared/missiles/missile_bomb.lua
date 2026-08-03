@@ -1,9 +1,9 @@
 --define the class
-ACF_defineGunClass("BOMB", {
+ACE.DefineGunClass("BOMB", {
 	type           = "missile",  -- i know i know
 	spread         = 1,
 	name           = "[Bomb] - General Purpose Bomb",
-	desc           = ACFTranslation.MissileClasses[5],
+	desc           = ACE.Translation.MissileClasses[5],
 	muzzleflash    = "40mm_muzzleflash_noscale",
 	rofmod         = 0.1,
 	year           = 1915,
@@ -17,7 +17,7 @@ ACF_defineGunClass("BOMB", {
 
 
 -- Balance the round in line with the 40mm pod rocket.
-ACF_defineGun("50kgBOMB", {						-- id
+ACE.DefineGun("50kgBOMB", {						-- id
 	name             = "50kg Free Falling Bomb",
 	desc             = "Old 100lb bomb, most effective vs exposed infantry and light trucks.",
 	model            = "models/bombs/fab50.mdl",
@@ -73,7 +73,7 @@ ACF_defineGun("50kgBOMB", {						-- id
 } )
 
 
-ACF_defineGun("100kgBOMB", {						-- id
+ACE.DefineGun("100kgBOMB", {						-- id
 	name             = "100kg Free Falling Bomb",
 	desc             = "An old 250lb WW2 bomb, as used by Soviet bombers to destroy enemies of the Motherland.",
 	model            = "models/bombs/fab100.mdl",
@@ -128,7 +128,7 @@ ACF_defineGun("100kgBOMB", {						-- id
 	armdelay	= 0.00							-- minimum fuse arming delay
 } )
 
-ACF_defineGun("250kgBOMB", {						-- id
+ACE.DefineGun("250kgBOMB", {						-- id
 	name             = "250kg Free Falling Bomb",
 	desc             = "A heavy 500lb bomb, widely used as a tank buster on various WW2 aircraft.",
 	model            = "models/bombs/fab250.mdl",
@@ -183,7 +183,7 @@ ACF_defineGun("250kgBOMB", {						-- id
 	armdelay	= 0.00							-- minimum fuse arming delay
 } )
 
-ACF_defineGun("500kgBOMB", {						-- id
+ACE.DefineGun("500kgBOMB", {						-- id
 	name             = "500kg Free Falling Bomb",
 	desc             = "A 1000lb bomb, as found in the heavy bombers of late WW2. Best used against fortifications or immobile targets.",
 	model            = "models/bombs/fab500.mdl",
@@ -235,7 +235,7 @@ ACF_defineGun("500kgBOMB", {						-- id
 	armdelay	= 0.00							-- minimum fuse arming delay
 } )
 
-ACF_defineGun("1000kgBOMB", {					-- id
+ACE.DefineGun("1000kgBOMB", {					-- id
 	name             = "1000kg Free Falling Bomb",
 	desc             = "A 2000lb bomb. Nothing is surviving the blast of this one, this munition will turn everything it touches to ashes. Handle with care.",
 	model            = "models/bombs/an_m66.mdl",
@@ -287,7 +287,7 @@ ACF_defineGun("1000kgBOMB", {					-- id
 } )
 
 
-ACF_defineGun("Mk82Bomb", {						-- id
+ACE.DefineGun("Mk82Bomb", {						-- id
 	name			= "MK-82 General Purpose Bomb",
 	desc			= "Small low drag general purpose bomb. You can carry a lot of these.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu12.mdl",
@@ -350,7 +350,7 @@ ACF_defineGun("Mk82Bomb", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACF_defineGun("Mk83Bomb", {						-- id
+ACE.DefineGun("Mk83Bomb", {						-- id
 	name			= "MK-83 General Purpose Bomb",
 	desc			= "Low drag general purpose bomb. Packs a sizable warhead perfect for nailing heavy targets.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu16.mdl",
@@ -410,7 +410,7 @@ ACF_defineGun("Mk83Bomb", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACF_defineGun("Mk84Bomb", {						-- id
+ACE.DefineGun("Mk84Bomb", {						-- id
 	name			= "MK-84 General Purpose Bomb",
 	desc			= "Low drag general purpose bomb with a massive warhead.\n\nInertial Guidance: No\nECCM: No\nDatalink: No",
 	model			= "models/bombs/gbu/gbu10.mdl",
@@ -467,7 +467,7 @@ ACF_defineGun("Mk84Bomb", {						-- id
 	armdelay	= 0.00								-- minimum fuse arming delay
 } )
 
-ACF_defineGun("100kgGBOMB", {					-- id
+ACE.DefineGun("100kgGBOMB", {					-- id
 	name             = "100kg Glide Bomb",
 	desc             = "A 250-pound bomb, fitted with fins for a longer reach.  Well suited to dive bombing, but bulkier and heavier from its fins.",
 	model            = "models/missiles/micro.mdl",
@@ -523,7 +523,7 @@ ACF_defineGun("100kgGBOMB", {					-- id
 })
 
 
-ACF_defineGun("250kgGBOMB", {					-- id
+ACE.DefineGun("250kgGBOMB", {					-- id
 	name             = "250kg Glide Bomb",
 	desc             = "A heavy 500lb bomb, fitted with fins for a gliding trajectory better suited to striking point targets.",
 	model            = "models/bombs/glide250.mdl",

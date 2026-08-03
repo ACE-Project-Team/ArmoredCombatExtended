@@ -77,6 +77,25 @@ class RepositoryStructureTests(unittest.TestCase):
 
         self.assertEqual([], missing, "direct AddCSLuaFile references do not resolve: " + ", ".join(missing))
 
+    def test_explicit_backend_include_targets_resolve(self):
+        pattern = re.compile(r"\b(?:include|AddCSLuaFile)\s*\(\s*[\"']([^\"']+)[\"']")
+        excluded = {
+            LUA_ROOT / "entities" / "gmod_wire_expression2" / "core" / "custom" / "acf.lua",
+            LUA_ROOT / "starfall" / "libs_sv" / "acf.lua",
+        }
+        for source_path in LUA_ROOT.rglob("*.lua"):
+            if source_path in excluded:
+                continue
+            source = source_path.read_text(encoding="utf-8", errors="replace")
+            for referenced in pattern.findall(source):
+                if "/" not in referenced or referenced.endswith("/"):
+                    continue
+                with self.subTest(source=source_path.relative_to(REPO), target=referenced):
+                    self.assertTrue(
+                        (LUA_ROOT / referenced).is_file(),
+                        f"missing include/AddCSLuaFile target {referenced} in {source_path.relative_to(REPO)}",
+                    )
+
     def test_loader_declared_shared_folders_exist(self):
         loader = (LUA_ROOT / "acf" / "shared" / "sh_ace_loader.lua").read_text(
             encoding="utf-8"

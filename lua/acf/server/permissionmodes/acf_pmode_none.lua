@@ -3,8 +3,8 @@
 		This mode completely disables damage protection.
 ----]]
 
-if not ACF or not ACF.Permissions or not ACF.Permissions.RegisterMode then error("ACF: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!") end
-local perms = ACF.Permissions
+if not ACE.Permissions or not ACE.Permissions.RegisterMode then error("ACE: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!") end
+local perms = ACE.Permissions
 
 -- the name for this mode used in commands and identification
 local modename = "none"

@@ -15,7 +15,7 @@ function EFFECT:Init( data )
 	--	Flash:SetOrigin( self.Origin)
 	--	Flash:SetNormal( self.DirVecNormal )
 	--	Flash:SetRadius( math.max( Radius, 1 ) )
-	--util.Effect( "ACF_Scaled_Explosion", Flash )
+	--util.Effect( "ACE_Scaled_Explosion", Flash )
 
 	local PlayerDist = (LocalPlayer():GetPos() - self.Origin):Length() / 20 + 0.001 --Divide by 0 is death, 20 is roughly 39.37 / 2
 

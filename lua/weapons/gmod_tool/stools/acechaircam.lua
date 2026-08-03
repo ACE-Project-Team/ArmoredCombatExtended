@@ -1,5 +1,5 @@
 TOOL.Category = "Render"
-TOOL.Name = "#tool.acfchaircam.name"
+TOOL.Name = "#tool.acechaircam.name"
 
 if CLIENT then
 
@@ -128,7 +128,7 @@ do
 
 		function TOOL.BuildCPanel( panel )
 
-			panel:Help( "#tool.acfchaircam.desc" )
+			panel:Help( "#tool.acechaircam.desc" )
 
 		end
 	end

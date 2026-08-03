@@ -646,7 +646,7 @@ local Shell170mm = {}
 	Shell170mm.volume = 11630.235
 AmmoTable["Shell170mm"] = Shell170mm
 
-ACF.Weapons.Ammo = AmmoTable --end ammo containers listing
+ACE.Weapons.Ammo = AmmoTable --end ammo containers listing
 
 --Cube
 ACE.DefineModelData("Box",{
@@ -697,7 +697,7 @@ ACE.DefineModelData("Wedge",{
 })
 
 --Another type of wedge.
-ACE.DefineModelData("Prism",{
+ACE_DefineModelData("Prism",{
 
 	Shape = "Prism",
 	Model = "models/holograms/prism.mdl",
@@ -758,7 +758,7 @@ ACE.DefineModelData("Cylinder",{
 })
 
 -- The sphere. Dont ask how i got its vertex.
-ACE.DefineModelData("Sphere",{
+ACE_DefineModelData("Sphere",{
 
 	Shape = "Sphere",
 	Model = "models/holograms/hq_sphere.mdl", --Note: The model can be used as ID if needed.

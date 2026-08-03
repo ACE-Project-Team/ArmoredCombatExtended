@@ -1,17 +1,17 @@
 
-ACF_DefineRadarClass("OMNI-AM", {
+ACE.DefineRadarClass("OMNI-AM", {
 	name = "Spherical Anti-missile Radar",
 	type = "Anti-missile",
-	desc = ACFTranslation.Radar[5],
+	desc = ACE.Translation.Radar[5],
 } )
 
 
 
 
-ACF_DefineRadar("SmallOMNI-AM", {
+ACE.DefineRadar("SmallOMNI-AM", {
 	name		= "Small Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[6],
+	desc		= ACE.Translation.Radar[6],
 	model		= "models/radar/radar_sp_sml.mdl",
 	class		= "OMNI-AM",
 	weight		= 300,
@@ -20,10 +20,10 @@ ACF_DefineRadar("SmallOMNI-AM", {
 } )
 
 
-ACF_DefineRadar("MediumOMNI-AM", {
+ACE.DefineRadar("MediumOMNI-AM", {
 	name		= "Medium Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[7],
+	desc		= ACE.Translation.Radar[7],
 	model		= "models/radar/radar_sp_mid.mdl", -- medium one is for now scalled big one - will be changed
 	class		= "OMNI-AM",
 	weight		= 600,
@@ -32,10 +32,10 @@ ACF_DefineRadar("MediumOMNI-AM", {
 } )
 
 
-ACF_DefineRadar("LargeOMNI-AM", {
+ACE.DefineRadar("LargeOMNI-AM", {
 	name		= "Large Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[8],
+	desc		= ACE.Translation.Radar[8],
 	model		= "models/radar/radar_sp_big.mdl",
 	class		= "OMNI-AM",
 	weight		= 1200,

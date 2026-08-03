@@ -10,17 +10,17 @@ return {
 		{
 			name = "covers player-facing round families",
 			func = function()
-				assertRegistryEntries(expect, ACF.RoundTypes, {
+				assertRegistryEntries(expect, ACE.RoundTypes, {
 					"AP", "APFSDS", "HE", "HEAT", "HESH", "THEAT",
 				})
 
 				for _, roundType in ipairs({ "AP", "APFSDS", "HE", "HEAT", "HESH", "THEAT" }) do
-					local round = ACF.RoundTypes[roundType]
+					local round = ACE.RoundTypes[roundType]
 					expect(round.name).to.exist()
 					expect(round.desc).to.exist()
 					if round.netid then
 						expect(round.create).to.beA("function")
-						expect(ACF.IdRounds[round.netid]).to.equal(roundType)
+						expect(ACE.IdRounds[round.netid]).to.equal(roundType)
 					end
 				end
 			end,
@@ -46,10 +46,10 @@ return {
 				for _, registryName in ipairs({
 					"Engines", "FuelTanks", "Crewseats", "Guns", "Racks", "Radars",
 				}) do
-					expect(ACF.Weapons[registryName]).to.exist()
+					expect(ACE.Weapons[registryName]).to.exist()
 
 					local count = 0
-					for _ in pairs(ACF.Weapons[registryName]) do
+					for _ in pairs(ACE.Weapons[registryName]) do
 						count = count + 1
 					end
 

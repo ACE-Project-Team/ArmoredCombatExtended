@@ -72,7 +72,7 @@ function SWEP:PrimaryAttack()
 		end
 	end
 
-	ACE.SendMsg(owner, Color(0,255,0), "[ACE SZ Tool] moved point(1)")
+	ACE_SendMsg(owner, Color(0,255,0), "[ACE SZ Tool] moved point(1)")
 	print("[ACE SZ Tool] moved point(1)")
 	self.Corner1Ent:SetPos(PointPos)
 	self.SZCorner1  = PointPos
@@ -84,7 +84,7 @@ function SWEP:PrimaryAttack()
 		if IsValid(self.PreviewEntity) then
 			self.PreviewEntity:Remove()
 		end
-		self.PreviewEntity = ACE.VisualizeSZ(self.SZCorner1, self.SZCorner2)
+		self.PreviewEntity = ACE_VisualizeSZ(self.SZCorner1, self.SZCorner2)
 	end
 
 end
@@ -126,7 +126,7 @@ function SWEP:SecondaryAttack()
 		end
 	end
 
-	ACE.SendMsg(owner, Color(255,0,0), "[ACE SZ Tool] moved point(2)")
+	ACE_SendMsg(owner, Color(255,0,0), "[ACE SZ Tool] moved point(2)")
 	print("[ACE SZ Tool] moved point(2)")
 	self.Corner2Ent:SetPos(PointPos)
 	self.SZCorner2  = PointPos
@@ -139,7 +139,7 @@ function SWEP:SecondaryAttack()
 		if IsValid(self.PreviewEntity) then
 			self.PreviewEntity:Remove()
 		end
-		self.PreviewEntity = ACE.VisualizeSZ(self.SZCorner1, self.SZCorner2)
+		self.PreviewEntity = ACE_VisualizeSZ(self.SZCorner1, self.SZCorner2)
 	end
 
 end

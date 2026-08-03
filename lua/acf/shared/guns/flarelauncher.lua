@@ -1,9 +1,9 @@
 --define the class
-ACF_defineGunClass("FGL", {
+ACE.DefineGunClass("FGL", {
 	type = "Gun",
 	spread = 3,
 	name = "Flare Launcher",
-	desc = ACFTranslation.GunClasses[5],
+	desc = ACE.Translation.GunClasses[5],
 	muzzleflash = "MO",
 	rofmod = 0.6,
 	year = 1970,
@@ -13,7 +13,7 @@ ACF_defineGunClass("FGL", {
 } )
 
 --add a gun to the class
-ACF_defineGun("40mmFGL", { --id
+ACE.DefineGun("40mmFGL", { --id
 	name = "40mm Flare Launcher",
 	desc = "Put on an all-American fireworks show with this flare launcher: high fire rate, low distraction rate.  Fill the air with flare.  Careful of your reload time.",
 	model = "models/missiles/blackjellypod.mdl",
@@ -32,7 +32,7 @@ ACF_defineGun("40mmFGL", { --id
 } )
 
 --add a gun to the class
-ACF_defineGun("60mmFGL", { --id
+ACE.DefineGun("60mmFGL", { --id
 	name = "60mm Flare Launcher",
 	desc = "Large countermeasure shooting out heavy flares. Has fewer shots than the its 40mm counterpart but reloads faster and is much better for distracting.",
 	model = "models/launcher/40mmgl.mdl",

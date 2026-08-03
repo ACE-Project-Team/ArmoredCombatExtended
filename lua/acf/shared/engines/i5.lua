@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACF_DefineEngine( "2.3-I5", {
+ACE.DefineEngine( "2.3-I5", {
 	name = "2.3L I5 Petrol",
 	desc = "Sedan-grade 5-cylinder, solid and dependable",
 	model = "models/engines/inline5s.mdl",
@@ -18,7 +18,7 @@ ACF_DefineEngine( "2.3-I5", {
 	limitrpm = 7000,
 } )
 
-ACF_DefineEngine( "3.9-I5", {
+ACE.DefineEngine( "3.9-I5", {
 	name = "3.9L I5 Petrol",
 	desc = "Truck sized inline 5, strong with a good balance of revs and torques",
 	model = "models/engines/inline5m.mdl",
@@ -35,7 +35,7 @@ ACF_DefineEngine( "3.9-I5", {
 
 -- Diesel
 
-ACF_DefineEngine( "2.9-I5", {
+ACE.DefineEngine( "2.9-I5", {
 	name = "2.9L I5 Diesel",
 	desc = "Aging fuel-injected diesel, low in horsepower but very forgiving and durable",
 	model = "models/engines/inline5s.mdl",
@@ -50,7 +50,7 @@ ACF_DefineEngine( "2.9-I5", {
 	limitrpm = 4200,
 } )
 
-ACF_DefineEngine( "4.1-I5", {
+ACE.DefineEngine( "4.1-I5", {
 	name = "4.1L I5 Diesel",
 	desc = "Heavier duty diesel, found in things that work hard",
 	model = "models/engines/inline5m.mdl",

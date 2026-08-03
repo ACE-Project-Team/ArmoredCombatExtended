@@ -1,15 +1,15 @@
 -- Code modified from the NADMOD client permissions menu, by Nebual
 -- http://www.facepunch.com/showthread.php?t=1221183
 
-ACF = ACF or {}
-ACF.Permissions = ACF.Permissions or {}
-local this = ACF.Permissions
+ACE = ACE or {}
+ACE.Permissions = ACE.Permissions or {}
+local this = ACE.Permissions
 
 local getPanelChecks = function() return {} end
 
 
 
-net.Receive("ACF_refreshfriends", function()
+net.Receive("ACE_refreshfriends", function()
 	--Msg("\ncl refreshfriends\n")
 	local perms = net.ReadTable()
 	local checks = getPanelChecks()
@@ -28,7 +28,7 @@ end)
 
 
 
-net.Receive("ACF_refreshfeedback", function()
+net.Receive("ACE_refreshfeedback", function()
 	local success = net.ReadBit()
 	local str, notify
 
@@ -53,7 +53,7 @@ function this.ApplyPermissions(checks)
 		perms[check.steamid] = check:GetChecked()
 	end
 
-	net.Start("ACF_dmgfriends")
+	net.Start("ACE_dmgfriends")
 		net.WriteTable(perms)
 	net.SendToServer()
 end
@@ -94,7 +94,7 @@ function this.ClientPanel(Panel)
 	local button = Panel:Button("Give Damage Permission")
 	button.DoClick = function() this.ApplyPermissions(Panel.playerChecks) end
 
-	net.Start("ACF_refreshfriends")
+	net.Start("ACE_refreshfriends")
 		net.WriteBit(true)
 	net.SendToServer(ply)
 end
@@ -106,11 +106,11 @@ function this.SpawnMenuOpen()
 		this.ClientPanel(this.ClientCPanel)
 	end
 end
-hook.Add("SpawnMenuOpen", "ACFPermissionsSpawnMenuOpen", this.SpawnMenuOpen)
+hook.Add("SpawnMenuOpen", "ACEPermissionsSpawnMenuOpen", this.SpawnMenuOpen)
 
 
 
 function this.PopulateToolMenu()
 	spawnmenu.AddToolMenuOption("Utilities", "ACE", "Damage Permission", "Damage Permission", "", "", this.ClientPanel)
 end
-hook.Add("PopulateToolMenu", "ACFPermissionsPopulateToolMenu", this.PopulateToolMenu)
+hook.Add("PopulateToolMenu", "ACEPermissionsPopulateToolMenu", this.PopulateToolMenu)

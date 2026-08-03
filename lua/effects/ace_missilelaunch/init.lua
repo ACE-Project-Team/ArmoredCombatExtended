@@ -14,7 +14,7 @@ function EFFECT:Init( data )
 		local Sound        = Rack:GetNWString( "Sound", "" )
 		local SoundPitch   = Rack:GetNWInt( "SoundPitch", 100 )
 
-		if not IsValidSound( Sound ) then
+		if not ACE.IsValidSound( Sound ) then
 			Sound = "acf_extra/airfx/rocket_fire2.wav"
 		end
 

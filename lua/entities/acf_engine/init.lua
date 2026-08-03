@@ -410,10 +410,10 @@ function ENT:TriggerInput( iname, value )
 				-- reason shows up on the engine's look-at overlay. The engine simply doesn't activate.
 				local Missing = {}
 				if not HasFuel then
-					Missing[#Missing + 1] = "an active fuel source (activate the fuel tank before the engine)"
+					Missing[#Missing + 1] = "an active fuel source"
 				end
 				if not HasDriver then
-					Missing[#Missing + 1] = "a driver (engine is above " .. ACF.LargeEngineThreshold .. " hp)"
+					Missing[#Missing + 1] = "a driver "
 				end
 
 				self.ActivationIssue = "Won't activate: needs " .. table.concat(Missing, " and ") .. "."

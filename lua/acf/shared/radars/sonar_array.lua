@@ -1,15 +1,15 @@
 
-ACF_DefineSonarClass("Sonar", {
+ACE.DefineSonarClass("Sonar", {
 	name = "Hull Sonar Array",
 	type = "Sonar",
-	desc = ACFTranslation.Sonar[1],
+	desc = ACE.Translation.Sonar[1],
 } )
 
 --
-ACF_DefineSonar("Tiny-Sonar", {
+ACE.DefineSonar("Tiny-Sonar", {
 	name		= "Tiny Sonar Array",
 	ent			= "ace_sonar",
-	desc		= ACFTranslation.Sonar[5],
+	desc		= ACE.Translation.Sonar[5],
 	model		= "models/props_c17/utilityconnecter006c.mdl",
 	class		= "Sonar",
 	weight		= 250,
@@ -20,10 +20,10 @@ ACF_DefineSonar("Tiny-Sonar", {
 	acepoints = 250
 } )
 
-ACF_DefineSonar("Small-Sonar", {
+ACE.DefineSonar("Small-Sonar", {
 	name		= "Small Sonar Array",
 	ent			= "ace_sonar",
-	desc		= ACFTranslation.Sonar[2],
+	desc		= ACE.Translation.Sonar[2],
 	model		= "models/macc/Cylindrical_Sonar.mdl",
 	class		= "Sonar",
 	weight		= 2000,
@@ -34,10 +34,10 @@ ACF_DefineSonar("Small-Sonar", {
 } )
 
 
-ACF_DefineSonar("Medium-Sonar", {
+ACE.DefineSonar("Medium-Sonar", {
 	name		= "Medium Sonar Array",
 	ent			= "ace_sonar",
-	desc		= ACFTranslation.Sonar[3],
+	desc		= ACE.Translation.Sonar[3],
 	model		= "models/macc/SQS53.mdl", -- medium one is for now scalled big one - will be changed
 	class		= "Sonar",
 	weight		= 7500,
@@ -48,10 +48,10 @@ ACF_DefineSonar("Medium-Sonar", {
 } )
 
 
-ACF_DefineSonar("Large-Sonar", {
+ACE.DefineSonar("Large-Sonar", {
 	name		= "Large Sonar Array",
 	ent			= "ace_sonar",
-	desc		= ACFTranslation.Sonar[4],
+	desc		= ACE.Translation.Sonar[4],
 	model		= "models/macc/zaryam.mdl",
 	class		= "Sonar",
 	weight		= 20000,

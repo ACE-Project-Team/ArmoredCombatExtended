@@ -1,7 +1,7 @@
 
 -- Electric motors
 
-ACF_DefineEngine( "Electric-Small", {
+ACE.DefineEngine( "Electric-Small", {
 	name				= "Electric motor, Small",
 	desc				= "A small electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy",
 	model			= "models/engines/emotorsmall.mdl",
@@ -18,7 +18,7 @@ ACF_DefineEngine( "Electric-Small", {
 	flywheeloverride	= 4750,
 } )
 
-ACF_DefineEngine( "Electric-Medium", {
+ACE.DefineEngine( "Electric-Medium", {
 	name				= "Electric motor, Medium",
 	desc				= "A medium electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy",
 	model			= "models/engines/emotormed.mdl",
@@ -36,7 +36,7 @@ ACF_DefineEngine( "Electric-Medium", {
 
 } )
 
-ACF_DefineEngine( "Electric-Large", {
+ACE.DefineEngine( "Electric-Large", {
 	name				= "Electric motor, Large",
 	desc				= "A huge electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy",
 	model			= "models/engines/emotorlarge.mdl",
@@ -54,7 +54,7 @@ ACF_DefineEngine( "Electric-Large", {
 
 } )
 
-ACF_DefineEngine( "Electric-Tiny-NoBatt", {
+ACE.DefineEngine( "Electric-Tiny-NoBatt", {
 	name = "Electric motor, Tiny, Standalone",
 	desc = "Basically a Nissan Leaf motor.  Can power electric razors, desk fans, or your hopes and dreams\n\nElectric motors provide huge amounts of torque, but are very heavy.\n\nStandalone electric motors don't have integrated batteries, saving on weight and volume, but require you to supply your own batteries.",
 	model = "models/engines/emotor-standalone-tiny.mdl",
@@ -73,7 +73,7 @@ ACF_DefineEngine( "Electric-Tiny-NoBatt", {
 
 
 
-ACF_DefineEngine( "Electric-Small-NoBatt", {
+ACE.DefineEngine( "Electric-Small-NoBatt", {
 	name = "Electric motor, Small, Standalone",
 	desc = "A small electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy.\n\nStandalone electric motors don't have integrated batteries, saving on weight and volume, but require you to supply your own batteries.",
 	model = "models/engines/emotor-standalone-sml.mdl",
@@ -90,7 +90,7 @@ ACF_DefineEngine( "Electric-Small-NoBatt", {
 	flywheeloverride = 4750,
 } )
 
-ACF_DefineEngine( "Electric-Medium-NoBatt", {
+ACE.DefineEngine( "Electric-Medium-NoBatt", {
 	name = "Electric motor, Medium, Standalone",
 	desc = "A medium electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy.\n\nStandalone electric motors don't have integrated batteries, saving on weight and volume, but require you to supply your own batteries.",
 	model = "models/engines/emotor-standalone-mid.mdl",
@@ -107,7 +107,7 @@ ACF_DefineEngine( "Electric-Medium-NoBatt", {
 	flywheeloverride = 8000,
 } )
 
-ACF_DefineEngine( "Electric-Large-NoBatt", {
+ACE.DefineEngine( "Electric-Large-NoBatt", {
 	name = "Electric motor, Large, Standalone",
 	desc = "A huge electric motor, loads of torque, but low power\n\nElectric motors provide huge amounts of torque, but are very heavy.\n\nStandalone electric motors don't have integrated batteries, saving on weight and volume, but require you to supply your own batteries.",
 	model = "models/engines/emotor-standalone-big.mdl",

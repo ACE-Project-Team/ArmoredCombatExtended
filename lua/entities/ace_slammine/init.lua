@@ -38,13 +38,13 @@ function ENT:Boom()
 	local HEWeight = 0.25
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
 
-	ACF_HE(self:GetPos(), Vector(0, 0, 1), HEWeight, HEWeight * 0.5, self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
+	ACE_HE(self:GetPos(), Vector(0, 0, 1), HEWeight, HEWeight * 0.5, self.DamageOwner, nil, self) --0.5 is standard antipersonal mine
 
 	local Flash = EffectData()
 		Flash:SetOrigin( self:GetPos() )
 		Flash:SetNormal( Vector(0, 0, -1) )
 		Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
-	util.Effect( "ACF_Scaled_Explosion", Flash )
+	util.Effect( "ACE_Scaled_Explosion", Flash )
 
 
 	self.FakeCrate = ents.Create("acf_fakecrate2")
@@ -56,7 +56,7 @@ function ENT:Boom()
 
 	self.Bulletdata.Pos = self:GetPos() + self:GetUp() * 2
 
-	self.CreateShell = ACF.RoundTypes[self.Bulletdata.Type].create
+	self.CreateShell = ACE.RoundTypes[self.Bulletdata.Type].create
 	self:CreateShell( self.Bulletdata )
 end
 

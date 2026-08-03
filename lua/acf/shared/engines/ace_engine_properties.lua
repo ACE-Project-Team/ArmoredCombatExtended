@@ -1,11 +1,11 @@
 --Fuel Density
-ACF.FuelDensity = { --kg/liter
+ACE.FuelDensity = { --kg/liter
 	Diesel = 0.832,
 	Petrol = 0.745,
 	Electric = 1.35 -- li-ion --WAS 3.1
 }
 
-ACF.Efficiency = { --how efficient various engine types are, higher is worse
+ACE.Efficiency = { --how efficient various engine types are, higher is worse
 	GenericPetrol = 0.203, --kg per kw hr
 	GenericDiesel = 0.162, --up to 0.274
 	Turbine = 0.25, -- previously 0.231
@@ -14,7 +14,7 @@ ACF.Efficiency = { --how efficient various engine types are, higher is worse
 	Electric = 0.6 --percent efficiency converting chemical kw into mechanical kw WAS 0.85
 }
 
-ACF.TorqueScale = { --how fast damage drops torque, lower loses more % torque
+ACE.TorqueScale = { --how fast damage drops torque, lower loses more % torque
 	GenericPetrol = 0.25,
 	GenericDiesel = 0.35,
 	Turbine = 0.2,
@@ -23,7 +23,7 @@ ACF.TorqueScale = { --how fast damage drops torque, lower loses more % torque
 	Electric = 0.3 --WAS 0.5
 }
 
-ACF.EngineHPMult = { --health multiplier for engines
+ACE.EngineHPMult = { --health multiplier for engines
 	GenericPetrol = 0.2,
 	GenericDiesel = 0.5,
 	Turbine = 0.125,
@@ -33,7 +33,7 @@ ACF.EngineHPMult = { --health multiplier for engines
 }
 
 --Use this to help design torque curves https://gist.github.com/CheezusChrust/7ccce5f5196d3adc95ab9573009f735a
-ACF.GenericTorqueCurves = { --Default curves for engines that don't have one defined
+ACE.GenericTorqueCurves = { --Default curves for engines that don't have one defined
 	GenericPetrol = {0.3, 0.55, 0.7, 0.85, 1, 0.9, 0.7},
 	GenericDiesel = {0.3, 0.9, 0.97, 1, 0.95, 0.9, 0.8, 0.65},
 	Turbine = {0.8, 1, 0.9, 0.8, 0.6, 0.4, 0.2, 0.1},

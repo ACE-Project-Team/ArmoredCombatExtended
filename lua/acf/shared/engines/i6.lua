@@ -3,7 +3,7 @@
 
 -- Petrol
 
-ACF_DefineEngine( "2.2-I6", {
+ACE.DefineEngine( "2.2-I6", {
 	name = "2.2L I6 Petrol",
 	desc = "Car sized I6 petrol with power in the high revs",
 	model = "models/engines/inline6s.mdl",
@@ -18,7 +18,7 @@ ACF_DefineEngine( "2.2-I6", {
 	limitrpm = 7200,
 } )
 
-ACF_DefineEngine( "4.8-I6", {
+ACE.DefineEngine( "4.8-I6", {
 	name = "4.8L I6 Petrol",
 	desc = "Light truck duty I6, good for offroad applications",
 	model = "models/engines/inline6m.mdl",
@@ -33,7 +33,7 @@ ACF_DefineEngine( "4.8-I6", {
 	limitrpm = 5500,
 } )
 
-ACF_DefineEngine( "17.2-I6", {
+ACE.DefineEngine( "17.2-I6", {
 	name = "17.2L I6 Petrol",
 	desc = "Heavy tractor duty petrol I6, decent overall powerband",
 	model = "models/engines/inline6l.mdl",
@@ -50,7 +50,7 @@ ACF_DefineEngine( "17.2-I6", {
 
 -- Diesel
 
-ACF_DefineEngine( "3.0-I6", {
+ACE.DefineEngine( "3.0-I6", {
 	name = "3.0L I6 Diesel",
 	desc = "Car sized I6 diesel, good, wide powerband",
 	model = "models/engines/inline6s.mdl",
@@ -65,7 +65,7 @@ ACF_DefineEngine( "3.0-I6", {
 	limitrpm = 4500,
 } )
 
-ACF_DefineEngine( "6.5-I6", {
+ACE.DefineEngine( "6.5-I6", {
 	name = "6.5L I6 Diesel",
 	desc = "Truck duty I6, good overall powerband and torque",
 	model = "models/engines/inline6m.mdl",
@@ -80,7 +80,7 @@ ACF_DefineEngine( "6.5-I6", {
 	limitrpm = 4000,
 } )
 
-ACF_DefineEngine( "20.0-I6", {
+ACE.DefineEngine( "20.0-I6", {
 	name = "20.0L I6 Diesel",
 	desc = "Heavy duty diesel I6, used in generators and heavy movers",
 	model = "models/engines/inline6l.mdl",

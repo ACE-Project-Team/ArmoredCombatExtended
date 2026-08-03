@@ -6,13 +6,13 @@ do
 		Entities = {},
 		Clock = 0
 	}
-	function ACF_UpdateVisualHealth( Entity )
+	function ACE_UpdateVisualHealth( Entity )
 		if not Entity.ACF.OnRenderQueue then
 			table.insert(RenderProps.Entities, Entity )
 			Entity.ACF.OnRenderQueue = true
 		end
 	end
-	function ACF_SendVisualDamage()
+	function ACE_SendVisualDamage()
 
 		local Time = CurTime()
 
@@ -26,7 +26,7 @@ do
 
 			local Entity = RenderProps.Entities[1]
 			if IsValid(Entity) then
-				net.Start("ACF_RenderDamage", true) -- i dont care if the message is not received under extreme cases since its simply a visual effect only.
+				net.Start("ACE_RenderDamage", true) -- i dont care if the message is not received under extreme cases since its simply a visual effect only.
 					net.WriteUInt(Entity:EntIndex(), 13)
 					net.WriteFloat(Entity.ACF.MaxHealth)
 					net.WriteFloat(Entity.ACF.Health)
@@ -39,11 +39,11 @@ do
 			RenderProps.Clock = Time + (SendDelay / 1000)
 		end
 	end
-	hook.Add("Think","ACF_RenderPropDamage", ACF_SendVisualDamage )
+	hook.Add("Think","ACE_RenderPropDamage", ACE_SendVisualDamage )
 end
 
 --Creates or updates the ACF entity data in a passive way. Meaning this entity wont be updated unless it really requires it (like a shot, damage, looking it using armor tool, etc)
-function ACF_Activate( Entity , Recalc )
+function ACE_Activate( Entity , Recalc )
 
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	if Entity.SpecialHealth then
@@ -82,8 +82,8 @@ function ACF_Activate( Entity , Recalc )
 
 	local massMod	= MatData.massMod
 
-	local Armour	= ACF_CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
-	local Health	= ( Area / ACF.Threshold ) * ( 1 + Ductility ) -- Setting the threshold of the prop Area gone
+	local Armour	= ACE.CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
+	local Health	= ( Area / ACE.Threshold ) * ( 1 + Ductility ) -- Setting the threshold of the prop Area gone
 
 	local Percent	= 1
 
@@ -94,7 +94,7 @@ function ACF_Activate( Entity , Recalc )
 	Entity.ACF.Health	= Health * Percent
 	Entity.ACF.MaxHealth	= Health
 	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour	= Armour * ACF.ArmorMod
+	Entity.ACF.MaxArmour	= Armour * ACE.ArmorMod
 	Entity.ACF.Type		= nil
 	Entity.ACF.Mass		= PhysObj:GetMass()
 
@@ -118,7 +118,7 @@ local IGNORED_CLASSES = {
 	sent_prop2mesh = true,
 }
 
-function ACF_Check( Entity )
+function ACE_Check( Entity )
 
 	if not IsValid(Entity) then return false end
 
@@ -126,22 +126,22 @@ function ACF_Check( Entity )
 	if not ( physobj:IsValid() and (physobj:GetMass() or 0) > 0 and not Entity:IsWorld() and not Entity:IsWeapon() ) then return false end
 
 	local Class = Entity:GetClass()
-	if IGNORED_CLASSES[Class] or (ACF.TraceFilter and ACF.TraceFilter[Class]) or ( Class ~= "func_breakable" and string.find( Class , "func_" )) then return false end
+	if IGNORED_CLASSES[Class] or (ACE.TraceFilter and ACE.TraceFilter[Class]) or ( Class ~= "func_breakable" and string.find( Class , "func_" )) then return false end
 	if Entity.Exploding then return false end
 
 	if not Entity.ACF or (Entity.ACF and isnumber(Entity.ACF.Material)) then
-		ACF_Activate( Entity )
+		ACE.Activate( Entity )
 	elseif Entity.ACF.Mass ~= physobj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= physobj) then
-		ACF_Activate( Entity , true )
+		ACE.Activate( Entity , true )
 	end
 
 	return Entity.ACF.Type
 end
 
-function ACF_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
+function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
 
-	local Activated = ACF_Check( Entity )
-	local CanDo = hook.Run("ACF_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
+	local Activated = ACE.Check( Entity )
+	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
 	if CanDo == false or Activated == false then -- above (default) hook does nothing with activated. Excludes godded players.
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
@@ -155,24 +155,26 @@ function ACF_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	elseif Activated == "Prop" then
 
-		hitRes = ACF_PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
+		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
 
 	elseif Activated == "Vehicle" then
 
-		hitRes = ACF_VehicleDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
+		hitRes = ACE.VehicleDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
 
 	elseif Activated == "Squishy" then
 
-		hitRes = ACF_SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
+		hitRes = ACE.SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
 
 	end
 
-	hook.Run("ACFOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
+	hook.Run("ACE_OnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
+	hook.Run("ACEOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
+	ACE.RunLegacyHook("ACFOnDamage", Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type, hitRes, oldACFTbl)
 	return hitRes
 
 end
 
-local function ACF_CanDamagePlayer(Target, Attacker)
+local function canDamagePlayer(Target, Attacker)
 	if not (IsValid(Target) and Target:IsPlayer()) then return true end
 	if IsValid(Attacker) and Attacker == Target then return true end
 	if Target:HasGodMode() then return false end
@@ -184,13 +186,13 @@ end
 
 
 
-function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
+function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	local HitRes			= {}
 
 	local armor			= Entity.ACF.Armour																						-- Armor
-	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor )									-- LOS Armor
-	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
+	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
+	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
 	local Mat			= Entity.ACF.Material or "RHA"	--very important thing
 	local MatData		= ACE.GetMaterialData( Mat )
@@ -198,54 +200,54 @@ function ACF_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	local damageMult		= 1
 
 	if Type == "AP" then
-		damageMult = ACF.APDamageMult
+		damageMult = ACE.APDamageMult
 	elseif Type == "Spall" then
-		damageMult = ACF.SpallDamageMult
+		damageMult = ACE.SpallDamageMult
 	elseif Type == "APHE" then
-		damageMult = ACF.APHEDamageMult
+		damageMult = ACE.APHEDamageMult
 	elseif Type == "APDS" then
-		damageMult = ACF.APDSDamageMult
+		damageMult = ACE.APDSDamageMult
 	elseif Type == "APFSDS" then
-		damageMult = ACF.APDSDamageMult
+		damageMult = ACE.APDSDamageMult
 	elseif Type == "HVAP" then
-		damageMult = ACF.HVAPDamageMult
+		damageMult = ACE.HVAPDamageMult
 	elseif Type == "FL" then
-		damageMult = ACF.FLDamageMult
+		damageMult = ACE.FLDamageMult
 	elseif Type == "HEAT" then
-		damageMult = ACF.HEATDamageMult
+		damageMult = ACE.HEATDamageMult
 	elseif Type == "HE" then
-		damageMult = ACF.HEDamageMult
+		damageMult = ACE.HEDamageMult
 	elseif Type == "HESH" then
-		damageMult = ACF.HESHDamageMult
+		damageMult = ACE.HESHDamageMult
 	elseif Type == "HP" then
-		damageMult = ACF.HPDamageMult
+		damageMult = ACE.HPDamageMult
 	end
 
 	-- RHA Penetration
 	local maxPenetration = ACE.CalcPenetration(Energy, FrArea)
 
 	-- Projectile caliber. Messy, function signature
-	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
+	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
 
 	--Nifty shell information debugging.
 	--print("Type: "..(Type or "Nil"))
 	--print("Penetration: " .. math.Round(maxPenetration,3) .. "mm")
 	--print("Caliber: "..math.Round(caliber,3).."mm")
 
-	local ACE_ArmorResolution = MatData["ArmorResolution"]
-	HitRes = ACE_ArmorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+	local armorResolution = MatData["ArmorResolution"]
+	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
 
 	return HitRes
 end
 
 -- replaced with _ due to lack of use: Inflictor, Bone
-function ACF_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
+function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
-	local HitRes = ACF_CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
 
 	HitRes.Kill = false
 
-	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
+	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
 	local BaseDamage = caliber * (4 + 0.1 * caliber)
 
 	Entity:TakeDamage(BaseDamage * 15) --Felt about right. Allows destroying physically destructible props.
@@ -260,7 +262,7 @@ function ACF_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) --Simulating the plate weakening after a hit
 
 		if Entity.ACF.PrHealth then
-			ACF_UpdateVisualHealth(Entity)
+			ACE.UpdateVisualHealth(Entity)
 		end
 		Entity.ACF.PrHealth = Entity.ACF.Health
 	end
@@ -270,7 +272,7 @@ function ACF_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 end
 
 -- replaced with _ due to lack of use: Bone
-function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Type)
+function ACE_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Type)
 
 	--We create a dummy table to pass armour values to the calc function
 	local Target = {
@@ -279,10 +281,10 @@ function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 		}
 	}
 
-	local HitRes = ACF_CalcDamage( Target , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Target , Energy , FrArea , Angle  , Type)
 	local Driver = Entity:GetDriver()
 	local validd = Driver:IsValid()
-	local canDamageDriver = validd and ACF_CanDamagePlayer(Driver, Inflictor)
+	local canDamageDriver = validd and canDamagePlayer(Driver, Inflictor)
 
 	--In case of HitRes becomes NAN. That means theres no damage, so leave it as 0
 	if HitRes.Damage ~= HitRes.Damage then HitRes.Damage = 0 end
@@ -306,7 +308,7 @@ function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	return HitRes
 end
 
-function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type)
+function ACE_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type)
 	--local Size = Entity:BoundingRadius()
 	local Mass = Entity:GetPhysicsObject():GetMass()
 	local MaxPen = Energy.Penetration
@@ -322,7 +324,7 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 
 	local IsPly = false
 	if Entity:IsPlayer() then IsPly = true end
-	if IsPly and not ACF_CanDamagePlayer(Entity, Inflictor) then
+	if IsPly and not canDamagePlayer(Entity, Inflictor) then
 		return {
 			Damage = 0,
 			Overkill = 0,
@@ -338,7 +340,7 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 
 	local FleshThickness = 5 * MassRatio --Past the armor, the thickness of flesh in RHA to do max damage. 5mm for human.
 
-	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
+	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
 	local BaseDamage = caliber * (4 + 0.1 * caliber)
 
 	if Bone then
@@ -474,7 +476,7 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 	--print("SquishyDamage: " .. math.Round(Damage,1))
 	--print("PenFraction: " .. math.Round(Penetration,1))
 
-	--local MaxDig = (( Energy.Penetration * 1 / Bullet.PenArea ) * ACF.KEtoRHA / ACF.GroundtoRHA ) / 25.4
+	--local MaxDig = (( Energy.Penetration * 1 / Bullet.PenArea ) * ACE.KEtoRHA / ACE.GroundtoRHA ) / 25.4
 	--local EnergyRatio =  (FleshThickness * Penetration) / MaxPen
 	local EnergyAbsorbed = Penetration * (Energy.Kinetic or 0) --Technically unrealistic but eh. I'll look up a more advanced model for hydralic pressure eventually.
 	--print("Energy Absorbed: " .. EnergyAbsorbed .. "Kj")
@@ -491,7 +493,7 @@ function ACF_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 		}
 	}
 
-	HitRes = ACF_CalcDamage(Target, Energy, FrArea, 0, Type)
+	HitRes = ACE.CalcDamage(Target, Energy, FrArea, 0, Type)
 
 	return HitRes
 end
@@ -500,7 +502,7 @@ end
 -- Returns a table of all physically connected entities
 -- ignoring ents attached by only nocollides
 ----------------------------------------------------------
-function ACF_GetAllPhysicalConstraints( ent, ResultTable )
+function ACE_GetAllPhysicalConstraints( ent, ResultTable )
 
 	ResultTable = ResultTable or {}
 
@@ -516,7 +518,7 @@ function ACF_GetAllPhysicalConstraints( ent, ResultTable )
 		-- skip shit that is attached by a nocollide
 		if con.Type ~= "NoCollide" then
 			for _, Ent in pairs( con.Entity ) do
-				ACF_GetAllPhysicalConstraints( Ent.Entity, ResultTable )
+				ACE.GetAllPhysicalConstraints( Ent.Entity, ResultTable )
 			end
 		end
 
@@ -527,7 +529,7 @@ function ACF_GetAllPhysicalConstraints( ent, ResultTable )
 end
 
 -- for those extra sneaky bastards
-function ACF_GetAllChildren( ent, ResultTable )
+function ACE_GetAllChildren( ent, ResultTable )
 
 	--if not ent.GetChildren then return end  --shouldn't need to check anymore, built into glua now
 
@@ -542,7 +544,7 @@ function ACF_GetAllChildren( ent, ResultTable )
 
 	for _, v in pairs( ChildTable ) do
 
-		ACF_GetAllChildren( v, ResultTable )
+		ACE.GetAllChildren( v, ResultTable )
 
 	end
 
@@ -551,7 +553,7 @@ function ACF_GetAllChildren( ent, ResultTable )
 end
 
 -- returns any wheels linked to this or child gearboxes
-function ACF_GetLinkedWheels( MobilityEnt )
+function ACE_GetLinkedWheels( MobilityEnt )
 	if not IsValid( MobilityEnt ) then return {} end
 
 	local ToCheck = {}
@@ -594,7 +596,7 @@ function ACF_GetLinkedWheels( MobilityEnt )
 
 				end
 			else
-				Wheels[Ent] = Ent -- indexing it same as ACF_GetAllPhysicalConstraints, for easy merge.  whoever indexed by entity in that function, uuuuuuggghhhhh
+				Wheels[Ent] = Ent -- indexing it same as ACE_GetAllPhysicalConstraints, for easy merge.  whoever indexed by entity in that function, uuuuuuggghhhhh
 			end
 		end
 	end
@@ -609,7 +611,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE.CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
+function ACE_CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -644,7 +646,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE.CreateSZRope( Pos, Ent, LPos1, LPos2 )
+function ACE_CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -673,7 +675,7 @@ function ACE.CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 end
 
-function ACE.VisualizeSZ(Point1, Point2)
+function ACE_VisualizeSZ(Point1, Point2)
 
 	local SZEnt = ents.Create("prop_physics")
 	if SZEnt:IsValid() then
@@ -767,7 +769,7 @@ function ACE.VisualizeSZ(Point1, Point2)
 	PT2 = Vector(Point2.x,Point1.y,Point1.z)
 	LPT1 = SZEnt:WorldToLocal(PT1)
 	LPT2 = SZEnt:WorldToLocal(PT2)
-	ACE.CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
+	ACE_CreateSZRope( PT1, SZEnt, LPT1, LPT2 )
 ]]--
 
 	return SZEnt
@@ -786,7 +788,7 @@ local WireTable = {
 	gmod_wire_joystick_multi = true
 }
 
-function ACE.GetWeaponUser( Weapon, inp )
+function ACE_GetWeaponUser( Weapon, inp )
 	if not IsValid(inp) then return end
 
 	if inp:GetClass() == "gmod_wire_adv_pod" then
@@ -826,12 +828,12 @@ function ACE.GetWeaponUser( Weapon, inp )
 	return inp:CPPIGetOwner()
 end
 
-util.AddNetworkString( "colorchatmessage" )
+util.AddNetworkString( "ACE_ColorChatMessage" )
 
 	--Sends a colored message to a specified player.
-function chatMessagePly( ply , message, color) --
+function ACE_ChatMessagePly( ply , message, color) --
 
-	net.Start( "colorchatmessage" )
+	net.Start( "ACE_ColorChatMessage" )
 		net.WriteColor( color or Color( 255, 255, 255 ) ) --Must go first
 		net.WriteString( message )
 	net.Send( ply )
@@ -839,10 +841,10 @@ function chatMessagePly( ply , message, color) --
 end
 
 
-function chatMessageGlobal( message, color) --Like chatMessagePly but it just goes to everyone.
+function ACE_ChatMessageGlobal( message, color) --Like ACE_ChatMessagePly but it just goes to everyone.
 
 	print(message)
-	net.Start( "colorchatmessage" )
+	net.Start( "ACE_ColorChatMessage" )
 		net.WriteColor( color or Color( 255, 255, 255 ) ) --Must go first
 		net.WriteString( message )
 	net.Broadcast()
@@ -851,11 +853,11 @@ end
 
 
 --[[
-function chatMessageGlobal( message, color) --Like chatMessagePly but it just goes to everyone.
+function ACE_ChatMessageGlobal( message, color) --Like ACE_ChatMessagePly but it just goes to everyone.
 
 	print(message)
 	for _, ply in ipairs( player.GetAll() ) do --Terrible. But you'd think the above would work.
-		chatMessagePly( ply , message, color)
+		ACE_ChatMessagePly( ply , message, color)
 	end
 end
 ]]--

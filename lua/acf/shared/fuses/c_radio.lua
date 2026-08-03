@@ -2,11 +2,11 @@
 local ClassName = "Radio"
 
 
-ACF = ACF or {}
-ACF.Fuse = ACF.Fuse or {}
+ACE = ACE or {}
+ACE.Fuse = ACE.Fuse or {}
 
-local this = ACF.Fuse[ClassName] or inherit.NewSubOf(ACF.Fuse.Contact)
-ACF.Fuse[ClassName] = this
+local this = ACE.Fuse[ClassName] or inherit.NewSubOf(ACE.Fuse.Contact)
+ACE.Fuse[ClassName] = this
 
 ---
 
@@ -24,7 +24,7 @@ this.Distance = 2000
 this.desc = "This fuse tracks around the missile itself in a radius detonating as soon as a target enters the radius. This may lead to early detonations.\n Useful for countering flares at the cost of detonating further from the target.\nDistance in inches." --This fuse tracks the guidance module's target and detonates when the distance becomes low enough.\nDistance in inches.
 
 
--- Configuration information for things like acfmenu.
+-- Configuration information for things like acemenu.
 this.Configurable = table.Copy(this:super().Configurable)
 
 local configs = this.Configurable

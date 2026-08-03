@@ -27,7 +27,7 @@ end
 -- the model + filler fraction through its ENT table (read off the created
 -- entity), and we read the model's REAL physics volume at its natural size -
 -- no model scaling on these props.
-function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
+function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_explosive") then return false end
 
 	local stored = scripted_ents.GetStored(class)
@@ -46,11 +46,11 @@ function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	local phys    = Charge:GetPhysicsObject()
 	local volCuIn = (IsValid(phys) and phys:GetVolume()) or 1000   -- model's true volume
-	local fillerMass, fragMass, physMass = ACE.GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
+	local fillerMass, fragMass, physMass = ACE_GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
 
 	Charge.FillerMass  = fillerMass
 	Charge.FragMass    = fragMass
-	Charge.BlastRadius = ACE.CalculateHERadius(fillerMass) / 39.37
+	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37
 	Charge.Mass        = physMass
 	Charge.DamageOwner = Owner
 
@@ -65,7 +65,7 @@ function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	if IsValid(Owner) then
 		Owner:AddCount("_ace_explosive", Charge)
-		Owner:AddCleanup("acfmenu", Charge)
+		Owner:AddCleanup("acemenu", Charge)
 	end
 
 	Wire_TriggerOutput(Charge, "Filler Mass", math.Round(fillerMass, 2))
@@ -73,8 +73,6 @@ function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	return Charge
 end
-
-ACE_MakePrebuiltExplosive = ACE.MakePrebuiltExplosive
 
 -- Shared by every variant's SpawnFunction (sandbox Q-menu). GMod passes the
 -- concrete class name as the third argument, which is exactly the variant we
@@ -84,7 +82,7 @@ function ENT:SpawnFunction(ply, tr, ClassName)
 	local class = ClassName or self.ClassName or "ace_bomb_satchel"
 	local pos = tr.HitPos + tr.HitNormal * 16
 	local ang = Angle(0, IsValid(ply) and ply:EyeAngles().yaw or 0, 0)
-	return ACE.MakePrebuiltExplosive(ply, class, pos, ang)
+	return ACE_MakePrebuiltExplosive(ply, class, pos, ang)
 end
 
 function ENT:Detonate()
@@ -95,14 +93,14 @@ function ENT:Detonate()
 	local owner  = self.DamageOwner
 	if not IsValid(owner) then owner = self:CPPIGetOwner() end
 
-	ACF_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
+	ACE_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
-	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
+	local radiusIn = ACE_CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
 		Flash:SetOrigin(origin)
 		Flash:SetNormal(Vector(0, 0, -1))
 		Flash:SetRadius(math.Round(math.max(radiusIn / 39.37, 1), 2))
-	util.Effect("ACF_Scaled_Explosion", Flash)
+	util.Effect("ACE_Scaled_Explosion", Flash)
 
 	self:Remove()
 end
@@ -121,7 +119,7 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Area   = self.ACF.Area or (phys:GetSurfaceArea() * 6.45)
 	self.ACF.Volume = self.ACF.Volume or (phys:GetVolume() * 16.38)
 
-	local Health  = (self.ACF.Volume / ACF.Threshold) / 20
+	local Health  = (self.ACF.Volume / ACE.Threshold) / 20
 	local Percent = 1
 	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 		Percent = self.ACF.Health / self.ACF.MaxHealth
@@ -138,7 +136,7 @@ function ENT:ACF_Activate(Recalc)
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
-	local HitRes = ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
+	local HitRes = ACE_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 
 	if IsValid(Inflictor) and Inflictor:IsPlayer() then self.DamageOwner = Inflictor end
@@ -148,8 +146,8 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
 	local dmgFrac    = (HitRes.Damage or 0) / math.max(maxHealth, 1)
 	local healthFrac = math.Clamp(health / math.max(maxHealth, 1), 0, 1)
 
-	local chance = dmgFrac * (ACF.ExplosiveCookoffMul or 4)
-		+ (1 - healthFrac) * (ACF.ExplosiveCookoffLowHP or 0.25)
+	local chance = dmgFrac * (ACE.ExplosiveCookoffMul or 4)
+		+ (1 - healthFrac) * (ACE.ExplosiveCookoffLowHP or 0.25)
 
 	if HitRes.Kill or math.random() < chance then
 		timer.Simple(0, function() if IsValid(self) then self:Detonate() end end)
@@ -162,12 +160,12 @@ function ENT:UpdateOverlayText()
 	local txt = self.ChargeName or "Explosive"
 	txt = txt .. "\nFiller: " .. math.Round(self.FillerMass or 0, 2) .. " kg HE"
 	txt = txt .. "\nBlast Radius: " .. math.Round(self.BlastRadius or 0, 1) .. " m"
-	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACF.HEPower or 8000), 0) .. " KJ"
+	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACE.HEPower or 8000), 0) .. " KJ"
 	txt = txt .. "\nMass: " .. math.Round(self.Mass or 0, 1) .. " kg"
 
-	if ACE.GetRoundLethalityLine then
+	if ACE_GetRoundLethalityLine then
 		local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = self.FillerMass or 0, guidance = "Dumb" }
-		local lethality = ACE.GetRoundLethalityLine(round)
+		local lethality = ACE_GetRoundLethalityLine(round)
 		if lethality then
 			txt = txt .. "\nLethality: " .. lethality
 		end

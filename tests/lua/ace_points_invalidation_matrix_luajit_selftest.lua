@@ -1,8 +1,7 @@
 local root = assert(arg[1], "usage: ace_points_invalidation_matrix_luajit_selftest.lua <ACE repo>")
 root = root:gsub("\\\\", "/"):gsub("/$", "")
 
-ACE = {}
-ACF = { PointsLimit = math.huge, MaxWeight = math.huge }
+ACE = { PointsLimit = math.huge, MaxWeight = math.huge }
 CFW = {
 	Classes = {
 		Contraption = {
@@ -31,13 +30,17 @@ function ACE.GetContraptionFromEntity(ent) return ent.con end
 function ACE.GetWeaponAnchorContraption(ent) return ent.anchor end
 function ACE.GetOwnerName() return "matrix-owner" end
 function ACE.GetContraptionOwner() return nil end
-function ACE.GetPtsType() return nil end
+function ACE.GetPtsType(class)
+	if class == "prop_physics" then return "Armor" end
+	if class == "acf_gun" or class == "acf_rack" then return "Firepower" end
+	return "Ignore"
+end
 function ACE.GetEntPoints(ent) return ent.points or 0 end
 function ACE.GetArmorPoints(ent) return ent.armorPoints or 0 end
 function ACE.GetCrewSeatPointCost() return 0 end
-function ACE.GetGunFirepowerPointsFor() return 0 end
+function ACE.GetGunFirepowerPointsFor(ent) return ent.firepowerPoints or 0 end
 function Color() return {} end
-function chatMessageGlobal() end
+function ACE.ChatMessageGlobal() end
 
 table.IsEmpty = function(value) return next(value) == nil end
 timer = { Simple = function() end }
@@ -89,6 +92,12 @@ function ACE.GetContraptionEntities(con)
 end
 
 dofile(root .. "/lua/acf/server/sv_contraptionlegality.lua")
+
+setmetatable(ACE, {
+	__index = function(_, key)
+		return _G["ACE_" .. key]
+	end,
+})
 
 local batches = {}
 local compat = {}
@@ -205,6 +214,16 @@ local function assertEvent(label, invoke, expected, categories, reason, opts)
 	assert(#compat == compatBefore + #expected, label .. ": compatibility hook cardinality mismatch")
 	local expectedRecalcs = opts.recalculations
 	if expectedRecalcs == nil then expectedRecalcs = #expected end
+	assert(#recalculated == recalcBefore,
+		label .. ": point work was not deferred to the next tick")
+	if opts.ledgerOnly then
+		for _, con in ipairs(expected) do
+			assert(not ACE.PendingPointRebuilds[con], label .. ": queued an avoidable full rebuild")
+		end
+	end
+	local flush = hookHandlers.Think and hookHandlers.Think.ACE_FlushQueuedPointChanges
+	assert(flush, label .. ": missing deferred point flush hook")
+	flush()
 	assert(#recalculated == recalcBefore + expectedRecalcs,
 		label .. ": recalculation cardinality mismatch (got " .. (#recalculated - recalcBefore) .. ")")
 	for index = compatBefore + 1, #compat do
@@ -351,6 +370,95 @@ assertEvent("entity-added", function()
 	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(created, added)
 end, { created }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-added")
 
+-- The deferred ledger applies add, armor reprice, and removal without a contraption scan.
+local ledgerCon = newContraption("ledger")
+local ledgerEnt = newEntity(ledgerCon, "prop_physics", { armorPoints = 10 })
+assertEvent("ledger-entity-added", function()
+	ledgerCon.ents[ledgerEnt] = true
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(ledgerCon, ledgerEnt)
+end, { ledgerCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-added", {
+	ledgerOnly = true,
+})
+assert(ledgerCon.ACEArmorPoints == 10 and ledgerCon.ACEPoints == 10,
+	"ledger add did not apply the cached armor contribution")
+assert(ledgerCon.ACEPointLedger[ledgerEnt] and ledgerCon.ACEPointLedger[ledgerEnt].Points == 10,
+	"ledger add did not retain the entity contribution")
+
+ledgerEnt.armorPoints = 25
+assertEvent("ledger-armor-reprice", function()
+	return ACE.MarkArmorDirty(ledgerCon, ledgerEnt, "ledger-armor-reprice")
+end, { ledgerCon }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "ledger-armor-reprice", {
+	ledgerOnly = true,
+})
+assert(ledgerCon.ACEArmorPoints == 25 and ledgerCon.ACEPoints == 25,
+	"ledger armor reprice did not apply new minus old")
+
+ledgerEnt.IsMarkedForDeletion = function() return true end
+assertEvent("ledger-entity-removed", function()
+	return hookHandlers["cfw.contraption.entityRemoved"].ACE_RemPoints(ledgerCon, ledgerEnt)
+end, { ledgerCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-removed", {
+	ledgerOnly = true,
+})
+assert(ledgerCon.ACEArmorPoints == 0 and ledgerCon.ACEPoints == 0 and not ledgerCon.ACEPointLedger[ledgerEnt],
+	"ledger removal did not subtract the recorded contribution")
+
+local moveParent = newContraption("ledger-move-parent")
+local moveChild = newContraption("ledger-move-child")
+local moveEnt = newEntity(moveParent, "prop_physics", { armorPoints = 4 })
+assertEvent("ledger-move-added", function()
+	moveParent.ents[moveEnt] = true
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(moveParent, moveEnt)
+end, { moveParent }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-added", {
+	ledgerOnly = true,
+})
+moveParent.ents[moveEnt] = nil
+moveChild.ents[moveEnt] = true
+moveEnt.con = moveChild
+assertNoEvent("ledger-move-membership", function()
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(moveChild, moveEnt)
+end)
+assertEvent("ledger-move-split", function()
+	return hookHandlers["cfw.contraption.split"].ACE_InheritPointWarning(moveParent, moveChild)
+end, { moveParent, moveChild }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-split", {
+	ledgerOnly = true,
+})
+assert(moveParent.ACEPoints == 0 and moveChild.ACEPoints == 4,
+	"ledger move did not transfer the contribution between contraptions")
+
+local linkedCon = newContraption("ledger-linked-weapon")
+local linkedGun = newEntity(linkedCon, "acf_gun", { firepowerPoints = 4 })
+local linkedAmmo = newEntity(linkedCon, "acf_ammo", { Master = { linkedGun } })
+assertEvent("ledger-linked-gun-added", function()
+	linkedCon.ents[linkedGun] = true
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(linkedCon, linkedGun)
+end, { linkedCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-added", {
+	ledgerOnly = true,
+})
+linkedGun.firepowerPoints = 7
+assertEvent("ledger-linked-crate-reprice", function()
+	return ACE.NotifyCrateWeapons(linkedAmmo, "linked-crate-updated")
+end, { linkedCon }, { Armor = false, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "linked-crate-updated", {
+	ledgerOnly = true,
+})
+assert(linkedCon.ACEPoints == 7, "linked crate update did not reprice the dependent weapon")
+
+linkedGun.con = nil
+linkedGun._ACEPointsConRef = nil
+linkedGun._ACEPointsOwnerConRef = nil
+assertEvent("ledger-orphan-final-anchor-removed", function()
+	return ACE.PointsInputChanged(linkedGun, "orphan-anchor-removed")
+end, { linkedCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "orphan-anchor-removed", {
+	ledgerOnly = true,
+})
+assert(linkedCon.ACEPoints == 0 and not linkedCon.ACEPointLedger[linkedGun],
+	"orphan weapon kept points after losing its final anchor")
+
+local deleted = newContraption("deleted")
+deleted._removed = true
+assertNoEvent("deleted-contraption-early-out", function()
+	return ACE.MarkArmorDirty(deleted, ledgerEnt, "deleted-armor")
+end)
+
 local removed = newEntity(conA, "prop_physics", {
 	IsMarkedForDeletion = function() return true end,
 })
@@ -452,6 +560,29 @@ end, { splitParent, splitChild }, { Armor = true, Ammo = true, Firepower = true,
 assert(splitChild.OTWarnings.WarnedOverPoints and splitChild.OTWarnings.WarnedOverWeight,
 	"split warning inheritance lost warning fields")
 
+local mergeSource = newContraption("ledger-merge-source")
+local mergeTarget = newContraption("ledger-merge-target")
+local mergeEnt = newEntity(mergeSource, "prop_physics", { armorPoints = 11 })
+assertEvent("ledger-merge-added", function()
+	mergeSource.ents[mergeEnt] = true
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(mergeSource, mergeEnt)
+end, { mergeSource }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "entity-added", {
+	ledgerOnly = true,
+})
+mergeEnt.con = mergeTarget
+mergeTarget.ents[mergeEnt] = true
+assertNoEvent("ledger-merge-membership", function()
+	return hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(mergeTarget, mergeEnt)
+end)
+assertEvent("ledger-merge-transfer", function()
+	return hookHandlers["cfw.contraption.merged"].ACE_InvalidateMergedContraptions(mergeSource, mergeTarget)
+end, { mergeSource, mergeTarget }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = true, Warning = true }, "contraption-merged", {
+	recalculations = 1,
+	ledgerOnly = true,
+})
+assert(mergeTarget.ACEPoints == 11 and mergeTarget.ACEPointLedger[mergeEnt],
+	"ledger merge did not preserve the transferred contribution")
+
 local merged = newContraption("merged")
 local target = newContraption("target")
 assertEvent("normal-merge", function()
@@ -492,7 +623,7 @@ assert(family.totalMass == 25, "family removal did not recover mass")
 
 -- Armor/clipping/mass sources all use armor-only categories.
 local massEntity = newEntity(conB, "prop_physics", { mass = 10 })
-local phys = setmetatable({ entity = massEntity, mass = 10 }, { __index = physMeta })
+local phys = setmetatable({ valid = true, entity = massEntity, mass = 10 }, { __index = physMeta })
 assertEvent("mass-change", function()
 	return phys:SetMass(20)
 end, { conB }, { Armor = true, Ammo = false, Firepower = false, ReadyRack = false, Warning = true }, "mass-changed")
@@ -582,6 +713,18 @@ assert(indexOf(batches[1].AffectedContraptions, resetA), "global cache reset mis
 assert(indexOf(batches[1].AffectedContraptions, resetB), "global cache reset missed reset-b")
 assert(not indexOf(batches[1].AffectedContraptions, merged), "global cache reset included merged contraption")
 
+local resetPending = newContraption("reset-pending")
+local resetPendingEnt = newEntity(resetPending, "prop_physics", { armorPoints = 13 })
+resetPending.ents[resetPendingEnt] = true
+clearLogs()
+hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(resetPending, resetPendingEnt)
+assert(ACE.PendingPointEntityChanges[resetPendingEnt], "pending delta was not queued before reset")
+concommands.ace_cache_clear_all()
+assert(ACE.PendingPointRebuilds[resetPending], "cache reset did not force a rebuild over pending deltas")
+hookHandlers.Think.ACE_FlushQueuedPointChanges()
+assert(resetPending.ACEPoints == 13 and resetPending.ACEPointLedger[resetPendingEnt],
+	"cache reset with a pending delta corrupted the ledger")
+
 -- Re-entrant reads must not recursively rebuild or emit another event.
 local reentrant = newContraption("reentrant")
 local reentrantRebuilds = 0
@@ -598,5 +741,8 @@ local reentrantEvent = ACE.NotifyPointsInvalidated(reentrant, "reentrant", {
 assert(reentrantEvent and reentrantRebuilds == 1, "re-entrant invalidation hook did not run once")
 assert(#batches == 1 and #recalculated == 1,
 	"re-entrant read duplicated event or rebuild (batches=" .. #batches .. ", recalculated=" .. #recalculated .. ")")
+hookHandlers.Think.ACE_FlushQueuedPointChanges()
+assert(#recalculated == 1 and not ACE.PendingPointRebuilds[reentrant],
+	"re-entrant immediate read left a duplicate rebuild queued")
 
 print("ACE points invalidation matrix LuaJIT self-test: PASS")

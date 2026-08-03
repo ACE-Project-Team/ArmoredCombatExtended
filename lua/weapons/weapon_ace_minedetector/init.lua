@@ -548,7 +548,7 @@ function SWEP:SecondaryAttack()
         end
     else
         -- Regular mine
-        mine = ACE.CreateMine(mineData.type, tr.HitPos + Vector(0, 0, 5), Angle(0, owner:EyeAngles().y, 0), owner)
+        mine = ACE_CreateMine(mineData.type, tr.HitPos + Vector(0, 0, 5), Angle(0, owner:EyeAngles().y, 0), owner)
     end
 
     if IsValid(mine) then

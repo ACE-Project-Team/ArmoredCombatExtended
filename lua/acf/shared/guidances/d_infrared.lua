@@ -2,11 +2,11 @@
 local ClassName = "Infrared"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 ---
 
@@ -50,13 +50,13 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone		= (ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone)
+	self.ViewCone		= (ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone)
 	self.ViewConeCos		= (math.cos(math.rad(self.ViewCone)))
-	self.SeekCone		= (ACF_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone)
-	self.HeatAboveAmbient = self.HeatAboveAmbient / (ACF_GetGunValue(missile.BulletData, "seeksensitivity") or 1)
-	--self.SeekSensitivity	= ACF_GetGunValue(missile.BulletData, "seeksensitivity") or this.SeekSensitivity
-	self.HasIRCCM	= ACF_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
-	self.seekReduction	= ACF_GetGunValue(missile.BulletData, "seekreduction") or 1
+	self.SeekCone		= (ACE.GetGunValue(missile.BulletData, "seekcone") or this.SeekCone)
+	self.HeatAboveAmbient = self.HeatAboveAmbient / (ACE.GetGunValue(missile.BulletData, "seeksensitivity") or 1)
+	--self.SeekSensitivity	= ACE_GetGunValue(missile.BulletData, "seeksensitivity") or this.SeekSensitivity
+	self.HasIRCCM	= ACE.GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.seekReduction	= ACE.GetGunValue(missile.BulletData, "seekreduction") or 1
 
 	--print("CEent")
 	--for i, ent in ipairs(ACE.contraptionEnts) do
@@ -174,7 +174,7 @@ function this:GetWhitelistedContraptionsInCone(missile)
 		dist	= difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 		-- skip any ent far than maximum distance
 		if dist > self.MaximumDistance then continue end
@@ -339,7 +339,7 @@ function this:AcquireLock(missile)
 	end
 
 
-	local CounterMeasures = ACFM_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
+	local CounterMeasures = ACE.Missile_GetFlaresInCone(missilePos, DifSeek, self.SeekCone)
 
 	local HottestCM = 0
 	local CM = nil
@@ -377,7 +377,7 @@ end
 --Another Stupid Workaround. Since guidance degrees are not loaded when ammo is created
 function this:GetDisplayConfig(Type)
 
-	local Guns = ACF.Weapons.Guns
+	local Guns = ACE.Weapons.Guns
 	local GunTable = Guns[Type]
 
 	local ViewCone = GunTable.viewcone and GunTable.viewcone * 2 or 0

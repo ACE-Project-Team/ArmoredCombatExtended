@@ -6,9 +6,9 @@ local TraceMissileLOS = include("acf/shared/sh_ace_missiletrace.lua")
 
 DEFINE_BASECLASS("acf_explosive")
 
---local GunTable	= ACF.Weapons.Guns
---local GuidanceTable = ACF.Guidance
---local FuseTable	= ACF.Fuse
+--local GunTable	= ACE.Weapons.Guns
+--local GuidanceTable = ACE.Guidance
+--local FuseTable	= ACE.Fuse
 
 function ENT:Initialize()
 
@@ -31,8 +31,8 @@ function ENT:Initialize()
 	self.PhysObj:EnableGravity( false )
 	self.PhysObj:EnableMotion( false )
 
-	self.SpecialHealth	= false  --If true needs a special ACF_Activate function
-	self.SpecialDamage	= true  --If true needs a special ACF_OnDamage function
+	self.SpecialHealth	= false  --If true needs a special ACE_Activate function
+	self.SpecialDamage	= true  --If true needs a special ACE_OnDamage function
 
 	self.MissileActive = false --False on rack, true in flight.
 
@@ -41,7 +41,7 @@ function ENT:Initialize()
 	self.CurPos = self:GetPos()
 	--Glide phase?
 
-	self.LastThink = ACF.CurTime
+	self.LastThink = ACE.CurTime
 
 
 	self.FirstThink = true
@@ -114,7 +114,7 @@ function ENT:Think()
 
 	if self.Exploded then return true end
 
-	local CT = ACF.CurTime
+	local CT = ACE.CurTime
 	DeltaTime = CT - self.LastThink
 	self.LastThink = CT
 	self:NextThink( CT + self.ThinkDelay )
@@ -294,7 +294,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACF_GetGunValue(self.BulletData, "effectbooster")
+							local effect = self.BoostEffect or ACE_GetGunValue(self.BulletData, "effectbooster")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -344,7 +344,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACF_GetGunValue(self.BulletData, "effect")
+							local effect = self.BoostEffect or ACE_GetGunValue(self.BulletData, "effect")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -544,7 +544,7 @@ function ENT:Think()
 			Flash:SetOrigin(self:GetPos() + Vector(0, 0, 8))
 			Flash:SetNormal(Vector(0, 0, -1))
 			Flash:SetRadius(2)
-			util.Effect( "ACF_Scaled_Explosion", Flash )
+			util.Effect( "ACE_Scaled_Explosion", Flash )
 
 			self:Remove()
 			return
@@ -554,8 +554,8 @@ function ENT:Think()
 	end
 
 
-	if self.IsJammed ~= 0 and ACF.CurTime > self.NextJamCheck then
-		self.NextJamCheck = ACF.CurTime + self.ResetJamDelay
+	if self.IsJammed ~= 0 and ACE.CurTime > self.NextJamCheck then
+		self.NextJamCheck = ACE.CurTime + self.ResetJamDelay
 		--print("ResetJam")
 		--Reset everything for next check
 		self.IsJammed			= 0
@@ -582,7 +582,7 @@ function ENT:ConfigureMissile()
 
 	--0-stops underwater
 	--1-booster only underwater - DEFAULT
-	--2-works above and below 
+	--2-works above and below
 	--3-underwater only
 	--4-booster all and under thrust only
 
@@ -617,7 +617,7 @@ function ENT:ConfigureLaunch()
 	self.MissilePosition = self:GetPos()
 
 	local CT = CurTime()
-	ACF_ActiveMissiles[self] = true
+	ACE.ActiveMissiles[self] = true
 	self.Fuse:Configure(self, self.Guidance)
 	self.TimeOfLaunch = CT
 
@@ -627,7 +627,7 @@ function ENT:Detonate()
 	if self.Exploded then return end
 
 	self.Exploded = true
-	ACF_ActiveMissiles[self] = nil
+	ACE.ActiveMissiles[self] = nil
 
 	local HEWeight = self.Bulletdata2.BoomFillerMass or self.Bulletdata2.FillerMass or 0
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
@@ -664,13 +664,13 @@ function ENT:Detonate()
 
 	self.Bulletdata2["PenArea"] = self.Bulletdata2["PenArea"] * self.MissileCalMul
 	--self.Bulletdata2["Caliber"] = self.Bulletdata2["FrArea"] * self.MissileCalMul
---	self.Bulletdata2["Flight"] = self:GetForward():GetNormalized() * self.Flight * 39.37 * ACF.MissileVelocityMul
+--	self.Bulletdata2["Flight"] = self:GetForward():GetNormalized() * self.Flight * 39.37 * ACE.MissileVelocityMul
 	self.Bulletdata2["Flight"] = self.Flight * 39.37 * self.MissileVelocityMul
 
 	self.Bulletdata2.Pos = self:GetPos()
 	self.Bulletdata2.Owner = self:CPPIGetOwner()
 
-	self.CreateShell = ACF.RoundTypes[self.Bulletdata2.Type].create
+	self.CreateShell = ACE.RoundTypes[self.Bulletdata2.Type].create
 	self:CreateShell( self.Bulletdata2 )
 
 	if Radius > 0.25 then
@@ -678,14 +678,14 @@ function ENT:Detonate()
 		Flash:SetOrigin(self:GetPos() + Vector(0, 0, 8))
 		Flash:SetNormal(Vector(0, 0, -1))
 		Flash:SetRadius(math.Round(math.max(Radius / 39.37, 1),2))
-		util.Effect( "ACF_Scaled_Explosion", Flash )
+		util.Effect( "ACE_Scaled_Explosion", Flash )
 	end
 --
 
 end
 
 function ENT:OnRemove()
-	ACF_ActiveMissiles[self] = nil
+	ACE.ActiveMissiles[self] = nil
 
 	if self.MotorSound then
 	self:StopSound(self.MotorSound)
@@ -710,11 +710,11 @@ do
 	function ENT:ACF_OnDamage( Ent, Energy, FrArea, _, Inflictor, _, Type )	--This function needs to return HitRes
 
 		local Mul	= (( HEtbl[Type] and 0.1 ) or 1) --HE penetrators better penetrate the armor of missiles
-		local HitRes	= ACF_PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
-		--local Activated = ACF_Check( Ent )
-		--local CanDo = hook.Run("ACF_BulletDamage", Activated, Ent, Energy, FrArea, 0, Inflictor )
+		local HitRes	= ACE_PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
+		--local Activated = ACE_Check( Ent )
+	--local CanDo = hook.Run("ACE_BulletDamage", Activated, Ent, Energy, FrArea, 0, Inflictor )
 
-		local CanDo = hook.Run("ACF_BulletDamage", _, Ent, _, _, _, Inflictor, _, _ )
+	local CanDo = hook.Run("ACE_BulletDamage", _, Ent, _, _, _, Inflictor, _, _ )
 		----------------------(_, Entity, _, _, _, Inflictor, _, _)
 		--print(math.Round(HitRes.Damage * 100))
 		--print(HitRes.Loss * 100)

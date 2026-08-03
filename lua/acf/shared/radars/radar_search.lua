@@ -1,5 +1,5 @@
 
-ACF_DefineTrackRadarClass("DIR-SEARCH", {
+ACE.DefineTrackRadarClass("DIR-SEARCH", {
 	name = "Search Radar",
 	type = "Search-Radar",
 	desc = "Search radar with unlimited range. Will periodically scan in a full 360 circle. Larger radars will scan faster. More susceptible than Track radars to jamming."
@@ -13,7 +13,7 @@ ACF_DefineTrackRadarClass("DIR-SEARCH", {
 
 
 --Large SAM Radar better able to search for targets and burn-through jamming. Max burn through at 200m. Negligible accuracy loss from offbore targets.
-ACF_DefineTrackRadar("Large-SEARCH", {
+ACE.DefineTrackRadar("Large-SEARCH", {
 	name		= "Large Search Radar",
 	ent			= "ace_searchradar",
 	desc		= "Massive search radar for quickly searching the airspace. More jam resistent than its smaller counterparts.",
@@ -28,7 +28,7 @@ ACF_DefineTrackRadar("Large-SEARCH", {
 } )
 
 --Baseline radar. Solid track cone. Center beam burn through at 200m. Decent offbore accuracy.
-ACF_DefineTrackRadar("Medium-SEARCH", {
+ACE.DefineTrackRadar("Medium-SEARCH", {
 	name		= "Medium Search Radar",
 	ent			= "ace_searchradar",
 	desc		= "Middle size search radar. Sweeps the air at a decent rate. Not particularly jam resistent but gets the job done.",
@@ -43,7 +43,7 @@ ACF_DefineTrackRadar("Medium-SEARCH", {
 } )
 
 --Only useful as a fire director
-ACF_DefineTrackRadar("Small-SEARCH", { --Does not burn through.
+ACE.DefineTrackRadar("Small-SEARCH", { --Does not burn through.
 	name		= "Small Search Radar",
 	ent			= "ace_searchradar",
 	desc		= "Compact. Though usable as a fire director the tiny viewcone and offbore accuracy make it difficult to use. Will never burn through but it is light.",

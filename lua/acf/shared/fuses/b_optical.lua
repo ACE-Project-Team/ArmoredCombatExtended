@@ -1,11 +1,11 @@
 
-ACF = ACF or {}
-ACF.Fuse = ACF.Fuse or {}
+ACE = ACE or {}
+ACE.Fuse = ACE.Fuse or {}
 
 local ClassName = "Optical"
 
-local this = ACF.Fuse[ClassName] or inherit.NewSubOf(ACF.Fuse.Contact)
-ACF.Fuse[ClassName] = this
+local this = ACE.Fuse[ClassName] or inherit.NewSubOf(ACE.Fuse.Contact)
+ACE.Fuse[ClassName] = this
 
 ---
 
@@ -20,7 +20,7 @@ this.Distance = 2000
 this.desc = "This fuse fires a beam directly ahead and detonates when the beam hits something close-by.\nDistance in inches."
 
 
--- Configuration information for things like acfmenu.
+-- Configuration information for things like acemenu.
 this.Configurable = table.Copy(this:super().Configurable)
 
 

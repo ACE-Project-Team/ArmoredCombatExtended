@@ -15,7 +15,7 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Inline
 
-ACF_DefineGearbox( "4Gear-L-S", {
+ACE.DefineGearbox( "4Gear-L-S", {
 	name = "4-Speed, Inline, Small",
 	desc = "A small, and light 4 speed inline gearbox, with a somewhat limited max torque rating\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_s.mdl",
@@ -34,7 +34,7 @@ ACF_DefineGearbox( "4Gear-L-S", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-L-M", {
+ACE.DefineGearbox( "4Gear-L-M", {
 	name = "4-Speed, Inline, Medium",
 	desc = "A medium sized, 4 speed inline gearbox",
 	model = "models/engines/linear_m.mdl",
@@ -53,7 +53,7 @@ ACF_DefineGearbox( "4Gear-L-M", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-L-L", {
+ACE.DefineGearbox( "4Gear-L-L", {
 	name = "4-Speed, Inline, Large",
 	desc = "A large, heavy and sturdy 4 speed inline gearbox",
 	model = "models/engines/linear_l.mdl",
@@ -74,7 +74,7 @@ ACF_DefineGearbox( "4Gear-L-L", {
 
 -- Inline Dual Clutch
 
-ACF_DefineGearbox( "4Gear-LD-S", {
+ACE.DefineGearbox( "4Gear-LD-S", {
 	name = "4-Speed, Inline, Small, Dual Clutch",
 	desc = "A small, and light 4 speed inline gearbox, with a somewhat limited max torque rating. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/linear_s.mdl",
@@ -94,7 +94,7 @@ ACF_DefineGearbox( "4Gear-LD-S", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-LD-M", {
+ACE.DefineGearbox( "4Gear-LD-M", {
 	name = "4-Speed, Inline, Medium, Dual Clutch",
 	desc = "A medium sized, 4 speed inline gearbox. The dual clutch allows you to apply power and brake each side independently",
 	model = "models/engines/linear_m.mdl",
@@ -114,7 +114,7 @@ ACF_DefineGearbox( "4Gear-LD-M", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-LD-L", {
+ACE.DefineGearbox( "4Gear-LD-L", {
 	name = "4-Speed, Inline, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 4 speed inline gearbox. The dual clutch allows you to apply power and brake each side independently",
 	model = "models/engines/linear_l.mdl",
@@ -136,7 +136,7 @@ ACF_DefineGearbox( "4Gear-LD-L", {
 
 -- Transaxial
 
-ACF_DefineGearbox( "4Gear-T-S", {
+ACE.DefineGearbox( "4Gear-T-S", {
 	name = "4-Speed, Transaxial, Small",
 	desc = "A small, and light 4 speed gearbox, with a somewhat limited max torque rating\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_s.mdl",
@@ -155,7 +155,7 @@ ACF_DefineGearbox( "4Gear-T-S", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-T-M", {
+ACE.DefineGearbox( "4Gear-T-M", {
 	name = "4-Speed, Transaxial, Medium",
 	desc = "A medium sized, 4 speed gearbox",
 	model = "models/engines/transaxial_m.mdl",
@@ -174,7 +174,7 @@ ACF_DefineGearbox( "4Gear-T-M", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-T-L", {
+ACE.DefineGearbox( "4Gear-T-L", {
 	name = "4-Speed, Transaxial, Large",
 	desc = "A large, heavy and sturdy 4 speed gearbox",
 	model = "models/engines/transaxial_l.mdl",
@@ -195,7 +195,7 @@ ACF_DefineGearbox( "4Gear-T-L", {
 
 -- Transaxial Dual Clutch
 
-ACF_DefineGearbox( "4Gear-TD-S", {
+ACE.DefineGearbox( "4Gear-TD-S", {
 	name = "4-Speed, Transaxial, Small, Dual Clutch",
 	desc = "A small, and light 4 speed gearbox, with a somewhat limited max torque rating. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 	model = "models/engines/transaxial_s.mdl",
@@ -215,7 +215,7 @@ ACF_DefineGearbox( "4Gear-TD-S", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-TD-M", {
+ACE.DefineGearbox( "4Gear-TD-M", {
 	name = "4-Speed, Transaxial, Medium, Dual Clutch",
 	desc = "A medium sized, 4 speed gearbox. The dual clutch allows you to apply power and brake each side independently",
 	model = "models/engines/transaxial_m.mdl",
@@ -235,7 +235,7 @@ ACF_DefineGearbox( "4Gear-TD-M", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-TD-L", {
+ACE.DefineGearbox( "4Gear-TD-L", {
 	name = "4-Speed, Transaxial, Large, Dual Clutch",
 	desc = "A large, heavy and sturdy 4 speed gearbox. The dual clutch allows you to apply power and brake each side independently",
 	model = "models/engines/transaxial_l.mdl",
@@ -257,7 +257,7 @@ ACF_DefineGearbox( "4Gear-TD-L", {
 
 -- Straight-through gearboxes
 
-ACF_DefineGearbox( "4Gear-ST-S", {
+ACE.DefineGearbox( "4Gear-ST-S", {
 	name = "4-Speed, Straight, Small",
 	desc = "A small straight-through gearbox",
 	model = "models/engines/t5small.mdl",
@@ -276,7 +276,7 @@ ACF_DefineGearbox( "4Gear-ST-S", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-ST-M", {
+ACE.DefineGearbox( "4Gear-ST-M", {
 	name = "4-Speed, Straight, Medium",
 	desc = "A medium sized, 4 speed straight-through gearbox.",
 	model = "models/engines/t5med.mdl",
@@ -295,7 +295,7 @@ ACF_DefineGearbox( "4Gear-ST-M", {
 	}
 } )
 
-ACF_DefineGearbox( "4Gear-ST-L", {
+ACE.DefineGearbox( "4Gear-ST-L", {
 	name = "4-Speed, Straight, Large",
 	desc = "A large sized, 4 speed straight-through gearbox.",
 	model = "models/engines/t5large.mdl",

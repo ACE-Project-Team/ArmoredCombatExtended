@@ -3,11 +3,11 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_acf_vheat_source", 3)
+CreateConVar("sbox_max_ace_vheat_source", 3)
 
 DEFINE_BASECLASS( "base_wire_entity" )
 
-local VHeatSrcTable = ACF.Weapons.Tools["VHeatSrc"]
+local VHeatSrcTable = ACE.Weapons.Tools["VHeatSrc"]
 
 function ENT:Initialize()
 	self.ThinkDelay			= 0.1
@@ -20,7 +20,7 @@ function ENT:Initialize()
 	self.CoolingRate = 0
 	self.MaxTemperature = self.Heat
 
-	self.SpecialHealth       = true  --If true needs a special ACF_Activate function
+	self.SpecialHealth       = true  --If true needs a special ACE_Activate function
 
 	self.Inputs = WireLib.CreateInputs(self, {
 		"Active (Whether to turn the virtual heat source on or off)",
@@ -52,7 +52,7 @@ function ENT:ACF_Activate( _ )
 	self.ACF.Type		= "Prop"
 end
 
-function MakeACE_VHeat_Source(Owner, Pos, Angle, Id)
+function ACE_MakeVHeatSource(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_vheat_source") then return false end
 
 	Id = Id or "VHeatSrc"
@@ -78,13 +78,13 @@ function MakeACE_VHeat_Source(Owner, Pos, Angle, Id)
 	VHeatSrcEnt:UpdateOverlayText()
 
 	Owner:AddCount( "_ace_vheat_source", VHeatSrcEnt )
-	Owner:AddCleanup( "acfmenu", VHeatSrcEnt )
+	Owner:AddCleanup( "acemenu", VHeatSrcEnt )
 
 	return VHeatSrcEnt
 end
 
 list.Set( "ACFCvars", "ace_vheat_source", {"id"} )
-duplicator.RegisterEntityClass("ace_vheat_source", MakeACE_VHeat_Source, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_vheat_source", ACE_MakeVHeatSource, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )

@@ -1,8 +1,7 @@
 local root = assert(arg[1], "usage: ace_points_invalidation_matrix_luajit_selftest.lua <ACE repo>")
 root = root:gsub("\\\\", "/"):gsub("/$", "")
 
-ACE = {}
-ACF = { PointsLimit = math.huge, MaxWeight = math.huge }
+ACE = { PointsLimit = math.huge, MaxWeight = math.huge }
 CFW = {
 	Classes = {
 		Contraption = {
@@ -41,7 +40,7 @@ function ACE.GetArmorPoints(ent) return ent.armorPoints or 0 end
 function ACE.GetCrewSeatPointCost() return 0 end
 function ACE.GetGunFirepowerPointsFor(ent) return ent.firepowerPoints or 0 end
 function Color() return {} end
-function chatMessageGlobal() end
+function ACE.ChatMessageGlobal() end
 
 table.IsEmpty = function(value) return next(value) == nil end
 timer = { Simple = function() end }
@@ -93,6 +92,12 @@ function ACE.GetContraptionEntities(con)
 end
 
 dofile(root .. "/lua/acf/server/sv_contraptionlegality.lua")
+
+setmetatable(ACE, {
+	__index = function(_, key)
+		return _G["ACE_" .. key]
+	end,
+})
 
 local batches = {}
 local compat = {}

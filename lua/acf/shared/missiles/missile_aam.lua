@@ -1,10 +1,10 @@
 
 --define the class
-ACF_defineGunClass("AAM", {
+ACE.DefineGunClass("AAM", {
 	type           = "missile",
 	spread         = 1,
 	name           = "[AAM] - Air-To-Air Missile",
-	desc           = ACFTranslation.MissileClasses[1],
+	desc           = ACE.Translation.MissileClasses[1],
 	muzzleflash    = "40mm_muzzleflash_noscale",
 	rofmod         = 1,
 	sound          = "acf_extra/airfx/rocket_fire2.wav",
@@ -16,7 +16,7 @@ ACF_defineGunClass("AAM", {
 } )
 
 -- The AIM-9 Sidewinder. The perfect choice for dogfights at short range. Although respectable payload, still tiny.
-ACF_defineGun("AIM-9 AAM", {								-- id
+ACE.DefineGun("AIM-9 AAM", {								-- id
 	name             = "AIM-9 Sidewinder",
 	desc             = "The gold standard in airborne jousting sticks. Agile and reliable with a rather underwhelming effective range, this homing missile is the weapon of choice for dogfights.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 183 m/s",
 	model            = "models/missiles/aim9m.mdl",
@@ -90,7 +90,7 @@ ACF_defineGun("AIM-9 AAM", {								-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("AIM-7 AAM", {							-- id
+ACE.DefineGun("AIM-7 AAM", {							-- id
 	name             = "AIM-7 Sparrow",
 	desc             = "While not as advanced as its modern counterparts, the Sparrow makes up for it in thrust and plentiful speed. Do not underestimate it.\n\nInertial Guidance: No\nECCM: No\nDatalink: Yes\nTop Speed: 310 m/s",
 	model            = "models/missiles/arend/aim7f.mdl",
@@ -164,7 +164,7 @@ ACF_defineGun("AIM-7 AAM", {							-- id
 } )
 
 --AIM-120 Sparrow. A medium-Range AAM missile, perfect for those who really need a decent boom in a single pass. Just remember that this is not an AIM-9 and is better to aim before.
-ACF_defineGun("AIM-120 AAM", {							-- id
+ACE.DefineGun("AIM-120 AAM", {							-- id
 	name             = "AIM-120 AMRAAM",
 	desc             = "Faster than the AIM-9, but also a lot heavier. Burns hot and fast, with a good reach, but harder to lock with.  This long-range missile is sure to deliver one heck of a blast upon impact.Less agile than its smaller stablemate, so choose your shots carefully.\n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 289 m/s",
 	model            = "models/missiles/aim120c.mdl",
@@ -239,7 +239,7 @@ ACF_defineGun("AIM-120 AAM", {							-- id
 
 --AIM-54 phoenix. Being faster and bigger than AIM-120, can deliver a single big blast against the target, however, this 300kgs piece of aerial destruction has a serious trouble
 --with its seek cone and is suggested to AIM before launching.
-ACF_defineGun("AIM-54 AAM", {							-- id
+ACE.DefineGun("AIM-54 AAM", {							-- id
 	name             = "AIM-54 Phoenix",
 	desc             = "Supersonic long-range air to air missile with early radar homing.Though relatively easy to dodge, this 300 kg beast will atomize any aircraft it hits. Getting hit is a traumatic experience. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 191 m/s",
 	model            = "models/missiles/arend/aim54c.mdl",
@@ -310,7 +310,7 @@ ACF_defineGun("AIM-54 AAM", {							-- id
 	ghosttime          = 0.05									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("SRAAM AAM", {								-- id
+ACE.DefineGun("SRAAM AAM", {								-- id
 	name             = "SRAAM",
 	desc             = "Wonderfully schizophrenic thrust vectoring absurdity. Shoots hot straight off the rails like some bat out of hell. Short range in every sense of the word but have fun dodging this one. Antimissile capable.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 302 m/s",
 	model            = "models/missiles/arend/sraam_unfolded.mdl",
@@ -381,7 +381,7 @@ ACF_defineGun("SRAAM AAM", {								-- id
 } )
 
 -- The AIM-9 Sidewinder. The perfect choice for dogfights at short range. Although respectable payload, still tiny.
-ACF_defineGun("Magic AAM", {								-- id
+ACE.DefineGun("Magic AAM", {								-- id
 	name             = "R-550 Magic",
 	desc             = "Short range air to air missile comparable to the sidewinder. Much more agile but less range and a smaller warhead.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: 151 m/s",
 	model            = "models/missiles/arend/r550magic.mdl",
@@ -455,7 +455,7 @@ ACF_defineGun("Magic AAM", {								-- id
 } )
 
 
-ACF_defineGun("MICA AAM", {								-- id
+ACE.DefineGun("MICA AAM", {								-- id
 	name             = "MICA Missile",
 	desc             = "Thrust vectoring short range air to air missile. Not quite as maneuverable as the R-73 but still remarkably agile. Capable of missile intercept. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 189 m/s",
 	model            = "models/missiles/arend/mica_em.mdl",
@@ -530,7 +530,7 @@ ACF_defineGun("MICA AAM", {								-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("Meteor AAM", {							-- id
+ACE.DefineGun("Meteor AAM", {							-- id
 	name             = "Meteor Missile",
 	desc             = "Long range ramjet proppeled missile. Takes a bit longer to get up to speed but much longer range and harder to overshoot. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 236 m/s",
 	model            = "models/missiles/arend/meteor.mdl",
@@ -604,7 +604,7 @@ ACF_defineGun("Meteor AAM", {							-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("R-60 AAM", {								-- id
+ACE.DefineGun("R-60 AAM", {								-- id
 	name             = "R-60 Aphid",
 	desc             = "Small early soviet air to air missile. Slow but has a good range. Don't expect to do much with its relatively puny warhead.\n\nInertial Guidance: No\nECCM: No\nDatalink: No\nTop Speed: 164 m/s",
 	model            = "models/missiles/arend/r60m.mdl",
@@ -677,7 +677,7 @@ ACF_defineGun("R-60 AAM", {								-- id
 } )
 
 
-ACF_defineGun("R-73 AAM", {								-- id
+ACE.DefineGun("R-73 AAM", {								-- id
 	name             = "R-73 Archer",
 	desc             = "A monster in a dogfight. Compared to the Aim-9 this missile has a longer range and incredible offbore capability. But the IRCCM isn't as effective.\n\nInertial Guidance: Yes\nECCM: Reduction\nDatalink: No\nTop Speed: 188 m/s",
 	model            = "models/missiles/arend/r73.mdl",
@@ -751,7 +751,7 @@ ACF_defineGun("R-73 AAM", {								-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("R-77 AAM", {							-- id
+ACE.DefineGun("R-77 AAM", {							-- id
 	name             = "R-77 Adder",
 	desc             = "Counterpart to the aim-120. Very similar in performance but heavier but burns hot and fast.  This long-range missile is sure to deliver its payload fast. Less agile than its smaller stablemate, so choose your shots carefully. \n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: Yes\nTop Speed: 330 m/s",
 	model            = "models/missiles/arend/r77.mdl",
@@ -825,7 +825,7 @@ ACF_defineGun("R-77 AAM", {							-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("R-27 AAM", {							-- id
+ACE.DefineGun("R-27 AAM", {							-- id
 	name             = "R-27 Alamo",
 	desc             = "Massive medium range AAM with an equally large warhead. Slower to start than the aim-120 but packs a powerful punch. \n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 274 m/s",
 	model            = "models/missiles/arend/r27t.mdl",
@@ -897,7 +897,7 @@ ACF_defineGun("R-27 AAM", {							-- id
 	ghosttime          = 0.075									-- Time where this missile will be unable to hit surfaces, in seconds
 } )
 
-ACF_defineGun("R-33 AAM", {							-- id
+ACE.DefineGun("R-33 AAM", {							-- id
 	name             = "R-33 Amos",
 	desc             = "A supersonic long-range air to air missile. H E A V Y. Faster than its Aim-54 counterpart but with a weaker warhead. Will vaporize any aircraft it touches.\n\nInertial Guidance: Yes\nECCM: ADV Reduction\nDatalink: No\nTop Speed: 216 m/s",
 	model            = "models/missiles/arend/r33.mdl",

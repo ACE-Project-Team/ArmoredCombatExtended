@@ -3,11 +3,11 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-CreateConVar("sbox_max_acf_gforce_meter", 10)
+CreateConVar("sbox_max_ace_gforce_meter", 10)
 
 DEFINE_BASECLASS("base_wire_entity")
 
-local ExtrasTable = ACF.Weapons.Extras
+local ExtrasTable = ACE.Weapons.Extras
 
 function ENT:Initialize()
 	self.ThinkDelay = 0.05
@@ -31,7 +31,7 @@ function ENT:Initialize()
 	self:UpdateOverlayText()
 end
 
-function MakeACE_GForce_Meter(Owner, Pos, Angle, Id)
+function ACE_MakeGForceMeter(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_gforce_meter") then return false end
 
 	Id = Id or "GForceMeter"
@@ -60,13 +60,13 @@ function MakeACE_GForce_Meter(Owner, Pos, Angle, Id)
 	ent:UpdateOverlayText()
 
 	Owner:AddCount("_ace_gforce_meter", ent)
-	Owner:AddCleanup("acfmenu", ent)
+	Owner:AddCleanup("acemenu", ent)
 
 	return ent
 end
 
 list.Set("ACFCvars", "ace_gforce_meter", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_gforce_meter", MakeACE_GForce_Meter, "Pos", "Angle", "Id", "Data")
+duplicator.RegisterEntityClass("ace_gforce_meter", ACE_MakeGForceMeter, "Pos", "Angle", "Id", "Data")
 
 function ENT:SetNWNetwork()
 	self:SetNWString("WireName", self.ACFName or "G-Force Meter")

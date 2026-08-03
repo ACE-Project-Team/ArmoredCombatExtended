@@ -21,7 +21,7 @@ math.Clamp = function(value, minimum, maximum)
 end
 
 local activations = 0
-function ACF_Activate(ent)
+function ACE.Activate(ent)
 	activations = activations + 1
 	ent.ACF = ent.ACF or {}
 	ent.ACF.Area = 100

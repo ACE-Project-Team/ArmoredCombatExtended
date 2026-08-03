@@ -1,3 +1,6 @@
+ACE = ACE or {}
+ACE.Manufacturing = ACE.Manufacturing or {}
+
 --[[-----------------------------------------------------------------------------
 	ACE Manufacturing Cost -- real-dollar build cost model
 
@@ -8,8 +11,6 @@
 
 	The pure model must load under vanilla Lua 5.1; GMod calls belong in the adapters.
 -------------------------------------------------------------------------------]]
-
-ACE = ACE or {}
 
 -- ================================================================
 --  SECTION 1 -- PURE MODEL  (vanilla Lua 5.1; no GMod calls)
@@ -74,7 +75,7 @@ local TYPE_FAMILY = {
 -- Manufacturing $ for ONE round. Missiles (guidance present) = body $/kg + seeker cost;
 -- shells = round mass (Proj+Prop) x its family $/kg rate. Refill rounds are free here.
 -- round = { Type, ProjMass, PropMass, guidance }.
-function ACE.Manu_RoundCost(round)
+function ACE.Manufacturing.RoundCost(round)
 	local t = round.Type
 	if not t or t == "" then t = "AP" end
 	local fam = TYPE_FAMILY[t] or "AP"
@@ -94,40 +95,40 @@ end
 
 -- Gun manufacturing $ = gun_cal_sq * caliber_mm^2 * class factor. caliberMm is millimetres
 -- (adapter passes Caliber_cm * 10). Unknown class -> factor 1.0.
-function ACE.Manu_GunCost(caliberMm, gunClass)
+function ACE.Manufacturing.GunCost(caliberMm, gunClass)
 	local calMm = tonumber(caliberMm) or 0.0
 	local mul = M.gun_class_mul[gunClass] or 1.0
 	return M.gun_cal_sq * calMm ^ 2 * mul
 end
 
 -- Rack manufacturing $ = tube count x flat rail/tube hardware. 0/nil tubes default to 1.
-function ACE.Manu_RackCost(maxMissile)
+function ACE.Manufacturing.RackCost(maxMissile)
 	local mm = tonumber(maxMissile) or 0
 	if mm == 0 then mm = 1 end
 	return mm * M.rack_flat
 end
 
 -- Armor manufacturing $ = mass (tonnes) x $/ton for the material. Unknown material -> RHA rate.
-function ACE.Manu_ArmorCost(massKg, material)
+function ACE.Manufacturing.ArmorCost(massKg, material)
 	local mass = tonumber(massKg) or 0.0
 	return mass / 1000.0 * (M.armor_per_ton[material] or 14000.0)
 end
 
 -- Engine manufacturing $ = peak hp x $/hp for the fuel type. hp is peak power (peakkw/0.7457).
 -- nil fuel -> Petrol (250); a known-name-but-unmapped fuel -> 350.
-function ACE.Manu_EngineCost(hp, fuelType)
+function ACE.Manufacturing.EngineCost(hp, fuelType)
 	return (tonumber(hp) or 0.0) * (M.engine_per_hp[fuelType or "Petrol"] or 350.0)
 end
 
-function ACE.Manu_ElectronicsCost(tierPoints)
+function ACE.Manufacturing.ElectronicsCost(tierPoints)
 	return (tonumber(tierPoints) or 0.0) * M.electronics_per_tier
 end
 
-function ACE.Manu_CrewCost()
+function ACE.Manufacturing.CrewCost()
 	return M.crew_seat
 end
 
-function ACE.Manu_RefillCost()
+function ACE.Manufacturing.RefillCost()
 	return M.refill_crate
 end
 
@@ -137,39 +138,39 @@ end
 
 -- Ammo crate -> Ammo $. Refill crates take the flat refill cost; every other crate is
 -- round_cost x Capacity. Type/guidance come from the EXISTING public round adapter
--- (ACE.Points_RoundFromBullet resolves missile guidance from guidance/Guidance/Data7);
+-- (ACE.Points.RoundFromBullet resolves missile guidance from guidance/Guidance/Data7);
 -- masses come straight off BulletData. Returns 0 for a crate with no BulletData.
 local function manuCrateCost(ent)
 	local bdata = ent.BulletData
 	if not istable(bdata) then return 0 end
 
-	local round = ACE.Points_RoundFromBullet(bdata)
+	local round = ACE.Points.RoundFromBullet(bdata)
 	if not round then return 0 end
 
 	if round.Type == "Refill" then
-		return ACE.Manu_RefillCost()
+		return ACE.Manufacturing.RefillCost()
 	end
 
 	round.ProjMass = tonumber(bdata.ProjMass)
 	round.PropMass = tonumber(bdata.PropMass)
-	return ACE.Manu_RoundCost(round) * (tonumber(ent.Capacity) or 0)
+	return ACE.Manufacturing.RoundCost(round) * (tonumber(ent.Capacity) or 0)
 end
 
 -- Manufacturing $ for ONE entity, plus its category (one of Armor/Powerpack/Armament/Ammo/
 -- Electronics/Crew), routed by entity class.
 -- Returns 0, nil for unpriceable ents. Server-realm inputs (physics mass, BulletData) -- called
 -- from the armor tool's server-side popup path.
-function ACE.Manu_EntCost(ent)
+function ACE.Manufacturing.EntCost(ent)
 	if not ACE.IsEnt(ent) then return 0, nil end
 
 	local cls = ent:GetClass() or ""
 
 	if cls == "acf_engine" then
-		return ACE.Manu_EngineCost((tonumber(ent.peakkw) or 0) / 0.7457, ent.FuelType), "Powerpack"
+		return ACE.Manufacturing.EngineCost((tonumber(ent.peakkw) or 0) / 0.7457, ent.FuelType), "Powerpack"
 	elseif cls == "acf_gun" then
-		return ACE.Manu_GunCost((tonumber(ent.Caliber) or 0) * 10, ent.Class), "Armament"
+		return ACE.Manufacturing.GunCost((tonumber(ent.Caliber) or 0) * 10, ent.Class), "Armament"
 	elseif cls == "acf_rack" then
-		return ACE.Manu_RackCost(ent.MaxMissile), "Armament"
+		return ACE.Manufacturing.RackCost(ent.MaxMissile), "Armament"
 	elseif cls == "acf_ammo" then
 		return manuCrateCost(ent), "Ammo"
 	elseif cls == "ace_explosive" or cls == "ace_explosive_prebuilt"
@@ -178,18 +179,18 @@ function ACE.Manu_EntCost(ent)
 		-- Cast-explosive charge: filler mass x the HE ammo $/kg rate (it is bulk explosive fill).
 		return (tonumber(ent.FillerMass) or 0) * (M.round_per_kg.HE or 100.0), "Ammo"
 	elseif cls:find("crewseat", 1, true) then
-		return ACE.Manu_CrewCost(), "Crew"
+		return ACE.Manufacturing.CrewCost(), "Crew"
 	end
 
-	-- Armor prop: same class-skip as ACE.Points_PropArmor (skip acf_/ace_/gmod_/pod). Priced
+	-- Armor prop: same class-skip as ACE.Points.PropArmor(skip acf_/ace_/gmod_/pod). Priced
 	-- by physics mass x the prop's armor-material $/ton.
-	if cls:sub(1, 4) ~= "acf_" and cls:sub(1, 4) ~= "ace_" and cls:sub(1, 5) ~= "gmod_"
+	if cls:sub(1, 4) ~= "ACE_" and cls:sub(1, 4) ~= "ace_" and cls:sub(1, 5) ~= "gmod_"
 		and not cls:find("pod", 1, true) then
 		local acf = ent.ACF
 		if istable(acf) and acf.Armour then
 			local phys = ent:GetPhysicsObject()
 			local mass = (IsValid(phys) and phys:GetMass()) or 0
-			return ACE.Manu_ArmorCost(mass, acf.Material or ent.ACF_Material), "Armor"
+			return ACE.Manufacturing.ArmorCost(mass, acf.Material or ent.ACF_Material), "Armor"
 		end
 		return 0, nil
 	end
@@ -197,18 +198,18 @@ function ACE.Manu_EntCost(ent)
 	-- Any other ACF/ACE component carrying an ACEPoints tier prices as electronics.
 	local tier = tonumber(ent.ACEPoints) or 0
 	if tier > 0 then
-		return ACE.Manu_ElectronicsCost(tier), "Electronics"
+		return ACE.Manufacturing.ElectronicsCost(tier), "Electronics"
 	end
 
 	return 0, nil
 end
 
-function ACE.Manu_ContraptionCost(conEnts)
+function ACE.Manufacturing.ContraptionCost(conEnts)
 	local out = { Armor = 0, Powerpack = 0, Armament = 0, Ammo = 0, Electronics = 0, Crew = 0, Total = 0 }
 
 	if istable(conEnts) then
 		for _, ent in ipairs(conEnts) do
-			local cost, cat = ACE.Manu_EntCost(ent)
+			local cost, cat = ACE.Manufacturing.EntCost(ent)
 			if cat and cost and cost > 0 then
 				out[cat] = (out[cat] or 0) + cost
 			end
@@ -218,3 +219,16 @@ function ACE.Manu_ContraptionCost(conEnts)
 	out.Total = out.Armor + out.Powerpack + out.Armament + out.Ammo + out.Electronics + out.Crew
 	return out
 end
+
+
+-- Legacy aliases retained for external ACE callers during the namespace migration.
+ACE_Manu_ArmorCost = ACE.Manufacturing.ArmorCost
+ACE_Manu_ContraptionCost = ACE.Manufacturing.ContraptionCost
+ACE_Manu_CrewCost = ACE.Manufacturing.CrewCost
+ACE_Manu_ElectronicsCost = ACE.Manufacturing.ElectronicsCost
+ACE_Manu_EngineCost = ACE.Manufacturing.EngineCost
+ACE_Manu_EntCost = ACE.Manufacturing.EntCost
+ACE_Manu_GunCost = ACE.Manufacturing.GunCost
+ACE_Manu_RackCost = ACE.Manufacturing.RackCost
+ACE_Manu_RefillCost = ACE.Manufacturing.RefillCost
+ACE_Manu_RoundCost = ACE.Manufacturing.RoundCost

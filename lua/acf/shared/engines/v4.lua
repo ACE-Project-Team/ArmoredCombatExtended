@@ -3,7 +3,7 @@
 
 --Diesel
 
-ACF_DefineEngine( "1.9L-V4", {
+ACE.DefineEngine( "1.9L-V4", {
 	name = "1.9L V4 Diesel",
 	desc = "Torquey little lunchbox; for those smaller vehicles that don't agree with petrol powerbands",
 	model = "models/engines/v4s.mdl",
@@ -18,7 +18,7 @@ ACF_DefineEngine( "1.9L-V4", {
 	limitrpm = 4000,
 } )
 
-ACF_DefineEngine( "3.3L-V4", {
+ACE.DefineEngine( "3.3L-V4", {
 	name = "3.3L V4 Diesel",
 	desc = "Compact cube of git; for moderate utility applications",
 	model = "models/engines/v4m.mdl",

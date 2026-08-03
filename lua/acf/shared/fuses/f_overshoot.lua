@@ -2,11 +2,11 @@
 local ClassName = "Overshoot"
 
 
-ACF = ACF or {}
-ACF.Fuse = ACF.Fuse or {}
+ACE = ACE or {}
+ACE.Fuse = ACE.Fuse or {}
 
-local this = ACF.Fuse[ClassName] or inherit.NewSubOf(ACF.Fuse.Contact)
-ACF.Fuse[ClassName] = this
+local this = ACE.Fuse[ClassName] or inherit.NewSubOf(ACE.Fuse.Contact)
+ACE.Fuse[ClassName] = this
 
 ---
 
@@ -26,7 +26,7 @@ this.fuseArmed = false --Arms the fuse once it gets below the target distance. A
 this.desc = "Once the arming distance has been reached. Detonates when the missile loses the target which is assumed to be at the closest point.\n NOT reccomended for missiles without inertial guidance.\nDistance in inches."
 
 
--- Configuration information for things like acfmenu.
+-- Configuration information for things like acemenu.
 this.Configurable = table.Copy(this:super().Configurable)
 
 local configs = this.Configurable

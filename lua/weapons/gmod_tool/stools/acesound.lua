@@ -1,10 +1,10 @@
 
-ACF = ACF or {}
+ACE = ACE or {}
 
-local cat = ((ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction");
+local cat = ((ACE.CustomToolCategory and ACE.CustomToolCategory:GetBool()) and "ACF" or "Construction");
 
 TOOL.Category		= cat
-TOOL.Name			= "#tool.acfsound.name"
+TOOL.Name			= "#tool.acesound.name"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
 
@@ -22,12 +22,12 @@ if CLIENT then
 
 end
 
-local GunClasses = ACF.Classes.GunClass
-local GunTable = ACF.Weapons.Guns
+local GunClasses = ACE.Classes.GunClass
+local GunTable = ACE.Weapons.Guns
 
-local EngineTable = ACF.Weapons.Engines
+local EngineTable = ACE.Weapons.Engines
 
-ACF.SoundToolSupport = {
+ACE.SoundToolSupport = ACE.SoundToolSupport or {
 
 	acf_gun = {
 
@@ -49,7 +49,7 @@ ACF.SoundToolSupport = {
 
 			local soundData = { Sound = sound, Pitch = 100 }
 
-			local setSound = ACF.SoundToolSupport["acf_gun"].SetSound
+			local setSound = ACE.SoundToolSupport["acf_gun"].SetSound
 			setSound( ent, soundData )
 		end,
 
@@ -74,7 +74,7 @@ ACF.SoundToolSupport = {
 
 			local soundData = { Sound = sound, Pitch = pitch }
 
-			local setSound = ACF.SoundToolSupport["acf_engine"].SetSound
+			local setSound = ACE.SoundToolSupport["acf_engine"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -98,7 +98,7 @@ ACF.SoundToolSupport = {
 
 			local soundData = { Sound = sound, Pitch = 100 }
 
-			local setSound = ACF.SoundToolSupport["acf_rack"].SetSound
+			local setSound = ACE.SoundToolSupport["acf_rack"].SetSound
 			setSound( ent, soundData )
 		end,
 
@@ -109,7 +109,7 @@ ACF.SoundToolSupport = {
 
 	acf_missileradar = {
 
-		GetSound = function(ent) return { Sound = ent.Sound or ACFM.DefaultRadarSound, Pitch = ent.SoundPitch or 100 } end,
+		GetSound = function(ent) return { Sound = ent.Sound or ACE.Missile.DefaultRadarSound, Pitch = ent.SoundPitch or 100 } end,
 
 		SetSound = function(ent, soundData)
 			ent.Sound = soundData.Sound
@@ -119,9 +119,9 @@ ACF.SoundToolSupport = {
 		end,
 
 		ResetSound = function(ent)
-			local soundData = {Sound = ACFM.DefaultRadarSound, Pitch = 100}
+			local soundData = {Sound = ACE.Missile.DefaultRadarSound, Pitch = 100}
 
-			local setSound = ACF.SoundToolSupport["acf_missileradar"].SetSound
+			local setSound = ACE.SoundToolSupport["acf_missileradar"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -140,7 +140,7 @@ ACF.SoundToolSupport = {
 		ResetSound = function(ent)
 			local soundData = {Sound = "npc/combine_soldier/die1.wav", Pitch = 100}
 
-			local setSound = ACF.SoundToolSupport["ace_crewseat_gunner"].SetSound
+			local setSound = ACE.SoundToolSupport["ace_crewseat_gunner"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -159,7 +159,7 @@ ACF.SoundToolSupport = {
 		ResetSound = function(ent)
 			local soundData = {Sound = "npc/combine_soldier/die1.wav", Pitch = 100}
 
-			local setSound = ACF.SoundToolSupport["ace_crewseat_driver"].SetSound
+			local setSound = ACE.SoundToolSupport["ace_crewseat_driver"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -178,7 +178,7 @@ ACF.SoundToolSupport = {
 		ResetSound = function(ent)
 			local soundData = {Sound = "npc/combine_soldier/die1.wav", Pitch = 100}
 
-			local setSound = ACF.SoundToolSupport["ace_crewseat_loader"].SetSound
+			local setSound = ACE.SoundToolSupport["ace_crewseat_loader"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -197,7 +197,7 @@ ACF.SoundToolSupport = {
 		ResetSound = function(ent)
 			local soundData = {Sound = "acf_extra/ACE/sensors/Sonar/coldwaters.wav", Pitch = 100}
 
-			local setSound = ACF.SoundToolSupport["ace_crewseat_driver"].SetSound
+			local setSound = ACE.SoundToolSupport["ace_crewseat_driver"].SetSound
 			setSound( ent, soundData )
 		end
 	},
@@ -209,6 +209,8 @@ ACF.SoundToolSupport = {
 
 local function ReplaceSound( _ , Entity , data)
 	if not IsValid( Entity ) then return end
+	local existing = Entity.EntityMods and Entity.EntityMods.ace_replacesound
+	data = existing or data
 	local sound = data[1]
 	local pitch = tonumber(data[2]) or 100
 	local isNew = data[3]
@@ -218,7 +220,7 @@ local function ReplaceSound( _ , Entity , data)
 	end
 
 	local class = Entity:GetClass()
-	local support = ACF.SoundToolSupport[class]
+	local support = ACE.SoundToolSupport[class]
 
 	if support then
 
@@ -231,10 +233,12 @@ local function ReplaceSound( _ , Entity , data)
 
 		local newdata = {sound, pitch, true}
 		support.SetSound(Entity, {Sound = sound, Pitch = pitch})
-		duplicator.StoreEntityModifier( Entity, "acf_replacesound", newdata )
+		duplicator.StoreEntityModifier( Entity, "ace_replacesound", newdata )
+		duplicator.ClearEntityModifier( Entity, "acf_replacesound" )
 	end
 end
 
+duplicator.RegisterEntityModifier( "ace_replacesound", ReplaceSound )
 duplicator.RegisterEntityModifier( "acf_replacesound", ReplaceSound )
 
 local function IsReallyValid(trace, ply)
@@ -243,8 +247,8 @@ local function IsReallyValid(trace, ply)
 	if SERVER and not trace.Entity:GetPhysicsObject():IsValid() then return false end
 
 	local class = trace.Entity:GetClass()
-	if not ACF.SoundToolSupport[class] then
-		ACF_SendNotify( ply, false, "#tool.acfsound.unsupported" )
+	if not ACE.SoundToolSupport[class] then
+		ACE_SendNotify( ply, false, "#tool.acesound.unsupported" )
 
 		return false
 	end
@@ -258,7 +262,7 @@ function TOOL:LeftClick( trace )
 	if not IsReallyValid( trace, self:GetOwner() ) then return false end
 
 	local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
-	local pitch = self:GetOwner():GetInfo("acfsound_pitch")
+	local pitch = self:GetOwner():GetInfo("acesound_pitch")
 	ReplaceSound( self:GetOwner(), trace.Entity, {sound, pitch, true} )
 	return true
 end
@@ -268,7 +272,7 @@ function TOOL:RightClick( trace )
 	if not IsReallyValid( trace, self:GetOwner() ) then return false end
 
 	local class = trace.Entity:GetClass()
-	local support = ACF.SoundToolSupport[class]
+	local support = ACE.SoundToolSupport[class]
 	if not support then return false end
 
 	local soundData = support.GetSound(trace.Entity)
@@ -276,7 +280,7 @@ function TOOL:RightClick( trace )
 	self:GetOwner():ConCommand("wire_soundemitter_sound " .. soundData.Sound);
 
 	if soundData.Pitch then
-		self:GetOwner():ConCommand("acfsound_pitch " .. soundData.Pitch);
+		self:GetOwner():ConCommand("acesound_pitch " .. soundData.Pitch);
 	end
 
 	return true
@@ -287,11 +291,12 @@ function TOOL:Reload( trace )
 	if not IsReallyValid( trace, self:GetOwner() ) then return false end
 
 	local class = trace.Entity:GetClass()
-	local support = ACF.SoundToolSupport[class]
+	local support = ACE.SoundToolSupport[class]
 	if not support then return false end
 
 	support.ResetSound(trace.Entity)
 
+	duplicator.ClearEntityModifier( trace.Entity, "ace_replacesound" )
 	duplicator.ClearEntityModifier( trace.Entity, "acf_replacesound" )
 
 	return true
@@ -302,7 +307,7 @@ if CLIENT then
 	function TOOL.BuildCPanel(panel)
 		local wide = panel:GetWide()
 
-		panel:Help( "#tool.acfsound.info" )
+		panel:Help( "#tool.acesound.info" )
 
 		local SoundNameText = vgui.Create("DTextEntry", ValuePanel)
 		SoundNameText:SetText("")
@@ -315,7 +320,7 @@ if CLIENT then
 		panel:AddItem(SoundNameText)
 
 		local SoundBrowserButton = vgui.Create("DButton")
-		SoundBrowserButton:SetText("#tool.acfsound.openbrowser")
+		SoundBrowserButton:SetText("#tool.acesound.openbrowser")
 		SoundBrowserButton:SetWide(wide)
 		SoundBrowserButton:SetTall(20)
 		SoundBrowserButton:SetVisible(true)
@@ -333,7 +338,7 @@ if CLIENT then
 		local SoundPreWide = SoundPre:GetWide()
 
 		local SoundPrePlay = vgui.Create("DButton", SoundPre)
-		SoundPrePlay:SetText("#tool.acfsound.play")
+		SoundPrePlay:SetText("#tool.acesound.play")
 		SoundPrePlay:SetWide(SoundPreWide / 2)
 		SoundPrePlay:SetPos(0, 0)
 		SoundPrePlay:SetTall(20)
@@ -344,7 +349,7 @@ if CLIENT then
 		end
 
 		local SoundPreStop = vgui.Create("DButton", SoundPre)
-		SoundPreStop:SetText("#tool.acfsound.stop")
+		SoundPreStop:SetText("#tool.acesound.stop")
 		SoundPreStop:SetWide(SoundPreWide / 2)
 		SoundPreStop:SetPos(SoundPreWide / 2, 0)
 		SoundPreStop:SetTall(20)
@@ -363,7 +368,7 @@ if CLIENT then
 		end
 
 		local CopyButton = vgui.Create("DButton")
-		CopyButton:SetText("#tool.acfsound.copy")
+		CopyButton:SetText("#tool.acesound.copy")
 		CopyButton:SetWide(wide)
 		CopyButton:SetTall(20)
 		CopyButton:SetIcon( "icon16/page_copy.png" )
@@ -374,7 +379,7 @@ if CLIENT then
 		panel:AddItem(CopyButton)
 
 		local ClearButton = vgui.Create("DButton")
-		ClearButton:SetText("#tool.acfsound.clear")
+		ClearButton:SetText("#tool.acesound.clear")
 		ClearButton:SetWide(wide)
 		ClearButton:SetTall(20)
 		ClearButton:SetIcon( "icon16/cancel.png" )
@@ -385,8 +390,8 @@ if CLIENT then
 		end
 		panel:AddItem(ClearButton)
 
-		panel:NumSlider( "#tool.acfsound.pitch", "acfsound_pitch", 10, 255, 0 )
-		panel:ControlHelp( "#tool.acfsound.pitchdesc" )
+		panel:NumSlider( "#tool.acesound.pitch", "acesound_pitch", 10, 255, 0 )
+		panel:ControlHelp( "#tool.acesound.pitchdesc" )
 	end
 
 	--[[
@@ -407,7 +412,7 @@ if CLIENT then
 
 			local CurMode = isstring(CurTool.Mode) and CurTool.Mode or ""
 
-			if tool == "wire_soundemitter" and CurMode == "acfsound" then
+			if tool == "wire_soundemitter" and CurMode == "acesound" then
 				tool = CurMode
 			end
 

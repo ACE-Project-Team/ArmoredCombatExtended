@@ -9,8 +9,8 @@ function EFFECT:Init( data )
 		local Sound        = Radar:GetNWString( "Sound", "" )
 		local SoundPitch   = Radar:GetNWInt( "SoundPitch", 100 )
 
-		if not IsValidSound( Sound ) then
-			Sound = ACFM.DefaultRadarSound
+		if not ACE.IsValidSound( Sound ) then
+			Sound = ACE.Missile.DefaultRadarSound
 		end
 
 		ACE.SimpleSound( Sound, Radar:WorldSpaceCenter(), SoundPitch, 1000 )

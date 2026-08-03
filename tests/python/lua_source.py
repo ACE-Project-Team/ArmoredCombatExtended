@@ -107,6 +107,8 @@ def iter_named_calls(source: str, function_name: str):
         if previous >= 0 and source[previous] == ".":
             continue
 
+            continue
+
         matched = True
         for part in function_parts[1:]:
             index = skip_space_and_comments(source, index)

@@ -29,8 +29,8 @@ function ENT:Think()
 
 		local rackId = self.RackID
 
-		if not (rackId and ACF.Weapons.Racks[rackId]) then
-			local GunClass = ACF.Weapons.Guns[self.Id]
+		if not (rackId and ACE.Weapons.Racks[rackId]) then
+			local GunClass = ACE.Weapons.Guns[self.Id]
 
 			if not GunClass then
 				error("Couldn't spawn the missile rack: can't find the gun-class '" + tostring(self.Id) + "'.")
@@ -44,8 +44,8 @@ function ENT:Think()
 		end
 
 
-		local Res = MakeACF_Rack(self:CPPIGetOwner(), pos, ang, rackId)
-		if not IsValid(Res) then ACF_SendNotify(self:CPPIGetOwner(), false, "#tool.acfmenu.creationfailed") end
+		local Res = ACE_MakeRack(self:CPPIGetOwner(), pos, ang, rackId)
+		if not IsValid(Res) then ACE_SendNotify(self:CPPIGetOwner(), false, "#tool.acemenu.creationfailed") end
 
 	end
 
@@ -63,9 +63,9 @@ end
 
 
 
-function MakeACF_MissileToRack(owner, pos, ang, id, rackid)
+function ACE_MakeMissileToRack(owner, pos, ang, id, rackid)
 
-	if not owner:CheckLimit("_acf_gun") then return false end
+	if not owner:CheckLimit("_ace_gun") then return false end
 
 	local converter = ents.Create("acf_missile_to_rack")
 
@@ -79,7 +79,7 @@ function MakeACF_MissileToRack(owner, pos, ang, id, rackid)
 
 	converter:Spawn()
 
-	-- Requires physics so acfmenu doesn't break.  Otherwise this could be a point entity.
+	-- Requires physics so acemenu doesn't break.  Otherwise this could be a point entity.
 	converter:SetModel("models/props_junk/popcan01a.mdl")
 	converter:PhysicsInit( SOLID_VPHYSICS )
 	converter:SetMoveType( MOVETYPE_VPHYSICS )
@@ -93,4 +93,4 @@ end
 
 
 list.Set( "ACFCvars", "acf_missile_to_rack", {"id", "data9"} )
-duplicator.RegisterEntityClass("acf_missile_to_rack", MakeACF_MissileToRack, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("acf_missile_to_rack", ACE_MakeMissileToRack, "Pos", "Angle", "Id" )

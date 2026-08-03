@@ -4,9 +4,9 @@ AddCSLuaFile()
 local Round = {}
 
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
-Round.name = "[Supply] - " .. ACFTranslation.ShellRef[1] --Human readable name
+Round.name = "[Supply] - " .. ACE.Translation.ShellRef[1] --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
-Round.desc = ACFTranslation.ShellRef[2]
+Round.desc = ACE.Translation.ShellRef[2]
 
 Round.Type  = "Refill"
 
@@ -58,20 +58,20 @@ end
 
 function Round.guicreate( Panel, Table )
 
-	acfmenupanel:AmmoSelect()
-	acfmenupanel:CPanelText("Desc", ACFTranslation.ShellRef[2])	--Description (Name, Desc)
+	acemenupanel:AmmoSelect()
+	acemenupanel:CPanelText("Desc", ACE.Translation.ShellRef[2])	--Description (Name, Desc)
 	Round.guiupdate( Panel, Table )
 
 end
 
 function Round.guiupdate()
 
-	RunConsoleCommand( "acfmenu_data1", acfmenupanel.CData.AmmoId )
-	RunConsoleCommand( "acfmenu_data2", "Refill")
+	RunConsoleCommand( "acemenu_data1", acemenupanel.CData.AmmoId )
+	RunConsoleCommand( "acemenu_data2", "Refill")
 
-	acfmenupanel.CustomDisplay:PerformLayout()
+	acemenupanel.CustomDisplay:PerformLayout()
 
 end
 
 list.Set( "SPECSRoundTypes", "Refill", Round )
-ACF.RoundTypes[Round.Type] = Round     --Set the round properties
+ACE.RoundTypes[Round.Type] = Round     --Set the round properties

@@ -26,7 +26,7 @@ Material.HEATresiliance = 2
 Material.HEresiliance	= 6
 
 -- Spall uses the ordinary kinetic resolver below. This keeps rubber's response thickness-based
--- and lets ACF_SpallTrace carry the resolver's remaining energy through layered armor.
+-- and lets ACE_SpallTrace carry the resolver's remaining energy through layered armor.
 Material.spallresist = 0.15
 
 Material.spallmult	= 0.01 --While spall can pierce rubber, Rubber itself should not really spall.

@@ -1,7 +1,7 @@
 if SERVER then
 	util.AddNetworkString("ACE_SWEPSounds")
 
-	function ACE.NetworkSPEffects(ent, propmass)
+	function ACE_NetworkSPEffects(ent, propmass)
 
 		net.Start("ACE_SWEPSounds", true)
 		net.WriteEntity(ent)
@@ -9,9 +9,9 @@ if SERVER then
 		net.Send(ent:GetOwner())
 	end
 
-	-- The previous networking function. Removed owner from vars since ent (the swep) already has the owner and sounds networked in it. 
+	-- The previous networking function. Removed owner from vars since ent (the swep) already has the owner and sounds networked in it.
 	-- propmass is serverside so we must include it into client.
-	function ACE.NetworkMPEffects(sourcePly, ent, propmass)
+	function ACE_NetworkMPEffects(sourcePly, ent, propmass)
 		local targets = {}
 
 		for _, v in ipairs(player.GetAll()) do

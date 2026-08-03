@@ -30,7 +30,7 @@ local function ClampColor( value )
 	return math.Clamp( math.floor( value ), 0, 255 )
 end
 
-local EffectDebugCvar = CreateClientConVar("acf_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
+local EffectDebugCvar = CreateClientConVar("ace_effect_debug", "0", true, false, "Log ACE clientside effect entry/exit.")
 local function DebugEffect(tag)
 	if EffectDebugCvar:GetBool() then
 		print(("[ACE Effect] %s"):format(tag))
@@ -120,13 +120,13 @@ function EFFECT:Init( data )
 	--Main explosion
 	if self.Radius < 10 then
 		self:ExplosionSmall()
-		ACF_RenderLight( 0, self.Radius * 450, Color(255, 90, 15), self.Origin, 0.08) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 450, Color(255, 90, 15), self.Origin, 0.08) -- idx 0: world
 	elseif self.Radius < 20 then
 		self:ExplosionMedium()
-		ACF_RenderLight( 0, self.Radius * 950, Color(255, 90, 15), self.Origin, 0.12) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 950, Color(255, 90, 15), self.Origin, 0.12) -- idx 0: world
 	else
 		self:ExplosionMedium()
-		ACF_RenderLight( 0, self.Radius * 1100, Color(255, 90, 15), self.Origin, 0.16) -- idx 0: world
+		ACE.RenderLight( 0, self.Radius * 1100, Color(255, 90, 15), self.Origin, 0.16) -- idx 0: world
 	end
 
 	local flashOrigin = self.Origin - self.DirVec * math.Clamp(12 + self.Radius * 0.4, 10, 30)
@@ -955,5 +955,4 @@ end
 -----------------------------------------------------------]]
 function EFFECT:Render()
 end
-
 

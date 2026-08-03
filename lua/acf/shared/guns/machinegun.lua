@@ -1,9 +1,9 @@
 --define the class
-ACF_defineGunClass("MG", {
+ACE.DefineGunClass("MG", {
 	type = "Gun",
 	spread = 0.13,
 	name = "Machinegun",
-	desc = ACFTranslation.GunClasses[9],
+	desc = ACE.Translation.GunClasses[9],
 	muzzleflash = "MG",
 	rofmod = 0.9,
 	year = 1910,
@@ -13,7 +13,7 @@ ACF_defineGunClass("MG", {
 } )
 
 --add a gun to the class
-ACF_defineGun("7.62mmMG", { --id
+ACE.DefineGun("7.62mmMG", { --id
 	name = "7.62mm Machinegun",
 	desc = "The 7.62mm is effective against infantry, but its usefulness against armor is laughable at best.",
 	model = "models/machinegun/machinegun_762mm.mdl",
@@ -30,7 +30,7 @@ ACF_defineGun("7.62mmMG", { --id
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACF_defineGun("12.7mmMG", {
+ACE.DefineGun("12.7mmMG", {
 	name = "12.7mm Machinegun",
 	desc = "The 12.7mm MG is still light, finding its way into a lot of mountings, including on top of tanks.",
 	model = "models/machinegun/machinegun_127mm.mdl",
@@ -47,7 +47,7 @@ ACF_defineGun("12.7mmMG", {
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACF_defineGun("14.5mmMG", {
+ACE.DefineGun("14.5mmMG", {
 	name = "14.5mm Machinegun",
 	desc = "The 14.5mm MG trades its smaller stablemates' rate of fire for more armor penetration and damage.",
 	model = "models/machinegun/machinegun_145mm.mdl",
@@ -65,7 +65,7 @@ ACF_defineGun("14.5mmMG", {
 } )
 
 
-ACF_defineGun("20mmMG", {
+ACE.DefineGun("20mmMG", {
 	name = "20mm Machinegun",
 	desc = "The 20mm MG is practically a cannon in its own right; the weight and recoil made it difficult to mount on light land vehicles, though it was adapted for use on both aircraft and ships.",
 	model = "models/machinegun/machinegun_20mm.mdl",

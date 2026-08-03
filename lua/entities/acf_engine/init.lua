@@ -5,7 +5,7 @@ AddCSLuaFile( "cl_init.lua" )
 
 include("shared.lua")
 
-local EngineTable = ACF.Weapons.Engines
+local EngineTable = ACE.Weapons.Engines
 local FuelLinkDistBase = 512
 
 do
@@ -37,11 +37,11 @@ do
 		self.FuelTank       = 0
 		self.Heat           = ACE.AmbientTemp
 		self.TotalFuel      = 0
-		self.Efficiency     = 1-(ACF.Efficiency[self.EngineType] or ACF.Efficiency["GenericPetrol"]) -- Energy not transformed into kinetic energy and instead into thermal
+		self.Efficiency     = 1-(ACE.Efficiency[self.EngineType] or ACE.Efficiency["GenericPetrol"]) -- Energy not transformed into kinetic energy and instead into thermal
 		self.Legal          = true
 		self.CanUpdate      = true
 		self.RequiresDriver = false
-		self.NextLegalCheck = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+		self.NextLegalCheck = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 		self.Legal          = true
 		self.LegalIssues    = ""
 		self.LockOnActive   = false --used to turn on the engine in case of being lockdown by not legal
@@ -81,14 +81,14 @@ do
 		["AVDS-1790-1500"]                        = "27.0-V12"
 	}
 
-	function MakeACF_Engine(Owner, Pos, Angle, Id)
+	function ACE_MakeEngine(Owner, Pos, Angle, Id)
 
-		if not Owner:CheckLimit("_acf_misc") then return false end
+		if not Owner:CheckLimit("_ace_misc") then return false end
 
 		local Engine = ents.Create( "acf_engine" )
 		if not IsValid( Engine ) then return false end
 
-		if not ACE.CheckEngine( Id ) then
+		if not ACE_CheckEngine( Id ) then
 			Id = BackComp[Id] or "5.7-V8"
 		end
 
@@ -117,7 +117,7 @@ do
 		Engine.IsTrans          = Lookup.istrans -- driveshaft outputs to the side
 		Engine.FuelType         = Lookup.fuel or "Petrol"
 		Engine.EngineType       = Lookup.enginetype or "GenericPetrol"
-		Engine.TorqueCurve      = Lookup.torquecurve or ACF.GenericTorqueCurves[Engine.EngineType]
+		Engine.TorqueCurve      = Lookup.torquecurve or ACE.GenericTorqueCurves[Engine.EngineType]
 		Engine.RequiresDriver   = false
 		Engine.SoundPath        = Lookup.sound
 		Engine.DefaultSound     = Engine.SoundPath
@@ -129,17 +129,17 @@ do
 		Engine.Heat             = ACE.AmbientTemp
 
 
-		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
+		Engine.TorqueScale	= ACE.TorqueScale[Engine.EngineType]
 
-		if Engine.peakkw > (74.57 / 100 * ACF.LargeEngineThreshold) and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
+		if Engine.peakkw > (74.57 / 100 * ACE.LargeEngineThreshold) and ACE.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
 			Engine.RequiresDriver = true
 			Engine.CanUseSeatDriver = true
 		end
 		--calculate base fuel usage
 		if Engine.EngineType == "Electric" then
-			Engine.FuelUse = ACF.ElecRate / (ACF.Efficiency[Engine.EngineType] * 60 * 60) --elecs use current power output, not max
+			Engine.FuelUse = ACE.ElecRate / (ACE.Efficiency[Engine.EngineType] * 60 * 60) --elecs use current power output, not max
 		else
-			Engine.FuelUse = ACF.FuelRate * ACF.Efficiency[Engine.EngineType] * Engine.peakkw / (60 * 60)
+			Engine.FuelUse = ACE.FuelRate * ACE.Efficiency[Engine.EngineType] * Engine.peakkw / (60 * 60)
 		end
 
 		Engine.FlyRPM = 0
@@ -162,15 +162,15 @@ do
 		Engine:SetNWString( "WireName", Lookup.name )
 		Engine:UpdateOverlayText()
 
-		Owner:AddCount("_acf_misc", Engine)
-		Owner:AddCleanup( "acfmenu", Engine )
+		Owner:AddCount("_ace_misc", Engine)
+		Owner:AddCleanup( "acemenu", Engine )
 
-		ACF_Activate( Engine, 0 )
+		ACE_Activate( Engine, 0 )
 
 		return Engine
 	end
 	list.Set( "ACFCvars", "acf_engine", {"id"} )
-	duplicator.RegisterEntityClass("acf_engine", MakeACF_Engine, "Pos", "Angle", "Id")
+	duplicator.RegisterEntityClass("acf_engine", ACE_MakeEngine, "Pos", "Angle", "Id")
 
 end
 
@@ -223,13 +223,13 @@ function ENT:Update( ArgsTable )
 	self.SpecialDamage     = true
 	self.TorqueMult        = self.TorqueMult or 1
 	self.FuelTank          = 0
-	self.TorqueScale		= ACF.TorqueScale[self.EngineType]
+	self.TorqueScale		= ACE.TorqueScale[self.EngineType]
 
 	--calculate base fuel usage
 	if self.EngineType == "Electric" then
-		self.FuelUse = ACF.ElecRate / (ACF.Efficiency[self.EngineType] * 60 * 60) --elecs use current power output, not max
+		self.FuelUse = ACE.ElecRate / (ACE.Efficiency[self.EngineType] * 60 * 60) --elecs use current power output, not max
 	else
-		self.FuelUse = ACF.FuelRate * ACF.Efficiency[self.EngineType] * self.peakkw / (60 * 60)
+		self.FuelUse = ACE.FuelRate * ACE.Efficiency[self.EngineType] * self.peakkw / (60 * 60)
 	end
 
 	self:SetModel( self.Model )
@@ -244,8 +244,8 @@ function ENT:Update( ArgsTable )
 	self:SetNWString( "WireName", Lookup.name )
 	self:UpdateOverlayText()
 
-	ACF_Activate( self, 1 )
-	if ACE.PointsInputChanged then ACE.PointsInputChanged( self, "engine-updated" ) end
+	ACE_Activate( self, 1 )
+	if ACE_PointsInputChanged then ACE_PointsInputChanged( self, "engine-updated" ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end
@@ -255,7 +255,7 @@ function ENT:UpdateOverlayText()
 	local pbmin = self.PeakMinRPM
 	local pbmax = self.PeakMaxRPM
 
-	local DriverBoost = self.HasDriver and ACF.DriverTorqueBoost or 1
+	local DriverBoost = self.HasDriver and ACE.DriverTorqueBoost or 1
 
 	local PowerKW = math.Round( self.peakkw * DriverBoost )
 	local PowerHP = math.Round( self.peakkw * DriverBoost * 1.34 )
@@ -274,11 +274,11 @@ function ENT:UpdateOverlayText()
 	end
 
 	if self.HasDriver then
-		text = text .. "\nDriver Provided (" .. (ACF.DriverTorqueBoost * 100 - 100) .. "% boost)"
+		text = text .. "\nDriver Provided (" .. (ACE.DriverTorqueBoost * 100 - 100) .. "% boost)"
 	end
 
 	if not self.Legal then
-		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText( text )
@@ -386,7 +386,7 @@ function ENT:TriggerInput( iname, value )
 				end
 			end
 			--RequiresDriver
-			if (HasFuel or ACF.EnginesRequireFuel == 0) and HasDriver then
+			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver then
 				self.Active = true
 				if self.SoundPath ~= "" then
 
@@ -405,7 +405,7 @@ function ENT:TriggerInput( iname, value )
 					local HasWarned = self.OTWarnings.WarnedFuel or false
 					--self.OTWarnings
 					if not HasWarned then
-						chatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine requires fuel to work and that it be activated BEFORE the engine.", Color( 255, 0, 0 ))
+						ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine requires fuel to work and that it be activated BEFORE the engine.", Color( 255, 0, 0 ))
 						self.OTWarnings.WarnedFuel = true
 					end
 				end
@@ -414,13 +414,13 @@ function ENT:TriggerInput( iname, value )
 					local HasWarned = self.OTWarnings.WarnedDriver or false
 					--self.OTWarnings
 					if not HasWarned then
-						chatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine is above [" .. ACF.LargeEngineThreshold .. " hp] requiring a driver to work.", Color( 255, 0, 0 ))
+						ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine is above [" .. ACE.LargeEngineThreshold .. " hp] requiring a driver to work.", Color( 255, 0, 0 ))
 						self.OTWarnings.WarnedDriver = true
 					end
 				end
 
 			end
-			ACE.DoContraptionLegalCheck(self)
+			ACE_DoContraptionLegalCheck(self)
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
 			self.FlyRPM = 0
@@ -464,7 +464,7 @@ function ENT:ACF_Activate()
 
 	local Area = Entity.ACF.Area
 	local Armour = (Entity:GetPhysicsObject():GetMass() * 1000 / Area / 0.78)
-	local Health = Area / ACF.Threshold
+	local Health = Area / ACE.Threshold
 
 	local Percent = 1
 
@@ -472,10 +472,10 @@ function ENT:ACF_Activate()
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
 
-	Entity.ACF.Health    = Health * Percent * ACF.EngineHPMult[self.EngineType]
-	Entity.ACF.MaxHealth = Health * ACF.EngineHPMult[self.EngineType]
+	Entity.ACF.Health    = Health * Percent * ACE.EngineHPMult[self.EngineType]
+	Entity.ACF.MaxHealth = Health * ACE.EngineHPMult[self.EngineType]
 	Entity.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour = Armour * ACF.ArmorMod
+	Entity.ACF.MaxArmour = Armour * ACE.ArmorMod
 	Entity.ACF.Type      = nil
 	Entity.ACF.Mass      = PhysObj:GetMass()
 	Entity.ACF.Type      = "Prop"
@@ -486,8 +486,8 @@ end
 
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
-	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACF.HEATMulEngine) or 1) --Heat penetrators deal bonus damage to engines
-	local HitRes = ACF_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACE.HEATMulEngine) or 1) --Heat penetrators deal bonus damage to engines
+	local HitRes = ACE_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 	return HitRes --This function needs to return HitRes
 end
@@ -502,23 +502,23 @@ end
 
 function ENT:Think()
 
-	if ACF.HasDefaultActiveInputState(self) and not ACF.IsDefaultActiveInputWired(self) then
-		local active = ACF.GetDefaultActiveInputState(self)
+	if ACF.HasDefaultActiveInputState(self) and not ACE_IsDefaultActiveInputWired(self) then
+		local active = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= active then
 			self:TriggerInput("Active", active and 1 or 0)
 		end
 	end
 
-	if ACF.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+	if ACE.CurTime > self.NextLegalCheck then
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:CheckRopes()
 		self:CheckFuel()
 		self:CalcMassRatio()
 
 		self:UpdateOverlayText()
-		self.NextUpdate = ACF.CurTime + 1
+		self.NextUpdate = ACE.CurTime + 1
 
 		self:IllegalCrewSeatRemove(self.CrewLink)
 
@@ -529,36 +529,36 @@ function ENT:Think()
 			-- Restore the requested state after a legality lockdown.
 			if self.LockOnActive then
 				self.LockOnActive = false
-				self:TriggerInput("Active", ACF.GetDefaultActiveInputState(self) and 1 or 0)
+				self:TriggerInput("Active", ACE_GetDefaultActiveInputState(self) and 1 or 0)
 			end
 		end
 	end
 
 	-- when not legal, update overlay displaying lockout and issues
-	if not self.Legal and ACF.CurTime > self.NextUpdate then
+	if not self.Legal and ACE.CurTime > self.NextUpdate then
 		self:UpdateOverlayText()
-		self.NextUpdate = ACF.CurTime + 1
+		self.NextUpdate = ACE.CurTime + 1
 	end
 
-	self.Heat = ACE.HeatFromEngine( self )
+	self.Heat = ACE_HeatFromEngine( self )
 	Wire_TriggerOutput(self, "EngineHeat", self.Heat)
 
-	if ACF.CurTime > self.NextUpdate then
+	if ACE.CurTime > self.NextUpdate then
 
 		self.TotalFuel = self:GetMaxFuel()
 		self.HasFuel = self.TotalFuel > 0
 		Wire_TriggerOutput(self, "Total Fuel", self.TotalFuel)
 
 		self:UpdateOverlayText()
-		self.NextUpdate = ACF.CurTime + 0.5
+		self.NextUpdate = ACE.CurTime + 0.5
 	end
 
 	if self.Active then
 		self:CalcRPM()
 	end
 
-	self.LastThink = ACF.CurTime
-	self:NextThink( ACF.CurTime )
+	self.LastThink = ACE.CurTime
+	self:NextThink( ACE.CurTime )
 	return true
 
 end
@@ -571,10 +571,10 @@ function ENT:CalcMassRatio()
 	local Check = nil
 
 	-- get the shit that is physically attached to the vehicle
-	local PhysEnts = ACF_GetAllPhysicalConstraints( self )
+	local PhysEnts = ACE_GetAllPhysicalConstraints( self )
 
 	-- get the wheels directly connected to the drivetrain
-	local Wheels = ACF_GetLinkedWheels(self)
+	local Wheels = ACE_GetLinkedWheels(self)
 
 	-- check if any wheels aren't in the physicalconstraint tree
 	for _,Ent in pairs( Wheels ) do
@@ -588,13 +588,13 @@ function ENT:CalcMassRatio()
 	-- if there's a wheel that's not in the engine constraint tree, use it as a start for getting physical constraints
 	if IsValid(Check) then -- sneaky bastards trying to get away with remote engines...  NOT ANYMORE
 		table.Merge(PhysEnts, Wheels) -- I mean, they'll still be remote... but they wont get free extra power from calcmass not seeing the contraption it's powering
-		ACF_GetAllPhysicalConstraints( Check, PhysEnts ) -- no need for assignment here
+		ACE_GetAllPhysicalConstraints( Check, PhysEnts ) -- no need for assignment here
 	end
 
 	-- add any parented but not constrained props you sneaky bastards
 	local AllEnts = table.Copy( PhysEnts )
 	for _, v in pairs( PhysEnts ) do
-		table.Merge( AllEnts, ACF_GetAllChildren( v ) )
+		table.Merge( AllEnts, ACE_GetAllChildren( v ) )
 	end
 
 	for _, v in pairs( AllEnts ) do
@@ -680,7 +680,7 @@ function ENT:CalcRPM()
 			Consumption = (self.Torque * self.FlyRPM / 9548.8) * self.FuelUse * DeltaTime
 		else
 			local Load = 0.3 + self.Throttle * 0.7 -- the heck are these magic numbers?
-			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACF.FuelDensity[Tank.FuelType]
+			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACE.FuelDensity[Tank.FuelType]
 		end
 
 		Tank.Fuel = math.max(Tank.Fuel - Consumption,0)
@@ -689,14 +689,14 @@ function ENT:CalcRPM()
 	else
 		Wire_TriggerOutput(self, "Fuel Use", 0)
 
-		if ACF.EnginesRequireFuel == 1 then
+		if ACE.EnginesRequireFuel == 1 then
 			self:TriggerInput( "Active", 0 ) --shut off if no fuel and requires it
 			return 0
 		end
 		self.HasFuel = false
 	end
 
-	ACE.DoContraptionLegalCheck(self)
+	ACE_DoContraptionLegalCheck(self)
 
 	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it
@@ -708,13 +708,13 @@ function ENT:CalcRPM()
 	--adjusting performance based on damage
 	-- TorqueMult is a mutipler that affects the final Torque an engine can offer at its max.
 	-- PeakTorque is the final possible torque to get.
-	local DriverBoost = self.HasDriver and ACF.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
+	local DriverBoost = self.HasDriver and ACE.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
 	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 	self.PeakTorque = self.BaseTorque * self.TorqueMult * DriverBoost
 
 	-- Calculate the current torque from flywheel RPM.
 	local perc = math.Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
-	self.Torque = self.Throttle * ACF_CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
+	self.Torque = self.Throttle * ACE_CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 
 	-- Let's accelerate the flywheel based on that torque.
 	-- Calculate drag
@@ -753,14 +753,14 @@ function ENT:CalcRPM()
 
 
 	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
-	self.Heat = ACE.HeatFromEngine( self )
+	self.Heat = ACE_HeatFromEngine( self )
 
 	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
 	if HealthRatio < 0.995 then
 		if HealthRatio > 0.025 then
 			local PhysObj = self:GetPhysicsObject()
 			local Mass = PhysObj:GetMass()
-			HitRes = ACF_Damage(self, {
+			HitRes = ACE_Damage(self, {
 				Kinetic = (1 + math.max(Mass / 2, 20) / 2.5) * 5 * self.Throttle / 100,
 				Momentum = 0,
 				Penetration = (1 + math.max(Mass / 2, 20) / 2.5) * 5 * self.Throttle / 100
@@ -947,8 +947,8 @@ do
 		local OutPos = self:LocalToWorld( self.Out ) 	--the engine output
 
 		local Rope = nil
-		if self:CPPIGetOwner():GetInfoNum( "ACF_MobilityRopeLinks", 1) == 1 then
-			Rope = ACE.CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
+		if self:CPPIGetOwner():GetInfoNum( "ace_mobility_rope_links", 1) == 1 then
+			Rope = ACE_CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
 		end
 
 		local Link = {

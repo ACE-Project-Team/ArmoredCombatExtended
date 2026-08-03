@@ -55,8 +55,8 @@ if SERVER then
 		local v = Vector(tonumber(parts[1]) or 0, tonumber(parts[2]) or 0, tonumber(parts[3]) or 0)
 
 		bounds = bounds or {}
-		local mn = bounds.min or ACF.CrateMinimumSize or 5
-		local mx = bounds.max or ACF.CrateMaximumSize or 250
+		local mn = bounds.min or ACE.CrateMinimumSize or 5
+		local mx = bounds.max or ACE.CrateMaximumSize or 250
 		v.x = math.Clamp(math.Round(v.x, 1), mn, mx)
 		v.y = math.Clamp(math.Round(v.y, 1), mn, mx)
 		v.z = math.Clamp(math.Round(v.z, 1), mn, mx)
@@ -118,6 +118,6 @@ if SERVER then
 		ent:UpdateOverlayText()
 
 		owner:AddCount(countKey, ent)
-		owner:AddCleanup("acfmenu", ent)
+		owner:AddCleanup("acemenu", ent)
 	end
 end

@@ -7,10 +7,10 @@ local TraceHull = util.TraceHull
 local min, Clamp = math.min, math.Clamp
 local tableInsert = table.insert
 
-ACF.SonarTimeCompression = 0.15 --Multiplier for speed of sound. 0.33 means sound takes ~3x the time to travel to the target. Generally sonar travels at ~1500 m/s
+ACE.SonarTimeCompression = 0.15 --Multiplier for speed of sound. 0.33 means sound takes ~3x the time to travel to the target. Generally sonar travels at ~1500 m/s
 
---ACF.SonarLayerDepth = (20 + math.Rand(0,1)) --Layer depth in meters where sonar scatters. Subject to being reworked later.
-ACF.SonarLayerDepth = 20 --Layer depth in meters where sonar scatters. Subject to being reworked later.
+--ACE.SonarLayerDepth = (20 + math.Rand(0,1)) --Layer depth in meters where sonar scatters. Subject to being reworked later.
+ACE.SonarLayerDepth = 20 --Layer depth in meters where sonar scatters. Subject to being reworked later.
 
 local SonarSpreadDistribution = Vector(1,1,0.1) --Scales the noise vector
 local NoZVector = Vector(1,1,0)
@@ -110,12 +110,12 @@ function ENT:Initialize()
 	self.SonarLastTracked = {}
 
 
-	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck     = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
 	self.LegalIssues        = ""
 
 	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 	self.TargetDetected		= false
 
@@ -123,16 +123,16 @@ function ENT:Initialize()
 
 end
 
-function MakeACE_Sonar(Owner, Pos, Angle, Id)
+function ACE_MakeSonar(Owner, Pos, Angle, Id)
 
 	--print("Test")
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Small-Sonar"
 	--print(Id)
 
-	local radar = ACF.Weapons.Radars[Id]
+	local radar = ACE.Weapons.Radars[Id]
 	if not radar then return false end
 
 	local Sonar = ents.Create("ace_sonar")
@@ -169,8 +169,8 @@ function MakeACE_Sonar(Owner, Pos, Angle, Id)
 		Sonar:SetModelEasy(radar.model)
 		Sonar:UpdateOverlayText()
 
-		Owner:AddCount( "_acf_missileradar", Sonar )
-		Owner:AddCleanup( "acfmenu", Sonar )
+		Owner:AddCount( "_ace_missileradar", Sonar )
+		Owner:AddCleanup( "acemenu", Sonar )
 
 		return Sonar
 	end
@@ -178,7 +178,7 @@ function MakeACE_Sonar(Owner, Pos, Angle, Id)
 	return false
 end
 list.Set( "ACFCvars", "ace_sonar", {"id"} )
-duplicator.RegisterEntityClass("ace_sonar", MakeACE_Sonar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_sonar", ACE_MakeSonar, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )
@@ -202,7 +202,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 	elseif inp == "ActiveSonar" then
 		if value > 0 then
 			self.ActiveTransmitting = true
@@ -335,23 +335,23 @@ function ENT:DoSonarFunctions()
 
 	self.SonarYaw = self:GetAngles().yaw
 
-	if ACF.CurTime > self.NextWaterlevelCheck then
+	if ACE.CurTime > self.NextWaterlevelCheck then
 		self:GetWaterHeight()
-		self.NextWaterlevelCheck = ACF.CurTime + 3
+		self.NextWaterlevelCheck = ACE.CurTime + 3
 	end
 
 	self:UpdateSonarTorpedoTracks()
 	self:UpdateRecievedPings()
 
-	if self.ActiveTransmitting and ACF.CurTime > self.NextPing then
+	if self.ActiveTransmitting and ACE.CurTime > self.NextPing then
 		if GetConVar( "developer" ):GetBool() ~= 0 then --Is there a faster way to do this?
 			self:SONARDevDisplayAngles(self.PulseDuration)
 		end
 			self:activeSonar()
-			self.NextPing = ACF.CurTime + self.PulseDuration
-	elseif ACF.CurTime > self.NextPing then
+			self.NextPing = ACE.CurTime + self.PulseDuration
+	elseif ACE.CurTime > self.NextPing then
 		self:passiveSonar()
-		self.NextPing = ACF.CurTime + 0.5
+		self.NextPing = ACE.CurTime + 0.5
 	end
 
 end
@@ -395,14 +395,14 @@ function ENT:GetWaterHeight()
 
 end
 
-function SONARCalculateAngle(StartPos, FinalPos)
+function ACE_SonarCalculateAngle(StartPos, FinalPos)
 	local PosDiff = FinalPos - StartPos
 	local AngleFromTarget = PosDiff:Angle()
 
 	return AngleFromTarget
 end
 
-function SONARCalculateDepth(Position, WaterZ)
+function ACE_SonarCalculateDepth(Position, WaterZ)
 	local Depth = -min(Position.z - WaterZ, 0)
 
 	return Depth
@@ -422,7 +422,7 @@ function ENT:activeSonar()
 	--EmitSound("acf_extra/ACE/sensors/Sonar/coldwaters.wav", SelfPos, 0, CHAN_WEAPON, 1, 400 * self.PowerScale, 0, 100 ) --Formerly 107
 	self:EmitSound(ActiveSound, 150 * self.PowerScale, ActivePitch, 1, CHAN_WEAPON )
 
-	local SpeedOfSound = 1540 * 39.37 * ACF.SonarTimeCompression
+	local SpeedOfSound = 1540 * 39.37 * ACE.SonarTimeCompression
 
 	--self:SONARDevDisplayAngles(Color(255, 135, 0), self.PulseDuration)
 
@@ -435,7 +435,7 @@ function ENT:activeSonar()
 		if ply:WaterLevel() == 0 then continue end
 		if ply:InVehicle() then continue end
 		local plyPos = ply:GetPos()
-		local AngToTarg = SONARCalculateAngle(SelfPos, plyPos)
+		local AngToTarg = ACE_SonarCalculateAngle(SelfPos, plyPos)
 
 		if not self:SONARIsInCone(AngToTarg.yaw, true) then continue end
 
@@ -472,10 +472,10 @@ function ENT:activeSonar()
 	----------------------------------------
 
 	local SelfContraption = self.SelfContraption
-	local MyID = ACE.GetContraptionIndex(SelfContraption) or -1
+	local MyID = ACE_GetContraptionIndex(SelfContraption) or -1
 
 
-	local CacheTime = ACF.CurTime + 5 --Time in seconds to remove a sonar ping
+	local CacheTime = ACE.CurTime + 5 --Time in seconds to remove a sonar ping
 
 	for Contraption in pairs(CFW.Contraptions) do
 		local Base = Contraption:GetACEBaseplate()
@@ -485,7 +485,7 @@ function ENT:activeSonar()
 		if Contraption == SelfContraption or not IsValid(Base) then continue end
 
 		local BasePos = Base:GetPos()
-		local AngToTarg = SONARCalculateAngle(SelfPos, BasePos)
+		local AngToTarg = ACE_SonarCalculateAngle(SelfPos, BasePos)
 		local AngPitch = math.NormalizeAngle(-AngToTarg.pitch)
 
 		if not self:SONARIsInCone(AngToTarg.yaw, true) then continue end
@@ -541,7 +541,7 @@ function ENT:activeSonar()
 		end
 
 		local TarDepth = (self.WaterZHeight - BasePos.z) / 39.37
-		if CheckShadowZoneObscured(SonarDepth, TarDepth, AngPitch) then continue end
+		if ACE_CheckShadowZoneObscured(SonarDepth, TarDepth, AngPitch) then continue end
 
 		--print(math.Round(self.MaximumDistance * EnvironmentalFactor / 39.37))
 
@@ -559,13 +559,13 @@ function ENT:activeSonar()
 
 			Contraption.SonarPings = Contraption.SonarPings or {}
 			Contraption.SonarPings[MyID] = Contraption.SonarPings[MyID] or {}
-			Contraption.SonarPings[MyID].Angle = SONARCalculateAngle(BasePos, SelfPos)
+			Contraption.SonarPings[MyID].Angle = ACE_SonarCalculateAngle(BasePos, SelfPos)
 			Contraption.SonarPings[MyID].Time = CacheTime
 
 			timer.Simple( 6, function() --Longer than cachetime. Should always clear unless something else resets the time.
 				if not IsValid(Contraption:GetACEBaseplate()) then return end
 				--PrintTable(Contraption.SonarPings or {})
-				if ACF.CurTime > Contraption.SonarPings[MyID].Time then
+				if ACE.CurTime > Contraption.SonarPings[MyID].Time then
 					Contraption.SonarPings[MyID] = nil
 					--table.remove(Contraption.SonarPings,MyID)
 				end
@@ -590,7 +590,7 @@ function ENT:activeSonar()
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE.GetContraptionIndex(Contraption)
+				local ID = ACE_GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 
@@ -610,7 +610,7 @@ function ENT:activeSonar()
 				self.SonarPositions[ID] = BasePos + Inaccuracy
 				self.SonarVelocity[ID] = Base:GetVelocity()
 				self.SonarOwners[ID] = Owner:Nick()
-				self.SonarLastTracked[ID] = ACF.CurTime
+				self.SonarLastTracked[ID] = ACE.CurTime
 
 				self.SonoUpdated = true --Let the sonar know to update the outputs
 
@@ -629,7 +629,7 @@ function ENT:passiveSonar() --Subject to rework
 
 	local SonarDepth = (self.WaterZHeight - SelfPos.z) / 39.37
 
-	local SpeedOfSound = 1540 * 39.37 * ACF.SonarTimeCompression
+	local SpeedOfSound = 1540 * 39.37 * ACE.SonarTimeCompression
 
 	----------------------------------------
 	-----Contraption Detection Handling-----
@@ -645,7 +645,7 @@ function ENT:passiveSonar() --Subject to rework
 		if Contraption == SelfContraption or not IsValid(Base) then continue end
 
 		local BasePos = Base:GetPos()
-		local AngToTarg = SONARCalculateAngle(SelfPos, BasePos)
+		local AngToTarg = ACE_SonarCalculateAngle(SelfPos, BasePos)
 		local AngPitch = math.NormalizeAngle(-AngToTarg.pitch)
 
 		if not self:SONARIsInCone(AngToTarg.yaw, false) then continue end
@@ -669,13 +669,13 @@ function ENT:passiveSonar() --Subject to rework
 		local TarDepth = (self.WaterZHeight - BasePos.z) / 39.37
 		local TarSpeed = Base:GetVelocity():Length()
 
-		if CheckShadowZoneObscured(TarDepth, SonarDepth, -AngPitch) then continue end
+		if ACE_CheckShadowZoneObscured(TarDepth, SonarDepth, -AngPitch) then continue end
 
 		--About noise
-		--Represents the volume of the sound generated by a vehicle.
+		-- Base noise is the sound-level input used by sonar detection.
 		--A target needs a relative noise of 1 to be detected
 		--It halves every 200m
-		--every 10m depth makes the sound generated by movement 25% quieter
+		-- Movement noise is reduced by 25% for each 10 m of depth.
 
 		--A stationary target can be detected 100m away
 		--A moving target at 10mph can be detected 400m away
@@ -713,7 +713,7 @@ function ENT:passiveSonar() --Subject to rework
 				if not IsValid(Base) then return end
 				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(0, 255, 38), true)
 
-				local ID = ACE.GetContraptionIndex(Contraption)
+				local ID = ACE_GetContraptionIndex(Contraption)
 				local Owner = Base:CPPIGetOwner()
 
 				local WashOutErrorMul = 1 + self.WashOut * 4
@@ -729,7 +729,7 @@ function ENT:passiveSonar() --Subject to rework
 				self.SonarPositions[ID] = BasePos + Inaccuracy
 				self.SonarVelocity[ID] = vector_origin
 				self.SonarOwners[ID] = Owner:Nick()
-				self.SonarLastTracked[ID] = ACF.CurTime
+				self.SonarLastTracked[ID] = ACE.CurTime
 
 				self.SonoUpdated = true --Let the sonar know to update the outputs
 
@@ -741,7 +741,7 @@ function ENT:passiveSonar() --Subject to rework
 end
 
 function ENT:CleanupSonarTracks(CleanupDelay)
-	local TimeAfter = ACF.CurTime - CleanupDelay
+	local TimeAfter = ACE.CurTime - CleanupDelay
 	local IDsToRemove = {}
 
 	-- Collect IDs that need removal
@@ -771,7 +771,7 @@ function ENT:UpdateSonarTorpedoTracks()
 	local TorpPositions = {}
 
 	local DetectionRange = 300 * 39.37 * self.PowerScale
-	local missiles = ACFM_GetMissilesInSphere(self,DetectionRange)
+	local missiles = ACE_Missile_GetMissilesInSphere(self,DetectionRange)
 
 	local i = 0
 	for _, missile in pairs(missiles) do
@@ -829,7 +829,7 @@ function ENT:UpdateRecievedPings()
 end
 
 --Negate elevation if reversed
-function CheckShadowZoneObscured(StartDepth, EndDepth, Elevation) --Checks if noise can reach the given area. Likely will be reworked.
+function ACE_CheckShadowZoneObscured(StartDepth, EndDepth, Elevation) --Checks if noise can reach the given area. Likely will be reworked.
 
 	local IsShallow = 1
 
@@ -841,10 +841,10 @@ function CheckShadowZoneObscured(StartDepth, EndDepth, Elevation) --Checks if no
 		local AboveShallowLayer = 1
 		local TarAboveShallowLayer = 1
 
-		if StartDepth > ACF.SonarLayerDepth then --Origin is below the layer
+		if StartDepth > ACE.SonarLayerDepth then --Origin is below the layer
 			AboveShallowLayer = 0
 		end
-		if EndDepth > ACF.SonarLayerDepth then --Target is above the layer
+		if EndDepth > ACE.SonarLayerDepth then --Target is above the layer
 			TarAboveShallowLayer = 0
 		end
 
@@ -922,8 +922,8 @@ function ENT:UpdateSonarTracks() --Step the track forward by velocity? Or let pl
 			OutputPosition = self.SonarPositions[ID]
 			OutputDistance = OutputPosition:Distance(SelfPos) --/ 39.3701
 
-			local Bearing = SONARCalculateAngle(SelfPos, OutputPosition).yaw
-			local Depth = SONARCalculateDepth(OutputPosition, self.WaterZHeight)
+			local Bearing = ACE_SonarCalculateAngle(SelfPos, OutputPosition).yaw
+			local Depth = ACE_SonarCalculateDepth(OutputPosition, self.WaterZHeight)
 
 			--if self.ActiveTransmitting and self.PulseDuration > 0.5 then
 			local Dist = ((SelfPos - OutputPosition) * NoZVector):Length()
@@ -934,7 +934,7 @@ function ENT:UpdateSonarTracks() --Step the track forward by velocity? Or let pl
 			--print("SonoDist: " .. math.Round(Dist / 39.37,2))
 			debugoverlay.Cross(OutputPosition,35,self.PulseDuration,Color( 183, 0, 255), true)
 
-			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, OutputDistance)
+			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, OutputDistance)
 			tableInsert(SonoBearings, InsertionIndex, Bearing)
 			tableInsert(SonoDepths, InsertionIndex, Depth)
 			tableInsert(SonoDistances, InsertionIndex, Dist)
@@ -993,15 +993,15 @@ end
 
 function ENT:Think()
 
-	local curTime = ACF.CurTime
+	local curTime = ACE.CurTime
 
 	-- Legal check system
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, nil, math.Round(self.Weight,2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, nil, math.Round(self.Weight,2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -1055,7 +1055,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(txt)

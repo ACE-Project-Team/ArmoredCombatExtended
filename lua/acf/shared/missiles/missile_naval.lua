@@ -1,10 +1,10 @@
 
 --define the class
-ACF_defineGunClass("NAV", {
+ACE.DefineGunClass("NAV", {
 	type           = "missile",
 	spread         = 1,
 	name           = "[NAV] - Naval Missiles",
-	desc           = ACFTranslation.MissileClasses[3],
+	desc           = ACE.Translation.MissileClasses[3],
 	muzzleflash    = "40mm_muzzleflash_noscale",
 	year           = 1969,
 	rofmod         = 1,
@@ -18,7 +18,7 @@ ACF_defineGunClass("NAV", {
 
 
 
-ACF_defineGun("BGM-109 Tomahawk", {						-- id
+ACE.DefineGun("BGM-109 Tomahawk", {						-- id
 	name             = "BGM-109 Tomahawk",
 	desc             = "The gold standard of cruise missiles. Subsonic and long range. Though slow this ordinance has extreme range and good maneuverability. Good for removing distant targets. Cannot be updated after it has launched.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 81 m/s",
 	model            = "models/macc/Tomahawk_Small.mdl",
@@ -101,7 +101,7 @@ ACF_defineGun("BGM-109 Tomahawk", {						-- id
 } )
 
 
-ACF_defineGun("AGM-84 Harpoon", {						-- id
+ACE.DefineGun("AGM-84 Harpoon", {						-- id
 	name             = "AGM-84 Harpoon",
 	desc             = "Versatile subsonic anti ship missile. Though somewhat sluggish packs a wallop.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 81 m/s",
 	model            = "models/missiles/1xagm84.mdl",
@@ -185,7 +185,7 @@ ACF_defineGun("AGM-84 Harpoon", {						-- id
 
 } )
 
-ACF_defineGun("Storm Shadow ASM", {						-- id
+ACE.DefineGun("Storm Shadow ASM", {						-- id
 	name             = "SCALP-EG Storm Shadow",
 	desc             = "The stormshadow is a low observability, turbojet driven cruise missile. Though slow this ordinance has extreme range, good maneuverability, staying time. And will obliterate anything it touches.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: Yes\nTop Speed: 81 m/s",
 	model            = "models/macc/storm_shadow_open.mdl",
@@ -266,7 +266,7 @@ ACF_defineGun("Storm Shadow ASM", {						-- id
 
 } )
 
-ACF_defineGun("3M-54 Kalibr", {						-- id
+ACE.DefineGun("3M-54 Kalibr", {						-- id
 	name             = "3M-54 Kalibr",
 	desc             = "Russia's cruise missile. Fast and long range. This massive missile can easily remove entire regions. Cannot be updated after it has launched.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: 81 m/s",
 	model            = "models/macc/Kalibr_small.mdl",
@@ -350,7 +350,7 @@ ACF_defineGun("3M-54 Kalibr", {						-- id
 
 
 
-ACF_defineGun("Black Shark Torp", {						-- id
+ACE.DefineGun("Black Shark Torp", {						-- id
 	name             = "533mm Black Shark Torpedo",
 	desc             = "Advanced heavyweight torpedo meant to strike fear into capital ships of all sizes.\n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: N/A m/s",
 	model            = "models/missiles/blacksharkwass_small.mdl",
@@ -430,7 +430,7 @@ ACF_defineGun("Black Shark Torp", {						-- id
 	armdelay           = 0.3								-- minimum fuse arming delay		--was 0.4
 } )
 
-ACF_defineGun("G7a Torp", {						-- id
+ACE.DefineGun("G7a Torp", {						-- id
 	name             = "533mm G7a Torpedo",
 	desc             = "Classic German U-boat torpedo. Fast, heavy hitting, but not particularly advanced.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: N/A m/s",
 	model            = "models/macc/Torpedo_G7A_Small.mdl",
@@ -505,7 +505,7 @@ ACF_defineGun("G7a Torp", {						-- id
 	armdelay           = 0.3								-- minimum fuse arming delay		--was 0.4
 } )
 
-ACF_defineGun("Mk13 Torp", {						-- id
+ACE.DefineGun("Mk13 Torp", {						-- id
 	name             = "570mm Mk 13 Torpedo",
 	desc             = "One of the most common aerial torpedoes of WW2. Used by the US. Has claimed many capital ships.\n\nInertial Guidance: Yes\nECCM: No\nDatalink: No\nTop Speed: N/A m/s",
 	model            = "models/macc/Torpedo_MK13_Small.mdl",
@@ -585,7 +585,7 @@ ACF_defineGun("Mk13 Torp", {						-- id
 	armdelay           = 0.3								-- minimum fuse arming delay		--was 0.4
 } )
 
-ACF_defineGun("Mk54 Torp", {						-- id
+ACE.DefineGun("Mk54 Torp", {						-- id
 	name             = "324mm Mk 54 Lightweight Torpedo",
 	desc             = "Compact and advanced airdropped torpedo. Though lighter than its larger counterparts it lighter and significantly more agile making it suited to being launched from aircraft. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: No\nTop Speed: N/A m/s",
 	model            = "models/macc/Torpedo_MK13_Small.mdl",
@@ -661,7 +661,7 @@ ACF_defineGun("Mk54 Torp", {						-- id
 } )
 
 
-ACF_defineGun("9M317ME SAM", {							-- id
+ACE.DefineGun("9M317ME SAM", {							-- id
 	name             = "9M317ME Navalized BUK",
 	desc             = "Get. Out. Of. MY. Airspace. Navalized version of the BUK often carried by cruisers. Perfect to designate a no-fly zone. Fast beyond belief and still decently maneuverable. \n\nInertial Guidance: Yes\nECCM: Yes\nDatalink: Yes\nTop Speed: 273 m/s",
 	model            = "models/macc/9M317ME_open_small.mdl",

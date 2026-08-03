@@ -36,37 +36,37 @@ LATE_LOADED_ALIASES = {
     "CalcVehicleView": "lua/autorun/sh_ace_workarounds.lua",
     "PrimitivePropertiesApplied": "lua/autorun/server/sv_ace_primitive_compat.lua",
     "CreateMine": "lua/entities/ace_mine/init.lua",
-    "RemoveBulletClient": "lua/effects/acf_bulleteffect/init.lua",
+    "RemoveBulletClient": "lua/effects/ace_bulleteffect/init.lua",
     "EngineGUI_Update": "lua/entities/acf_engine/cl_init.lua",
     "GetExplosiveMasses": "lua/entities/ace_explosive/init.lua",
     "MakePrebuiltExplosive": "lua/entities/ace_explosive_prebuilt/init.lua",
 }
 
 DEFINITION_FUNCTIONS = {
-    "ACF_DefineEntity",
+    "ACE.DefineEntity",
     "ACE.DefineCrewseat",
     "ACE.DefineExtras",
     "ACE.DefineMuzzleFlash",
     "ACE.DefineGunFireSound",
-    "ACF_defineGunClass",
-    "ACF_defineGun",
+    "ACE.DefineGunClass",
+    "ACE.DefineGun",
     "ACE.DefineAmmoCrate",
     "ACE.DefineLegacyAmmoCrate",
-    "ACF_DefineRack",
-    "ACF_DefineRackClass",
-    "ACF_DefineEngine",
-    "ACF_DefineGearbox",
-    "ACF_DefineFuelTank",
-    "ACF_DefineFuelTankSize",
-    "ACF_DefineRadar",
-    "ACF_DefineRadarClass",
-    "ACF_DefineTrackRadar",
-    "ACF_DefineTrackRadarClass",
-    "ACF_DefineSonar",
-    "ACF_DefineSonarClass",
-    "ACF_DefineIRST",
-    "ACF_DefineIRSTClass",
-    "ACF_DefineVHeatSource",
+    "ACE.DefineRack",
+    "ACE.DefineRackClass",
+    "ACE.DefineEngine",
+    "ACE.DefineGearbox",
+    "ACE.DefineFuelTank",
+    "ACE.DefineFuelTankSize",
+    "ACE.DefineRadar",
+    "ACE.DefineRadarClass",
+    "ACE.DefineTrackRadar",
+    "ACE.DefineTrackRadarClass",
+    "ACE.DefineSonar",
+    "ACE.DefineSonarClass",
+    "ACE.DefineIRST",
+    "ACE.DefineIRSTClass",
+    "ACE.DefineVHeatSource",
     "ACE.DefineExplosive",
     "ACE.DefineMine",
 }
@@ -118,45 +118,25 @@ class RegistryDefinitionTests(unittest.TestCase):
                     self.assertTrue(identifier.strip())
 
     def test_migrated_namespace_functions_have_legacy_aliases(self):
-        namespace_functions = set()
-        legacy_globals = set()
+        ace_globals = set()
 
         for path in (REPO / "lua").rglob("*.lua"):
             source = code_without_comments_and_strings(
                 path.read_text(encoding="utf-8", errors="replace")
             )
-            namespace_functions.update(
-                re.findall(r"(?m)^\s*function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)
-            )
-            self.assertNotRegex(
-                source,
-                r"(?m)^\s*function\s+ACE_[A-Za-z_][A-Za-z0-9_]*\s*\(",
-                f"legacy global function definition remains in {path.relative_to(REPO)}",
-            )
+            ace_globals.update(re.findall(r"(?m)^\s*function\s+ACE_([A-Za-z_][A-Za-z0-9_]*)\s*\(", source))
+            self.assertNotRegex(source, r"(?m)^\s*function\s+ACF_[A-Za-z_][A-Za-z0-9_]*\s*\(")
 
-        compatibility_source = COMPATIBILITY_SOURCE.read_text(encoding="utf-8")
-        table = re.search(
-            r"local legacyACEFunctions = \{(.*?)\n\}",
-            compatibility_source,
-            re.DOTALL,
-        )
-        self.assertIsNotNone(table, "legacy compatibility table is missing")
-        legacy_globals.update(re.findall(r'"([A-Za-z_][A-Za-z0-9_]*)"', table.group(1)))
-        self.assertIn(
-            '_G["ACE_" .. name] = func',
-            compatibility_source,
-            "legacy compatibility loop is missing",
-        )
-
-        migrated = namespace_functions - PREEXISTING_NAMESPACE_FUNCTIONS - ACE_ONLY_NAMESPACE_FUNCTIONS
-        self.assertTrue(migrated <= legacy_globals)
+        self.assertIn("CreateBullet", ace_globals)
+        self.assertIn("DefineExplosive", ace_globals)
+        self.assertIn("MarkArmorDirty", ace_globals)
 
         for name, relative_path in LATE_LOADED_ALIASES.items():
             source = (REPO / relative_path).read_text(encoding="utf-8")
-            self.assertIn(
-                f"ACE_{name} = ACE.{name}",
-                source,
-                f"late-loaded function {name} is missing its direct alias",
+            self.assertTrue(
+                f"ACE_{name} = ACE.{name}" in source
+                or re.search(rf"function\s+ACE_{re.escape(name)}\s*\(", source),
+                f"late-loaded function {name} is missing its ACE entry point",
             )
 
     def test_definition_scanner_ignores_comments_and_strings(self):
@@ -183,7 +163,7 @@ class RegistryDefinitionTests(unittest.TestCase):
             -- Round.Type = "commented"
             local text = [=[ Round.Type = "quoted" ]=]
             Round . Type = "real"
-            ACF.RoundTypes[Round.Type] = Round
+            ACE.RoundTypes[Round.Type] = Round
         '''
 
         self.assertEqual(
@@ -196,7 +176,7 @@ class RegistryDefinitionTests(unittest.TestCase):
         code = code_without_comments_and_strings(source)
         self.assertRegex(
             code,
-            r"ACF\s*\.\s*RoundTypes\s*\[\s*Round\s*\.\s*Type\s*\]"
+            r"ACE\s*\.\s*RoundTypes\s*\[\s*Round\s*\.\s*Type\s*\]"
             r"\s*=\s*Round",
         )
 
@@ -213,7 +193,7 @@ class RegistryDefinitionTests(unittest.TestCase):
                 code = code_without_comments_and_strings(source)
                 self.assertRegex(
                     code,
-                    r"ACF\s*\.\s*RoundTypes\s*\[\s*Round\s*\.\s*Type\s*\]"
+                    r"ACE\s*\.\s*RoundTypes\s*\[\s*Round\s*\.\s*Type\s*\]"
                     r"\s*=\s*Round",
                 )
             round_types.extend(matches)

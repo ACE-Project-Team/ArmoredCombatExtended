@@ -20,7 +20,7 @@ function ENT:Initialize()
 	self.ResetJamDelay		= 0.45 --Periodically resets jamming strength to zero for the jammer to apply the highest noise available. This means the jamming won't always remain at full strength without a lot of networking.
 	self.NextJamCheck		= 0
 	self.StatusUpdateDelay	= 0.5
-	self.LastStatusUpdate	= ACF.CurTime
+	self.LastStatusUpdate	= ACE.CurTime
 	self.Active				= false
 
 	self.Heat				= 21
@@ -28,7 +28,7 @@ function ENT:Initialize()
 	self.JamStrength		= 0
 	self.JamDir				= vector_origin
 
-	self.NextLegalCheck		= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
 	self.LegalIssues		= ""
 
@@ -55,7 +55,7 @@ function ENT:Initialize()
 	}
 
 	self.TargetDetected = false
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 end
 
@@ -65,13 +65,13 @@ local function SetConeParameters( Radar )
 
 end
 
-function MakeACE_TrackingRadar(Owner, Pos, Angle, Id)
+function ACE_MakeTrackingRadar(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Large-TRACK"
 
-	local radar = ACF.Weapons.Radars[Id]
+	local radar = ACE.Weapons.Radars[Id]
 
 	if not radar then return false end
 
@@ -105,20 +105,20 @@ function MakeACE_TrackingRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
 	Radar:UpdateOverlayText()
 
-	Owner:AddCount( "_acf_missileradar", Radar )
-	Owner:AddCleanup( "acfmenu", Radar )
+	Owner:AddCount( "_ace_missileradar", Radar )
+	Owner:AddCleanup( "acemenu", Radar )
 
 	return Radar
 
 end
 list.Set( "ACFCvars", "ace_trackingradar", {"id"} )
-duplicator.RegisterEntityClass("ace_trackingradar", MakeACE_TrackingRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_trackingradar", ACE_MakeTrackingRadar, "Pos", "Angle", "Id" )
 
 function ENT:SetModelEasy(mdl)
 
@@ -140,9 +140,9 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 
-		if ACF.IsDefaultActiveInputWired(self) then
+		if ACE_IsDefaultActiveInputWired(self) then
 			local curTime = CurTime()
 			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
 		end
@@ -232,7 +232,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	txt = txt .. "\nTemp: " .. math.Round(self.Heat) .. "C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "F"
@@ -280,7 +280,7 @@ function ENT:ScanForContraptions()
 
 	local BTFactor = 1 / (1 + ((self.Cone - 1) / (self.ICone - 1)) * 2)
 
-	local CounterMeasures = ACFM_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
+	local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 	local CMCount = table.Count(CounterMeasures)
 
 	for Contraption in pairs(CFW.Contraptions) do
@@ -365,8 +365,8 @@ function ENT:ScanForContraptions()
 
 					OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
 
-					local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
-					local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
+					local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
+					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
 
 					tableInsert(Owners, InsertionIndex, Owner:Nick())
 					tableInsert(Distances, InsertionIndex, BaseDistance)
@@ -420,12 +420,12 @@ function ENT:Think()
 	local curTime = CurTime()
 	self:NextThink(curTime + self.ThinkDelay)
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -448,8 +448,8 @@ function ENT:Think()
 	WireLib.TriggerOutput( self, "JamDirection", self.JamDir )
 	self:UpdateOverlayText()
 
-	if self.IsJammed ~= 0 and ACF.CurTime > self.NextJamCheck then
-		self.NextJamCheck = ACF.CurTime + self.ResetJamDelay
+	if self.IsJammed ~= 0 and ACE.CurTime > self.NextJamCheck then
+		self.NextJamCheck = ACE.CurTime + self.ResetJamDelay
 
 		--Reset everything for next check
 		self.IsJammed			= 0

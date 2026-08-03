@@ -14,7 +14,7 @@ function SWEP:DoAmmoStatDisplay()
 
 
 
-	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
 end
 
 function SWEP:Equip()

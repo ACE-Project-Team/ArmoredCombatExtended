@@ -43,7 +43,7 @@ return {
 		{
 			name = "THEAT exposes both staged detonation and impact handlers",
 			func = function()
-				local round = ACF.RoundTypes.THEAT
+				local round = ACE.RoundTypes.THEAT
 				expect(round).to.exist()
 				expect(round.detonate).to.beA("function")
 				expect(round.propimpact).to.beA("function")
@@ -73,7 +73,7 @@ return {
 		{
 			name = "killed armor with residual energy remains continuable",
 			func = function()
-				local result = ACF_GetPostPenetration({ Kill = true, Loss = 0.25, Overkill = 0 }, { Kinetic = 80, Penetration = 100 })
+				local result = ACE.GetPostPenetration({ Kill = true, Loss = 0.25, Overkill = 0 }, { Kinetic = 80, Penetration = 100 })
 				expect(result.Continue).to.equal(true)
 				expect(result.RemainingKinetic).to.aboutEqual(60)
 				expect(result.RemainingPenetration).to.aboutEqual(75)

@@ -1,9 +1,9 @@
 --define the class
-ACF_defineGunClass("ATR", {
+ACE.DefineGunClass("ATR", {
 	type = "Gun",
 	spread = 0.01,
 	name = "Anti-Tank Rifle",
-	desc = ACFTranslation.GunClasses[1],
+	desc = ACE.Translation.GunClasses[1],
 	muzzleflash = "MG",
 	rofmod = 10,
 	year = 1917,
@@ -12,7 +12,7 @@ ACF_defineGunClass("ATR", {
 } )
 
 --add a gun to the class
-ACF_defineGun("7.92mmATR", { --id
+ACE.DefineGun("7.92mmATR", { --id
 	name = "7.92mm Anti Tank Rifle",
 	desc = "The 7.92 Anti Tank Rifle is somone's desperate attempt to fend off hordes of tracked beasts in the trenches",
 	model = "models/machinegun/machinegun_762mm.mdl",
@@ -29,7 +29,7 @@ ACF_defineGun("7.92mmATR", { --id
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACF_defineGun("14.5mmATR", { --id
+ACE.DefineGun("14.5mmATR", { --id
 	name = "14.5mm Anti Tank Rifle",
 	desc = "Commonly used by soviets as a budget way to kill tanks, still worthless.",
 	model = "models/machinegun/machinegun_145mm.mdl",
@@ -46,7 +46,7 @@ ACF_defineGun("14.5mmATR", { --id
 	gunnerexception = true --Bypasses regular gunner rules.
 } )
 
-ACF_defineGun("20mmATR", { --id
+ACE.DefineGun("20mmATR", { --id
 	name = "20mm Anti Tank Rifle",
 	desc = "Collosal anti tank rifle, good for putting a hole through side armor at point blank, that is if you can carry it.",
 	model = "models/machinegun/machinegun_20mm.mdl",

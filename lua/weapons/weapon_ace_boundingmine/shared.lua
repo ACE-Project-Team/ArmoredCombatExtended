@@ -83,7 +83,7 @@ function SWEP:PrimaryAttack()
 		local Pos       = Owner:GetShootPos() + Forward * 32
 		local Angle     = Owner:EyeAngles()
 
-		ACE.CreateMine( "Bounding-APL", Pos, Angle, Owner )
+		ACE_CreateMine( "Bounding-APL", Pos, Angle, Owner )
 
 	end
 

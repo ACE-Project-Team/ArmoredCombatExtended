@@ -20,7 +20,7 @@ local V =  {
 					HandleAnimation = HandleACFPodAnimation
 	}
 }
-list.Set( "Vehicles", "acf_pod", V )
+list.Set( "Vehicles", "ACE_pod", V )
 
 local V = {
 	-- Required information
@@ -37,4 +37,4 @@ local V = {
 					limitview		=	"0"
 				},
 }
-list.Set( "Vehicles", "acf_pilotseat", V )
+list.Set( "Vehicles", "ACE_pilotseat", V )

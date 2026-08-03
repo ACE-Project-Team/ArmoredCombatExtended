@@ -2,11 +2,11 @@
 local ClassName = "Dumb"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewBaseClass()
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewBaseClass()
+ACE.Guidance[ClassName] = this
 
 ---
 

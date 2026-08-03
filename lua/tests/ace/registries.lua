@@ -18,8 +18,8 @@ return {
 			name = "exposes every loader category",
 			func = function()
 				expect(ACF).to.exist()
-				expect(ACF.Weapons).to.exist()
-				expect(ACF.Classes).to.exist()
+				expect(ACE.Weapons).to.exist()
+				expect(ACE.Classes).to.exist()
 				expect(ACE).to.exist()
 
 				for _, name in ipairs({
@@ -27,20 +27,20 @@ return {
 					"FuelTanks", "FuelTanksSize", "Radars", "Tools", "Crewseats",
 					"Extras", "Explosives", "Mobility",
 				}) do
-					expect(ACF.Weapons[name]).to.exist()
-					countEntries(ACF.Weapons[name], expect)
+					expect(ACE.Weapons[name]).to.exist()
+					countEntries(ACE.Weapons[name], expect)
 				end
 
 				for _, name in ipairs({ "GunClass", "Rack", "Radar" }) do
-					expect(ACF.Classes[name]).to.exist()
-					countEntries(ACF.Classes[name], expect)
+					expect(ACE.Classes[name]).to.exist()
+					countEntries(ACE.Classes[name], expect)
 				end
 			end,
 		},
 		{
 			name = "preserves the required shape of core definitions",
 			func = function()
-				for id, gun in pairs(ACF.Weapons.Guns) do
+				for id, gun in pairs(ACE.Weapons.Guns) do
 					expect(gun.round).to.exist()
 					expect(gun.gunclass).to.exist()
 					expect(gun.caliber).to.beA("number")
@@ -48,14 +48,14 @@ return {
 					expect(id).to.equal(gun.id)
 				end
 
-				for id, engine in pairs(ACF.Weapons.Engines) do
+				for id, engine in pairs(ACE.Weapons.Engines) do
 					expect(engine.torque).to.beA("number")
 					expect(engine.limitrpm).to.beA("number")
 					expect(engine.limitrpm).to.beGreaterThan(engine.idlerpm)
 					expect(id).to.equal(engine.id)
 				end
 
-				for id, gearbox in pairs(ACF.Weapons.Gearboxes) do
+				for id, gearbox in pairs(ACE.Weapons.Gearboxes) do
 					expect(gearbox.gears).to.beA("number")
 					expect(gearbox.geartable).to.beA("table")
 					expect(id).to.equal(gearbox.id)
@@ -90,11 +90,11 @@ return {
 		{
 			name = "keeps round type and network ID registries coherent",
 			func = function()
-				expect(ACF.RoundTypes).to.exist()
-				expect(ACF.IdRounds).to.exist()
+				expect(ACE.RoundTypes).to.exist()
+				expect(ACE.IdRounds).to.exist()
 				local count = 0
 
-				for roundType, round in pairs(ACF.RoundTypes) do
+				for roundType, round in pairs(ACE.RoundTypes) do
 					expect(type(roundType)).to.equal("string")
 					expect(type(round)).to.equal("table")
 					expect(round.Type).to.equal(roundType)
@@ -102,7 +102,7 @@ return {
 						expect(round.create).to.beA("function")
 					end
 					if round.netid then
-						expect(ACF.IdRounds[round.netid]).to.beA("string")
+						expect(ACE.IdRounds[round.netid]).to.beA("string")
 					end
 					count = count + 1
 				end

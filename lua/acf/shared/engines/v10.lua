@@ -1,6 +1,6 @@
 --V10s
 
-ACF_DefineEngine( "4.3-V10", {
+ACE.DefineEngine( "4.3-V10", {
 	name = "4.3L V10 Petrol",
 	desc = "Small-block V-10 gasoline engine, great for powering a hot rod lincoln",
 	model = "models/engines/v10sml.mdl",
@@ -15,7 +15,7 @@ ACF_DefineEngine( "4.3-V10", {
 	limitrpm = 6250,
 } )
 
-ACF_DefineEngine( "8.0-V10", {
+ACE.DefineEngine( "8.0-V10", {
 	name = "8.0L V10 Petrol",
 	desc = "Beefy 10-cylinder gas engine, gets 9 kids to soccer practice",
 	model = "models/engines/v10med.mdl",
@@ -30,7 +30,7 @@ ACF_DefineEngine( "8.0-V10", {
 	limitrpm = 6500,
 } )
 
-ACF_DefineEngine( "22.0-V10", {
+ACE.DefineEngine( "22.0-V10", {
 	name = "22.0L V10 Multifuel",
 	desc = "Heavy multifuel V-10, gearbox-shredding torque but very heavy.",
 	model = "models/engines/v10big.mdl",
@@ -44,7 +44,7 @@ ACF_DefineEngine( "22.0-V10", {
 	idlerpm = 525,
 	limitrpm = 2500,
 } )
-ACF_DefineEngine( "23.0-V10", {
+ACE.DefineEngine( "23.0-V10", {
 	name = "23.0L V10 Petrol",
 	desc = "You should be crazy to install this engine.Designed for drag racers",
 	model = "models/engines/v10big.mdl",

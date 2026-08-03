@@ -25,8 +25,8 @@ function ENT:Initialize()
 
 	end
 
-	if ACF.DebrisLifeTime > 0 then
-		timer.Simple(ACF.DebrisLifeTime, function()
+	if ACE.DebrisLifeTime > 0 then
+		timer.Simple(ACE.DebrisLifeTime, function()
 			if IsValid(self) then
 				self:Remove()
 			end

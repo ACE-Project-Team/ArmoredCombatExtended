@@ -49,7 +49,7 @@ assertEqual(ACF.GetDefaultActiveInputState(ent), true, "stored state returns aft
 
 local engine = read("lua/entities/acf_engine/init.lua")
 assert(engine:find("ACF.HasDefaultActiveInputState(self)", 1, true), "engine refreshes explicit stored state")
-assert(engine:find("ACF.GetDefaultActiveInputState(self) and 1 or 0", 1, true), "engine legality recovery preserves requested off")
+assert(engine:find("ACE_GetDefaultActiveInputState(self) and 1 or 0", 1, true), "engine legality recovery preserves requested off")
 assert(read("lua/entities/gmod_wire_expression2/core/custom/acf.lua"):find("ACF.SetDefaultActiveInputState(this, on)", 1, true), "E2 stores state")
 assert(read("lua/starfall/libs_sv/acf.lua"):find("ACF.SetDefaultActiveInputState(this, on and 1 or 0)", 1, true), "Starfall stores state")
 

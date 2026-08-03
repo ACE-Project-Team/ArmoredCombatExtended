@@ -261,9 +261,8 @@ do
 		if not hasActiveInput(this) then return self:throw("Entity is not a valid active-capable ACF entity") end
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot control this entity") end
 
-		if ACF.SetDefaultActiveInputState(this, on) then
-			this:TriggerInput("Active", on)
-		end
+		ACF.SetDefaultActiveInputState(this, on)
+		this:TriggerInput("Active", on)
 	end
 
 	-- Returns 1 if the hitpos is on a clipped part of the entity

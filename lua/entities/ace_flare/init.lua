@@ -20,7 +20,7 @@ function ENT:Initialize()
 	self.RadarSig   = self.RadarSig or 1
 	self.FirstRadarSig = self.RadarSig
 
-	self.FirstTime = ACF.CurTime
+	self.FirstTime = ACE.CurTime
 
 	local phys = self:GetPhysicsObject()
 	if IsValid( phys ) then
@@ -58,7 +58,7 @@ function ENT:Think()
 		return false
 	end
 
-	local AliveTime = (ACF.CurTime - self.FirstTime)
+	local AliveTime = (ACE.CurTime - self.FirstTime)
 	local EffectivenessMul = (1 - (AliveTime / self.Life))
 	self.Thermal = self.FirstThermal * EffectivenessMul
 	self.RadarSig = self.FirstRadarSig * EffectivenessMul

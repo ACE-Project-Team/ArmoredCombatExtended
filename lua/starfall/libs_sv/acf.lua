@@ -300,9 +300,8 @@ do
 
 		if not hasActiveInput(this) then return end
 
-		if ACF.SetDefaultActiveInputState(this, on and 1 or 0) then
-			this:TriggerInput("Active", on and 1 or 0)
-		end
+		ACF.SetDefaultActiveInputState(this, on and 1 or 0)
+		this:TriggerInput("Active", on and 1 or 0)
 	end
 
 	--- Returns true if hitpos is on a clipped part of prop

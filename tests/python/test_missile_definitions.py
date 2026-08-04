@@ -8,9 +8,7 @@ from lua_source import find_call_table, iter_named_calls
 
 
 REPO = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location(
-    "ace_definition_audit", Path(__file__).with_name("missile_definition_audit.py")
-)
+SPEC = importlib.util.spec_from_file_location("ace_definition_audit", REPO / "test.py")
 AUDIT = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(AUDIT)

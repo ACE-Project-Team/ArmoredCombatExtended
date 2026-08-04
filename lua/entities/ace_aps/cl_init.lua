@@ -1,6 +1,6 @@
 include("shared.lua")
 
 function ENT:Draw()
-	self:DrawModel()
+	self:DoNormalDraw(false, false)
 	Wire_Render(self)
 end

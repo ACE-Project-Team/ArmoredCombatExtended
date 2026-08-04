@@ -17,6 +17,11 @@ class APSEntityTests(unittest.TestCase):
                 self.assertIn("ENT.Spawnable = true", source)
                 self.assertIn("ENT.AdminSpawnable = true", source)
 
+    def test_wire_draw_path_uses_look_at_overlay(self):
+        source = (ENTITY_ROOT / "ace_aps" / "cl_init.lua").read_text(encoding="utf-8")
+        self.assertIn("self:DoNormalDraw(false, false)", source)
+        self.assertIn("Wire_Render(self)", source)
+
     def test_base_aps_owns_link_and_duplication_contracts(self):
         source = (ENTITY_ROOT / "ace_aps" / "init.lua").read_text(encoding="utf-8")
 

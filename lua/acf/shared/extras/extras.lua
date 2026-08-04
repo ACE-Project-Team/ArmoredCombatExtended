@@ -17,3 +17,23 @@ ACE.DefineExtras("GForceMeter", {
 	weight = 2,
 	acepoints = 0,
 })
+
+ACE.DefineExtras("APS_Static", {
+	name = "APS (Static)",
+	ent = "ace_aps_static",
+	category = "APS",
+	desc = "A static active protection system mount scaffold. Link to one or more missile radars and one ACF gun.",
+	model = "models/props_lab/reciever01a.mdl",
+	weight = 25,
+	acepoints = 0,
+})
+
+ACE.DefineExtras("APS_Gimbal", {
+	name = "APS (Gimbal)",
+	ent = "ace_aps_gimbal",
+	category = "APS",
+	desc = "A gimbal active protection system mount scaffold. Link to one or more missile radars and one ACF gun.",
+	model = "models/props_lab/reciever01a.mdl",
+	weight = 25,
+	acepoints = 0,
+})

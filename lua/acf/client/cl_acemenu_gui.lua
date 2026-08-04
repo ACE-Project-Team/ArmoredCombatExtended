@@ -376,9 +376,11 @@ function PANEL:Init( )
 	]]--==================================================
 
 		local extrasNode = HomeNode:AddNode("Extras", "icon16/bricks.png")
+		local apsNode = HomeNode:AddNode("APS", "icon16/shield.png")
 
 		for _, ExtrasData in pairs(FinalContainer["Extras"] or {}) do
-			local ItemNode = extrasNode:AddNode(ExtrasData.name or "No Name", ItemIcon2)
+			local ParentNode = ExtrasData.category == "APS" and apsNode or extrasNode
+			local ItemNode = ParentNode:AddNode(ExtrasData.name or "No Name", ItemIcon2)
 			ItemNode.mytable = ExtrasData
 
 			function ItemNode:DoClick()

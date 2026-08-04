@@ -23,7 +23,7 @@ ACE.DefineExtras("APS_Static", {
 	ent = "ace_aps_static",
 	category = "APS",
 	desc = "A static active protection system mount scaffold. Link to one or more missile radars and one ACF gun.",
-	model = "models/props_lab/reciever01a.mdl",
+	model = "models/golem/Zaslin_APS.mdl",
 	weight = 25,
 	acepoints = 0,
 })

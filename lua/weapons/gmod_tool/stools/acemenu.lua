@@ -30,6 +30,12 @@ TOOL.SelectedEntities = {}
 
 cleanup.Register( "acemenu" )
 
+local APSClasses = {
+	ace_aps = true,
+	ace_aps_static = true,
+	ace_aps_gimbal = true,
+}
+
 if CLIENT then
 	TOOL.Information = {
 		{ name = "left", stage = 0 },
@@ -146,19 +152,13 @@ function TOOL:DeselectAll()
 end
 
 local function linkEnts(e1, e2, unlink)
-	local apsClass = {
-		ace_aps = true,
-		ace_aps_static = true,
-		ace_aps_gimbal = true,
-	}
-
-	if apsClass[e1:GetClass()] then
+	if e1.IsAPS or APSClasses[e1:GetClass()] then
 		if unlink then
 			return e1:Unlink(e2)
 		else
 			return e1:Link(e2)
 		end
-	elseif apsClass[e2:GetClass()] then
+	elseif e2.IsAPS or APSClasses[e2:GetClass()] then
 		if unlink then
 			return e2:Unlink(e1)
 		else

@@ -2,6 +2,7 @@ ENT.Type = "anim"
 ENT.Base = "base_wire_entity"
 ENT.PrintName = "ACE APS Base"
 ENT.WireDebugName = "ACE APS"
+ENT.IsAPS = true
 ENT.Author = "ACE Project Team"
 ENT.Category = "ACE - Entities"
 ENT.Spawnable = false

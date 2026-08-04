@@ -5,3 +5,6 @@ ENT.WireDebugName = "ACE APS Static"
 ENT.Spawnable = true
 ENT.AdminSpawnable = true
 ENT.APSVariant = "static"
+ENT.APSModel = "models/golem/Zaslin_APS.mdl"
+ENT.GunMountOffset = Vector(0, 28, 0)
+ENT.GunMountAngle = Angle(0, 90, 0)

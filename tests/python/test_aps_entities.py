@@ -38,6 +38,16 @@ class APSEntityTests(unittest.TestCase):
         self.assertIn('BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)', source)
         self.assertIn('function ACE.MakeAPS', source)
         self.assertNotIn('ACE_MakeAPS', source)
+        self.assertIn('self.CanUpdate = true', source)
+        self.assertIn('function ENT:Update(_ArgsTable)', source)
+        self.assertIn('APS properties are not configurable yet.', source)
+        self.assertIn('APSInputDescriptions', source)
+        self.assertIn('APSOutputDescriptions', source)
+        self.assertIn('"Enables or disables the APS scaffold."', source)
+        self.assertIn('"Current active state."', source)
+        self.assertIn('"Number of linked missile radars."', source)
+        self.assertIn('"Whether an ACF gun is linked."', source)
+        self.assertIn('"Whether this is the gimbal variant."', source)
 
     def test_menu_defines_both_spawnable_aps_choices(self):
         extras = (REPO / "lua" / "acf" / "shared" / "extras" / "extras.lua").read_text(

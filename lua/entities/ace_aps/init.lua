@@ -14,6 +14,17 @@ local RadarClasses = {
 	acf_missileradar = true,
 }
 
+local APSInputDescriptions = {
+	"Enables or disables the APS scaffold.",
+}
+
+local APSOutputDescriptions = {
+	"Current active state.",
+	"Number of linked missile radars.",
+	"Whether an ACF gun is linked.",
+	"Whether this is the gimbal variant.",
+}
+
 local function IsLinkInRange(aps, ent)
 	return aps:GetPos():DistToSqr(ent:GetPos()) <= LinkDistance * LinkDistance
 end
@@ -30,6 +41,7 @@ end
 
 function ENT:Initialize()
 	BaseClass.Initialize(self)
+	self.CanUpdate = true
 
 	self:SetModel(APSModel)
 	self:PhysicsInit(SOLID_VPHYSICS)
@@ -45,13 +57,13 @@ function ENT:Initialize()
 	self.IsMaster = true
 	self.RadarLinks = {}
 	self.LinkedGun = nil
-	self.Inputs = WireLib.CreateInputs(self, {"Active"})
+	self.Inputs = WireLib.CreateInputs(self, {"Active"}, APSInputDescriptions)
 	self.Outputs = WireLib.CreateOutputs(self, {
 		"Active",
 		"Radar Count",
 		"Gun Linked",
 		"Gimbal",
-	})
+	}, APSOutputDescriptions)
 	self.Active = true
 	self:UpdateWireOutputs()
 	self:UpdateOverlayText()
@@ -79,6 +91,14 @@ function ACE.MakeAPS(Owner, Pos, Angle, Class)
 	Owner:AddCleanup("acemenu", APS)
 
 	return APS
+end
+
+--- Handles an ACE menu update for an APS entity.
+-- @param _ArgsTable table Reserved update arguments from the ACE menu.
+-- @return boolean Always true; APS properties are not configurable yet.
+-- @return string Update result message.
+function ENT:Update(_ArgsTable)
+	return true, "APS properties are not configurable yet."
 end
 
 --- Checks whether an entity can be linked to this APS.

@@ -108,7 +108,7 @@ end
 
 function ENT:TriggerInput(inp, value)
 	if inp == "Active" then
-		self.Active = value ~= 0
+		self.Active = value ~= 0 and ACE.RequireEntityLegal(self)
 	elseif inp == "Max Temperature" then
 		self.MaxTemperature = math.max(value, ACE.AmbientTemp)
 		self.Heat = math.Clamp(self.Heat, ACE.AmbientTemp, self.MaxTemperature)

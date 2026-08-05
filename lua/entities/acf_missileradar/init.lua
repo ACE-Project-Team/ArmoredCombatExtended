@@ -47,9 +47,9 @@ function ENT:Initialize()
 	self.StatusUpdateDelay	= 0.5
 	self.LastStatusUpdate	= CurTime()
 
-	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.Legal				= true
-	self.LegalIssues		= ""
+	self.NextLegalCheck		= ACE.CurTime
+	self.Legal				= false
+	self.LegalIssues		= "Awaiting legality validation"
 
 	self.Heat 				= ACE.AmbientTemp
 

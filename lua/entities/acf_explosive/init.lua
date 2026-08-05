@@ -179,6 +179,7 @@ end
 function ENT:Detonate(overrideBData)
 
 	if self.Detonated then return end
+	if not ACE.RequireEntityLegal(self) then return end
 	self.Detonated = true
 
 	local bdata = overrideBData or self.BulletData

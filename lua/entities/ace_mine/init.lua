@@ -101,6 +101,7 @@ do
 	end
 
 	function ENT:Detonate()
+		if not ACE.RequireEntityLegal(self) then return end
 		if self.CustomMineDetonation then self.CustomMineDetonation( self ) return end
 
 		self:Remove()

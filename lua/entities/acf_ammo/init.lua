@@ -128,9 +128,9 @@ function ENT:Initialize()
 	self.Ammo                = 0
 	self.IsTwoPiece          = false
 
-	self.NextLegalCheck      = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.Legal               = true
-	self.LegalIssues         = ""
+	self.NextLegalCheck      = ACE.CurTime
+	self.Legal               = false
+	self.LegalIssues         = "Awaiting legality validation"
 
 	self.Active              = true
 	self.Master              = {}
@@ -730,7 +730,9 @@ function ENT:UpdateMass()
 		local phys = self:GetPhysicsObject()
 		if (phys:IsValid()) then
 
-			phys:SetMass( self.Mass )
+			ACE.WithMutationScope(self, "ammo-mass-update", function()
+				phys:SetMass( self.Mass )
+			end)
 
 		end
 	end
@@ -758,7 +760,7 @@ function ENT:TriggerInput( iname, value )
 		if active then
 			self.Active = true
 
-			if self.Legal then
+			if ACE.RequireEntityLegal(self) then
 				self.Load = true
 				self:FirstLoad()
 			end
@@ -774,7 +776,7 @@ function ENT:FirstLoad()
 
 	for Key in pairs(self.Master) do
 		local Gun = self.Master[Key]
-		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
+		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and ACE.RequireEntityLegal(Gun) then
 			-- Reload=true: scale-0 muzzleflash effect (soundless) so the client initializes its
 			-- animation state; a fully silent load leaves the load animation strobing (see acf_gun).
 			Gun:LoadAmmo(false, true)
@@ -791,7 +793,7 @@ function ENT:Think()
 	if not ACE_IsDefaultActiveInputWired(self) then
 		self.Active = true
 
-		if self.Legal and not self.Load then
+		if ACE.RequireEntityLegal(self) and not self.Load then
 			self.Load = true
 			self:FirstLoad()
 		end
@@ -1034,7 +1036,7 @@ function ENT:Think()
 			else
 				local dist = self:GetPos():Distance(Ammo:GetPos())
 				-- If ammo crate is out of refill max distance or is full or our refill crate is damaged or just in-active then stop refiliing it.
-				if (dist > ACE.RefillDistance) or (Ammo.Capacity <= Ammo.Ammo) or self.Damaged or not self.Load or not Ammo.Legal then
+				if (dist > ACE.RefillDistance) or (Ammo.Capacity <= Ammo.Ammo) or self.Damaged or not self.Load or not ACE.RequireEntityLegal(Ammo) then
 					table.remove(self.SupplyingTo, k)
 					self:StopRefillEffect( EntID )
 				end

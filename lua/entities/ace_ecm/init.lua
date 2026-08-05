@@ -35,9 +35,9 @@ function ENT:Initialize()
 
 	WireLib.TriggerOutput( self, "JamCount", 0 )
 
-	self.NextLegalCheck	= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.Legal = true
-	self.LegalIssues = ""
+	self.NextLegalCheck	= ACE.CurTime
+	self.Legal = false
+	self.LegalIssues = "Awaiting legality validation"
 
 	--out radars jammed?
 	self:SetActive(false)
@@ -52,7 +52,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE_GetDefaultActiveInputState(self, value) and self.Legal)
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value) and ACE.RequireEntityLegal(self))
 	elseif inp == "JamDirection" then
 		self.JamDirection = value
 		self.JamTargetPos = nil

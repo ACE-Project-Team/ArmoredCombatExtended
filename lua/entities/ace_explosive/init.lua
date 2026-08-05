@@ -95,6 +95,7 @@ duplicator.RegisterEntityClass("ace_explosive", ACE_MakeExplosive, "Pos", "Angle
 
 function ENT:Detonate()
 	if self.Detonated then return end
+	if not ACE.RequireEntityLegal(self) then return end
 	self.Detonated = true
 
 	local origin = self:WorldSpaceCenter()

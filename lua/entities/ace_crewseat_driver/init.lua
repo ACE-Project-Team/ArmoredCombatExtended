@@ -68,10 +68,10 @@ end
 
 function ENT:Think()
 	ACE_UpdateCrewseatAnglePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	local legal = ACE.RequireEntityLegal(self)
 
 	local eng = self.LinkedEngine
-	if not self.Legal and IsValid(eng) then
+	if not legal and IsValid(eng) then
 		eng:Unlink(self)
 	end
 
@@ -154,8 +154,10 @@ function ENT:ConsumeCrewseats()
 	self.Legal = false
 	self.LegalIssues = "Apparently He Died"
 
-	self:SetNoDraw( true )
-	self:SetNotSolid( true )
+	ACE.WithMutationScope(self, "crewseat-death", function()
+		self:SetNoDraw( true )
+		self:SetNotSolid( true )
+	end)
 
 	-- Store engine active states BEFORE marking driver as dead
 	self.PreviousEngineStates = {}
@@ -211,8 +213,10 @@ function ENT:ResetLinks()
 	self.ACF.Health = self.ACF.MaxHealth or 1
 	self.ACF.Armour = self.ACF.MaxArmour or 1
 	self.NextLegalCheck = 0
-	self:SetNoDraw( false )
-	self:SetNotSolid( false )
+	ACE.WithMutationScope(self, "crewseat-replacement", function()
+		self:SetNoDraw( false )
+		self:SetNotSolid( false )
+	end)
 
 	for _, Link in pairs( self.Master ) do
 		if IsValid( Link ) then

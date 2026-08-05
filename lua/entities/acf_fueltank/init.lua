@@ -39,9 +39,9 @@ do
 		self.Active           = true
 		self.SupplyFuel       = false
 		self.Leaking          = 0
-		self.NextLegalCheck   = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-		self.Legal            = true
-		self.LegalIssues      = ""
+		self.NextLegalCheck   = ACE.CurTime
+		self.Legal            = false
+		self.LegalIssues      = "Awaiting legality validation"
 
 		self.Inputs = Wire_CreateInputs( self, { "Active", "Refuel Duty (" .. FueltankWireDescs["Refuel"] .. ")" } )
 		self.Outputs = WireLib.CreateSpecialOutputs( self,
@@ -385,7 +385,9 @@ function ENT:UpdateFuelMass()
 		self.NextMassUpdate = CurTime() + math.Rand(10, 15)
 		local phys = self:GetPhysicsObject()
 		if (phys:IsValid()) then
-			phys:SetMass( self.Mass )
+			ACE.WithMutationScope(self, "fueltank-mass-update", function()
+				phys:SetMass( self.Mass )
+			end)
 		end
 	end
 
@@ -457,7 +459,7 @@ function ENT:Think()
 		self:NextThink(CurTime())
 		for _,Tank in pairs(ACE.FuelTanks) do
 
-			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel and Tank.Legal then --don't refuel the refuellers, otherwise it'll be one big circlejerk
+			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel and ACE.RequireEntityLegal(Tank) then --don't refuel the refuellers, otherwise it'll be one big circlejerk
 				local dist = self:GetPos():Distance(Tank:GetPos())
 
 				if dist < ACE.RefillDistance and (Tank.Capacity - Tank.Fuel > 0.1) then

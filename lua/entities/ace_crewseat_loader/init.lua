@@ -128,14 +128,14 @@ end
 function ENT:Think()
 	ACE_UpdateCrewseatAnglePenalty(self)
 	ACE_UpdateGForcePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	local legal = ACE.RequireEntityLegal(self)
 
-	if self.Legal then
+	if legal then
 		self:IncreaseStamina()
 	end
 
 	local gun = self.LinkedGun
-	if not self.Legal and IsValid(gun) then
+	if not legal and IsValid(gun) then
 		gun:Unlink(self)
 	end
 

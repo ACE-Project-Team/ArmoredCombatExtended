@@ -10,24 +10,33 @@ include("acf/shared/sh_ace_manufacturing.lua")
 local floor, Clamp = math.floor, math.Clamp
 
 -- returns last parent in chain, which has physics
-function ACE_GetPhysicalParent( obj )
+function ACE_GetPhysicalParent( obj, ForceRefresh )
 	if not IsValid(obj) then return nil end
 
 	--check for fresh cached parent
-	if obj.acfphysparent and ACE.CurTime < obj.acfphysstale then
+	if not ForceRefresh and obj.acfphysparent and ACE.CurTime < obj.acfphysstale then
 		return obj.acfphysparent
 	end
 
 	local Parent = obj
 	local Seen = {}
 	local Depth = 0
+	local Cycle = false
+	obj.ACEPhysicalParentIssue = nil
 
 	while IsValid(Parent) and Depth < 64 and not Seen[Parent] do
 		Seen[Parent] = true
 		local NextParent = Parent:GetParent()
-		if not IsValid(NextParent) or Seen[NextParent] then break end
+		if not IsValid(NextParent) then break end
+		if Seen[NextParent] then Cycle = true break end
 		Parent = NextParent
 		Depth = Depth + 1
+	end
+
+	if Depth >= 64 then
+		obj.ACEPhysicalParentIssue = "Physical parent chain too deep"
+	elseif Cycle then
+		obj.ACEPhysicalParentIssue = "Physical parent cycle"
 	end
 
 	--update cached parent

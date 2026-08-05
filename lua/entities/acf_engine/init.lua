@@ -38,12 +38,12 @@ do
 		self.Heat           = ACE.AmbientTemp
 		self.TotalFuel      = 0
 		self.Efficiency     = 1-(ACE.Efficiency[self.EngineType] or ACE.Efficiency["GenericPetrol"]) -- Energy not transformed into kinetic energy and instead into thermal
-		self.Legal          = true
+		self.Legal          = false
 		self.CanUpdate      = true
 		self.RequiresDriver = false
-		self.NextLegalCheck = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-		self.Legal          = true
-		self.LegalIssues    = ""
+		self.NextLegalCheck = ACE.CurTime
+		self.Legal          = false
+		self.LegalIssues    = "Awaiting legality validation"
 		self.LockOnActive   = false --used to turn on the engine in case of being lockdown by not legal
 		self.CrewLink       = {}
 		self.HasDriver      = false
@@ -155,7 +155,9 @@ do
 
 		local phys = Engine:GetPhysicsObject()
 		if IsValid( phys ) then
-			phys:SetMass( Engine.Weight )
+			ACE.WithMutationScope(Engine, "engine-mass-update", function()
+				phys:SetMass( Engine.Weight )
+			end)
 			Engine.ModelInertia = 0.99 * phys:GetInertia() / phys:GetMass() -- giving a little wiggle room
 		end
 
@@ -233,12 +235,16 @@ function ENT:Update( ArgsTable )
 	end
 
 	self:SetModel( self.Model )
-	self:SetSolid( SOLID_VPHYSICS )
+	ACE.WithMutationScope(self, "engine-physics-update", function()
+		self:SetSolid( SOLID_VPHYSICS )
+	end)
 	self.Out = self:WorldToLocal(self:GetAttachment(self:LookupAttachment( "driveshaft" )).Pos)
 
 	local phys = self:GetPhysicsObject()
 	if IsValid( phys ) then
-		phys:SetMass( self.Weight )
+		ACE.WithMutationScope(self, "engine-mass-update", function()
+			phys:SetMass( self.Weight )
+		end)
 	end
 
 	self:SetNWString( "WireName", Lookup.name )
@@ -369,7 +375,7 @@ function ENT:TriggerInput( iname, value )
 			local HasDriver
 
 			for _,fueltank in pairs(self.FuelLink) do
-				if fueltank.Fuel > 0 and fueltank.Active and fueltank.Legal then HasFuel = true break end
+				if fueltank.Fuel > 0 and fueltank.Active and ACE.RequireEntityLegal(fueltank) then HasFuel = true break end
 			end
 
 			self.HasFuel = HasFuel == true
@@ -494,7 +500,7 @@ end
 
 function ENT:IllegalCrewSeatRemove(crewEntities)
 	for _, crewEnt in ipairs(crewEntities) do
-		if not crewEnt.Legal then
+		if not ACE.RequireEntityLegal(crewEnt) then
 			self:Unlink(crewEnt)
 		end
 	end
@@ -646,7 +652,7 @@ end
 
 -- Checks if the fuel tank is valid, has fuel, is active and was not marked as illegal.
 local function IsValidfueltank( Tank )
-	return IsValid(Tank) and Tank.Fuel > 0 and Tank.Active and Tank.Legal
+	return IsValid(Tank) and Tank.Fuel > 0 and Tank.Active and ACE.RequireEntityLegal(Tank)
 end
 
 -- Literally, the engine main core. Here the RPMs, Torque and important stuff is calculated here.
@@ -725,7 +731,7 @@ function ENT:CalcRPM()
 	local TotalReqTq = 0
 	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
 	for _, Link in pairs( self.GearLink ) do
-		if not Link.Ent.Legal then continue end
+		if not ACE.RequireEntityLegal(Link.Ent) then continue end
 
 		Link.ReqTq = Link.Ent:Calc( self.FlyRPM, self.Inertia )
 		TotalReqTq = TotalReqTq + Link.ReqTq
@@ -739,7 +745,7 @@ function ENT:CalcRPM()
 
 	-- Split the torque fairly between the gearboxes who need it
 	for _, Link in pairs( self.GearLink ) do
-		if not Link.Ent.Legal then continue end
+		if not ACE.RequireEntityLegal(Link.Ent) then continue end
 
 		Link.Ent:Act( Link.ReqTq * AvailRatio * self.MassRatio, DeltaTime, self.MassRatio )
 	end
@@ -986,7 +992,7 @@ do
 
 	function ENT:LinkCrew( Target )
 
-		if not Target.Legal then
+		if not ACE.RequireEntityLegal(Target) then
 			return false, "The driver seat is illegal!"
 		end
 

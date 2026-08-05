@@ -336,9 +336,9 @@ function ACE_InitializeCrewseat(ent, modelType)
 	ent.Sound = ent.Sound or ("npc/combine_soldier/die" .. tostring(math.random(1, 3)) .. ".wav")
 	ent.SoundPitch = ent.SoundPitch or 100
 
-	ent.NextLegalCheck = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max)
-	ent.Legal = true
-	ent.LegalIssues = ""
+	ent.NextLegalCheck = ACE.CurTime
+	ent.Legal = false
+	ent.LegalIssues = "Awaiting legality validation"
 
 	ent.SpecialHealth = false
 	ent.SpecialDamage = true

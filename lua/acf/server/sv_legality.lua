@@ -12,6 +12,7 @@ ACE = ACE or {}
 ACE.Legal = {}
 ACE.Legal.Ignore = {}
 ACE.Legal.MutationDepth = ACE.Legal.MutationDepth or setmetatable({}, { __mode = "k" })
+ACE.Legal.Contracts = ACE.Legal.Contracts or {}
 
 ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
@@ -64,6 +65,49 @@ ACE.Legal.Min		= 5	-- min seconds between checks --5
 ACE.Legal.Max		= 25	-- max seconds between checks --25
 ACE.Legal.Lockout	= 35	-- lockout time on not legal  --35
 ACE.Legal.NextCheck  = function(_, Legal) return ACE.CurTime + (Legal and math.random(ACE.Legal.Min, ACE.Legal.Max) or ACE.Legal.Lockout) end
+
+local function Contract(model, mass, inertia, parent)
+	return function(ent)
+		local modelValue = model and ent[model] or nil
+		local massValue = mass and ent[mass] or nil
+		return modelValue, massValue and math.Round(massValue, 2), inertia and ent[inertia] or nil, parent, true
+	end
+end
+
+ACE.Legal.Contracts["acf_gun"] = Contract("Model", "Mass", "ModelInertia", false)
+ACE.Legal.Contracts["acf_rack"] = Contract(nil, "Mass", "ModelInertia", false)
+ACE.Legal.Contracts["acf_ammo"] = function(ent)
+		return ent.Model, math.min(math.Round(ent.EmptyMass or 0, 2), 50000), nil, true, true
+	end
+ACE.Legal.Contracts["acf_engine"] = Contract("Model", "Weight", "ModelInertia", true)
+ACE.Legal.Contracts["acf_fueltank"] = Contract("Model", "EmptyMass", nil, true)
+ACE.Legal.Contracts["acf_gearbox"] = Contract("Model", "Mass", "ModelInertia", true)
+ACE.Legal.Contracts["acf_missileradar"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_ecm"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_irst"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_rwr_dir"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_rwr_sphere"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_searchradar"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_trackingradar"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_sonar"] = Contract(nil, "Weight", nil, true)
+ACE.Legal.Contracts["ace_crewseat_driver"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_crewseat_gunner"] = Contract("Model", "Weight", nil, true)
+ACE.Legal.Contracts["ace_crewseat_loader"] = Contract("Model", "Weight", nil, true)
+
+-- Every ACE/ACF entity has a declared fallback contract. Specialized entities above
+-- override this with their exact configured mass/inertia/parent requirements.
+local GenericContract = function(entity)
+	local mass = entity.Mass or entity.Weight or entity.EmptyMass
+	return entity:GetModel(), mass and math.Round(mass, 2) or nil, nil, true, false
+end
+for _, class in ipairs({
+	"ace_bomb_aerial", "ace_bomb_barrel", "ace_bomb_satchel", "ace_explosive", "ace_explosive_prebuilt",
+	"ace_flare", "ace_gforce_meter", "ace_grenade", "ace_mine", "ace_missile", "ace_scalability",
+	"ace_slammine", "ace_smokegrenade", "ace_vheat_source", "ace_wind_sensor", "acf_explosive",
+	"acf_fakecrate2", "acf_missile_to_rack", "acf_opticalcomputer"
+}) do
+	ACE.Legal.Contracts[class] = ACE.Legal.Contracts[class] or GenericContract
+end
 
 
 --[[
@@ -168,7 +212,9 @@ function ACE_CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
 	-- A parent is optional for a root build, but a present physical parent must be legal.
 	if ACE.Legal.Ignore.Parent <= 0 and _ then
 		local parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(Ent)
-		if IsValid(parent) and parent ~= Ent and parent.Legal == false then
+		if Ent.ACEPhysicalParentIssue then
+			table.insert(problems, Ent.ACEPhysicalParentIssue)
+		elseif IsValid(parent) and parent ~= Ent and parent.Legal == false then
 			table.insert(problems, "Illegal physical parent")
 		end
 	end
@@ -227,6 +273,34 @@ end
 
 do
 	local ENTITY = FindMetaTable("Entity")
+	local function InstallMutationDetour(name, reason)
+		local oldName = "_OldEntity" .. name
+		ACE[oldName] = ACE[oldName] or ENTITY[name]
+		local old = ACE[oldName]
+		if not old then return end
+
+		ENTITY[name] = function(self, ...)
+			if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) then
+				ACE.InvalidateLegal(self, reason .. " rejected")
+				return false
+			end
+			local result = old(self, ...)
+			return result
+		end
+	end
+
+	InstallMutationDetour("PhysicsInit", "Physics rebuilt")
+	InstallMutationDetour("PhysicsInitSphere", "Spherical physics changed")
+	InstallMutationDetour("PhysicsInitMultiConvex", "Convex physics changed")
+	InstallMutationDetour("SetCollisionBounds", "Collision bounds changed")
+	InstallMutationDetour("SetNotSolid", "Solidity changed")
+	InstallMutationDetour("SetSolid", "Solidity changed")
+	InstallMutationDetour("SetNoDraw", "Visibility changed")
+	InstallMutationDetour("SetParent", "Physical parent changed")
+end
+
+do
+	local ENTITY = FindMetaTable("Entity")
 	ACE._OldEntitySetCollisionGroup = ACE._OldEntitySetCollisionGroup or ENTITY.SetCollisionGroup
 	local OldSetCollisionGroup = ACE._OldEntitySetCollisionGroup
 	local AllowedGroups = {
@@ -240,9 +314,6 @@ do
 			return false
 		end
 		local result = OldSetCollisionGroup(self, group)
-		if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) then
-			ACE.InvalidateLegal(self, "Collision group changed")
-		end
 		return result
 	end
 end
@@ -256,8 +327,9 @@ function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVi
 
 	local legal, issues = ACE_CheckLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
 	if istable(legal) then
+		local result = legal
 		legal = false
-		issues = table.concat(legal.Problems or { "Invalid legality result" }, ", ")
+		issues = table.concat(result.Problems or { "Invalid legality result" }, ", ")
 	end
 
 	legal = legal == true
@@ -265,6 +337,17 @@ function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVi
 		ent.Legal = legal
 		ent.LegalIssues = issues or ""
 		ent.NextLegalCheck = ACE.Legal.NextCheck(legal)
+		if legal then
+			local phys = ent:GetPhysicsObject()
+			ent.ACE_LegalFingerprint = {
+				model = ent:GetModel(), material = ent.ACF and ent.ACF.Material,
+				mass = IsValid(phys) and phys:GetMass() or nil, solid = ent:IsSolid(),
+				collision = ent:GetCollisionGroup(), clips = ent.ClipData and #ent.ClipData or 0,
+				parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil
+			}
+		else
+			ent.ACE_LegalFingerprint = nil
+		end
 		if not legal and ent.Active and ent.SetActive then ent:SetActive(false) end
 	end
 
@@ -278,17 +361,29 @@ function ACE.RequireEntityLegal(ent)
 
 	local args = ent.ACE_LegalArgs
 	if args then
+		if ent.Legal == true and ACE.CurTime < (ent.NextLegalCheck or 0) then
+			local fingerprint = ent.ACE_LegalFingerprint
+			local phys = ent:GetPhysicsObject()
+			local unchanged = fingerprint and fingerprint.model == ent:GetModel()
+				and fingerprint.material == (ent.ACF and ent.ACF.Material)
+				and fingerprint.mass == (IsValid(phys) and phys:GetMass() or nil)
+				and fingerprint.solid == ent:IsSolid()
+				and fingerprint.collision == ent:GetCollisionGroup()
+				and fingerprint.clips == (ent.ClipData and #ent.ClipData or 0)
+				and fingerprint.parent == (ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil)
+			if unchanged then return true, ent.LegalIssues or "" end
+			ACE.InvalidateLegal(ent, "Legality state changed")
+		end
+		if ent.Legal == false and ACE.CurTime < (ent.NextLegalCheck or 0) then return false, ent.LegalIssues or "Legality lockout" end
 		return ACE.RequireLegal(ent, unpack(args))
 	end
 
 	local class = ent:GetClass()
-	local model = ent.Model
-	local mass = ent.Weight or ent.EmptyMass or ent.Mass
-	local inertia = ent.ModelInertia
-	if class == "acf_ammo" and mass then mass = math.min(math.Round(mass, 2), 50000) end
-	local requiresParent = class ~= "acf_gun" and class ~= "acf_rack"
-
-	local legal, issues = ACE.RequireLegal(ent, model, mass and math.Round(mass, 2) or nil, inertia, requiresParent, true)
+	local contract = ACE.Legal.Contracts[class]
+	if not contract then
+		contract = GenericContract
+	end
+	local legal, issues = ACE.RequireLegal(ent, contract(ent))
 	if not legal and ent.SetActive and ent.Active then ent:SetActive(false) end
 	return legal, issues
 end

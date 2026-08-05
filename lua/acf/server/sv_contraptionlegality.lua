@@ -775,6 +775,10 @@ do
 			ACE_EnsureCFWMassState(ent, currentMass)
 		end
 
+		if IsEnt(ent) and ent.ACE_LegalArgs and not ACE.IsMutationScoped(ent) and math.abs(mass - currentMass) >= 0.01 then
+			return false
+		end
+
 		local result = OldSetMass(self, mass)
 
 		if not IsEnt(ent) then
@@ -788,6 +792,7 @@ do
 		if math.abs(mass - currentMass) < 0.01 then
 			return result
 		end
+
 
 		if ent:GetClass() ~= "prop_physics" and not ent.IsPrimitive then return result end
 

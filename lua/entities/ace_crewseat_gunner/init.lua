@@ -86,10 +86,10 @@ end
 function ENT:Think()
 	ACE_UpdateCrewseatAnglePenalty(self)
 	ACE_UpdateGForcePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	local legal = ACE.RequireEntityLegal(self)
 
 	local gun = self.LinkedGun
-	if not self.Legal and IsValid(gun) then
+	if not legal and IsValid(gun) then
 		gun:Unlink(self)
 	end
 
@@ -170,8 +170,10 @@ function ENT:ConsumeCrewseats()
 	self.Legal = false
 	self.LegalIssues = "Apparently He Died"
 
-	self:SetNoDraw(true)
-	self:SetNotSolid(true)
+	ACE.WithMutationScope(self, "crewseat-death", function()
+		self:SetNoDraw(true)
+		self:SetNotSolid(true)
+	end)
 
 	for _, Link in pairs(self.Master) do
 		if IsValid(Link) then
@@ -204,8 +206,10 @@ function ENT:ResetLinks()
 	self.ACF.Health = self.ACF.MaxHealth or 1
 	self.ACF.Armour = self.ACF.MaxArmour or 1
 	self.NextLegalCheck = 0
-	self:SetNoDraw(false)
-	self:SetNotSolid(false)
+	ACE.WithMutationScope(self, "crewseat-replacement", function()
+		self:SetNoDraw(false)
+		self:SetNotSolid(false)
+	end)
 
 	for _, Link in pairs(self.Master) do
 		if IsValid(Link) then

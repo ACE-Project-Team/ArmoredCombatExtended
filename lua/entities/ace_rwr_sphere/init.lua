@@ -34,9 +34,9 @@ function ENT:Initialize()
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected"} )
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected", "Radar ID [ARRAY]", "Radar Power [ARRAY]"} )
 
-	self.NextLegalCheck	= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.Legal = true
-	self.LegalIssues = ""
+	self.NextLegalCheck	= ACE.CurTime
+	self.Legal = false
+	self.LegalIssues = "Awaiting legality validation"
 
 	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
 	self:SetActive(ACE_GetDefaultActiveInputState(self))

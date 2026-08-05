@@ -44,11 +44,11 @@ do
 		self.InGear			= false
 		self.CanUpdate		= true
 		self.LastActive		= 0
-		self.Legal			= true
+		self.Legal			= false
 		self.Parentable		= false
 		self.RootParent		= nil
-		self.NextLegalCheck = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-		self.LegalIssues	= ""
+		self.NextLegalCheck = ACE.CurTime
+		self.LegalIssues	= "Awaiting legality validation"
 
 		--self.Heat		= ACE.AmbientTemp
 
@@ -179,7 +179,9 @@ do
 
 		local phys = Gearbox:GetPhysicsObject()
 		if IsValid( phys ) then
-			phys:SetMass( Gearbox.Mass )
+				ACE.WithMutationScope(Gearbox, "gearbox-mass-update", function()
+					phys:SetMass( Gearbox.Mass )
+				end)
 			Gearbox.ModelInertia = 0.99 * phys:GetInertia() / phys:GetMass() -- giving a little wiggle room
 		end
 
@@ -265,7 +267,9 @@ function ENT:Update( ArgsTable )
 
 		local phys = self:GetPhysicsObject()
 		if IsValid( phys ) then
+		ACE.WithMutationScope(self, "gearbox-mass-update", function()
 			phys:SetMass( self.Mass )
+		end)
 		end
 
 		self.Inputs = Wire_CreateInputs( self, Inputs )
@@ -547,7 +551,7 @@ function ENT:Calc( InputRPM, InputInertia )
 
 		Link.ReqTq = 0
 		if Link.Ent.IsGeartrain then
-			if not Link.Ent.Legal then continue end
+			if not ACE.RequireEntityLegal(Link.Ent) then continue end
 			local Inertia = 0
 			if self.GearRatio ~= 0 then Inertia = InputInertia / self.GearRatio end
 			Link.ReqTq = math.min( Clutch, math.abs( Link.Ent:Calc( InputRPM * self.GearRatio, Inertia ) * self.GearRatio ) )

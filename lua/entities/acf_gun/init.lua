@@ -14,7 +14,7 @@ local AmmoLinkDistBase = 512
 local function AttemptFirstLoad(Gun, Crate)
 	if not IsValid(Gun) or not IsValid(Crate) then return end
 	if Gun.BulletData.Type ~= "Empty" then return end
-	if not Crate.Load or not Gun.FirstLoad or not Gun.Legal then return end
+	if not Crate.Load or not Gun.FirstLoad or not ACE.RequireEntityLegal(Gun) or not ACE.RequireEntityLegal(Crate) then return end
 
 	-- Reload=true sends the scale-0 muzzleflash effect (no sound/flash), which runs the client
 	-- Animate(LoadOnly) that initializes the gun's animation state. Without it the client stays in
@@ -87,9 +87,9 @@ function ENT:Initialize()
 	self.NextFire            = 0
 	self.LastSend            = 0
 	self.LastLoadDuration    = 0
-	self.NextLegalCheck      = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.Legal               = true
-	self.LegalIssues         = ""
+	self.NextLegalCheck      = ACE.CurTime
+	self.Legal               = false
+	self.LegalIssues         = "Awaiting legality validation"
 	self.FuseTime            = 0
 	self.OverrideFuse        = false		-- Override disabled by default
 	self.ROFLimit            = 0			-- Used for selecting firerate
@@ -425,7 +425,7 @@ function ENT:Link( Target )
 		return false, "Target not a valid entity!"
 	end
 
-	if not Target.Legal then
+	if not ACE.RequireEntityLegal(Target) then
 		return false, "This entity is illegal!"
 	end
 
@@ -610,7 +610,7 @@ function ENT:TriggerInput(iname, value)
 	if iname == "Unload" and value > 0 and not self.Reloading then
 		-- Triggered to unload ammo
 		self:UnloadAmmo()
-	elseif iname == "Fire" and value > 0 and ACE.GunfireEnabled and self.Legal then
+	elseif iname == "Fire" and value > 0 and ACE.GunfireEnabled and ACE.RequireEntityLegal(self) then
 		-- Triggered to fire if conditions are met
 		if self.NextFire < CurTime() then
 			-- Check if it's time to fire
@@ -747,7 +747,7 @@ function ENT:Think()
 		local seat = IsValid(self.User) and self.User:GetVehicle() or nil
 
 		if IsValid(seat) then
-			local legal, issues = ACE.RequireLegal(seat, nil, nil, nil, nil, false)
+			local legal, issues = ACE.RequireEntityLegal(seat)
 			if not legal then
 				self.Legal = false
 				self.LegalIssues = self.LegalIssues .. "\nSeat not legal: " .. issues
@@ -775,7 +775,7 @@ function ENT:Think()
 
 		--UnlinkDistance
 		for _, Crate in pairs(self.AmmoLink) do
-			if IsValid( Crate ) and Crate.Load and Crate.Legal then
+			if IsValid( Crate ) and Crate.Load and ACE.RequireEntityLegal(Crate) then
 
 			if IsInRetDist( self, Crate, AmmoLinkDistBase * self.LinkRangeMul ) then
 					Ammo = Ammo + (Crate.Ammo or 0)
@@ -914,7 +914,7 @@ do
 		local highestStamina = 0
 
 		for _, crewEnt in ipairs(self.CrewLink) do
-			if crewEnt:GetClass() == "ace_crewseat_loader" and crewEnt.Legal then
+			if crewEnt:GetClass() == "ace_crewseat_loader" and ACE.RequireEntityLegal(crewEnt) then
 				local stamina = crewEnt.Stamina
 				if stamina >= highestStamina then
 					highestStamina = stamina
@@ -964,7 +964,7 @@ do
 		-- which calls LoadAmmo to pull a round from any active crate.
 		local isEmpty = self.BulletData.Type == "Empty"
 
-		if ( bool and self.IsUnderWeight and (self.Ready or isEmpty) and self.Legal ) then
+		if ( bool and self.IsUnderWeight and (self.Ready or isEmpty) and ACE.RequireEntityLegal(self) ) then
 
 			local Blacklist = {}
 			if not ACE.AmmoBlacklist[self.BulletData.Type] then
@@ -1046,7 +1046,7 @@ function ENT:FindNextCrate()
 		if self.CurAmmo > MaxAmmo then self.CurAmmo = 1 end
 
 		AmmoEnt = self.AmmoLink[self.CurAmmo]
-		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0 and AmmoEnt.Load and AmmoEnt.Legal then
+		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0 and AmmoEnt.Load and ACE.RequireEntityLegal(AmmoEnt) then
 			return AmmoEnt
 		end
 		AmmoEnt = nil
@@ -1064,7 +1064,7 @@ function ENT:LoadAmmo( AddTime, Reload )
 	local AmmoEnt = self:FindNextCrate()
 	local curTime = CurTime()
 
-	if AmmoEnt and AmmoEnt.Legal then
+	if AmmoEnt and ACE.RequireEntityLegal(AmmoEnt) then
 		AmmoEnt.Ammo = AmmoEnt.Ammo - 1
 		self.BulletData = AmmoEnt.BulletData
 		self.BulletData.Crate = AmmoEnt:EntIndex()

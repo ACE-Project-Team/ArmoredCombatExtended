@@ -625,6 +625,7 @@ end
 
 function ENT:Detonate()
 	if self.Exploded then return end
+	if not ACE.RequireEntityLegal(self) then return end
 
 	self.Exploded = true
 	ACE.ActiveMissiles[self] = nil
@@ -649,8 +650,10 @@ function ENT:Detonate()
 	self.Bulletdata2["Crate"] = fakecrate:EntIndex()
 	fakecrate:RegisterTo(self.Bulletdata2)
 
-	self:SetNoDraw( true ) --Since we aren't immediately deleting the entity, hide it.
-	self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
+	ACE.WithMutationScope(self, "missile-detonation-hide", function()
+		self:SetNoDraw( true ) --Since we aren't immediately deleting the entity, hide it.
+		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
+	end)
 	self:StopParticles()
 
 	timer.Simple(0.5, function() --Keep missile alive and give it time to show effects

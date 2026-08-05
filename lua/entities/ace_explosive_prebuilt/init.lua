@@ -87,6 +87,7 @@ end
 
 function ENT:Detonate()
 	if self.Detonated then return end
+	if not ACE.RequireEntityLegal(self) then return end
 	self.Detonated = true
 
 	local origin = self:WorldSpaceCenter()

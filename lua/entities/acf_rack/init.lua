@@ -54,8 +54,8 @@ function ENT:Initialize()
 
 	--self.NextLegalCheck  = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.NextLegalCheck  = ACE.CurTime + 3 -- give any spawning issues time to iron themselves out
-	self.Legal			= true
-	self.LegalIssues	= ""
+	self.Legal			= false
+	self.LegalIssues	= "Awaiting legality validation"
 	self.SpecialHealth	= false	--If true needs a special ACE_Activate function
 	self.SpecialDamage	= true	--If true needs a special ACE_OnDamage function --NOTE: you can't "fix" missiles with setting this to false, it acts like a prop!!!!
 
@@ -171,10 +171,13 @@ function ACE_MakeRack(Owner, Pos, Angle, Id)
 	Rack.name		= gundef.name
 	Rack.Class		= gundef.gunclass
 
-	Rack:SetModel( Rack.Model )
-	Rack:PhysicsInit( SOLID_VPHYSICS )
+	Rack.ACE_LegalArgs = { Rack.Model, nil, nil, nil, true }
+	ACE.WithMutationScope(Rack, "rack-construction", function()
+		Rack:SetModel( Rack.Model )
+		Rack:PhysicsInit( SOLID_VPHYSICS )
+		Rack:SetSolid( SOLID_VPHYSICS )
+	end)
 	Rack:SetMoveType( MOVETYPE_VPHYSICS )
-	Rack:SetSolid( SOLID_VPHYSICS )
 
 	-- Custom BS for karbine. Per Rack ROF.
 --	Rack.PGRoFmod = 1
@@ -408,7 +411,7 @@ function ENT:Think()
 		Wire_TriggerOutput(self, "TargetDirection", Vector())
 	end
 
-	if self.Firing and self.Ready and self.Legal then
+	if self.Firing and self.Ready and ACE.RequireEntityLegal(self) then
 		if self.BurstMode > 0 and self.CurMissile <= 0 then
 			self.Firing = false
 			self.BurstRemaining = 0

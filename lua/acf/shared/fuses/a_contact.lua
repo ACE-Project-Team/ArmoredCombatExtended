@@ -84,11 +84,15 @@ function this:PerformDetonation( missile, bdata, phys, pos )
 
 	ACE.Missile_BulletLaunch(bdata)
 
-	missile:SetSolid(SOLID_NONE)
+	ACE.WithMutationScope(missile, "missile-contact-fuse", function()
+		missile:SetSolid(SOLID_NONE)
+	end)
 	phys:EnableMotion(false)
 
 	missile:DoReplicatedPropHit(bdata)
-	missile:SetNoDraw(true)
+	ACE.WithMutationScope(missile, "missile-contact-fuse", function()
+		missile:SetNoDraw(true)
+	end)
 end
 
 function this:GetDisplayConfig()

@@ -1189,13 +1189,14 @@ local function resolveWeaponPricingInputs(ent)
 	local rate = candidate and candidate.Rate or 0
 	local threat = round and ACE.Points.Gate(ACE.Points.GatePen(round)) or 0
 	local baseRoundCost = round and ACE.Points.BaseRoundCost(round) or 0
+	local gunnerMultiplier = class == "acf_gun" and (ent.HasGunner and 1 or 2) or 1
 	local roundScore = threat * baseRoundCost
 	local points = class == "acf_gun"
-		and ACE.Points.GunCost(rate, baseRoundCost, threat)
+		and ACE.Points.GunCost(rate, baseRoundCost, threat, gunnerMultiplier)
 		or ACE.Points.RackCostFromRate(rate, roundScore)
 	local model = ACE.PointsModel or {}
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
-	local rawPoints = rate * roundScore * firepowerScale
+	local rawPoints = rate * roundScore * firepowerScale * gunnerMultiplier
 	local rateFloor = ACE.Points.RateFloor and ACE.Points.RateFloor() or 0
 	-- Compare against the FLOORED rate's raw product, not the true rate's -- otherwise every
 	-- floor-affected weapon falsely reads as having hit the flat weapon minimum instead.
@@ -1208,6 +1209,7 @@ local function resolveWeaponPricingInputs(ent)
 		Rate = rate,
 		Threat = threat,
 		BaseRoundCost = baseRoundCost,
+		GunnerMultiplier = gunnerMultiplier,
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
 		MinimumApplied = minimumApplied,
@@ -1243,7 +1245,7 @@ function ACE_GetGunFirepowerPricingLine(readout, menuFormat)
 			readout.Rate,
 			readout.Threat * 100,
 			string.Comma(math.Round(readout.BaseRoundCost)),
-			readout.FirepowerScale,
+			readout.FirepowerScale * (readout.GunnerMultiplier or 1),
 			string.Comma(math.Round(readout.RawPoints)))
 	end
 
@@ -1251,7 +1253,12 @@ function ACE_GetGunFirepowerPricingLine(readout, menuFormat)
 		readout.Rate * 60,
 		readout.Threat * 100,
 		readout.BaseRoundCost,
-		readout.FirepowerScale)
+		readout.FirepowerScale * (readout.GunnerMultiplier or 1))
+end
+
+function ACE_GetGunnerMultiplierLine(readout)
+	if not istable(readout) or (readout.GunnerMultiplier or 1) <= 1 then return end
+	return "No Gunner: " .. tostring(readout.GunnerMultiplier) .. "x Firepower Cost"
 end
 
 -- Tells a player when their weapon priced off the delivery-rate floor instead of its true,

@@ -176,6 +176,9 @@ function ENT:ConsumeCrewseats()
 	for _, Link in pairs(self.Master) do
 		if IsValid(Link) then
 			Link.HasGunner = false
+			if ACE_PointsInputChanged then
+				ACE_PointsInputChanged({ Link, self }, "gunner-status-changed")
+			end
 		end
 	end
 
@@ -208,6 +211,9 @@ function ENT:ResetLinks()
 		if IsValid(Link) then
 			table.insert(Link.CrewLink, self)
 			Link.HasGunner = true
+			if ACE_PointsInputChanged then
+				ACE_PointsInputChanged({ Link, self }, "gunner-status-changed")
+			end
 		end
 	end
 end

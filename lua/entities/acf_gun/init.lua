@@ -241,15 +241,10 @@ do
 		Gun.Heat            = ACE.AmbientTemp
 		Gun.LinkRangeMul    = math.max(Gun.Caliber / 10,1) ^ 1.2
 		Gun.RequiresGunner	= false
-		local GunnerExcluded	= Lookup.gunnerexception or false
 
 		Gun.noloaders	= ClassData.noloader or nil
 
 		Gun.Inaccuracy = ClassData.spread
-
-		if not GunnerExcluded and (Gun.Caliber * 10) > ACE.LargeGunsThreshold and ACE.LargeGunsRequireGunners ~= 0 then --If the caliber is large enough it requires a gunner.
-			Gun.RequiresGunner = true
-		end
 
 		if ClassData.color then
 			Gun:SetColor(Color(ClassData.color[1],ClassData.color[2],ClassData.color[3], 255))
@@ -381,6 +376,8 @@ function ENT:UpdateOverlayText()
 			if readout.MinimumApplied then
 				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
+			local gunnerLine = ACE_GetGunnerMultiplierLine and ACE_GetGunnerMultiplierLine(readout)
+			if gunnerLine then text = text .. "\n" .. gunnerLine end
 			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then text = text .. "\n" .. floorLine end
 		end
@@ -478,10 +475,6 @@ function ENT:Link( Target )
 		--Don't link if it's too far from this gun
 		if not IsInRetDist( self, Target, CrewLinkDistBase * self.LinkRangeMul ) then
 			return false, "That crewseat is too far to be linked to this gun!"
-		end
-
-		if not self.HasGunner then --IK there is going to be an exploit to delete the gunner after placing a loader but idk how to fix *shrugs* --NO LONGER
-			return false, "You need a gunner before you can have a loader!"
 		end
 
 		if self.noloaders then
@@ -953,17 +946,6 @@ do
 
 		if self.IsUnderWeight == nil then
 			self.IsUnderWeight = true
-		end
-
-		if self.RequiresGunner and not self.HasGunner then
-			local HasWarned = self.OTWarnings.WarnedGunner or false
-			--self.OTWarnings
-			if not HasWarned then
-				--print("No")
-				ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your gun is above [" .. ACE.LargeGunsThreshold .. " mm] and requires a gunner to operate.", Color( 255, 0, 0 ))
-				self.OTWarnings.WarnedGunner = true
-			end
-			return
 		end
 
 		ACE_DoContraptionLegalCheck(self)

@@ -49,4 +49,14 @@ local _, _, unknownMassEfficiency = ACE.Points.PropArmor(unknown)
 assert(math.abs(unknownMassEfficiency - 1) < 1e-12,
 	"unknown materials must use neutral mass efficiency")
 
+local gunWithGunner = ACE.Points.GunCost(1, 10, 0.5, 1)
+local gunWithoutGunner = ACE.Points.GunCost(1, 10, 0.5, 2)
+assert(math.abs(gunWithoutGunner / gunWithGunner - 2) < 1e-12,
+	"ungunned guns must cost exactly twice as much firepower")
+
+local minimumWithGunner = ACE.Points.GunCost(0, 0, 0, 1)
+local minimumWithoutGunner = ACE.Points.GunCost(0, 0, 0, 2)
+assert(math.abs(minimumWithoutGunner / minimumWithGunner - 2) < 1e-12,
+	"the ungunned multiplier must apply to the flat firepower minimum")
+
 print("ACE points model LuaJIT self-test: PASS")

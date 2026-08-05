@@ -223,12 +223,13 @@ end
 
 -- Gun firepower cost (scaled). This is called once per gun entity; identical guns therefore
 -- add linearly instead of sharing or deduplicating the round cost.
-function ACE.Points.GunCost(sustainedRps, baseRoundCost, threat)
+function ACE.Points.GunCost(sustainedRps, baseRoundCost, threat, gunnerMultiplier)
 	local pricedRps = max(tonumber(sustainedRps) or 0, 1.0 / RACK_WINDOW)
 	return max(Model.kGun
 		* pricedRps
 		* (tonumber(baseRoundCost) or 0)
 		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
+		* (tonumber(gunnerMultiplier) or 1)
 end
 
 function ACE.Points.RackRate(reloadTime, maxMissile)

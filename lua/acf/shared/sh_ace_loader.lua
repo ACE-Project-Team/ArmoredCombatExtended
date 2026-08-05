@@ -1,6 +1,7 @@
 
 -- Loads all files from shared folder
 AddCSLuaFile()
+include("acf/shared/sh_ace_armor_behaviors.lua")
 
 ACE = ACE or {}
 
@@ -423,6 +424,10 @@ do
 		end
 
 	end
+
+	-- Attach descriptive behavior modules after all material definitions load.
+	-- This is metadata only; legacy coefficients and ArmorResolution functions remain untouched.
+	if ACE.ApplyArmorBehaviorModules then ACE.ApplyArmorBehaviorModules(ACE.ArmorTypes) end
 
 end
 

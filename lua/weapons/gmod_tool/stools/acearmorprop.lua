@@ -568,6 +568,7 @@ if CLIENT then
 		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
+		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. table.concat(MaterialData.BehaviorLabels or {}, ", ") )
 
 		-- Update material selection from UI.
 		function ToolPanel.ComboMat:OnSelect(_, value, data)
@@ -677,6 +678,7 @@ if CLIENT then
 				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
 				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
 				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
+				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. table.concat(MatData.BehaviorLabels or {}, ", ") )
 
 			end
 	end, "acearmorprop_material")

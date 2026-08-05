@@ -19,9 +19,15 @@ function ACE_GetPhysicalParent( obj )
 	end
 
 	local Parent = obj
+	local Seen = {}
+	local Depth = 0
 
-	while IsValid(Parent:GetParent()) do
-		Parent = Parent:GetParent()
+	while IsValid(Parent) and Depth < 64 and not Seen[Parent] do
+		Seen[Parent] = true
+		local NextParent = Parent:GetParent()
+		if not IsValid(NextParent) or Seen[NextParent] then break end
+		Parent = NextParent
+		Depth = Depth + 1
 	end
 
 	--update cached parent

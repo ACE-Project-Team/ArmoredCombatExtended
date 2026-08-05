@@ -84,12 +84,12 @@ do
 	if ACE.Legal.IsActivated == 0 then return #problems == 0, table.concat(problems, ", ") end
 
 	-- check it exists
-	if not ACE.Check( Ent ) then return { Legal = false, Problems = {"Invalid Ent"} } end
+	if not ACE.Check( Ent ) then return false, "Invalid Ent" end
 
 	local physobj = Ent:GetPhysicsObject()
 
 	-- check if physics is valid
-	if not IsValid(physobj) then return { Legal = false, Problems = {"Invalid Physics"} } end
+	if not IsValid(physobj) then return false, "Invalid Physics" end
 
 
 	-- make sure traces can hit it (fade door, propnotsolid)
@@ -106,7 +106,12 @@ do
 	if ACE.Legal.Ignore.Mass <= 0 then
 
 		--Lets assume that input minmass is also rounded like here.
-		local CMass = math.Round(physobj:GetMass(),2)
+		local rawMass = tonumber(physobj:GetMass()) or 0
+		if rawMass <= 0 or rawMass ~= rawMass or rawMass == math.huge or rawMass == -math.huge then
+			table.insert(problems, "Invalid mass")
+			rawMass = 1
+		end
+		local CMass = math.Round(rawMass, 2)
 
 		if MinMass ~= nil and CMass < MinMass then
 			table.insert(problems,"Under min mass")
@@ -127,8 +132,11 @@ do
 
 	-- check inertia components
 	if ACE.Legal.Ignore.Inertia <= 0 and MinInertia ~= nil then
-		local inertia = physobj:GetInertia() / physobj:GetMass()
-		if (inertia.x < MinInertia.x) or (inertia.y < MinInertia.y) or (inertia.z < MinInertia.z) then
+		local mass = tonumber(physobj:GetMass()) or 0
+		local rawInertia = physobj:GetInertia()
+		local inertia = mass > 0 and rawInertia / mass or Vector(math.huge, math.huge, math.huge)
+		if inertia.x ~= inertia.x or inertia.y ~= inertia.y or inertia.z ~= inertia.z
+			or (inertia.x < MinInertia.x) or (inertia.y < MinInertia.y) or (inertia.z < MinInertia.z) then
 			table.insert(problems,"Under min inertia")
 		end
 	end
@@ -152,4 +160,23 @@ do
 	return #problems == 0, table.concat(problems, ", ")
 
 	end
+end
+
+-- Authoritative use-site gate. Periodic checks keep overlays current, but weapon activation
+-- must re-check the live entity so a mutation cannot fire during the scan interval.
+function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
+	local legal, issues = ACE_CheckLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
+	if istable(legal) then
+		legal = false
+		issues = table.concat(legal.Problems or { "Invalid legality result" }, ", ")
+	end
+
+	legal = legal == true
+	if IsValid(ent) then
+		ent.Legal = legal
+		ent.LegalIssues = issues or ""
+		ent.NextLegalCheck = ACE.Legal.NextCheck(legal)
+	end
+
+	return legal, issues or ""
 end

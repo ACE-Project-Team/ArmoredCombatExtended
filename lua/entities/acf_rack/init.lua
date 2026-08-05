@@ -396,7 +396,7 @@ function ENT:Think()
 
 	if CT > self.NextLegalCheck then
 		self.Legal, self.LegalIssues = ACE_CheckLegal(self, nil, math.Round(self.Mass,2), self.ModelInertia, nil, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 
 		if not self.Legal and self.Firing then
 			self.Firing = false
@@ -426,6 +426,12 @@ function ENT:ShootMissile()
 	local ShotMissile = self.Missiles[MissileToShoot][1] or nil
 
 	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
+
+	local legal, issues = ACE.RequireLegal(self, nil, math.Round(self.Mass, 2), self.ModelInertia, nil, true)
+	if not legal then
+		self.LegalIssues = issues
+		return
+	end
 
 	ACE_DoContraptionLegalCheck(self)
 

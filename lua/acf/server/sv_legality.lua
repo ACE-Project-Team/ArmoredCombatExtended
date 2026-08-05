@@ -211,7 +211,7 @@ function ACE_CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
 
 	-- A parent is optional for a root build, but a present physical parent must be legal.
 	if ACE.Legal.Ignore.Parent <= 0 and _ then
-		local parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(Ent)
+		local parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(Ent, true)
 		if Ent.ACEPhysicalParentIssue then
 			table.insert(problems, Ent.ACEPhysicalParentIssue)
 		elseif IsValid(parent) and parent ~= Ent and parent.Legal == false then
@@ -343,7 +343,9 @@ function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVi
 				model = ent:GetModel(), material = ent.ACF and ent.ACF.Material,
 				mass = IsValid(phys) and phys:GetMass() or nil, solid = ent:IsSolid(),
 				collision = ent:GetCollisionGroup(), clips = ent.ClipData and #ent.ClipData or 0,
-				parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil
+				parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil,
+				parentLegal = ent.acfphysparent and ent.acfphysparent.Legal,
+				parentIssue = ent.ACEPhysicalParentIssue
 			}
 		else
 			ent.ACE_LegalFingerprint = nil
@@ -371,6 +373,8 @@ function ACE.RequireEntityLegal(ent)
 				and fingerprint.collision == ent:GetCollisionGroup()
 				and fingerprint.clips == (ent.ClipData and #ent.ClipData or 0)
 				and fingerprint.parent == (ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil)
+				and fingerprint.parentLegal == (ent.acfphysparent and ent.acfphysparent.Legal)
+				and fingerprint.parentIssue == ent.ACEPhysicalParentIssue
 			if unchanged then return true, ent.LegalIssues or "" end
 			ACE.InvalidateLegal(ent, "Legality state changed")
 		end

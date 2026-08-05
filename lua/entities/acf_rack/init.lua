@@ -18,12 +18,25 @@ local FuseTable	= ACE.Fuse
 
 local AmmoLinkDistBase = 512
 
+local function NormalizeBurst(value, maxMissile)
+	value = tonumber(value) or 0
+	if value ~= value or value == math.huge or value == -math.huge then return 0 end
+	return math.Clamp(math.floor(value), 0, maxMissile)
+end
+
+local function BurstDescription(mode)
+	if mode == 0 then return "Automatic" end
+	if mode == 1 then return "Semi-automatic" end
+	return mode .. " per impulse"
+end
+
 local RackWireDescs = {
 	--Inputs
 	["Reload"]       = "Arms this rack. Its mandatory to set this since racks don't reload automatically.",
 	["TargetPos"]    = "Defines the Target position for the ordnance in this rack. This only works for Wire and laser guidances.",
 	["Delay"]        = "Sets a specific delay to guidance control over the default one in seconds.",
 	["Detonate"]        = "Remotely detonate any currently outbound missiles.",
+	["Burst"]        = "Automatic at 0, one missile at 1, or this many missiles per Fire impulse.",
 
 	--Outputs
 	["Ready"]        = "Returns if the rack is ready to fire.",
@@ -54,6 +67,9 @@ function ENT:Initialize()
 	self.ReloadMultiplierBonus = 1
 
 	self.Firing			= false
+	self.FireInputActive = false
+	self.BurstMode		= 0
+	self.BurstRemaining	= 0
 	self.Reloading		= false
 	self.GuidanceActive = false
 
@@ -79,8 +95,8 @@ function ENT:Initialize()
 
 	self.SelfContraption = nil
 
-	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
-													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL", "NORMAL" } )
+	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Burst (" .. RackWireDescs["Burst"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
+															{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL", "NORMAL" } )
 
 	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget", "TargetDirection", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
 														{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "ENTITY", "STRING", "NORMAL", "VECTOR" } )
@@ -216,11 +232,20 @@ duplicator.RegisterEntityClass("acf_rack", ACE_MakeRack, "Pos", "Angle", "Id")
 function ENT:TriggerInput( iname , value )
 
 	if ( iname == "Fire" ) then
-		if value > 0 then
+		local active = value > 0
+		if active then
+			if not self.FireInputActive then
+				self.FireInputActive = true
+				self.BurstRemaining = self.BurstMode
+			end
 			self.Firing = true
 		else
+			self.FireInputActive = false
 			self.Firing = false
+			self.BurstRemaining = 0
 		end
+	elseif iname == "Burst" then
+		self.BurstMode = NormalizeBurst(value, self.MaxMissile)
 	elseif iname == "Reload"then
 		if value > 0 then
 			self.Reloading = true
@@ -384,7 +409,22 @@ function ENT:Think()
 	end
 
 	if self.Firing and self.Ready and self.Legal then
-		self:ShootMissile()
+		if self.BurstMode > 0 and self.CurMissile <= 0 then
+			self.Firing = false
+			self.BurstRemaining = 0
+		elseif self.BurstMode == 0 then
+			self:ShootMissile()
+		elseif self.BurstRemaining > 0 then
+			if self:ShootMissile() then
+				self.BurstRemaining = self.BurstRemaining - 1
+				if self.BurstRemaining == 0 then self.Firing = false end
+			else
+				self.Firing = false
+				self.BurstRemaining = 0
+			end
+		else
+			self.Firing = false
+		end
 	elseif self.Reloading and CT > self.NextReload then
 		self:Reload()
 	end
@@ -425,12 +465,12 @@ function ENT:ShootMissile()
 
 	local ShotMissile = self.Missiles[MissileToShoot][1] or nil
 
-	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
+	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return false end
 
 	local legal, issues = ACE.RequireLegal(self, nil, math.Round(self.Mass, 2), self.ModelInertia, nil, true)
 	if not legal then
 		self.LegalIssues = issues
-		return
+		return false
 	end
 
 	ACE_DoContraptionLegalCheck(self)
@@ -492,6 +532,8 @@ function ENT:ShootMissile()
 			Warning = true,
 		})
 	end
+
+	return true
 end
 
 function ENT:Reload() --
@@ -877,8 +919,9 @@ function ENT:GetOverlayText()
 	local ReloadBonus	= 1-self.ReloadMultiplierBonus
 	local Status		= self.RackStatus
 	local txt = ""
+	txt = "Burst: " .. BurstDescription(self.BurstMode or 0)
 
-	txt = "-  " .. Status
+	txt = txt .. "\n-  " .. Status
 	if self.RackStatus == "Loading" then
 		local reloadtime = math.max(math.Round(self.NextFire - ACE.CurTime),0)
 		txt = txt .. " (Seconds left: " .. reloadtime .. ")"

@@ -45,7 +45,11 @@ local function GetGunReloadTime(Gun, BulletData, RoFMul)
 
 	if CanUseLoader then
 		local CrewReload = Loader.Stamina / 100
-		return math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, DefaultReloadTime), Loader
+		local ReloadTime = math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, DefaultReloadTime)
+		local LoaderUp = Loader:GetUp()
+		local LoaderAngle = math.deg(math.acos(math.Clamp(LoaderUp:Dot(vector_up), -1, 1)))
+
+		return ReloadTime * ACE.GetLoaderReloadMultiplier(LoaderAngle), Loader
 	end
 
 	return math.max(DefaultReloadTime, LowestReloadTime)

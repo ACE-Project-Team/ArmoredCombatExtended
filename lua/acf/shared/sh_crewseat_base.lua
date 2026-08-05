@@ -82,6 +82,14 @@ ACE.CrewseatPoseModifiers = {
 	},
 }
 
+-- Reload time stays at its normal value through the preferred loader angle,
+-- ramps to 3x by horizontal, and becomes a hard 10x penalty when inverted.
+function ACE.GetLoaderReloadMultiplier(angle)
+	if angle <= 15 then return 1 end
+	if angle <= 90 then return 1 + 2 * (angle - 15) / 75 end
+	return 10
+end
+
 -- Helper function to check if pose is standing
 function ACE_IsStandingPose(modelType)
 	return ACE.CrewseatStandingModels[modelType] or false

@@ -23,11 +23,30 @@ assert(ACE.Points.BaseRoundCost(loaded) > ACE.Points.BaseRoundCost(empty),
 
 local primitive = {
 	GetClass = function() return "prop_physics" end,
-	ACF = { MaxArmour = 100, MaxHealth = 100 },
+	ACF = { MaxArmour = 100, MaxHealth = 100, Material = "Ti" },
 }
-assert(ACE.Points.PropArmor(primitive) ~= nil, "ordinary prop armor must remain priced")
+local threatRHAe, health, massEfficiency = ACE.Points.PropArmor(primitive)
+assert(threatRHAe ~= nil and health == 100 and massEfficiency > 1,
+	"ordinary prop armor must return a lightweight-material premium")
 primitive.ACE_PrimitivePropertiesPending = true
 assert(ACE.Points.PropArmor(primitive) == nil,
 	"Primitive armor must stay out of pricing while its properties are pending")
+
+local titanium = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
+ACE.PointsModel.ArmorMassAlpha = 0.5
+local relaxed = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
+ACE.PointsModel.ArmorMassAlpha = 2.0
+local strict = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
+ACE.PointsModel.ArmorMassAlpha = 1.0
+assert(relaxed < titanium and strict > titanium,
+	"armor mass alpha must control the lightweight-material premium")
+
+local unknown = {
+	GetClass = primitive.GetClass,
+	ACF = { MaxArmour = 100, MaxHealth = 100, Material = "Unknown" },
+}
+local _, _, unknownMassEfficiency = ACE.Points.PropArmor(unknown)
+assert(math.abs(unknownMassEfficiency - 1) < 1e-12,
+	"unknown materials must use neutral mass efficiency")
 
 print("ACE points model LuaJIT self-test: PASS")

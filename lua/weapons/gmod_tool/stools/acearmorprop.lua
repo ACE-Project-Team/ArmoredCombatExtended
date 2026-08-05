@@ -492,12 +492,15 @@ if CLIENT then
 			effKE = tonumber(matData.effectiveness) or 1
 			effCHEM = tonumber(matData.HEATeffectiveness or matData.effectiveness) or effKE
 		end
-		local effMm = ACE.Points.EffectiveMm(armor, effKE, effCHEM)
+		local curve = (matData and tonumber(matData.curve)) or 1
+		local massMod = (matData and tonumber(matData.massMod)) or 1
+		local threatRHAe = armor ^ curve * (0.7 * effKE + 0.3 * effCHEM)
 		local hp = tonumber(health) or 0
 
-		if effMm <= 0 or hp <= 0 then return 0 end
+		if threatRHAe <= 0 or hp <= 0 then return 0 end
 
-		return ACE.Points.ArmorProp(effMm, hp)
+		local massEfficiency = threatRHAe / (armor * massMod)
+		return ACE.Points.ArmorProp(threatRHAe, hp, massEfficiency)
 	end
 
 	-- Helper to add centered help text; mirrors PANEL:CPanelText for this file.
@@ -897,4 +900,3 @@ if CLIENT then
 
 	end
 end
-

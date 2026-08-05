@@ -21,7 +21,10 @@ ACE.PointsModel = ACE.PointsModel or {
 	P50    = 548.5,            -- gate half-point: pen where a round defeats half the meta
 	Scale  = 0.65,             -- global display scale; sets how much of PointsLimit real fielded
 	                           -- vehicles use, deliberately independent of the corpus fit below
+	ArmorMassAlpha = 1.0,      -- mass-efficiency premium; 1.0 charges mass loss linearly
 }
+
+ACE.PointsModel.ArmorMassAlpha = ACE.PointsModel.ArmorMassAlpha or 1.0
 
 local Model = ACE.PointsModel
 
@@ -266,10 +269,12 @@ function ACE.Points.EffectiveMm(armourMm, ke, chem)
 end
 
 -- Per-prop armor survivability cost (scaled). mm is intensive (^1.4), HP is linear (^1.0).
-function ACE.Points.ArmorProp(effMm, maxHealth)
+-- A mass-efficiency factor above one prices lightweight protection at a premium.
+function ACE.Points.ArmorProp(effMm, maxHealth, massEfficiency)
 	return Model.kArmor * 100.0
 		* ((tonumber(effMm) or 0) / 50.0) ^ EXP_MM
 		* ((tonumber(maxHealth) or 0) / 75.0) ^ EXP_HP
+		* (tonumber(massEfficiency) or 1.0) ^ (tonumber(Model.ArmorMassAlpha) or 1.0)
 		* Model.Scale
 end
 
@@ -309,17 +314,17 @@ local function resolveGuidanceName(guidanceValue)
 end
 
 -- These calibrated pricing weights intentionally differ from some live armor material values.
--- Retune them against the reference corpus; unknown materials use (1, 1).
+-- Retune effectiveness against the reference corpus; massMod and curve mirror the live resolver.
 local MATERIAL_EFF = {
-	RHA   = { 1.0,    1.0 },
-	CHA   = { 0.98,   0.98 },
-	Cer   = { 2.05,   2.05 },
-	DU    = { 3.0,    3.0 },
-	Ti    = { 1.7,    1.7 },
-	Alum  = { 0.8325, 0.8325 / 5.0 },
-	ERA   = { 2.5,    8.0 },
-	Rub   = { 0.05,   3.0 },
-	Texto = { 0.5,    1.2 },
+	RHA   = { 1.0,    1.0,    1.0,   1.00 },
+	CHA   = { 0.98,   0.98,   1.2,   1.00 },
+	Cer   = { 2.05,   2.05,   1.2,   0.99 },
+	DU    = { 3.0,    3.0,    2.43,  1.06 },
+	Ti    = { 1.7,    1.7,    0.61,  1.00 },
+	Alum  = { 0.8325, 0.8325 / 5.0, 0.333, 0.92 },
+	ERA   = { 2.5,    8.0,    2.0,   0.95 },
+	Rub   = { 0.05,   3.0,    0.2,   0.93 },
+	Texto = { 0.5,    1.2,    0.35,  0.94 },
 }
 
 local function materialEff(mat)
@@ -375,9 +380,10 @@ function ACE.Points.ChargeEntCost(ent)
 	return ACE.Points.ChargeCost(tonumber(ent.FillerMass) or 0)
 end
 
--- Prop -> (effectiveMm, maxHealth) for the armor term, or nil to skip. Skips ACF/ACE
+-- Prop -> (threatRHAe, maxHealth, massEfficiency) for the armor term, or nil to skip. Skips ACF/ACE
 -- components and pods (they price in their own categories) and props with no armour or HP.
--- Uses MAX armour/health (static design). Material ke/chem via the curated MATERIAL_EFF above.
+-- Uses MAX armour/health (static design). Material ke/chem, massMod, and curve come from the
+-- curated MATERIAL_EFF above.
 function ACE.Points.PropArmor(ent)
 	if not ACE.IsEnt(ent) then return nil end
 	if ent.ACE_PrimitiveArmorPending or ent.ACE_PrimitivePropertiesPending
@@ -398,8 +404,13 @@ function ACE.Points.PropArmor(ent)
 	local hp       = tonumber(acf.MaxHealth) or 0
 	if armourMm <= 0 or hp <= 0 then return nil end
 
+	local material = MATERIAL_EFF[acf.Material or ent.ACF_Material]
 	local ke, chem = materialEff(acf.Material or ent.ACF_Material)
-	return ACE.Points.EffectiveMm(armourMm, ke, chem), hp
+	local curve = material and material[4] or 1.0
+	local massMod = material and material[3] or 1.0
+	local threatRHAe = armourMm ^ curve * (0.7 * ke + 0.3 * chem)
+	local massEfficiency = threatRHAe / (armourMm * massMod)
+	return threatRHAe, hp, massEfficiency
 end
 
 

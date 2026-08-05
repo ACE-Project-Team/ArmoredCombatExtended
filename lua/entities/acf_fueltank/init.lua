@@ -435,8 +435,8 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 	end
 
@@ -453,7 +453,7 @@ function ENT:Think()
 	end
 
 	--refuelling
-	if self.Active and self.SupplyFuel and self.Fuel > 0 and self.Legal then
+	if self.Active and ACE.RequireEntityLegal(self) and self.SupplyFuel and self.Fuel > 0 then
 		self:NextThink(CurTime())
 		for _,Tank in pairs(ACE.FuelTanks) do
 

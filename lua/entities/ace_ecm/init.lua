@@ -65,6 +65,7 @@ function ENT:TriggerInput( inp, value )
 end
 
 function ENT:SetActive(active)
+	if active and not ACE.RequireEntityLegal(self) then active = false end
 
 	self.Active = active
 
@@ -91,13 +92,13 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 
 	end
 
 	self.CurrentlyJamming = 0
-	if self.Active and self.Legal then
+	if self.Active and ACE.RequireEntityLegal(self) then
 
 		if self.JamTargetPos and isvector(self.JamTargetPos) then
 			self.JamDirection = (self.JamTargetPos-self:GetPos()):GetNormalized()

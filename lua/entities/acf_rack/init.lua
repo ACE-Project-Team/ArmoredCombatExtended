@@ -435,7 +435,7 @@ function ENT:Think()
 	end
 
 	if CT > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, nil, math.Round(self.Mass,2), self.ModelInertia, nil, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, nil, math.Round(self.Mass,2), self.ModelInertia, nil, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 
 		if not self.Legal and self.Firing then

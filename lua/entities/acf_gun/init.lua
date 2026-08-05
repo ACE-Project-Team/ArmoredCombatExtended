@@ -740,14 +740,14 @@ function ENT:Think()
 	if ACE.CurTime > self.NextLegalCheck then
 
 		-- check gun is legal
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, nil, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 
 		-- check the seat is legal
 		local seat = IsValid(self.User) and self.User:GetVehicle() or nil
 
 		if IsValid(seat) then
-			local legal, issues = ACE_CheckLegal(seat, nil, nil, nil, nil, false)
+			local legal, issues = ACE.RequireLegal(seat, nil, nil, nil, nil, false)
 			if not legal then
 				self.Legal = false
 				self.LegalIssues = self.LegalIssues .. "\nSeat not legal: " .. issues

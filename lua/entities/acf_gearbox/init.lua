@@ -424,8 +424,8 @@ end
 function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.Mass,2), self.ModelInertia, true, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 
 		if self.Legal and self.Parentable then self.RootParent = ACE_GetPhysicalParent(self) end
@@ -605,7 +605,7 @@ end
 
 function ENT:Act( Torque, DeltaTime, MassRatio )
 
-	if not self.Legal then self.LastActive = CurTime() return end
+	if not ACE.RequireEntityLegal(self) then self.LastActive = CurTime() return end
 	--internal torque loss from being damaged
 	local Loss = math.Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1)
 

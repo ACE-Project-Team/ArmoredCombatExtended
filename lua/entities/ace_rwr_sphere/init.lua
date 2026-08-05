@@ -52,6 +52,7 @@ function ENT:TriggerInput( inp, value )
 end
 
 function ENT:SetActive(active)
+	if active and not ACE.RequireEntityLegal(self) then active = false end
 
 	active = active and true or false
 
@@ -88,8 +89,8 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 
 		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
@@ -99,7 +100,7 @@ function ENT:Think()
 
 	end
 
-	if self.Active and self.Legal then
+	if self.Active and ACE.RequireEntityLegal(self) then
 
 		local ScanArray = ACE.radarEntities
 		local thisPos = self:GetPos()

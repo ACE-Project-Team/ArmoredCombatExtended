@@ -386,7 +386,7 @@ function ACE_CrewseatLegalCheck(ent)
 			ent.Model = currentModel
 		end
 
-		ent.Legal, ent.LegalIssues = ACE.CheckLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
+		ent.Legal, ent.LegalIssues = ACE.RequireLegal(ent, ent.Model, math.Round(ent.Weight, 2), nil, true, true)
 
 		if ent.Legal and not (ACE.IsValidCrewseatModel and ACE.IsValidCrewseatModel(currentModel)) then
 			ent.Legal = false

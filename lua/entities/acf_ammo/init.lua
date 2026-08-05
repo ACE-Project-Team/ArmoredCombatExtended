@@ -784,6 +784,7 @@ function ENT:FirstLoad()
 end
 
 function ENT:Think()
+	local currentLegal = ACE.RequireEntityLegal(self)
 
 	if not self.BulletData then return false end
 
@@ -798,11 +799,11 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 
-		if not self.Legal then
+		if not currentLegal then
 			self.Load = false
 		else
 			--if legal, go back to the action
@@ -817,7 +818,7 @@ function ENT:Think()
 
 		self:UpdateMass()
 
-		if self.Ammo ~= self.AmmoLast or not self.Legal then
+		if self.Ammo ~= self.AmmoLast or not currentLegal then
 			self:UpdateOverlayText()
 			self.AmmoLast = self.Ammo
 		end

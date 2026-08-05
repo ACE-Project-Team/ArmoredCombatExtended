@@ -363,7 +363,7 @@ function ENT:TriggerInput( iname, value )
 	if (iname == "Throttle") then
 		self.Throttle = math.Clamp(value,0,100) / 100
 	elseif (iname == "Active") then
-		if (value > 0 and not self.Active and self.Legal) then
+		if (value > 0 and not self.Active and ACE.RequireEntityLegal(self)) then
 			--make sure we have fuel
 			local HasFuel
 			local HasDriver
@@ -503,8 +503,8 @@ end
 function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
-		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:CheckRopes()
 		self:CheckFuel()
 		self:CalcMassRatio()
@@ -545,8 +545,10 @@ function ENT:Think()
 		self.NextUpdate = ACE.CurTime + 0.5
 	end
 
-	if self.Active then
+	if self.Active and ACE.RequireEntityLegal(self) then
 		self:CalcRPM()
+	elseif self.Active then
+		self:TriggerInput("Active", 0)
 	end
 
 	self.LastThink = ACE.CurTime

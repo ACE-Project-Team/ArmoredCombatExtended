@@ -59,7 +59,7 @@ ACE.ArmorBehaviorSets = {
 }
 
 --- Attaches descriptive armor behavior metadata to loaded materials.
----@param materials table Loaded ACE armor material definitions.
+-- @param materials table Loaded ACE armor material definitions.
 function ACE.ApplyArmorBehaviorModules(materials)
 	for materialId, behaviorIds in pairs(ACE.ArmorBehaviorSets) do
 		local material = materials[materialId]
@@ -81,8 +81,8 @@ function ACE.ApplyArmorBehaviorModules(materials)
 end
 
 --- Returns the behavior module IDs attached to an armor material.
----@param material table|nil ACE armor material definition.
----@return table modules Behavior module IDs, or an empty table.
+-- @param material table|nil ACE armor material definition.
+-- @return table modules Behavior module IDs, or an empty table.
 function ACE.GetArmorBehaviorModules(material)
 	return material and material.BehaviorModules or {}
 end

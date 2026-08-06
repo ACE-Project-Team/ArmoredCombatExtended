@@ -101,9 +101,27 @@ local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")
 local breach = modular.ArmorResolution(target, 10, 10, 10, 20, 1, 100, 1, "AP")
 target.ACF.Health = 0
 local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
+
+local retentionOnly = ACE.DefineArmorMaterial({
+	id = "RetentionOnly",
+	resolver = "modular",
+	behaviors = { "homogeneous_metal" },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1.6, multiHitRetention = 0.5, degradation = 0.75 }
+})
+local degradationOnly = ACE.DefineArmorMaterial({
+	id = "DegradationOnly",
+	resolver = "modular",
+	behaviors = { "homogeneous_metal" },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1.6, degradation = 0.25 }
+})
+local damagedTarget = { ACF = { Health = 0, MaxHealth = 100 } }
+local retentionResult = retentionOnly.ArmorResolution(damagedTarget, 10, 10, 10, 100, 1, 1, 1, "AP")
+local degradationResult = degradationOnly.ArmorResolution(damagedTarget, 10, 10, 10, 100, 1, 1, 1, "AP")
 math.random = oldRandom
 assert(degraded.Overkill > intact.Overkill, "multi-hit retention did not reduce degraded protection")
 assert(heat.Damage < intact.Damage, "shock transmission did not reduce HE damage")
 assert(breach.Overkill == 4, "breach math ignored kinetic RHAe")
+assert(retentionResult.Overkill == 92, "retention floor changed unexpectedly: " .. tostring(retentionResult.Overkill))
+assert(degradationResult.Overkill == 88, "degradation slope changed unexpectedly: " .. tostring(degradationResult.Overkill))
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

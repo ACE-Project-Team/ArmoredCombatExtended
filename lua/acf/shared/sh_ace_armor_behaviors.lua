@@ -104,6 +104,13 @@ local function IsFiniteNumber(value)
 	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function ValidateLegacyFields(material)
+	for _, field in ipairs({ "massMod", "curve", "effectiveness", "resiliance", "HEATeffectiveness", "HEATresiliance", "HEeffectiveness", "HEresiliance", "spallresist", "ArmorMul", "NormMult" }) do
+		if material[field] ~= nil then assert(IsFiniteNumber(material[field]) and material[field] > 0, field .. " must be a positive number") end
+	end
+	if material.spallmult ~= nil then assert(IsFiniteNumber(material.spallmult) and material.spallmult >= 0, "spallmult must be a non-negative number") end
+end
+
 --- Validates optional physical/test inputs before registering a material.
 -- @param spec table Physical/test specification.
 -- @return boolean valid Whether all supplied values are usable.
@@ -159,6 +166,10 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 	material.BehaviorConfig = CopyValues(behaviorConfig)
 
 	for index, behavior in ipairs(behaviorIds or {}) do
+		assert(type(behavior) == "string" or type(behavior) == "table", "armor behavior entry must be a module ID or table")
+		if type(behavior) == "table" then
+			for key in pairs(behavior) do assert(key == "id" or key == "parameters", "unknown armor behavior entry key: " .. tostring(key)) end
+		end
 		local behaviorId = type(behavior) == "table" and behavior.id or behavior
 		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior module: " .. tostring(behaviorId))
 		material.BehaviorModules[#material.BehaviorModules + 1] = behaviorId
@@ -208,13 +219,19 @@ end
 function ACE.ConfigureArmorMaterial(material, definition)
 	definition = definition or {}
 	material.ArmorSpec = CopyValues(definition.spec or material.ArmorSpec)
-	local valid, errors = ACE.ValidateArmorSpec(material.ArmorSpec)
-	assert(valid, "invalid armor spec: " .. table.concat(errors, "; "))
 
 	local legacy = definition.legacy or {}
 	for key, value in pairs(legacy) do
 		if material[key] == nil then material[key] = value end
 	end
+
+	AttachBehaviorModules(material, definition.behaviors or material.BehaviorModules, definition.behaviorConfig or material.BehaviorConfig)
+	for _, parameters in pairs(material.BehaviorConfig) do
+		for field, value in pairs(parameters) do material.ArmorSpec[field] = value end
+	end
+
+	local valid, errors = ACE.ValidateArmorSpec(material.ArmorSpec)
+	assert(valid, "invalid armor spec: " .. table.concat(errors, "; "))
 
 	local spec = material.ArmorSpec
 	local modular = definition.resolver == "modular" or material.ArmorResolver == "modular"
@@ -244,8 +261,6 @@ function ACE.ConfigureArmorMaterial(material, definition)
 	if spec.spallProduction and material.spallmult == nil then material.spallmult = spec.spallProduction end
 	if spec.shockTransmission and material.Stopshock == nil then material.Stopshock = spec.shockTransmission <= 0 end
 
-	AttachBehaviorModules(material, definition.behaviors or material.BehaviorModules, definition.behaviorConfig or material.BehaviorConfig)
-
 	if definition.resolver == "modular" then
 		material.ArmorResolver = "modular"
 		if SERVER then
@@ -254,6 +269,7 @@ function ACE.ConfigureArmorMaterial(material, definition)
 			end
 		end
 	end
+	ValidateLegacyFields(material)
 
 	return material
 end
@@ -264,9 +280,17 @@ end
 -- @return table material The registered material definition.
 function ACE.DefineArmorMaterial(definition)
 	assert(type(definition) == "table", "armor material definition must be a table")
-	assert(definition.id, "armor material definition requires id")
+	assert(type(definition.id) == "string" and definition.id ~= "", "armor material definition requires a non-empty id")
 	local allowed = { id = true, name = true, sname = true, desc = true, year = true, material = true, spec = true, behaviors = true, behaviorConfig = true, legacy = true, resolver = true }
 	for key in pairs(definition) do assert(allowed[key], "unknown armor material definition key: " .. tostring(key)) end
+	for _, key in ipairs({ "name", "sname", "desc" }) do
+		if definition[key] ~= nil then assert(type(definition[key]) == "string", key .. " must be a string") end
+	end
+	if definition.year ~= nil then assert(IsFiniteNumber(definition.year), "year must be a finite number") end
+	if definition.resolver ~= nil then assert(definition.resolver == "modular", "resolver must be modular") end
+	for _, key in ipairs({ "material", "spec", "behaviors", "behaviorConfig", "legacy" }) do
+		if definition[key] ~= nil then assert(type(definition[key]) == "table", key .. " must be a table") end
+	end
 
 	local material = CopyValues(definition.material)
 	material.id = definition.id

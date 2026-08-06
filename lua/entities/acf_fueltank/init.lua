@@ -430,7 +430,7 @@ end
 function ENT:Think()
 
 	if not ACE_IsDefaultActiveInputWired(self) then
-		self.Active = true
+		self.Active = ACE_GetDefaultActiveInputState(self)
 	end
 
 	if ACE.CurTime > self.NextLegalCheck then

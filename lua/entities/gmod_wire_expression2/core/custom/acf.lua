@@ -261,6 +261,7 @@ do
 		if not hasActiveInput(this) then return self:throw("Entity is not a valid active-capable ACF entity") end
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot control this entity") end
 
+		ACF.SetDefaultActiveInputState(this, on)
 		this:TriggerInput("Active", on)
 	end
 

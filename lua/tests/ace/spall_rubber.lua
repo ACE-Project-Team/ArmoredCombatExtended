@@ -136,6 +136,72 @@ return {
 			end,
 		},
 		{
+			name = "scales liner capture by material and armor thickness",
+			func = function()
+				local function captureFor(materialName, armor)
+					local entity = makeEntity(materialName)
+					entity.ACF = { Ductility = 0, Armour = armor, Material = materialName }
+					local capturedPenetration
+
+					withSpallTraceStubs(function()
+						ACE.CritEnts = {}
+						ACE.SpallTraces[1] = {
+							start = Vector(0, 0, 0),
+							endpos = Vector(0, 100, 0),
+							filter = {},
+							mins = Vector(0, 0, 0),
+							maxs = Vector(0, 0, 0),
+						}
+
+						_G.ACE_Check = function() return true end
+						_G.ACE_CheckClips = function() return false end
+						_G.ACE_GetHitAngle = function() return 0 end
+						_G.ACE_APKill = function() return nil end
+						_G.VectorRand = function() return Vector(0, 0, 0) end
+						ACE.GetMaterialData = function(id)
+							local capture = id == "Rub" and 0.65 or 0.35
+							return {
+								spallresist = 1,
+								ArmorSpec = {
+									densityKgM3 = id == "Rub" and 1560 or 1900,
+									spallCapture = capture,
+									spallCaptureArealDensity = id == "Rub" and 18 or 40,
+									spallCaptureVelocity = id == "Rub" and 1400 or 1800,
+									spallCaptureSpacing = id == "Rub" and 0.1 or 0.05,
+								}
+							}
+						end
+						util.Decal = function() end
+						debugoverlay.Line = function() end
+						util.TraceLine = function()
+							return {
+								Hit = true,
+								Entity = entity,
+								HitNormal = Vector(-1, 0, 0),
+								StartPos = Vector(0, 0, 0),
+								HitPos = Vector(0, 100, 0),
+							}
+						end
+						_G.ACE_Damage = function(_, energy)
+							capturedPenetration = energy.Penetration
+							return { Overkill = 0, Loss = 1, Kill = false }
+						end
+
+						ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+					end)
+
+					return capturedPenetration
+				end
+
+				local thickRubber = captureFor("Rub", 10)
+				local thinRubber = captureFor("Rub", 1)
+				local thickTextolite = captureFor("Texto", 10)
+				expect(thickRubber).to.beLessThan(100)
+				expect(thinRubber).to.beGreaterThan(thickRubber)
+				expect(thickRubber).to.beLessThan(thickTextolite)
+			end,
+		},
+		{
 			name = "terminates recursive spall when the same layer is visited again",
 			func = function()
 				local plate = makeEntity("cycle")
@@ -178,6 +244,57 @@ return {
 				end)
 
 				expect(traces).to.equal(2)
+			end,
+		},
+		{
+			name = "does not absorb spall in visual-clipped geometry",
+			func = function()
+				local clipped = makeEntity("clipped")
+				local solid = makeEntity("solid")
+				clipped.ACF = { Armour = 10, Material = "Rub", Ductility = 0 }
+				solid.ACF = { Armour = 10, Material = "RHA", Ductility = 0 }
+				clipped.GetPhysicsObject = function() return {} end
+				local seen
+
+				withSpallTraceStubs(function()
+					ACE.CritEnts = {}
+					ACE.SpallTraces[1] = {
+						start = Vector(0, 0, 0),
+						endpos = Vector(0, 100, 0),
+						filter = {},
+						mins = Vector(0, 0, 0),
+						maxs = Vector(0, 0, 0),
+					}
+					_G.ACE_Check = function() return true end
+					_G.ACE_CheckClips = function(entity) return entity == clipped end
+					_G.ACE_GetHitAngle = function() return 0 end
+					_G.ACE_APKill = function() return nil end
+					_G.VectorRand = function() return Vector(0, 0, 0) end
+					ACE.GetMaterialData = function(id)
+						return { spallresist = 1, ArmorSpec = { spallCapture = id == "Rub" and 0.65 or 0 } }
+					end
+					util.Decal = function() end
+					debugoverlay.Line = function() end
+					local traces = 0
+					util.TraceLine = function()
+						traces = traces + 1
+						return {
+							Hit = true,
+							Entity = traces == 1 and clipped or solid,
+							HitNormal = Vector(-1, 0, 0),
+							StartPos = Vector(0, 0, 0),
+							HitPos = Vector(0, traces * 100, 0),
+						}
+					end
+					_G.ACE_Damage = function(_, energy)
+						seen = energy.Penetration
+						return { Overkill = 0, Loss = 1, Kill = false }
+					end
+
+					ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, 100)
+				end)
+
+				expect(seen).to.equal(100)
 			end,
 		},
 		{

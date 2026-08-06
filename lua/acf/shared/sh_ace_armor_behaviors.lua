@@ -42,7 +42,7 @@ ACE.ArmorBehaviorModules = {
 	spall_response = {
 		label = "Spall response",
 		description = "Controls fragment production and residual spall energy after impact.",
-		fields = { "spallProduction", "spallResistance", "spallCapture" }
+		fields = { "spallProduction", "spallResistance", "spallCapture", "spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing" }
 	},
 	shock_barrier = {
 		label = "Shock barrier",
@@ -78,6 +78,9 @@ ACE.ArmorSpecFields = {
 	spallProduction = { label = "Spall production", unit = "×" },
 	spallResistance = { label = "Spall resistance", unit = "×" },
 	spallCapture = { label = "Spall capture", unit = "0–1" },
+	spallCaptureArealDensity = { label = "Capture areal density", unit = "kg/m²" },
+	spallCaptureVelocity = { label = "Capture velocity reference", unit = "m/s" },
+	spallCaptureSpacing = { label = "Capture spacing reference", unit = "m" },
 	shockTransmission = { label = "Shock transmission", unit = "0–1" },
 	residualDamageMultiplier = { label = "Residual damage", unit = "×" },
 	tileMassKgM2 = { label = "Tile mass", unit = "kg/m²" },
@@ -149,7 +152,7 @@ function ACE.ValidateArmorSpec(spec)
 	local positive = {
 		"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "kineticRHAe", "chemicalRHAe", "heRHAe",
 		"curve", "overmatchRatio", "kineticResilience", "chemicalResilience", "heResilience", "penetrationDamageMultiplier",
-		"spallResistance", "residualDamageMultiplier", "tileMassKgM2"
+		"spallResistance", "residualDamageMultiplier", "tileMassKgM2", "spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"
 	}
 	local fractions = { "ductility", "multiHitRetention", "spallCapture", "shockTransmission", "degradation" }
 

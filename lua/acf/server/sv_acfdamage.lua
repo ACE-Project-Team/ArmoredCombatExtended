@@ -821,14 +821,28 @@ local function CopySpallEnergy( Energy )
 	}
 end
 
-local function ApplySpallCapture( Energy, MatData )
+local function ApplySpallCapture( Energy, MatData, Entity, SpallVelocity, Spacing )
 	local spec = MatData and MatData.ArmorSpec
-	local capture = math.Clamp(tonumber(spec and spec.spallCapture) or 0, 0, 1)
+	local baseCapture = math.Clamp(tonumber(spec and spec.spallCapture) or 0, 0, 1)
+	if baseCapture <= 0 then return 0 end
+
+	local armor = math.max(tonumber(Entity and Entity.ACF and Entity.ACF.Armour) or 0, 0)
+	local density = math.max(tonumber(spec and spec.densityKgM3) or 7850, 1)
+	local arealReference = math.max(tonumber(spec and spec.spallCaptureArealDensity) or 1, 1)
+	local velocityReference = math.max(tonumber(spec and spec.spallCaptureVelocity) or 1, 1)
+	local spacingReference = math.max(tonumber(spec and spec.spallCaptureSpacing) or 1, 0.001)
+	local arealDensity = armor * density / 1000
+	local thicknessFactor = 1 - math.exp(-arealDensity / arealReference)
+	local velocityRatio = math.max(tonumber(SpallVelocity) or 0, 0) / velocityReference
+	local velocityFactor = 1 / (1 + velocityRatio * velocityRatio * 0.5)
+	local spacingFactor = 0.65 + 0.35 * math.Clamp((tonumber(Spacing) or 0) / spacingReference, 0, 1)
+	local capture = math.Clamp(baseCapture * thicknessFactor * velocityFactor * spacingFactor, 0, 1)
 	if capture <= 0 then return end
 
 	local retained = 1 - capture
 	Energy.Kinetic = Energy.Kinetic * retained
 	Energy.Penetration = Energy.Penetration * retained
+	return capture
 end
 
 function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
@@ -860,14 +874,6 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		CanContinue, State = CanContinueSpallTrace(Index, SpallRes, State)
 		if not CanContinue then return end
 
-		local Mat = SpallRes.Entity.ACF.Material or "RHA"
-		local MatData = ACE.GetMaterialData(Mat)
-		ApplySpallCapture(SpallEnergy, MatData)
-		if SpallEnergy.Penetration <= 0 or SpallEnergy.Kinetic <= 0 then
-			SetSpallTermination(Index, "captured")
-			return
-		end
-
 		do
 
 			local phys = SpallRes.Entity:GetPhysicsObject()
@@ -888,6 +894,16 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 				return
 			end
 
+		end
+
+		local Mat = SpallRes.Entity.ACF.Material or "RHA"
+		local MatData = ACE.GetMaterialData(Mat)
+		local spacing = State.LastSolidHitPos and SpallRes.HitPos:Distance(State.LastSolidHitPos) or 0
+		State.LastSolidHitPos = SpallRes.HitPos
+		ApplySpallCapture(SpallEnergy, MatData, SpallRes.Entity, SpallVelocity, spacing)
+		if SpallEnergy.Penetration <= 0 or SpallEnergy.Kinetic <= 0 then
+			SetSpallTermination(Index, "captured")
+			return
 		end
 
 		-- Get the spalling hitAngle

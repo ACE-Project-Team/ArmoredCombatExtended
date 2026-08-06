@@ -23,6 +23,7 @@ SOURCE = (
 )
 ARMOR_PROFILES = SOURCE.parents[1] / "shared" / "armor" / "modular_legacy_profiles.lua"
 ARMOR_BEHAVIORS = SOURCE.parents[1] / "shared" / "sh_ace_armor_behaviors.lua"
+ARMOR_TOOL = SOURCE.parents[2] / "weapons" / "gmod_tool" / "stools" / "acearmorprop.lua"
 
 
 @dataclass(frozen=True)
@@ -243,6 +244,7 @@ class SpallSourceContractTests(unittest.TestCase):
         cls.body = match.group("body")
         cls.rubber_source = ARMOR_PROFILES.read_text(encoding="utf-8")
         cls.behavior_source = ARMOR_BEHAVIORS.read_text(encoding="utf-8")
+        cls.armor_tool_source = ARMOR_TOOL.read_text(encoding="utf-8")
 
     def test_trace_owns_a_copy_before_mutating_penetration(self):
         copy_pos = self.body.index("SpallEnergy = CopySpallEnergy(SpallEnergy)")
@@ -268,9 +270,33 @@ class SpallSourceContractTests(unittest.TestCase):
             '"no_penetration"',
             '"invalid_entity"',
             '"exhausted_valid_layers"',
+            '"captured"',
         ):
             with self.subTest(reason=reason):
                 self.assertIn(reason, self.source)
+
+    def test_capture_skips_visual_clips_and_scales_by_layer_context(self):
+        clip = self.body.index("ACE.CheckClips")
+        capture = self.body.index("ApplySpallCapture(SpallEnergy")
+        self.assertLess(clip, capture)
+        self.assertIn("spallCaptureArealDensity", self.behavior_source)
+        self.assertIn("spallCaptureVelocity", self.behavior_source)
+        self.assertIn("spallCaptureSpacing", self.behavior_source)
+        self.assertIn("State.LastSolidHitPos", self.body)
+        self.assertIn("thicknessFactor", self.source)
+        self.assertIn("velocityFactor", self.source)
+        self.assertIn("spacingFactor", self.source)
+
+    def test_liner_capture_profiles_have_context_references(self):
+        for field in ("spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"):
+            self.assertIn(field, self.rubber_source)
+            self.assertIn(field, self.behavior_source)
+
+    def test_armor_menu_explains_capture_context_and_custom_resolvers(self):
+        self.assertIn("ArmorResolverText", self.armor_tool_source)
+        self.assertIn('type(material.ArmorResolution) == "function"', self.armor_tool_source)
+        for field in ("spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"):
+            self.assertIn(f'"{field}"', self.armor_tool_source)
 
     def test_spall_trace_repeated_visit_guard_runs_before_damage(self):
         guard = self.body.index("CanContinue, State = CanContinueSpallTrace")

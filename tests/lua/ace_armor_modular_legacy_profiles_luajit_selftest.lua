@@ -40,5 +40,7 @@ assert(ACE.ArmorTypes.ERA.Stopshock == true, "ERA shock compatibility changed")
 assert(ACE.ArmorTypes.Rub.Stopshock == true, "Rubber shock compatibility changed")
 assert(ACE.ArmorTypes.Rub.ArmorSpec.spallCapture == 0.65, "Rubber spall capture behavior missing")
 assert(ACE.ArmorTypes.Texto.ArmorSpec.spallCapture == 0.35, "Textolite spall capture behavior missing")
+assert(ACE.ArmorTypes.Rub.ArmorSpec.spallCaptureArealDensity == 18, "Rubber capture areal density missing")
+assert(ACE.ArmorTypes.Texto.ArmorSpec.spallCaptureVelocity == 1800, "Textolite capture velocity missing")
 
 print("ACE modular legacy armor profile self-test: PASS")

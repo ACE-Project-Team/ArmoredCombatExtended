@@ -113,6 +113,11 @@ local target = { ACF = { Health = 100, MaxHealth = 100 } }
 local intact = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")
 local breach = modular.ArmorResolution(target, 10, 10, 10, 20, 1, 100, 1, "AP")
+
+assert(type(intact.Outcome) == "string", "modular resolver missing normalized outcome")
+assert(intact.PenetrationSpent >= 0, "modular resolver missing penetration spent")
+assert(intact.PenetrationRemaining >= 0, "modular resolver missing penetration remaining")
+assert(math.abs(intact.PenetrationSpent + intact.PenetrationRemaining - 100) < 0.0000001, "normalized penetration budget changed")
 target.ACF.Health = 0
 local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 

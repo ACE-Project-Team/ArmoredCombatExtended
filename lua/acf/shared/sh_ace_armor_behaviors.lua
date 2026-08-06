@@ -383,6 +383,23 @@ if SERVER then
 		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 	end
 
+	-- Keep the resolver's physical result in one shape. Loss remains the legacy
+	-- compatibility field, while the explicit spent/remaining values give
+	-- post-penetration callers a canonical contract to consume.
+	local function ImpactResult(damage, overkill, loss, outcome, maxPenetration)
+		local spentFraction = math.Clamp(loss or 1, 0, 1)
+		local incoming = math.max(maxPenetration or 0, 0)
+
+		return {
+			Damage = damage,
+			Overkill = overkill,
+			Loss = loss,
+			Outcome = outcome,
+			PenetrationSpent = incoming * spentFraction,
+			PenetrationRemaining = incoming * (1 - spentFraction)
+		}
+	end
+
 	local function LegacyDuctility(Entity, config)
 		local value = ((Entity and Entity.ACF and Entity.ACF.Ductility) or 0) * (config.ductilityFactor or 1.25)
 		local base = config.ductilityBase or 2
@@ -447,11 +464,13 @@ if SERVER then
 
 		if not options.ignoreBreach and breachProbability > math.random() and maxPenetration > breachArmor then
 			if options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
-			return {
-				Damage = FrArea * resilience * passedDamageMult * damageFactor * (options.breachDuctility == false and 1 or ductility),
-				Overkill = maxPenetration - breachArmor,
-				Loss = breachArmor / maxPenetration
-			}
+			return ImpactResult(
+				FrArea * resilience * passedDamageMult * damageFactor * (options.breachDuctility == false and 1 or ductility),
+				maxPenetration - breachArmor,
+				breachArmor / maxPenetration,
+				"breached",
+				maxPenetration
+			)
 		end
 
 		if penetrationProbability > math.random() then
@@ -459,20 +478,24 @@ if SERVER then
 			local denominator = options.penetrationDamageDenominator == "los" and losArmor or losArmorHealth
 			local penetrationDamageFactor = maxPenetration > losArmor * effectiveness and (options.penetrationDamageFactor or 1) or 1
 			if (penetrationDamageFactor ~= 1 or (options.triggerOnPenetration and maxPenetration > losArmor * effectiveness)) and options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
-			return {
-				Damage = (penetration / denominator / effectiveness) ^ (options.penetrationDamagePower or 2) * FrArea * resilience * passedDamageMult * damageFactor * penetrationDamageFactor * ductility,
-				Overkill = maxPenetration - penetration,
-				Loss = penetration / maxPenetration
-			}
+			return ImpactResult(
+				(penetration / denominator / effectiveness) ^ (options.penetrationDamagePower or 2) * FrArea * resilience * passedDamageMult * damageFactor * penetrationDamageFactor * ductility,
+				maxPenetration - penetration,
+				penetration / maxPenetration,
+				"penetrated",
+				maxPenetration
+			)
 		end
 
 		local penetration = math.min(maxPenetration, losArmor * effectiveness)
 		local denominator = options.failedDamageDenominator == "los" and losArmor or losArmorHealth
-		return {
-			Damage = (penetration / denominator / effectiveness) ^ (options.failedDamagePower or 1) * FrArea * resilience * passedDamageMult * damageFactor * (options.failedDamageFactor or 1) * ductility,
-			Overkill = 0,
-			Loss = 1
-		}
+		return ImpactResult(
+			(penetration / denominator / effectiveness) ^ (options.failedDamagePower or 1) * FrArea * resilience * passedDamageMult * damageFactor * (options.failedDamageFactor or 1) * ductility,
+			0,
+			1,
+			"stopped",
+			maxPenetration
+		)
 	end
 
 	local function ResolveLegacy(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
@@ -563,11 +586,13 @@ if SERVER then
 
 			if (not HETypes[Type] and maxPenetration > blastArmor / sensor) or condition < 0.15 then
 				TriggerImpactHook(config.impactHook, Entity, armor, maxPenetration)
-				return {
-					Damage = 9999999999999,
-					Overkill = math.Clamp(maxPenetration - blastArmor, 0, 1),
-					Loss = math.Clamp(blastArmor / maxPenetration, 0, 0.98)
-				}
+				return ImpactResult(
+					9999999999999,
+					math.Clamp(maxPenetration - blastArmor, 0, 1),
+					math.Clamp(blastArmor / maxPenetration, 0, 0.98),
+					"detonated",
+					maxPenetration
+				)
 			end
 
 			return LegacyResult(armor ^ (legacy.NCurve or 1), losArmor ^ (legacy.NCurve or 1), losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.Neffectiveness, legacy.Nresiliance, 1, config, { breachLimit = 7, breachUsesRawArmor = true }, Entity, armor)
@@ -679,28 +704,34 @@ if SERVER then
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 
 		if breachProbability > math.random() and maxPenetration > breachArmor then
-			return {
-				Damage = FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
-				Overkill = maxPenetration - breachArmor,
-				Loss = breachArmor / maxPenetration
-			}
+			return ImpactResult(
+				FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
+				maxPenetration - breachArmor,
+				breachArmor / maxPenetration,
+				"breached",
+				maxPenetration
+			)
 		end
 
 		if penetrationProbability > math.random() then
 			local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
-			return {
-				Damage = (penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
-				Overkill = maxPenetration - penetration,
-				Loss = penetration / maxPenetration
-			}
+			return ImpactResult(
+				(penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
+				maxPenetration - penetration,
+				penetration / maxPenetration,
+				"penetrated",
+				maxPenetration
+			)
 		end
 
 		local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
-		return {
-			Damage = (penetration / losArmorHealth / effectiveness) * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
-			Overkill = 0,
-			Loss = 1
-		}
+		return ImpactResult(
+			(penetration / losArmorHealth / effectiveness) * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
+			0,
+			1,
+			"stopped",
+			maxPenetration
+		)
 	end
 end
 

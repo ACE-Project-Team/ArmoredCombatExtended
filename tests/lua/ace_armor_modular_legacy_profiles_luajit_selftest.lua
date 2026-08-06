@@ -38,5 +38,7 @@ assert(ACE.ArmorTypes.Cast == nil, "Cast must retain the CHA compatibility ID")
 assert(ACE.ArmorTypes.CHA.sname == "Cast", "Cast display identity changed")
 assert(ACE.ArmorTypes.ERA.Stopshock == true, "ERA shock compatibility changed")
 assert(ACE.ArmorTypes.Rub.Stopshock == true, "Rubber shock compatibility changed")
+assert(ACE.ArmorTypes.Rub.ArmorSpec.spallCapture == 0.65, "Rubber spall capture behavior missing")
+assert(ACE.ArmorTypes.Texto.ArmorSpec.spallCapture == 0.35, "Textolite spall capture behavior missing")
 
 print("ACE modular legacy armor profile self-test: PASS")

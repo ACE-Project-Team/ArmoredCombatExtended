@@ -17,8 +17,8 @@ local function Profile(id, name, sname, desc, year, legacy, behaviors, spec, res
 	})
 end
 
-local function CommonSpec(legacy)
-	return {
+local function CommonSpec(legacy, behavior)
+	local spec = {
 		densityKgM3 = legacy.massMod * 7850,
 		kineticRHAe = legacy.effectiveness,
 		chemicalRHAe = legacy.HEATeffectiveness or legacy.effectiveness,
@@ -32,6 +32,8 @@ local function CommonSpec(legacy)
 		spallResistance = legacy.spallresist,
 		shockTransmission = legacy.Stopshock and 0 or 1
 	}
+	for key, value in pairs(behavior or {}) do spec[key] = value end
+	return spec
 end
 
 local function CommonResolverConfig(legacy)
@@ -108,7 +110,10 @@ Profile("DU", "Depleted Uranium", "DU", "Heavy yet extremely effective armor. Th
 Profile("Ti", "Titanium", "Titanium", "Lightweight and super resiliant. But E X P E N S I V E. 60% Lighter than RHA for a given thickness.\nUnlike aluminum works at high thicknesses but for a price.", 1950, Ti, { "lightweight_metal", "homogeneous_metal", "spall_response" }, CommonSpec(Ti), CommonResolverConfig(Ti))
 Profile("Alum", "Aluminum", "Aluminum", "Aluminum is normally used by AFVs or light constructions, as it provides significantly more protection for a given weight. It is more costly and prone to spalling though.", 1955, Alum, { "lightweight_metal", "homogeneous_metal", "spall_response" }, CommonSpec(Alum), CommonResolverConfig(Alum))
 Profile("ERA", "Explosive Reactive Armor", "ERA", "An explosive composite sandwiched between 2 plates. When penetrated the plate detonates damaging or even destroying the incoming shell degrading its performance. Explosive rounds can make short work of this material. This material is heavy compared to RHA and unlike other materials, will damage anything near the detonation.", 1955, ERA, { "reactive_tile", "shock_barrier", "spall_response", "failure_state" }, CommonSpec(ERA), { impactHook = "era_detonation", ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
-Profile("Rub", "Rubber", "Rubber", "Another material that while useless against kinetic rounds, excels at stopping shaped charges and spall", 1955, Rub, { "elastomer_liner", "spall_response", "shock_barrier" }, CommonSpec(Rub), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
-Profile("Texto", "Textolite", "Textolite", "Fiberglass based material, this material provides decent protection agaisnt both chemical especially and kinetic rounds, while taking reduced damage from explosions.", 1955, Texto, { "composite_backing", "spall_response", "failure_state" }, CommonSpec(Texto), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
+-- These are behavior-model inputs, not replacements for the legacy tuning numbers above.
+-- Rubber is modeled as a deformable fragment-capture liner; textolite is a rigid
+-- glass/resin backing that captures less fragment energy than a dedicated liner.
+Profile("Rub", "Rubber", "Rubber", "Another material that while useless against kinetic rounds, excels at stopping shaped charges and spall", 1955, Rub, { "elastomer_liner", "spall_response", "shock_barrier" }, CommonSpec(Rub, { spallCapture = 0.65 }), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
+Profile("Texto", "Textolite", "Textolite", "Fiberglass based material, this material provides decent protection agaisnt both chemical especially and kinetic rounds, while taking reduced damage from explosions.", 1955, Texto, { "composite_backing", "spall_response", "failure_state" }, CommonSpec(Texto, { spallCapture = 0.35 }), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
 
 ACE.ERABoomPerTick = ACE.ERABoomPerTick or 0

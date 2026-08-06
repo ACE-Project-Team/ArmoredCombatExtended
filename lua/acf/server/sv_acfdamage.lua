@@ -860,6 +860,14 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		CanContinue, State = CanContinueSpallTrace(Index, SpallRes, State)
 		if not CanContinue then return end
 
+		local Mat = SpallRes.Entity.ACF.Material or "RHA"
+		local MatData = ACE.GetMaterialData(Mat)
+		ApplySpallCapture(SpallEnergy, MatData)
+		if SpallEnergy.Penetration <= 0 or SpallEnergy.Kinetic <= 0 then
+			SetSpallTermination(Index, "captured")
+			return
+		end
+
 		do
 
 			local phys = SpallRes.Entity:GetPhysicsObject()
@@ -885,10 +893,6 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- Get the spalling hitAngle
 		local Angle		= ACE.GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
-
-		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
-		local MatData	= ACE.GetMaterialData( Mat )
-		ApplySpallCapture(SpallEnergy, MatData)
 
 		local spall_resistance = MatData.spallresist
 

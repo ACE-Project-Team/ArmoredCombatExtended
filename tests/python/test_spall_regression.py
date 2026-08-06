@@ -312,10 +312,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertLess(guard, damage)
 
     def test_both_continuation_paths_use_incoming_direction(self):
-        end_positions = re.findall(
-            r"ACE\.SpallTraces\[Index\]\.endpos\s*=\s*(.+)",
-            self.body,
-        )
+        end_positions = re.findall(r"TraceData\.endpos\s*=\s*(.+)", self.body)
 
         self.assertEqual(len(end_positions), 2)
         self.assertTrue(all("SpallDirection" in expression for expression in end_positions))
@@ -361,7 +358,8 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("spallresist = 0.15", self.rubber_source)
         self.assertIn('resolver = "modular"', self.rubber_source)
         self.assertNotIn('legacyMode = "rubber"', self.rubber_source)
-        self.assertIn('threat = "fragment"', self.behavior_source)
+        self.assertIn('ThreatTypes[Type] or "kinetic"', self.behavior_source)
+        self.assertIn('Frag = "fragment"', self.behavior_source)
         self.assertNotIn("specialresiliance = Material.spallresist", self.behavior_source)
 
     def test_rubber_preserves_non_spall_overmatch_behavior(self):

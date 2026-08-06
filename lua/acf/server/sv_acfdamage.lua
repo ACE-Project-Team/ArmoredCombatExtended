@@ -7,6 +7,10 @@ ACE.SpallFragmentMax = ACE.SpallFragmentMax or ACE.SpallMax
 ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth
 local InitialSpallTraceMaxDepth = ACE.SpallTraceMaxDepth
 local InitialSpallLayerMax = ACE.SpallLayerMax
+local SpallDebug = GetConVar("ace_spall_debug") or CreateConVar(
+	"ace_spall_debug", "0", FCVAR_ARCHIVE,
+	"Draw ACE spall continuation traces (debug only)."
+)
 
 local function GetSpallDepthBudget()
 	local traceMax = ACE.SpallTraceMaxDepth
@@ -920,15 +924,13 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			if IsValid(phys) and ACE.CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
 
-				local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
-				table.insert( Temp_Filter , SpallRes.Entity )
-
-				ACE.SpallTraces[Index] = {}
-				ACE.SpallTraces[Index].start  = SpallRes.HitPos
-				ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-				ACE.SpallTraces[Index].filter = Temp_Filter
-				ACE.SpallTraces[Index].mins	= Vector(0,0,0)
-				ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
+				local TraceData = ACE.SpallTraces[Index]
+				TraceData.filter = TraceData.filter or {}
+				TraceData.filter[#TraceData.filter + 1] = SpallRes.Entity
+				TraceData.start  = SpallRes.HitPos
+				TraceData.endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				TraceData.mins	= vector_origin
+				TraceData.maxs	= vector_origin
 
 				ACE.SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 				return
@@ -1003,20 +1005,21 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			SpallEnergy.Penetration = PostPenetration.RemainingPenetration
 			SpallEnergy.Kinetic = PostPenetration.RemainingKinetic
 
-			local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
-			table.insert( Temp_Filter , SpallRes.Entity )
+			local TraceData = ACE.SpallTraces[Index]
+			TraceData.filter = TraceData.filter or {}
+			TraceData.filter[#TraceData.filter + 1] = SpallRes.Entity
 			if IsValid(Debris) then
-				table.insert( Temp_Filter , Debris )
+				TraceData.filter[#TraceData.filter + 1] = Debris
 			end
 
-			ACE.SpallTraces[Index] = {}
-			ACE.SpallTraces[Index].start  = SpallRes.HitPos
-			ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-			ACE.SpallTraces[Index].filter = Temp_Filter
-			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
-			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
+			TraceData.start  = SpallRes.HitPos
+			TraceData.endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			TraceData.mins	= vector_origin
+			TraceData.maxs	= vector_origin
 
-			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
+			if SpallDebug:GetBool() then
+				debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
+			end
 			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
@@ -1024,13 +1027,17 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			return
 		else
 			SetSpallTermination(Index, "no_penetration")
-			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
+			if SpallDebug:GetBool() then
+				debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
+			end
 			-- Red trace means spall trace that did hit something.
 		end
 
 	else
 		SetSpallTermination(Index, SpallRes.Hit and "invalid_entity" or "exhausted_valid_layers")
-		debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,255,0), true )
+		if SpallDebug:GetBool() then
+			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,255,0), true )
+		end
 		-- Green trace means spall trace that doesn't hit something.
 	end
 end

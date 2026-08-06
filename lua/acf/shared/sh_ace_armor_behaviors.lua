@@ -99,12 +99,31 @@ CopyValues = function(source)
 	return copy
 end
 
-local function HasBehavior(material, behaviorId)
-	for _, id in ipairs(material.BehaviorModules or {}) do
-		if id == behaviorId then return true end
-	end
+-- Compile immutable per-material decisions used by the impact resolver.
+-- Public material fields remain unchanged; this cache only removes repeated setup work.
+local function BuildRuntimeProfile(material)
+	local spec = material.ArmorSpec or {}
+	local resolverConfig = material.ArmorResolverConfig or {}
+	local behaviorConfig = material.BehaviorConfig or {}
+	local active = {}
 
-	return false
+	for _, behaviorId in ipairs(material.BehaviorModules or {}) do active[behaviorId] = true end
+
+	local profile = material.ACEArmorRuntime or {}
+	profile.spec = spec
+	profile.resolverConfig = resolverConfig
+	profile.behaviorConfig = behaviorConfig
+	profile.threats = resolverConfig.threats
+	profile.defaultThreat = resolverConfig.defaultThreat or {}
+	profile.hasBrittleStrikeFace = active.brittle_strike_face == true
+	profile.hasCompositeBacking = active.composite_backing == true
+	profile.hasShockBarrier = active.shock_barrier == true
+	profile.impactHook = resolverConfig.impactHook
+	profile.triggerOnPenetration = resolverConfig.triggerOnPenetration == true
+	profile.singleUse = spec.singleUse == true
+	material.ACEArmorRuntime = profile
+
+	return profile
 end
 
 local function IsFiniteNumber(value)
@@ -319,6 +338,7 @@ function ACE.ConfigureArmorMaterial(material, definition)
 		end
 	end
 	ValidateLegacyFields(material)
+	BuildRuntimeProfile(material)
 
 	return material
 end
@@ -362,6 +382,16 @@ if SERVER then
 		HEATFS = true,
 		THEATFS = true
 	}
+	local ThreatTypes = {
+		HEAT = "chemical",
+		THEAT = "chemical",
+		HEATFS = "chemical",
+		THEATFS = "chemical",
+		HE = "blast",
+		HESH = "blast",
+		Frag = "fragment",
+		Spall = "fragment"
+	}
 
 	local function Probability(penetration, armor, effectiveness)
 		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
@@ -389,6 +419,40 @@ if SERVER then
 		}
 	end
 
+	local ERAEffectPositions = {}
+	local ERAEffectRadii = {}
+	local ERAEffectNames = {}
+	local ERAEffectScales = {}
+	local ERAEffectCount = 0
+	local ERAEffectFlushQueued = false
+
+	-- Coalesce same-tick ERA visuals so rapid impacts do not allocate one timer per tile.
+	local function QueueERAEffect(position, radius, effectName, scale)
+		ERAEffectCount = ERAEffectCount + 1
+		ERAEffectPositions[ERAEffectCount] = position
+		ERAEffectRadii[ERAEffectCount] = radius
+		ERAEffectNames[ERAEffectCount] = effectName
+		ERAEffectScales[ERAEffectCount] = scale or 0.125
+		if ERAEffectFlushQueued then return end
+
+		ERAEffectFlushQueued = true
+		timer.Simple(0.001, function()
+			ERAEffectFlushQueued = false
+			for index = 1, ERAEffectCount do
+				local flash = EffectData()
+				flash:SetOrigin(ERAEffectPositions[index])
+				flash:SetNormal(-vector_up)
+				flash:SetRadius(math.Round(math.max(ERAEffectRadii[index] / 39.37 * ERAEffectScales[index], 1), 2))
+				util.Effect(ERAEffectNames[index], flash)
+				ERAEffectPositions[index] = nil
+				ERAEffectRadii[index] = nil
+				ERAEffectNames[index] = nil
+				ERAEffectScales[index] = nil
+			end
+			ERAEffectCount = 0
+		end)
+	end
+
 	local function TriggerImpactHook(hook, Entity, armor, maxPenetration)
 		if not Entity or not hook then return end
 
@@ -400,13 +464,7 @@ if SERVER then
 			ACE.HE(position, vector_up, weight, weight, owner, Entity, Entity)
 			if timer and timer.Simple and ACE.CalculateHERadius and EffectData and util and util.Effect then
 				local radius = ACE.CalculateHERadius(weight)
-				timer.Simple(0.001, function()
-					local flash = EffectData()
-					flash:SetOrigin(position)
-					flash:SetNormal(-vector_up)
-					flash:SetRadius(math.Round(math.max(radius / 39.37 * 0.25, 1), 2))
-					util.Effect("ace_scaled_detonation", flash)
-				end)
+				QueueERAEffect(position, radius, "ace_scaled_detonation", 0.25)
 			end
 		elseif hook == "ceramic_shatter" then
 			if Entity.EmitSound and Sound then
@@ -425,28 +483,28 @@ if SERVER then
 				if not timer.Exists or not timer.Exists("ACE_ERA_Reset") then
 					timer.Create("ACE_ERA_Reset", 0.01, 1, function() ACE.ERABoomPerTick = 0 end)
 				end
-				timer.Simple(0.001, function()
-					local flash = EffectData()
-					flash:SetOrigin(position)
-					flash:SetNormal(-vector_up)
-					flash:SetRadius(math.Round(math.max(radius / 39.37 * 0.125, 1), 2))
-					util.Effect("ACE_Scaled_Explosion", flash)
-				end)
+				QueueERAEffect(position, radius, "ACE_Scaled_Explosion", 0.125)
 			end
 		end
 	end
 
-	local function ThreatValues(material, Type)
-		local spec = material.ArmorSpec or {}
-		local threat = "kinetic"
-
-		if Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS" then
-			threat = "chemical"
-		elseif Type == "HE" or Type == "HESH" then
-			threat = "blast"
-		elseif Type == "Frag" or Type == "Spall" then
-			threat = "fragment"
+	-- Apply resolver-side trigger rules without allocating a per-impact closure.
+	local function TriggerModularImpactHook(profile, materialId, Type, Entity, breachArmor, effectiveLosArmor, maxPenetration)
+		local hook = profile.impactHook
+		if not hook then return end
+		if hook == "era_detonation" and not HEATTypes[Type] and maxPenetration <= breachArmor then return end
+		if hook == "era_detonation" and profile.singleUse then
+			Entity.ACEArmorBehaviorState = Entity.ACEArmorBehaviorState or {}
+			if Entity.ACEArmorBehaviorState[materialId] then return end
+			Entity.ACEArmorBehaviorState[materialId] = true
 		end
+		TriggerImpactHook(hook, Entity, effectiveLosArmor, maxPenetration)
+	end
+
+	local function ThreatValues(material, Type)
+		local profile = material.ACEArmorRuntime or BuildRuntimeProfile(material)
+		local spec = profile.spec
+		local threat = ThreatTypes[Type] or "kinetic"
 
 		local effectiveness = spec.kineticRHAe or material.effectiveness or 1
 		local resilience = spec.kineticResilience or material.resiliance or 1
@@ -476,31 +534,30 @@ if SERVER then
 	-- @param Type string ACE threat type.
 	-- @return table result ACE-compatible damage result.
 	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
-		local spec = material.ArmorSpec or {}
-		local resolverConfig = material.ArmorResolverConfig or {}
+		local profile = material.ACEArmorRuntime or BuildRuntimeProfile(material)
+		local spec = profile.spec
+		local resolverConfig = profile.resolverConfig
 		local _, effectiveness, resilience = ThreatValues(material, Type)
-		local threatConfig = resolverConfig.threats and resolverConfig.threats[Type]
-			or resolverConfig.defaultThreat
-			or {}
+		local threatConfig = profile.threats and profile.threats[Type] or profile.defaultThreat
 		effectiveness = threatConfig.effectiveness or effectiveness
 		resilience = threatConfig.resilience or resilience
 		local curve = threatConfig.curve or spec.curve or material.curve or 1
 		local overmatchRatio = threatConfig.overmatchRatio or spec.overmatchRatio or 7
 		local damageMultiplier = spec.penetrationDamageMultiplier or 1
-		local behaviorConfig = material.BehaviorConfig or {}
+		local behaviorConfig = profile.behaviorConfig
 
-		if HasBehavior(material, "brittle_strike_face") then
+		if profile.hasBrittleStrikeFace then
 			local config = behaviorConfig.brittle_strike_face or {}
 			damageMultiplier = config.penetrationDamageMultiplier or damageMultiplier
 		end
 
-		if HasBehavior(material, "composite_backing") then
+		if profile.hasCompositeBacking then
 			local config = behaviorConfig.composite_backing or {}
 			damageMultiplier = damageMultiplier * (config.residualDamageMultiplier or 1)
 		end
 
 		if Type == "HE" or Type == "HESH" then
-			local config = behaviorConfig.shock_barrier or {}
+			local config = profile.hasShockBarrier and behaviorConfig.shock_barrier or {}
 			damageMultiplier = damageMultiplier * (config.shockTransmission or spec.shockTransmission or 1)
 		end
 
@@ -517,7 +574,7 @@ if SERVER then
 		local conditionFactor = math.max(retention, degradationFactor)
 		local singleUseState = Entity and Entity.ACEArmorBehaviorState
 		local singleUseSpent = singleUseState and singleUseState[material.id]
-		if spec.singleUse and singleUseSpent then conditionFactor = 0 end
+		if profile.singleUse and singleUseSpent then conditionFactor = 0 end
 		-- A failed single-use tile is effectively gone, but keep a tiny positive
 		-- denominator so the normalized impact result remains finite.
 		effectiveness = math.max(effectiveness * conditionFactor, 0.000001)
@@ -532,21 +589,9 @@ if SERVER then
 		local breachProbability = math.Clamp((breachCaliber / effectiveArmor / effectiveness - 1.3) / (overmatchRatio - 1.3), 0, 1)
 		local breachArmor = effectiveArmor * effectiveness
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
-		local function TriggerModularImpactHook()
-			local hook = resolverConfig.impactHook
-			if not hook then return end
-			if hook == "era_detonation" and Type ~= "HEAT" and Type ~= "THEAT" and Type ~= "HEATFS" and Type ~= "THEATFS" and maxPenetration <= breachArmor then return end
-			if hook == "era_detonation" and spec.singleUse then
-				Entity.ACEArmorBehaviorState = Entity.ACEArmorBehaviorState or {}
-				if Entity.ACEArmorBehaviorState[material.id] then return end
-				Entity.ACEArmorBehaviorState[material.id] = true
-			end
-			TriggerImpactHook(hook, Entity, effectiveLosArmor, maxPenetration)
-		end
-
 		local layerCapacity = effectiveLosArmor * effectiveness
 		if breachProbability > ImpactRandom() and maxPenetration > breachArmor and maxPenetration >= layerCapacity then
-			TriggerModularImpactHook()
+			TriggerModularImpactHook(profile, material.id, Type, Entity, breachArmor, effectiveLosArmor, maxPenetration)
 			return ImpactResult(
 				FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - breachArmor,
@@ -564,8 +609,10 @@ if SERVER then
 			-- plate and should not consume a reactive or penetrator-effect hook.
 			local defeated = maxPenetration >= layerCapacity
 			local reactiveHit = resolverConfig.impactHook == "era_detonation" and HEATTypes[Type]
-			local hookOnPenetration = defeated and (resolverConfig.triggerOnPenetration or resolverConfig.impactHook == "ceramic_shatter" or resolverConfig.impactHook == "era_detonation")
-			if penetration > 0 and (hookOnPenetration or reactiveHit) then TriggerModularImpactHook() end
+			local hookOnPenetration = defeated and (profile.triggerOnPenetration or profile.impactHook == "ceramic_shatter" or profile.impactHook == "era_detonation")
+			if penetration > 0 and (hookOnPenetration or reactiveHit) then
+				TriggerModularImpactHook(profile, material.id, Type, Entity, breachArmor, effectiveLosArmor, maxPenetration)
+			end
 			return ImpactResult(
 				(penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - penetration,
@@ -578,7 +625,9 @@ if SERVER then
 		local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
 		-- A shaped-charge jet activates a reactive tile on impact even when the
 		-- tile stops the jet; that is the defining expendable behavior of ERA.
-		if resolverConfig.impactHook == "era_detonation" and HEATTypes[Type] then TriggerModularImpactHook() end
+		if profile.impactHook == "era_detonation" and HEATTypes[Type] then
+			TriggerModularImpactHook(profile, material.id, Type, Entity, breachArmor, effectiveLosArmor, maxPenetration)
+		end
 		return ImpactResult(
 			(penetration / losArmorHealth / effectiveness) * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 			0,

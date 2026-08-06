@@ -1,5 +1,5 @@
 -- Shared behavior vocabulary and opt-in resolver for armor materials.
--- Existing material definitions remain on their legacy coefficients and resolvers.
+-- Armor definitions are declarative; legacy coefficients are retained as compatibility inputs.
 AddCSLuaFile()
 
 ACE = ACE or {}
@@ -114,6 +114,32 @@ local function ValidateLegacyFields(material)
 	if material.spallmult ~= nil then assert(IsFiniteNumber(material.spallmult) and material.spallmult >= 0, "spallmult must be a non-negative number") end
 end
 
+local function ValidateResolverConfig(config)
+	local allowed = {
+		legacyMode = true,
+		ductilityFactor = true,
+		ductilityBase = true,
+		ductilityScale = true,
+		breachCaliberMultiplier = true,
+		impactHook = true,
+		triggerOnPenetration = true,
+		threats = true,
+		defaultThreat = true
+	}
+	local modes = { common = true, ceramic = true, rubber = true, textolite = true, era = true }
+	local hooks = { du_secondary_blast = true, era_detonation = true }
+
+	for key in pairs(config or {}) do assert(allowed[key], "unknown armor resolver configuration: " .. tostring(key)) end
+	if config.legacyMode ~= nil then assert(modes[config.legacyMode], "unknown armor resolver mode: " .. tostring(config.legacyMode)) end
+	for _, key in ipairs({ "ductilityFactor", "ductilityBase", "ductilityScale", "breachCaliberMultiplier" }) do
+		if config[key] ~= nil then assert(IsFiniteNumber(config[key]) and config[key] > 0, key .. " must be a positive number") end
+	end
+	if config.impactHook ~= nil then assert(hooks[config.impactHook], "unknown armor impact hook: " .. tostring(config.impactHook)) end
+	if config.triggerOnPenetration ~= nil then assert(type(config.triggerOnPenetration) == "boolean", "triggerOnPenetration must be boolean") end
+	if config.threats ~= nil then assert(type(config.threats) == "table", "threats must be a table") end
+	if config.defaultThreat ~= nil then assert(type(config.defaultThreat) == "table", "defaultThreat must be a table") end
+end
+
 --- Validates optional physical/test inputs before registering a material.
 -- @param spec table Physical/test specification.
 -- @return boolean valid Whether all supplied values are usable.
@@ -123,7 +149,7 @@ function ACE.ValidateArmorSpec(spec)
 	local positive = {
 		"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "kineticRHAe", "chemicalRHAe", "heRHAe",
 		"curve", "overmatchRatio", "kineticResilience", "chemicalResilience", "heResilience", "penetrationDamageMultiplier",
-		"spallProduction", "spallResistance", "residualDamageMultiplier", "tileMassKgM2"
+		"spallResistance", "residualDamageMultiplier", "tileMassKgM2"
 	}
 	local fractions = { "ductility", "multiHitRetention", "spallCapture", "shockTransmission", "degradation" }
 
@@ -141,6 +167,10 @@ function ACE.ValidateArmorSpec(spec)
 		if spec[field] ~= nil and (not IsFiniteNumber(spec[field]) or spec[field] < 0 or spec[field] > 1) then
 			errors[#errors + 1] = field .. " must be between 0 and 1"
 		end
+	end
+
+	if spec.spallProduction ~= nil and (not IsFiniteNumber(spec.spallProduction) or spec.spallProduction < 0) then
+		errors[#errors + 1] = "spallProduction must be non-negative"
 	end
 
 	if IsFiniteNumber(spec.overmatchRatio) and spec.overmatchRatio <= 1.3 then
@@ -214,6 +244,8 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 				assert(type(value) == "boolean", "singleUse must be boolean")
 			elseif field == "ductility" or field == "multiHitRetention" or field == "spallCapture" or field == "shockTransmission" or field == "degradation" then
 				assert(IsFiniteNumber(value) and value >= 0 and value <= 1, field .. " must be between 0 and 1")
+			elseif field == "spallProduction" then
+				assert(IsFiniteNumber(value) and value >= 0, field .. " must be non-negative")
 			else
 				assert(IsFiniteNumber(value) and value > 0, field .. " must be a positive number")
 			end
@@ -230,6 +262,8 @@ end
 function ACE.ConfigureArmorMaterial(material, definition)
 	definition = definition or {}
 	material.ArmorSpec = CopyValues(definition.spec or material.ArmorSpec)
+	material.ArmorResolverConfig = CopyValues(definition.resolverConfig or material.ArmorResolverConfig)
+	ValidateResolverConfig(material.ArmorResolverConfig)
 
 	local legacy = definition.legacy or {}
 	for key, value in pairs(legacy) do
@@ -293,14 +327,14 @@ end
 function ACE.DefineArmorMaterial(definition)
 	assert(type(definition) == "table", "armor material definition must be a table")
 	assert(type(definition.id) == "string" and definition.id ~= "", "armor material definition requires a non-empty id")
-	local allowed = { id = true, name = true, sname = true, desc = true, year = true, material = true, spec = true, behaviors = true, behaviorConfig = true, legacy = true, resolver = true }
+	local allowed = { id = true, name = true, sname = true, desc = true, year = true, material = true, spec = true, behaviors = true, behaviorConfig = true, resolverConfig = true, legacy = true, resolver = true }
 	for key in pairs(definition) do assert(allowed[key], "unknown armor material definition key: " .. tostring(key)) end
 	for _, key in ipairs({ "name", "sname", "desc" }) do
 		if definition[key] ~= nil then assert(type(definition[key]) == "string", key .. " must be a string") end
 	end
 	if definition.year ~= nil then assert(IsFiniteNumber(definition.year), "year must be a finite number") end
 	if definition.resolver ~= nil then assert(definition.resolver == "modular", "resolver must be modular") end
-	for _, key in ipairs({ "material", "spec", "behaviors", "behaviorConfig", "legacy" }) do
+	for _, key in ipairs({ "material", "spec", "behaviors", "behaviorConfig", "resolverConfig", "legacy" }) do
 		if definition[key] ~= nil then assert(type(definition[key]) == "table", key .. " must be a table") end
 	end
 
@@ -319,6 +353,220 @@ function ACE.DefineArmorMaterial(definition)
 end
 
 if SERVER then
+	local HEATTypes = {
+		HEAT = true,
+		THEAT = true,
+		HEATFS = true,
+		THEATFS = true
+	}
+
+	local HETypes = {
+		HE = true,
+		HESH = true,
+		Frag = true
+	}
+
+	local function Probability(penetration, armor, effectiveness)
+		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
+	end
+
+	local function LegacyDuctility(Entity, config)
+		local value = ((Entity and Entity.ACF and Entity.ACF.Ductility) or 0) * (config.ductilityFactor or 1.25)
+		local base = config.ductilityBase or 2
+		return base / (base + value * (config.ductilityScale or 1.5))
+	end
+
+	local function TriggerImpactHook(hook, Entity, armor, maxPenetration)
+		if not Entity or not hook then return end
+
+		if hook == "du_secondary_blast" then
+			if not ACE.HE or not Entity.GetPos then return end
+			local weight = math.min(maxPenetration * 0.001, 30)
+			local owner = (CPPI and Entity.CPPIGetOwner and Entity:CPPIGetOwner()) or NULL
+			local position = Entity:GetPos()
+			ACE.HE(position, vector_up, weight, weight, owner, Entity, Entity)
+			if timer and timer.Simple and ACE.CalculateHERadius and EffectData and util and util.Effect then
+				local radius = ACE.CalculateHERadius(weight)
+				timer.Simple(0.001, function()
+					local flash = EffectData()
+					flash:SetOrigin(position)
+					flash:SetNormal(-vector_up)
+					flash:SetRadius(math.Round(math.max(radius / 39.37 * 0.25, 1), 2))
+					util.Effect("ace_scaled_detonation", flash)
+				end)
+			end
+		elseif hook == "era_detonation" then
+			if Entity.Remove then Entity:Remove() end
+			ACE.ERABoomPerTick = (ACE.ERABoomPerTick or 0) + 1
+			if not ACE.HE or not Entity.GetPos or ACE.ERABoomPerTick > 3 then return end
+			local weight = math.min(armor * 0.2, 200)
+			local owner = (CPPI and Entity.CPPIGetOwner and Entity:CPPIGetOwner()) or NULL
+			local position = Entity:GetPos()
+			ACE.HE(position, vector_up, weight, weight, owner, Entity, Entity, 0.1)
+			if timer and timer.Create and ACE.CalculateHERadius and EffectData and util and util.Effect then
+				local radius = ACE.CalculateHERadius(weight)
+				if not timer.Exists or not timer.Exists("ACE_ERA_Reset") then
+					timer.Create("ACE_ERA_Reset", 0.01, 1, function() ACE.ERABoomPerTick = 0 end)
+				end
+				timer.Simple(0.001, function()
+					local flash = EffectData()
+					flash:SetOrigin(position)
+					flash:SetNormal(-vector_up)
+					flash:SetRadius(math.Round(math.max(radius / 39.37 * 0.125, 1), 2))
+					util.Effect("ACE_Scaled_Explosion", flash)
+				end)
+			end
+		end
+	end
+
+	local function LegacyResult(armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, originalArmor)
+		local breachCaliber = caliber * (options.breachCaliberMultiplier or 1)
+		local breachLimit = options.breachLimit or 7
+		local breachProbability = math.Clamp((breachCaliber / armor / effectiveness - 1.3) / (breachLimit - 1.3), 0, 1)
+		local penetrationProbability = Probability(maxPenetration, losArmor, effectiveness)
+		local damageFactor = options.damageFactor or 1
+		local passedDamageMult = options.ignoreDamageMult and 1 or damageMult
+		local breachArmor = options.breachUsesRawArmor and armor or armor * effectiveness
+
+		if not options.ignoreBreach and breachProbability > math.random() and maxPenetration > breachArmor then
+			if options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
+			return {
+				Damage = FrArea * resilience * passedDamageMult * damageFactor * ductility,
+				Overkill = maxPenetration - breachArmor,
+				Loss = breachArmor / maxPenetration
+			}
+		end
+
+		if penetrationProbability > math.random() then
+			local penetration = math.min(maxPenetration, losArmor * effectiveness)
+			local denominator = options.penetrationDamageDenominator == "los" and losArmor or losArmorHealth
+			local penetrationDamageFactor = maxPenetration > losArmor * effectiveness and (options.penetrationDamageFactor or 1) or 1
+			if (penetrationDamageFactor ~= 1 or options.triggerOnPenetration) and options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
+			return {
+				Damage = (penetration / denominator / effectiveness) ^ (options.penetrationDamagePower or 2) * FrArea * resilience * passedDamageMult * damageFactor * penetrationDamageFactor * ductility,
+				Overkill = maxPenetration - penetration,
+				Loss = penetration / maxPenetration
+			}
+		end
+
+		local penetration = math.min(maxPenetration, losArmor * effectiveness)
+		local denominator = options.failedDamageDenominator == "los" and losArmor or losArmorHealth
+		return {
+			Damage = (penetration / denominator / effectiveness) ^ (options.failedDamagePower or 1) * FrArea * resilience * passedDamageMult * damageFactor * (options.failedDamageFactor or 1) * ductility,
+			Overkill = 0,
+			Loss = 1
+		}
+	end
+
+	local function ResolveLegacy(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+		local config = material.ArmorResolverConfig or {}
+		local mode = config.legacyMode or "common"
+		local legacy = material
+		local curve = legacy.curve or 1
+		local effectiveArmor = armor ^ curve
+		local effectiveLosArmor = losArmor ^ curve
+		local ductility = LegacyDuctility(Entity, config)
+
+		if mode == "ceramic" then
+			local factor = effectiveLosArmor / effectiveArmor
+			if HETypes[Type] then factor = factor * 15 end
+			local result = LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.effectiveness, legacy.resiliance, ductility, config, {
+				breachLimit = 0,
+				breachCaliberMultiplier = 0,
+				damageFactor = factor,
+				penetrationDamageFactor = 4,
+				ignoreBreach = true
+			}, Entity, armor)
+			return result
+		end
+
+		if mode == "textolite" then
+			local heat = HEATTypes[Type]
+			local other = HETypes[Type] or Type == "Spall"
+			local effectiveness = heat and legacy.HEATeffectiveness or other and legacy.HEeffectiveness or legacy.effectiveness
+			local resilience = heat and legacy.HEATresiliance or other and legacy.HEresiliance or legacy.resiliance
+			local options = {
+				breachCaliberMultiplier = heat and 1 or 10,
+				breachUsesRawArmor = not heat,
+				failedDamageDenominator = (heat or other) and "los" or nil,
+				failedDamagePower = (heat or other) and 2 or 1,
+				ignoreDamageMult = true
+			}
+			return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
+		end
+
+		if mode == "rubber" then
+			if Type == "Spall" then
+				effectiveArmor = armor ^ curve
+				effectiveLosArmor = losArmor ^ curve
+				return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.spallresist, legacy.resiliance, ductility, config, {
+					breachCaliberMultiplier = 1,
+					breachUsesRawArmor = true,
+					failedDamageDenominator = "los",
+					failedDamagePower = 2,
+					failedDamageFactor = legacy.Catchresiliance
+				}, Entity, armor)
+			end
+
+			local heat = HEATTypes[Type]
+			local effectiveness = heat and legacy.HEATeffectiveness or legacy.effectiveness
+			local resilience = heat and legacy.HEATresiliance or Type == "HE" and legacy.HEresiliance or legacy.resiliance
+			local options = {
+				breachCaliberMultiplier = heat and 1 or 10,
+				breachUsesRawArmor = true,
+				failedDamageDenominator = heat and "los" or nil,
+				failedDamagePower = heat and 2 or 2,
+				damageFactor = Type == "HE" and 1 or 1
+			}
+			if not heat and Type ~= "HE" then
+				options.breachCaliberMultiplier = Type == "Spall" and 1 or 10
+				options.failedDamageFactor = legacy.Catchresiliance
+			end
+			return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
+		end
+
+		if mode == "era" then
+			local health = Entity and Entity.ACF and Entity.ACF.Health or 1
+			local maxHealth = Entity and Entity.ACF and Entity.ACF.MaxHealth or 1
+			local condition = math.Clamp(health / math.max(maxHealth, 1), 0, 1)
+			local blastArmor = legacy.effectiveness * losArmor * condition
+			local sensor = legacy.APSensorFactor or 4
+			local resilience = legacy.resiliance
+
+			if HEATTypes[Type] then
+				blastArmor = legacy.HEATeffectiveness * losArmor
+				resilience = legacy.HEATresiliance
+				sensor = legacy.HEATSensorFactor or 16
+			elseif HETypes[Type] then
+				blastArmor = legacy.Neffectiveness * armor
+				resilience = legacy.Nresiliance
+				sensor = 1
+			end
+
+			if (not HETypes[Type] and maxPenetration > blastArmor / sensor) or condition < 0.15 then
+				TriggerImpactHook(config.impactHook, Entity, armor, maxPenetration)
+				return {
+					Damage = 9999999999999,
+					Overkill = math.Clamp(maxPenetration - blastArmor, 0, 1),
+					Loss = math.Clamp(blastArmor / maxPenetration, 0, 0.98)
+				}
+			end
+
+			return LegacyResult(armor ^ (legacy.NCurve or 1), losArmor ^ (legacy.NCurve or 1), losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.Neffectiveness, legacy.Nresiliance, 1, config, { breachLimit = 7, breachUsesRawArmor = true }, Entity, armor)
+		end
+
+		local effectiveness = legacy.effectiveness
+		local resilience = legacy.resiliance
+		local options = { breachCaliberMultiplier = 1, breachUsesRawArmor = true }
+		options.impactHook = config.impactHook
+		options.triggerOnPenetration = config.triggerOnPenetration
+		if HEATTypes[Type] then
+			effectiveness = legacy.effectiveness
+			if legacy.HEATMul then options.damageFactor = legacy.HEATMul end
+		end
+		return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
+	end
+
 	local function ThreatValues(material, Type)
 		local spec = material.ArmorSpec or {}
 		local threat = "kinetic"
@@ -357,10 +605,19 @@ if SERVER then
 	-- @param Type string ACE threat type.
 	-- @return table result ACE-compatible damage result.
 	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+		if (material.ArmorResolverConfig or {}).legacyMode then
+			return ResolveLegacy(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+		end
 		local spec = material.ArmorSpec or {}
+		local resolverConfig = material.ArmorResolverConfig or {}
 		local _, effectiveness, resilience = ThreatValues(material, Type)
-		local curve = spec.curve or material.curve or 1
-		local overmatchRatio = spec.overmatchRatio or 7
+		local threatConfig = resolverConfig.threats and resolverConfig.threats[Type]
+			or resolverConfig.defaultThreat
+			or {}
+		effectiveness = threatConfig.effectiveness or effectiveness
+		resilience = threatConfig.resilience or resilience
+		local curve = threatConfig.curve or spec.curve or material.curve or 1
+		local overmatchRatio = threatConfig.overmatchRatio or spec.overmatchRatio or 7
 		local damageMultiplier = spec.penetrationDamageMultiplier or 1
 		local behaviorConfig = material.BehaviorConfig or {}
 
@@ -391,11 +648,14 @@ if SERVER then
 		local degradationFactor = 1 - degradation * (1 - condition)
 		effectiveness = effectiveness * math.max(retention, degradationFactor)
 
-		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
-		local ductilityMultiplier = 2 / (2 + ductility * 1.5)
+		local ductility = math.Clamp((Entity and Entity.ACF and Entity.ACF.Ductility or spec.ductility or 0) * (resolverConfig.ductilityFactor or 1), 0, 1)
+		local ductilityBase = resolverConfig.ductilityBase or 2
+		local ductilityScale = resolverConfig.ductilityScale or 1.5
+		local ductilityMultiplier = ductilityBase / (ductilityBase + ductility * ductilityScale)
 		local effectiveArmor = armor ^ curve
 		local effectiveLosArmor = losArmor ^ curve
-		local breachProbability = math.Clamp((caliber / effectiveArmor / effectiveness - 1.3) / (overmatchRatio - 1.3), 0, 1)
+		local breachCaliber = caliber * (threatConfig.breachCaliberMultiplier or resolverConfig.breachCaliberMultiplier or 1)
+		local breachProbability = math.Clamp((breachCaliber / effectiveArmor / effectiveness - 1.3) / (overmatchRatio - 1.3), 0, 1)
 		local breachArmor = effectiveArmor * effectiveness
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 

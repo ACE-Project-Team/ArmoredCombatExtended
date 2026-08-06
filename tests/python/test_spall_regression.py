@@ -21,7 +21,8 @@ SOURCE = (
     / "server"
     / "sv_acfdamage.lua"
 )
-RUBBER_SOURCE = SOURCE.parents[1] / "shared" / "armor" / "rubber.lua"
+ARMOR_PROFILES = SOURCE.parents[1] / "shared" / "armor" / "modular_legacy_profiles.lua"
+ARMOR_BEHAVIORS = SOURCE.parents[1] / "shared" / "sh_ace_armor_behaviors.lua"
 
 
 @dataclass(frozen=True)
@@ -240,7 +241,8 @@ class SpallSourceContractTests(unittest.TestCase):
         if not match:
             raise AssertionError("ACE.SpallTrace body could not be located")
         cls.body = match.group("body")
-        cls.rubber_source = RUBBER_SOURCE.read_text(encoding="utf-8")
+        cls.rubber_source = ARMOR_PROFILES.read_text(encoding="utf-8")
+        cls.behavior_source = ARMOR_BEHAVIORS.read_text(encoding="utf-8")
 
     def test_trace_owns_a_copy_before_mutating_penetration(self):
         copy_pos = self.body.index("SpallEnergy = table.Copy(SpallEnergy)")
@@ -322,16 +324,13 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIsNotNone(continuation)
 
     def test_rubber_uses_default_spall_resolution_with_material_effectiveness(self):
-        self.assertIn("Material.spallresist = 0.15", self.rubber_source)
-        self.assertIn('if Type == "Spall" then\n\t\t\teffectiveness = Material.spallresist', self.rubber_source)
-        valid_types = re.search(r"local validTypes = \{(?P<body>.*?)\n\t\t\}", self.rubber_source, re.DOTALL)
-
-        self.assertIsNotNone(valid_types)
-        self.assertNotIn('["Spall"]', valid_types.group("body"))
-        self.assertNotIn("specialresiliance = Material.spallresist", self.rubber_source)
+        self.assertIn("spallresist = 0.15", self.rubber_source)
+        self.assertIn('legacyMode = "rubber"', self.rubber_source)
+        self.assertIn('if Type == "Spall" then', self.behavior_source)
+        self.assertNotIn("specialresiliance = Material.spallresist", self.behavior_source)
 
     def test_rubber_preserves_non_spall_overmatch_behavior(self):
-        self.assertIn("local breachCaliber = Type == \"Spall\" and caliber or caliber * 10", self.rubber_source)
+        self.assertIn('options.breachCaliberMultiplier = Type == "Spall" and 1 or 10', self.behavior_source)
 
     def test_original_fragment_callers_remain_compatible(self):
         callers = re.findall(r"ACE.SpallTrace\(HitVec, Index", self.source)

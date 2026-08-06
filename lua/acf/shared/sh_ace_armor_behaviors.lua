@@ -121,13 +121,14 @@ local function ValidateResolverConfig(config)
 		ductilityBase = true,
 		ductilityScale = true,
 		breachCaliberMultiplier = true,
+		breachDuctility = true,
 		impactHook = true,
 		triggerOnPenetration = true,
 		threats = true,
 		defaultThreat = true
 	}
 	local modes = { common = true, ceramic = true, rubber = true, textolite = true, era = true }
-	local hooks = { du_secondary_blast = true, era_detonation = true }
+	local hooks = { du_secondary_blast = true, ceramic_shatter = true, era_detonation = true }
 
 	for key in pairs(config or {}) do assert(allowed[key], "unknown armor resolver configuration: " .. tostring(key)) end
 	if config.legacyMode ~= nil then assert(modes[config.legacyMode], "unknown armor resolver mode: " .. tostring(config.legacyMode)) end
@@ -136,6 +137,7 @@ local function ValidateResolverConfig(config)
 	end
 	if config.impactHook ~= nil then assert(hooks[config.impactHook], "unknown armor impact hook: " .. tostring(config.impactHook)) end
 	if config.triggerOnPenetration ~= nil then assert(type(config.triggerOnPenetration) == "boolean", "triggerOnPenetration must be boolean") end
+	if config.breachDuctility ~= nil then assert(type(config.breachDuctility) == "boolean", "breachDuctility must be boolean") end
 	if config.threats ~= nil then assert(type(config.threats) == "table", "threats must be a table") end
 	if config.defaultThreat ~= nil then assert(type(config.defaultThreat) == "table", "defaultThreat must be a table") end
 end
@@ -366,6 +368,17 @@ if SERVER then
 		Frag = true
 	}
 
+	local CeramicBlastTypes = {
+		HE = true,
+		HESH = true
+	}
+
+	local TextoliteOtherImpactTypes = {
+		HE = true,
+		HESH = true,
+		Spall = true
+	}
+
 	local function Probability(penetration, armor, effectiveness)
 		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 	end
@@ -394,6 +407,10 @@ if SERVER then
 					flash:SetRadius(math.Round(math.max(radius / 39.37 * 0.25, 1), 2))
 					util.Effect("ace_scaled_detonation", flash)
 				end)
+			end
+		elseif hook == "ceramic_shatter" then
+			if Entity.EmitSound and Sound then
+				Entity:EmitSound(Sound("physics/concrete/concrete_break2.wav"), 100, 100, 1, CHAN_WEAPON)
 			end
 		elseif hook == "era_detonation" then
 			if Entity.Remove then Entity:Remove() end
@@ -431,7 +448,7 @@ if SERVER then
 		if not options.ignoreBreach and breachProbability > math.random() and maxPenetration > breachArmor then
 			if options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
 			return {
-				Damage = FrArea * resilience * passedDamageMult * damageFactor * ductility,
+				Damage = FrArea * resilience * passedDamageMult * damageFactor * (options.breachDuctility == false and 1 or ductility),
 				Overkill = maxPenetration - breachArmor,
 				Loss = breachArmor / maxPenetration
 			}
@@ -441,7 +458,7 @@ if SERVER then
 			local penetration = math.min(maxPenetration, losArmor * effectiveness)
 			local denominator = options.penetrationDamageDenominator == "los" and losArmor or losArmorHealth
 			local penetrationDamageFactor = maxPenetration > losArmor * effectiveness and (options.penetrationDamageFactor or 1) or 1
-			if (penetrationDamageFactor ~= 1 or options.triggerOnPenetration) and options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
+			if (penetrationDamageFactor ~= 1 or (options.triggerOnPenetration and maxPenetration > losArmor * effectiveness)) and options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
 			return {
 				Damage = (penetration / denominator / effectiveness) ^ (options.penetrationDamagePower or 2) * FrArea * resilience * passedDamageMult * damageFactor * penetrationDamageFactor * ductility,
 				Overkill = maxPenetration - penetration,
@@ -469,12 +486,13 @@ if SERVER then
 
 		if mode == "ceramic" then
 			local factor = effectiveLosArmor / effectiveArmor
-			if HETypes[Type] then factor = factor * 15 end
+			if CeramicBlastTypes[Type] then factor = factor * 15 end
 			local result = LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.effectiveness, legacy.resiliance, ductility, config, {
 				breachLimit = 0,
 				breachCaliberMultiplier = 0,
 				damageFactor = factor,
 				penetrationDamageFactor = 4,
+				impactHook = config.impactHook,
 				ignoreBreach = true
 			}, Entity, armor)
 			return result
@@ -482,13 +500,13 @@ if SERVER then
 
 		if mode == "textolite" then
 			local heat = HEATTypes[Type]
-			local other = HETypes[Type] or Type == "Spall"
+			local other = TextoliteOtherImpactTypes[Type]
 			local effectiveness = heat and legacy.HEATeffectiveness or other and legacy.HEeffectiveness or legacy.effectiveness
 			local resilience = heat and legacy.HEATresiliance or other and legacy.HEresiliance or legacy.resiliance
 			local options = {
 				breachCaliberMultiplier = heat and 1 or 10,
 				breachUsesRawArmor = not heat,
-				failedDamageDenominator = (heat or other) and "los" or nil,
+				failedDamageDenominator = heat and "los" or nil,
 				failedDamagePower = (heat or other) and 2 or 1,
 				ignoreDamageMult = true
 			}
@@ -560,6 +578,7 @@ if SERVER then
 		local options = { breachCaliberMultiplier = 1, breachUsesRawArmor = true }
 		options.impactHook = config.impactHook
 		options.triggerOnPenetration = config.triggerOnPenetration
+		options.breachDuctility = config.breachDuctility
 		if HEATTypes[Type] then
 			effectiveness = legacy.effectiveness
 			if legacy.HEATMul then options.damageFactor = legacy.HEATMul end
@@ -591,8 +610,8 @@ if SERVER then
 	end
 
 	--- Resolves a declarative armor material using test-facing RHAe and failure inputs.
-	-- Existing ACE materials retain their bespoke ArmorResolution functions; this resolver is
-	-- opt-in through `resolver = "modular"` in ACE.DefineArmorMaterial.
+	-- New materials opt in through `resolver = "modular"`; the built-in profiles also use
+	-- this path with explicit compatibility modes for their former branch behavior.
 	-- @param material table Configured material definition.
 	-- @param Entity entity Impacted armor entity.
 	-- @param armor number Normal armor thickness.
@@ -648,7 +667,7 @@ if SERVER then
 		local degradationFactor = 1 - degradation * (1 - condition)
 		effectiveness = effectiveness * math.max(retention, degradationFactor)
 
-		local ductility = math.Clamp((Entity and Entity.ACF and Entity.ACF.Ductility or spec.ductility or 0) * (resolverConfig.ductilityFactor or 1), 0, 1)
+		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
 		local ductilityBase = resolverConfig.ductilityBase or 2
 		local ductilityScale = resolverConfig.ductilityScale or 1.5
 		local ductilityMultiplier = ductilityBase / (ductilityBase + ductility * ductilityScale)

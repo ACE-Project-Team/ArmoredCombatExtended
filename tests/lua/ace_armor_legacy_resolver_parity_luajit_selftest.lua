@@ -6,6 +6,8 @@ function AddCSLuaFile() end
 math.Min = math.min
 vector_up = {}
 NULL = {}
+CHAN_WEAPON = 1
+Sound = function(path) return path end
 timer = { Simple = function() end, Create = function() end, Exists = function() return false end }
 util = { Effect = function() end }
 EffectData = function() return { SetOrigin = function() end, SetNormal = function() end, SetRadius = function() end } end
@@ -90,17 +92,31 @@ end
 local heCalls = 0
 ACE.HE = function() heCalls = heCalls + 1 end
 local removed = 0
+local soundCalls = 0
 local impactEntity = {
 	ACF = { Ductility = 0.25, Health = 100, MaxHealth = 100 },
 	Remove = function() removed = removed + 1 end,
 	GetPos = function() return {} end,
-	EmitSound = function() end
+	EmitSound = function() soundCalls = soundCalls + 1 end
 }
 math.random = function() return 0 end
+local castBreach = ACE.ArmorTypes.CHA.ArmorResolution(impactEntity, 10, 10, 10, 20, 2.5, 100, 1.3, "AP")
+assert(math.abs(castBreach.Damage - 1.3) < 0.0000001, "Cast breach damage still applies ductility")
+local ceramicAP = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
+local ceramicFrag = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "Frag")
+assert(math.abs(ceramicAP.Damage - ceramicFrag.Damage) < 0.0000001, "Ceramic Frag classification changed")
+assert(soundCalls == 0, "Ceramic shatter sound triggered without overpenetration")
+ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 100, 2.5, 5, 1.3, "AP")
+assert(soundCalls == 1, "Ceramic shatter sound hook was not preserved")
+ACE.ArmorTypes.DU.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
+assert(heCalls == 0, "DU secondary blast triggered without overpenetration")
 ACE.ArmorTypes.DU.ArmorResolution(impactEntity, 10, 15, 10, 100, 2.5, 5, 1.3, "AP")
 assert(heCalls == 1, "DU secondary blast hook was not preserved")
 ACE.ArmorTypes.ERA.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
 assert(removed == 1, "ERA detonation removal hook was not preserved")
 assert(heCalls == 2, "ERA detonation blast hook was not preserved")
+assert(type(ACE.ArmorTypes.ERA.HEATList) == "table", "ERA HEATList compatibility field was lost")
+assert(type(ACE.ArmorTypes.ERA.HEList) == "table", "ERA HEList compatibility field was lost")
+assert(ACE.ERABoomPerTick == 1, "ERA boom counter initialization changed")
 
 print("ACE legacy armor resolver parity self-test: PASS")

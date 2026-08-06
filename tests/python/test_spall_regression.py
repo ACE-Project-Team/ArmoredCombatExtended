@@ -259,7 +259,14 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_spall_trace_depth_budget_is_tied_to_existing_spall_cap(self):
         self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax", self.source)
         self.assertIn("ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth", self.source)
-        self.assertIn("State.Depth > (ACE.SpallLayerMax or ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
+        self.assertIn("GetSpallDepthBudget()", self.source)
+        self.assertIn("if traceMax ~= InitialSpallTraceMaxDepth and layerMax == InitialSpallLayerMax", self.source)
+
+    def test_spall_context_uses_source_unit_conversions_and_geometry(self):
+        self.assertIn("local SPALL_UNITS_PER_M = 39.37", self.source)
+        self.assertIn("local velocityMeters = math.max(tonumber(SpallVelocity) or 0, 0) / SPALL_UNITS_PER_M", self.source)
+        self.assertIn("OBBMins", self.source)
+        self.assertIn("WorldToLocal", self.source)
 
     def test_spall_trace_records_explicit_termination_reasons(self):
         for reason in (

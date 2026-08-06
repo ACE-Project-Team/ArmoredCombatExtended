@@ -22,6 +22,7 @@ local function withSpallTraceStubs(callback)
 		CritEnts = ACE.CritEnts,
 		SpallTrace = ACE.SpallTraces[1],
 		SpallTraceMaxDepth = ACE.SpallTraceMaxDepth,
+		SpallLayerMax = ACE.SpallLayerMax,
 	}
 
 	local ok, err = pcall(callback)
@@ -39,6 +40,7 @@ local function withSpallTraceStubs(callback)
 	ACE.CritEnts = original.CritEnts
 	ACE.SpallTraces[1] = original.SpallTrace
 	ACE.SpallTraceMaxDepth = original.SpallTraceMaxDepth
+	ACE.SpallLayerMax = original.SpallLayerMax
 
 	if not ok then error(err, 0) end
 end
@@ -199,6 +201,95 @@ return {
 				expect(thickRubber).to.beLessThan(100)
 				expect(thinRubber).to.beGreaterThan(thickRubber)
 				expect(thickRubber).to.beLessThan(thickTextolite)
+			end,
+		},
+		{
+			name = "converts physical inter-plate spacing before applying liner capture",
+			func = function()
+				local function energyAfterSecondPlate(gap)
+					local scale = math.sqrt(0.5)
+					local platePath = 10 / 25.4
+					local localHit = 100 * scale
+					local spallVelocity = 1400 * 39.37
+					local front = makeEntity("front")
+					front.ACF = { Ductility = 0, Armour = 10, Material = "RHA" }
+					front.WorldToLocal = function(_, position)
+						return Vector((position.x + position.y) * scale, (position.y - position.x) * scale, position.z)
+					end
+					front.OBBMins = function() return Vector(-1000, -1000, -1) end
+					front.OBBMaxs = function()
+						return Vector(localHit + platePath * scale * 2, localHit + platePath * scale, 1)
+					end
+					local rear = makeEntity("rear")
+					rear.ACF = { Ductility = 0, Armour = 10, Material = "Rub" }
+					local secondEnergy
+
+					withSpallTraceStubs(function()
+						ACE.SpallTraces[1] = {
+							start = Vector(0, 0, 0),
+							endpos = Vector(0, 100, 0),
+							filter = {},
+							mins = Vector(0, 0, 0),
+							maxs = Vector(0, 0, 0),
+						}
+						_G.ACE_Check = function() return true end
+						_G.ACE_CheckClips = function() return false end
+						_G.ACE_GetHitAngle = function() return 0 end
+						_G.ACE_APKill = function() return nil end
+						_G.VectorRand = function() return Vector(0, 0, 0) end
+						ACE.GetMaterialData = function(id)
+							return {
+								spallresist = 1,
+								ArmorSpec = {
+									densityKgM3 = 1560,
+									spallCapture = id == "Rub" and 0.65 or 0,
+									spallCaptureArealDensity = 18,
+									spallCaptureVelocity = 1400,
+									spallCaptureSpacing = 0.1,
+								},
+							}
+						end
+						util.Decal = function() end
+						debugoverlay.Line = function() end
+						local traces = 0
+						util.TraceLine = function()
+							traces = traces + 1
+							return {
+								Hit = true,
+								Entity = traces == 1 and front or rear,
+								HitNormal = Vector(-1, 0, 0),
+								StartPos = Vector(0, 0, 0),
+								HitPos = Vector(0, traces == 1 and 100 or 100 + platePath + gap, 0),
+							}
+						end
+						_G.ACE_Damage = function(entity, energy)
+							if entity == rear then secondEnergy = energy.Penetration end
+							return { Overkill = entity == front and 10 or 0, Loss = entity == front and 0.25 or 1, Kill = false }
+						end
+
+						ACE.SpallTrace(Vector(1, 0, 0), 1, { Penetration = 100, Kinetic = 80 }, 1, nil, spallVelocity)
+					end)
+
+					return secondEnergy
+				end
+
+				local arealDensity = 10 * 1560 / 1000
+				local thicknessFactor = 1 - math.exp(-arealDensity / 18)
+				local velocityFactor = 1 / 1.5
+				local function expectedEnergy(gap)
+					local spacingFactor = 0.65 + 0.35 * math.Clamp(gap / 39.37 / 0.1, 0, 1)
+					local capture = 0.65 * thicknessFactor * velocityFactor * spacingFactor
+					return 75 * (1 - capture)
+				end
+
+				local touching = energyAfterSecondPlate(0)
+				local halfReference = energyAfterSecondPlate(0.05 * 39.37)
+				local fullReference = energyAfterSecondPlate(0.1 * 39.37)
+				expect(touching).to.aboutEqual(expectedEnergy(0))
+				expect(halfReference).to.aboutEqual(expectedEnergy(0.05 * 39.37))
+				expect(fullReference).to.aboutEqual(expectedEnergy(0.1 * 39.37))
+				expect(touching).to.be.GreaterThan(halfReference)
+				expect(halfReference).to.be.GreaterThan(fullReference)
 			end,
 		},
 		{

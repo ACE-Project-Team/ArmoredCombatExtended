@@ -328,17 +328,34 @@ local MATERIAL_EFF = {
 	Texto = { 0.5,    1.2,    0.35,  0.94 },
 }
 
+local function liveMaterialEff(mat)
+	local material = ACE.ArmorTypes and ACE.ArmorTypes[mat]
+	if not material then return end
+
+	local effectiveness = tonumber(material.effectiveness)
+	if not effectiveness then return end
+
+	return effectiveness,
+		tonumber(material.HEATeffectiveness or material.effectiveness) or effectiveness,
+		tonumber(material.massMod) or 1.0,
+		tonumber(material.curve) or 1.0
+end
+
 local function materialEff(mat)
 	local eff = MATERIAL_EFF[mat or "RHA"]
-	if not eff then return 1.0, 1.0 end
-	return eff[1], eff[2]
+	if eff then return eff[1], eff[2], eff[3], eff[4] end
+
+	local ke, chem, massMod, curve = liveMaterialEff(mat or "RHA")
+	return ke or 1.0, chem or 1.0, massMod or 1.0, curve or 1.0
 end
 
 -- Returns nil for unknown materials so display code can fall back to live material data.
 function ACE.Points.MaterialEff(mat)
 	local eff = MATERIAL_EFF[mat]
-	if not eff then return nil end
-	return eff[1], eff[2]
+	if eff then return eff[1], eff[2] end
+
+	local ke, chem = liveMaterialEff(mat)
+	return ke, chem
 end
 
 -- Build the plain pricing round from a gun/crate/rack BulletData table. nil if not a table.
@@ -383,8 +400,8 @@ end
 
 -- Prop -> (threatRHAe, maxHealth, massEfficiency) for the armor term, or nil to skip. Skips ACF/ACE
 -- components and pods (they price in their own categories) and props with no armour or HP.
--- Uses MAX armour/health (static design). Material ke/chem, massMod, and curve come from the
--- curated MATERIAL_EFF above.
+-- Uses MAX armour/health (static design). Built-in materials keep their calibrated pricing
+-- weights; custom materials use the live resolver coefficients so pricing matches the preview.
 function ACE.Points.PropArmor(ent)
 	if not ACE.IsEnt(ent) then return nil end
 	if ent.ACE_PrimitiveArmorPending or ent.ACE_PrimitivePropertiesPending
@@ -405,10 +422,8 @@ function ACE.Points.PropArmor(ent)
 	local hp       = tonumber(acf.MaxHealth) or 0
 	if armourMm <= 0 or hp <= 0 then return nil end
 
-	local material = MATERIAL_EFF[acf.Material or ent.ACF_Material]
-	local ke, chem = materialEff(acf.Material or ent.ACF_Material)
-	local curve = material and material[4] or 1.0
-	local massMod = material and material[3] or 1.0
+	local material = acf.Material or ent.ACF_Material
+	local ke, chem, massMod, curve = materialEff(material)
 	local threatRHAe = armourMm ^ curve * (0.7 * ke + 0.3 * chem)
 	local massEfficiency = threatRHAe / (armourMm * massMod)
 	return threatRHAe, hp, massEfficiency

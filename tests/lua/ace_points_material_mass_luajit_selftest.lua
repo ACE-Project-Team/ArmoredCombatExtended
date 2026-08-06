@@ -30,4 +30,25 @@ assert(math.abs(threatRHAe - 85) < 1,
 assert(health == 75, "armor adapter must preserve max health")
 assert(massEfficiency > 1, "titanium must carry a mass-efficiency premium")
 
+ACE.ArmorTypes = {
+	Custom = {
+		effectiveness = 1.5,
+		HEATeffectiveness = 2.5,
+		massMod = 0.4,
+		curve = 0.8,
+	},
+}
+
+local custom = {
+	ACF = { MaxArmour = 80, MaxHealth = 75, Material = "Custom" },
+	GetClass = function() return "prop_physics" end,
+}
+local customRHAe, customHealth, customEfficiency = ACE.Points.PropArmor(custom)
+local customExpected = 80 ^ 0.8 * (0.7 * 1.5 + 0.3 * 2.5)
+assert(math.abs(customRHAe - customExpected) < 0.001,
+	"custom material armor pricing must use live kinetic and chemical coefficients")
+assert(customHealth == 75, "custom material adapter must preserve max health")
+assert(math.abs(customEfficiency - customExpected / (80 * 0.4)) < 0.001,
+	"custom material armor pricing must use live mass and curve coefficients")
+
 print("ACE points material mass LuaJIT self-test: PASS")

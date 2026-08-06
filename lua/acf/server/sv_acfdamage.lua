@@ -5,6 +5,21 @@ ACE.SpallMax	= 250
 ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
 ACE.SpallFragmentMax = ACE.SpallFragmentMax or ACE.SpallMax
 ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth
+local InitialSpallTraceMaxDepth = ACE.SpallTraceMaxDepth
+local InitialSpallLayerMax = ACE.SpallLayerMax
+
+local function GetSpallDepthBudget()
+	local traceMax = ACE.SpallTraceMaxDepth
+	local layerMax = ACE.SpallLayerMax
+
+	-- SpallTraceMaxDepth is the established external control. If only that alias
+	-- changes at runtime, honor it; otherwise the newer layer-specific control wins.
+	if traceMax ~= InitialSpallTraceMaxDepth and layerMax == InitialSpallLayerMax then
+		return traceMax
+	end
+
+	return layerMax or traceMax or ACE.SpallMax or 250
+end
 
 local DeterministicImpacts = GetConVar("ace_deterministic_impacts") or CreateConVar(
 	"ace_deterministic_impacts", "0", FCVAR_ARCHIVE,
@@ -795,7 +810,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 	State = State or { Depth = 0, Visited = {} }
 	State.Depth = State.Depth + 1
 
-	if State.Depth > (ACE.SpallLayerMax or ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
+	if State.Depth > GetSpallDepthBudget() then
 		SetSpallTermination(Index, "depth_budget")
 		return false, State
 	end
@@ -821,6 +836,8 @@ local function CopySpallEnergy( Energy )
 	}
 end
 
+local SPALL_UNITS_PER_M = 39.37
+
 local function ApplySpallCapture( Energy, MatData, Entity, SpallVelocity, Spacing )
 	local spec = MatData and MatData.ArmorSpec
 	local baseCapture = math.Clamp(tonumber(spec and spec.spallCapture) or 0, 0, 1)
@@ -833,7 +850,8 @@ local function ApplySpallCapture( Energy, MatData, Entity, SpallVelocity, Spacin
 	local spacingReference = math.max(tonumber(spec and spec.spallCaptureSpacing) or 1, 0.001)
 	local arealDensity = armor * density / 1000
 	local thicknessFactor = 1 - math.exp(-arealDensity / arealReference)
-	local velocityRatio = math.max(tonumber(SpallVelocity) or 0, 0) / velocityReference
+	local velocityMeters = math.max(tonumber(SpallVelocity) or 0, 0) / SPALL_UNITS_PER_M
+	local velocityRatio = velocityMeters / velocityReference
 	local velocityFactor = 1 / (1 + velocityRatio * velocityRatio * 0.5)
 	local spacingFactor = 0.65 + 0.35 * math.Clamp((tonumber(Spacing) or 0) / spacingReference, 0, 1)
 	local capture = math.Clamp(baseCapture * thicknessFactor * velocityFactor * spacingFactor, 0, 1)
@@ -843,6 +861,28 @@ local function ApplySpallCapture( Energy, MatData, Entity, SpallVelocity, Spacin
 	Energy.Kinetic = Energy.Kinetic * retained
 	Energy.Penetration = Energy.Penetration * retained
 	return capture
+end
+
+local function GetBoxExitDistance(Position, Direction, Minimum, Maximum)
+	if Direction > 0.0001 then return math.max((Maximum - Position) / Direction, 0) end
+	if Direction < -0.0001 then return math.max((Minimum - Position) / Direction, 0) end
+	return math.huge
+end
+
+local function GetSpallPlatePath( Entity, HitPos, Direction )
+	if not Entity or not Entity.OBBMins or not Entity.OBBMaxs or not Entity.WorldToLocal then return 0 end
+
+	local LocalHit = Entity:WorldToLocal(HitPos)
+	local LocalEnd = Entity:WorldToLocal(HitPos + Direction)
+	local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
+	if not LocalHit or not LocalEnd or not Mins or not Maxs then return 0 end
+	local LocalDirection = LocalEnd - LocalHit
+
+	return math.min(
+		GetBoxExitDistance(LocalHit.x, LocalDirection.x, Mins.x, Maxs.x),
+		GetBoxExitDistance(LocalHit.y, LocalDirection.y, Mins.y, Maxs.y),
+		GetBoxExitDistance(LocalHit.z, LocalDirection.z, Mins.z, Maxs.z)
+	)
 end
 
 function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
@@ -898,7 +938,17 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 		local Mat = SpallRes.Entity.ACF.Material or "RHA"
 		local MatData = ACE.GetMaterialData(Mat)
-		local spacing = State.LastSolidHitPos and SpallRes.HitPos:Distance(State.LastSolidHitPos) or 0
+		-- Traces start at the previous plate's front face. Remove that plate's path length
+		-- before converting the remaining front-face distance from Source units to metres;
+		-- touching plates therefore have zero physical spacing instead of receiving full
+		-- stand-off credit.
+		local spacing = 0
+		if State.LastSolidEntity and State.LastSolidHitPos then
+			local rawSpacing = SpallRes.HitPos:Distance(State.LastSolidHitPos)
+			local previousPath = GetSpallPlatePath(State.LastSolidEntity, State.LastSolidHitPos, SpallDirection)
+			spacing = math.max(rawSpacing - previousPath, 0) / SPALL_UNITS_PER_M
+		end
+		State.LastSolidEntity = SpallRes.Entity
 		State.LastSolidHitPos = SpallRes.HitPos
 		ApplySpallCapture(SpallEnergy, MatData, SpallRes.Entity, SpallVelocity, spacing)
 		if SpallEnergy.Penetration <= 0 or SpallEnergy.Kinetic <= 0 then

@@ -514,7 +514,13 @@ if SERVER then
 		local retention = spec.multiHitRetention or 0
 		local degradation = spec.degradation or 0
 		local degradationFactor = 1 - degradation * (1 - condition)
-		effectiveness = effectiveness * math.max(retention, degradationFactor)
+		local conditionFactor = math.max(retention, degradationFactor)
+		local singleUseState = Entity and Entity.ACEArmorBehaviorState
+		local singleUseSpent = singleUseState and singleUseState[material.id]
+		if spec.singleUse and singleUseSpent then conditionFactor = 0 end
+		-- A failed single-use tile is effectively gone, but keep a tiny positive
+		-- denominator so the normalized impact result remains finite.
+		effectiveness = math.max(effectiveness * conditionFactor, 0.000001)
 
 		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
 		local ductilityBase = resolverConfig.ductilityBase or 2
@@ -530,10 +536,16 @@ if SERVER then
 			local hook = resolverConfig.impactHook
 			if not hook then return end
 			if hook == "era_detonation" and Type ~= "HEAT" and Type ~= "THEAT" and Type ~= "HEATFS" and Type ~= "THEATFS" and maxPenetration <= breachArmor then return end
-			TriggerImpactHook(hook, Entity, armor, maxPenetration)
+			if hook == "era_detonation" and spec.singleUse then
+				Entity.ACEArmorBehaviorState = Entity.ACEArmorBehaviorState or {}
+				if Entity.ACEArmorBehaviorState[material.id] then return end
+				Entity.ACEArmorBehaviorState[material.id] = true
+			end
+			TriggerImpactHook(hook, Entity, effectiveLosArmor, maxPenetration)
 		end
 
-		if breachProbability > ImpactRandom() and maxPenetration > breachArmor then
+		local layerCapacity = effectiveLosArmor * effectiveness
+		if breachProbability > ImpactRandom() and maxPenetration > breachArmor and maxPenetration >= layerCapacity then
 			TriggerModularImpactHook()
 			return ImpactResult(
 				FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
@@ -546,7 +558,14 @@ if SERVER then
 
 		if penetrationProbability > ImpactRandom() then
 			local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
-			if penetration > 0 then TriggerModularImpactHook() end
+			-- A penetrator must defeat the full effective layer before triggering
+			-- material effects such as DU's secondary blast. A stopped projectile
+			-- can still produce normal damage/spall, but it did not perforate the
+			-- plate and should not consume a reactive or penetrator-effect hook.
+			local defeated = maxPenetration >= layerCapacity
+			local reactiveHit = resolverConfig.impactHook == "era_detonation" and HEATTypes[Type]
+			local hookOnPenetration = defeated and (resolverConfig.triggerOnPenetration or resolverConfig.impactHook == "ceramic_shatter" or resolverConfig.impactHook == "era_detonation")
+			if penetration > 0 and (hookOnPenetration or reactiveHit) then TriggerModularImpactHook() end
 			return ImpactResult(
 				(penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - penetration,
@@ -557,6 +576,9 @@ if SERVER then
 		end
 
 		local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
+		-- A shaped-charge jet activates a reactive tile on impact even when the
+		-- tile stops the jet; that is the defining expendable behavior of ERA.
+		if resolverConfig.impactHook == "era_detonation" and HEATTypes[Type] then TriggerModularImpactHook() end
 		return ImpactResult(
 			(penetration / losArmorHealth / effectiveness) * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 			0,

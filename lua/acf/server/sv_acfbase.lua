@@ -189,12 +189,28 @@ end
 function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	local HitRes			= {}
+	local armorData		= Entity and Entity.ACF
+	local incomingArea	= tonumber(FrArea) or 0
+	local incomingAngle	= tonumber(Angle) or 0
+
+	-- Custom damage entities can reach this path with incomplete state. Fail
+	-- closed with a normalized impact instead of emitting NaN/Inf downstream.
+	if not armorData or incomingArea <= 0 then
+		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
+	end
+	Angle = incomingAngle
+	FrArea = incomingArea
 
 	local armor			= Entity.ACF.Armour																						-- Armor
 	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
+	armor = math.max(tonumber(armorData.Armour) or 0, 0)
+	local safeCosine = math.max(math.abs(math.cos(math.rad(incomingAngle))) ^ ACE.SlopeEffectFactor, 0.0001)
+	losArmor = armor / safeCosine
+	losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / safeCosine, 2.8) * 0.5)
 
 	local Mat			= Entity.ACF.Material or "RHA"	--very important thing
+	Mat = armorData.Material or Mat
 	local MatData		= ACE.GetMaterialData( Mat )
 
 	local damageMult		= 1
@@ -225,17 +241,25 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	-- RHA Penetration
 	local maxPenetration = ACE.CalcPenetration(Energy, FrArea)
+	maxPenetration = math.max(tonumber(maxPenetration) or 0, 0)
 
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
+	caliber = math.max(tonumber(caliber) or 0, 0)
 
 	--Nifty shell information debugging.
 	--print("Type: "..(Type or "Nil"))
 	--print("Penetration: " .. math.Round(maxPenetration,3) .. "mm")
 	--print("Caliber: "..math.Round(caliber,3).."mm")
 
-	local armorResolution = MatData["ArmorResolution"]
+	local armorResolution = MatData and MatData["ArmorResolution"]
+	if not armorResolution then
+		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
+	end
 	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+	if type(HitRes) ~= "table" then
+		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
+	end
 
 	return HitRes
 end

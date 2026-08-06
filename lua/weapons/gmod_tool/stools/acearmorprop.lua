@@ -575,6 +575,19 @@ if CLIENT then
 		return #values > 0 and table.concat(values, " | ") or "No behavior overrides"
 	end
 
+	local function ArmorBehaviorText( material )
+		local values = {}
+
+		for _, behaviorId in ipairs(material.BehaviorModules or {}) do
+			local behavior = ACE.ArmorBehaviorModules and ACE.ArmorBehaviorModules[behaviorId]
+			if behavior then
+				values[#values + 1] = behavior.label .. ": " .. behavior.description
+			end
+		end
+
+		return #values > 0 and table.concat(values, "\n") or "No behavior modules declared"
+	end
+
 	-- Build or refresh the material combo box.
 	local function MaterialTable( panel )
 
@@ -616,7 +629,8 @@ if CLIENT then
 		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
-		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MaterialData.BehaviorLabels or {}) > 0 and table.concat(MaterialData.BehaviorLabels, ", ") or "none") )
+		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MaterialData) )
+		ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. (MaterialData.ArmorResolver == "modular" and "modular with legacy-compatible tuning" or "legacy") )
 		ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MaterialData) )
 		ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MaterialData) )
 
@@ -728,7 +742,8 @@ if CLIENT then
 				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
 				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
 				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
-				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MatData.BehaviorLabels or {}) > 0 and table.concat(MatData.BehaviorLabels, ", ") or "none") )
+				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MatData) )
+				ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. (MatData.ArmorResolver == "modular" and "modular with legacy-compatible tuning" or "legacy") )
 				ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MatData) )
 				ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MatData) )
 

@@ -408,6 +408,8 @@ end
 -- how much of the incoming energy was spent; callers must not reinterpret Overkill or
 -- Loss independently. Killed entities may continue when residual energy remains.
 function ACE_GetPostPenetration( HitRes, Energy )
+	HitRes = HitRes or {}
+	Energy = Energy or {}
 	local Loss = math.Clamp( HitRes.Loss or 1, 0, 1 )
 	local Remaining = 1 - Loss
 	local HasNormalizedOutcome = HitRes.ContinueEligible ~= nil
@@ -416,17 +418,22 @@ function ACE_GetPostPenetration( HitRes, Energy )
 		ContinueEligible = (HitRes.Overkill or 0) > 0 or HitRes.Kill
 	end
 	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ContinueEligible
+	if HitRes.PostPenetration then return HitRes.PostPenetration end
+	local IncomingKinetic = tonumber(Energy.Kinetic) or 0
+	local IncomingPenetration = tonumber(Energy.Penetration) or 0
 
-	return {
+	local Result = {
 		Continue = Continue,
 		Loss = Loss,
 		Remaining = Remaining,
-		IncomingKinetic = Energy.Kinetic,
-		IncomingPenetration = Energy.Penetration,
-		SpentKinetic = Energy.Kinetic * Loss,
-		RemainingKinetic = Energy.Kinetic * Remaining,
-		RemainingPenetration = Energy.Penetration * Remaining
+		IncomingKinetic = IncomingKinetic,
+		IncomingPenetration = IncomingPenetration,
+		SpentKinetic = IncomingKinetic * Loss,
+		RemainingKinetic = IncomingKinetic * Remaining,
+		RemainingPenetration = IncomingPenetration * Remaining
 	}
+	HitRes.PostPenetration = Result
+	return Result
 end
 
 --Handles normal spalling

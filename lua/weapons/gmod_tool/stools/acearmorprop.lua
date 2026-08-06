@@ -533,6 +533,13 @@ if CLIENT then
 		return "unregistered"
 	end
 
+	local function ArmorPointEffectivenessText(material)
+		local materialId = material.id or "RHA"
+		local effectiveness = ACE.Points and ACE.Points.MaterialPointEffectiveness
+			and ACE.Points.MaterialPointEffectiveness(materialId)
+		return string.format("%.1f%% (RHA baseline; 50 mm / 75 HP reference)", tonumber(effectiveness) or 100)
+	end
+
 	local function ArmorSpecText( material )
 		local spec = material.ArmorSpec or {}
 		local fields = {
@@ -635,6 +642,7 @@ if CLIENT then
 		ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
 		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
+		ArmorPanelText( "ComboPointEffectiveness", ToolPanel.panel, "Point effectiveness: " .. ArmorPointEffectivenessText(MaterialData) )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MaterialData) )
 		ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. ArmorResolverText(MaterialData) )
@@ -748,6 +756,7 @@ if CLIENT then
 				ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass_scale") .. ": " .. MatData.massMod .. "x RHA")
 				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
 				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
+				ArmorPanelText( "ComboPointEffectiveness", ToolPanel.panel, "Point effectiveness: " .. ArmorPointEffectivenessText(MatData) )
 				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
 				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MatData) )
 				ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. ArmorResolverText(MatData) )

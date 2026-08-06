@@ -5,12 +5,26 @@ ACE = {}
 function isstring(value) return type(value) == "string" end
 function istable(value) return type(value) == "table" end
 function ACE.IsEnt(value) return value ~= nil end
+ACE.Points_MaterialPointEffectiveness = function() return "stale" end
 
 dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
 
 local rha = ACE.Points.ArmorProp(50, 75, 1)
 local titanium = ACE.Points.ArmorProp(50, 75, 1.7 / 0.61)
 assert(titanium > rha, "lightweight armor must pay a mass-efficiency premium")
+
+local rhaEffectiveness = ACE.Points.MaterialPointEffectiveness("RHA")
+local castEffectiveness = ACE.Points.MaterialPointEffectiveness("CHA")
+local titaniumEffectiveness = ACE.Points.MaterialPointEffectiveness("Ti")
+assert(ACE.Points.MaterialPointEffectiveness ~= nil,
+	"material point effectiveness helper must remain under ACE.Points")
+assert(ACE.Points_MaterialPointEffectiveness == nil,
+	"material point effectiveness must remain namespaced under ACE.Points")
+assert(math.abs(rhaEffectiveness - 100) < 0.001, "RHA must be the point-effectiveness baseline")
+assert(math.abs(castEffectiveness - 123.44) < 0.01,
+	"cast steel point effectiveness changed unexpectedly")
+assert(math.abs(titaniumEffectiveness - 29.02) < 0.01,
+	"titanium point effectiveness changed unexpectedly")
 
 ACE.PointsModel.ArmorMassAlpha = 0.5
 local relaxed = ACE.Points.ArmorProp(50, 75, 1.7 / 0.61)

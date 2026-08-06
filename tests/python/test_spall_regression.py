@@ -302,6 +302,8 @@ class SpallSourceContractTests(unittest.TestCase):
     def test_armor_menu_explains_capture_context_and_custom_resolvers(self):
         self.assertIn("ArmorResolverText", self.armor_tool_source)
         self.assertIn('type(material.ArmorResolution) == "function"', self.armor_tool_source)
+        self.assertIn("ComboPointEffectiveness", self.armor_tool_source)
+        self.assertIn("50 mm / 75 HP reference", self.armor_tool_source)
         for field in ("spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"):
             self.assertIn(f'"{field}"', self.armor_tool_source)
 

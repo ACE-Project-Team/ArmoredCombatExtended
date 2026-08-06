@@ -349,6 +349,24 @@ local function materialEff(mat)
 	return ke or 1.0, chem or 1.0, massMod or 1.0, curve or 1.0
 end
 
+--- Returns protection delivered per armor point at the reference thickness and health.
+-- RHA is always the 100% baseline; the ratio includes the live mass-efficiency premium.
+-- @param mat string Material ID.
+-- @return number percentage Protection per point relative to RHA.
+function ACE.Points.MaterialPointEffectiveness(mat)
+	local referenceArmor = 50.0
+	local referenceHealth = 75.0
+	local ke, chem, massMod, curve = materialEff(mat or "RHA")
+	local threatRHAe = referenceArmor ^ curve * (0.7 * ke + 0.3 * chem)
+	local massEfficiency = threatRHAe / (referenceArmor * massMod)
+	local materialCost = ACE.Points.ArmorProp(threatRHAe, referenceHealth, massEfficiency)
+	local rhaCost = ACE.Points.ArmorProp(referenceArmor, referenceHealth, 1.0)
+
+	if materialCost <= 0 or rhaCost <= 0 then return 0 end
+
+	return (threatRHAe / materialCost) / (referenceArmor / rhaCost) * 100.0
+end
+
 -- Returns nil for unknown materials so display code can fall back to live material data.
 function ACE.Points.MaterialEff(mat)
 	local eff = MATERIAL_EFF[mat]
@@ -459,6 +477,9 @@ ACE_Points_RoundScore = ACE.Points.RoundScore
 ACE_Points_SustainedRps = ACE.Points.SustainedRps
 
 -- A few older consumers still address the migrated API as ACE.Points_<Name>.
+ACE.Points_MaterialPointEffectiveness = nil
 for name, fn in pairs(ACE.Points) do
-	ACE["Points_" .. name] = fn
+	if name ~= "MaterialPointEffectiveness" then
+		ACE["Points_" .. name] = fn
+	end
 end

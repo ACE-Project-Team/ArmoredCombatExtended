@@ -469,6 +469,20 @@ function ACE_GetPostPenetration( HitRes, Energy )
 	return Result
 end
 
+-- Named spall-energy policies keep round-specific legacy coefficients visible
+-- without duplicating their meaning across every round handler.
+function ACE_GetSpallEnergy( HitRes, Policy )
+	local Post = HitRes and (HitRes.PostPenetration or ACE.GetPostPenetration(HitRes, {}) ) or {}
+
+	if Policy == "heat_shaped_charge" then
+		return (Post.IncomingKinetic or 0) * 0.75
+	elseif Policy == "residual_plus_fudge" then
+		return (Post.SpentKinetic or 0) + 0.2
+	end
+
+	return Post.SpentKinetic or 0
+end
+
 --Handles normal spalling
 function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Material) --_ = Armor
 

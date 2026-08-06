@@ -376,7 +376,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_heat_spall_uses_shared_spent_energy_with_its_existing_multiplier(self):
         heat = (SOURCE.parents[1] / "shared" / "rounds" / "roundheat.lua").read_text(encoding="utf-8")
-        self.assertIn("HitRes.PostPenetration.IncomingKinetic * 0.75", heat)
+        self.assertIn('ACE.GetSpallEnergy(HitRes, "heat_shaped_charge")', heat)
 
     def test_round_handlers_use_the_shared_post_penetration_decision(self):
         rounds = list((SOURCE.parents[1] / "shared" / "rounds").glob("round*.lua"))

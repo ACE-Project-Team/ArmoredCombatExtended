@@ -410,7 +410,12 @@ end
 function ACE_GetPostPenetration( HitRes, Energy )
 	local Loss = math.Clamp( HitRes.Loss or 1, 0, 1 )
 	local Remaining = 1 - Loss
-	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ((HitRes.Overkill or 0) > 0 or HitRes.Kill)
+	local HasNormalizedOutcome = HitRes.ContinueEligible ~= nil
+	local ContinueEligible = HasNormalizedOutcome and HitRes.ContinueEligible
+	if not HasNormalizedOutcome then
+		ContinueEligible = (HitRes.Overkill or 0) > 0 or HitRes.Kill
+	end
+	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ContinueEligible
 
 	return {
 		Continue = Continue,

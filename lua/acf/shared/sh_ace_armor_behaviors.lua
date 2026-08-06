@@ -395,6 +395,7 @@ if SERVER then
 			Overkill = overkill,
 			Loss = loss,
 			Outcome = outcome,
+			ContinueEligible = outcome ~= "stopped",
 			PenetrationSpent = incoming * spentFraction,
 			PenetrationRemaining = incoming * (1 - spentFraction)
 		}

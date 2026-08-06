@@ -326,12 +326,13 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_rubber_uses_default_spall_resolution_with_material_effectiveness(self):
         self.assertIn("spallresist = 0.15", self.rubber_source)
-        self.assertIn('legacyMode = "rubber"', self.rubber_source)
+        self.assertIn('resolver = "modular"', self.rubber_source)
+        self.assertNotIn('legacyMode = "rubber"', self.rubber_source)
         self.assertIn('if Type == "Spall" then', self.behavior_source)
         self.assertNotIn("specialresiliance = Material.spallresist", self.behavior_source)
 
     def test_rubber_preserves_non_spall_overmatch_behavior(self):
-        self.assertIn('options.breachCaliberMultiplier = Type == "Spall" and 1 or 10', self.behavior_source)
+        self.assertIn('spallResistance = legacy.spallresist', self.rubber_source)
 
     def test_original_fragment_callers_remain_compatible(self):
         callers = re.findall(r"ACE.SpallTrace\(HitVec, Index", self.source)

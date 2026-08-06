@@ -36,7 +36,6 @@ end
 
 local function CommonResolverConfig(legacy)
 	return {
-		legacyMode = "common",
 		ductilityFactor = 1.25,
 		ductilityBase = 2,
 		ductilityScale = 1.5,
@@ -101,15 +100,15 @@ Profile("RHA", "Rolled homogeneous Armor", "RHA", "Simple, generic, but trusty s
 local CHAConfig = CommonResolverConfig(CHA)
 CHAConfig.breachDuctility = false
 Profile("CHA", "Cast homogeneous Armor", "Cast", "Despite of being heavier than RHA, Cast steel material provides more resiliance against damage than its rolled counterpart. Highly vulnerable to spalling.", 1930, CHA, { "homogeneous_metal", "spall_response" }, CommonSpec(CHA), CHAConfig)
-Profile("Cer", "Ceramic", "Ceramic", "Ceramic is usually used as a material to ensure shells do not penetrate due to its high penetration resistance. Due to its frailty it is usually only used as a backing and is not meant to take the brunt of damage. Do not let it get penetrated or it will shatter.", 1955, Cer, { "brittle_strike_face", "composite_backing", "spall_response", "failure_state" }, CommonSpec(Cer), { legacyMode = "ceramic", impactHook = "ceramic_shatter", ductilityFactor = 1.25, ductilityBase = 4, ductilityScale = 1.5 })
+Profile("Cer", "Ceramic", "Ceramic", "Ceramic is usually used as a material to ensure shells do not penetrate due to its high penetration resistance. Due to its frailty it is usually only used as a backing and is not meant to take the brunt of damage. Do not let it get penetrated or it will shatter.", 1955, Cer, { "brittle_strike_face", "composite_backing", "spall_response", "failure_state" }, CommonSpec(Cer), { impactHook = "ceramic_shatter", ductilityFactor = 1.25, ductilityBase = 4, ductilityScale = 1.5 })
 local DUConfig = CommonResolverConfig(DU)
 DUConfig.impactHook = "du_secondary_blast"
 DUConfig.triggerOnPenetration = true
 Profile("DU", "Depleted Uranium", "DU", "Heavy yet extremely effective armor. Though costly, a slab of this can stop just about anything.\n Has some nasty secondary effects when penetrated. More effective at higher thicknesses.", 1970, DU, { "dense_metal", "homogeneous_metal", "spall_response" }, CommonSpec(DU), DUConfig)
 Profile("Ti", "Titanium", "Titanium", "Lightweight and super resiliant. But E X P E N S I V E. 60% Lighter than RHA for a given thickness.\nUnlike aluminum works at high thicknesses but for a price.", 1950, Ti, { "lightweight_metal", "homogeneous_metal", "spall_response" }, CommonSpec(Ti), CommonResolverConfig(Ti))
 Profile("Alum", "Aluminum", "Aluminum", "Aluminum is normally used by AFVs or light constructions, as it provides significantly more protection for a given weight. It is more costly and prone to spalling though.", 1955, Alum, { "lightweight_metal", "homogeneous_metal", "spall_response" }, CommonSpec(Alum), CommonResolverConfig(Alum))
-Profile("ERA", "Explosive Reactive Armor", "ERA", "An explosive composite sandwiched between 2 plates. When penetrated the plate detonates damaging or even destroying the incoming shell degrading its performance. Explosive rounds can make short work of this material. This material is heavy compared to RHA and unlike other materials, will damage anything near the detonation.", 1955, ERA, { "reactive_tile", "shock_barrier", "spall_response", "failure_state" }, CommonSpec(ERA), { legacyMode = "era", impactHook = "era_detonation", ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
-Profile("Rub", "Rubber", "Rubber", "Another material that while useless against kinetic rounds, excels at stopping shaped charges and spall", 1955, Rub, { "elastomer_liner", "spall_response", "shock_barrier" }, CommonSpec(Rub), { legacyMode = "rubber", ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
-Profile("Texto", "Textolite", "Textolite", "Fiberglass based material, this material provides decent protection agaisnt both chemical especially and kinetic rounds, while taking reduced damage from explosions.", 1955, Texto, { "composite_backing", "spall_response", "failure_state" }, CommonSpec(Texto), { legacyMode = "textolite", ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
+Profile("ERA", "Explosive Reactive Armor", "ERA", "An explosive composite sandwiched between 2 plates. When penetrated the plate detonates damaging or even destroying the incoming shell degrading its performance. Explosive rounds can make short work of this material. This material is heavy compared to RHA and unlike other materials, will damage anything near the detonation.", 1955, ERA, { "reactive_tile", "shock_barrier", "spall_response", "failure_state" }, CommonSpec(ERA), { impactHook = "era_detonation", ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
+Profile("Rub", "Rubber", "Rubber", "Another material that while useless against kinetic rounds, excels at stopping shaped charges and spall", 1955, Rub, { "elastomer_liner", "spall_response", "shock_barrier" }, CommonSpec(Rub), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
+Profile("Texto", "Textolite", "Textolite", "Fiberglass based material, this material provides decent protection agaisnt both chemical especially and kinetic rounds, while taking reduced damage from explosions.", 1955, Texto, { "composite_backing", "spall_response", "failure_state" }, CommonSpec(Texto), { ductilityFactor = 1.25, ductilityBase = 2, ductilityScale = 1.5 })
 
 ACE.ERABoomPerTick = ACE.ERABoomPerTick or 0

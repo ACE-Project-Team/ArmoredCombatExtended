@@ -362,12 +362,6 @@ if SERVER then
 		THEATFS = true
 	}
 
-	local HETypes = {
-		HE = true,
-		HESH = true,
-		Frag = true
-	}
-
 	local CeramicBlastTypes = {
 		HE = true,
 		HESH = true
@@ -403,12 +397,6 @@ if SERVER then
 			PenetrationSpent = incoming * spentFraction,
 			PenetrationRemaining = incoming * (1 - spentFraction)
 		}
-	end
-
-	local function LegacyDuctility(Entity, config)
-		local value = ((Entity and Entity.ACF and Entity.ACF.Ductility) or 0) * (config.ductilityFactor or 1.25)
-		local base = config.ductilityBase or 2
-		return base / (base + value * (config.ductilityScale or 1.5))
 	end
 
 	local function TriggerImpactHook(hook, Entity, armor, maxPenetration)
@@ -624,6 +612,8 @@ if SERVER then
 			threat = "chemical"
 		elseif Type == "HE" or Type == "HESH" then
 			threat = "blast"
+		elseif Type == "Frag" or Type == "Spall" then
+			threat = "fragment"
 		end
 
 		local effectiveness = spec.kineticRHAe or material.effectiveness or 1
@@ -631,7 +621,7 @@ if SERVER then
 		if threat == "chemical" then
 			effectiveness = spec.chemicalRHAe or material.HEATeffectiveness or effectiveness
 			resilience = spec.chemicalResilience or material.HEATresiliance or resilience
-		elseif threat == "blast" then
+		elseif threat == "blast" or threat == "fragment" then
 			effectiveness = spec.heRHAe or material.HEeffectiveness or effectiveness
 			resilience = spec.heResilience or material.HEresiliance or resilience
 		end
@@ -654,9 +644,6 @@ if SERVER then
 	-- @param Type string ACE threat type.
 	-- @return table result ACE-compatible damage result.
 	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
-		if (material.ArmorResolverConfig or {}).legacyMode then
-			return ResolveLegacy(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
-		end
 		local spec = material.ArmorSpec or {}
 		local resolverConfig = material.ArmorResolverConfig or {}
 		local _, effectiveness, resilience = ThreatValues(material, Type)
@@ -707,8 +694,15 @@ if SERVER then
 		local breachProbability = math.Clamp((breachCaliber / effectiveArmor / effectiveness - 1.3) / (overmatchRatio - 1.3), 0, 1)
 		local breachArmor = effectiveArmor * effectiveness
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
+		local function TriggerModularImpactHook()
+			local hook = resolverConfig.impactHook
+			if not hook then return end
+			if hook == "era_detonation" and Type ~= "HEAT" and Type ~= "THEAT" and Type ~= "HEATFS" and Type ~= "THEATFS" and maxPenetration <= breachArmor then return end
+			TriggerImpactHook(hook, Entity, armor, maxPenetration)
+		end
 
 		if breachProbability > ImpactRandom() and maxPenetration > breachArmor then
+			TriggerModularImpactHook()
 			return ImpactResult(
 				FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - breachArmor,
@@ -720,6 +714,7 @@ if SERVER then
 
 		if penetrationProbability > ImpactRandom() then
 			local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
+			if penetration > 0 then TriggerModularImpactHook() end
 			return ImpactResult(
 				(penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - penetration,

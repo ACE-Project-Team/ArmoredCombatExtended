@@ -84,16 +84,26 @@ local badBehaviorParameter = pcall(ACE.DefineArmorMaterial, {
 	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
 })
 assert(not badBehaviorParameter, "unsupported module parameter was registered")
+local orphanBehaviorParameter = pcall(ACE.DefineArmorMaterial, {
+	id = "OrphanBehaviorParameter",
+	resolver = "modular",
+	behaviors = { "homogeneous_metal" },
+	behaviorConfig = { shock_barrier = { shockTransmission = 0.5 } },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
+})
+assert(not orphanBehaviorParameter, "inactive module parameter was registered")
 
 local oldRandom = math.random
 math.random = function() return 0 end
 local target = { ACF = { Health = 100, MaxHealth = 100 } }
 local intact = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")
+local breach = modular.ArmorResolution(target, 10, 10, 10, 20, 1, 100, 1, "AP")
 target.ACF.Health = 0
 local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 math.random = oldRandom
 assert(degraded.Overkill > intact.Overkill, "multi-hit retention did not reduce degraded protection")
 assert(heat.Damage < intact.Damage, "shock transmission did not reduce HE damage")
+assert(breach.Overkill == 4, "breach math ignored kinetic RHAe")
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

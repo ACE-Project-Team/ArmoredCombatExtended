@@ -564,7 +564,11 @@ if CLIENT then
 			for _, key in ipairs(keys) do
 				local value = parameters[key]
 				if type(value) == "number" then value = math.Round(value, 3) end
-				values[#values + 1] = behaviorId .. "." .. key .. "=" .. tostring(value)
+				local behavior = ACE.ArmorBehaviorModules and ACE.ArmorBehaviorModules[behaviorId]
+				local field = ACE.ArmorSpecFields and ACE.ArmorSpecFields[key]
+				local label = (behavior and behavior.label or behaviorId) .. " / " .. (field and field.label or key)
+				local unit = field and (" " .. field.unit) or ""
+				values[#values + 1] = label .. "=" .. tostring(value) .. unit
 			end
 		end
 

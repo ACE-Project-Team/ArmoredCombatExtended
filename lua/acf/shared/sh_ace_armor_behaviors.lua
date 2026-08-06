@@ -174,6 +174,12 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 		material.BehaviorLabels[#material.BehaviorLabels + 1] = behavior.label
 	end
 
+	local activeBehaviors = {}
+	for _, behaviorId in ipairs(material.BehaviorModules) do activeBehaviors[behaviorId] = true end
+	for behaviorId in pairs(material.BehaviorConfig) do
+		assert(activeBehaviors[behaviorId], "behavior configuration is not active: " .. tostring(behaviorId))
+	end
+
 	for behaviorId, parameters in pairs(material.BehaviorConfig) do
 		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior configuration: " .. tostring(behaviorId))
 		assert(type(parameters) == "table", "behavior configuration must be a table: " .. tostring(behaviorId))
@@ -195,7 +201,9 @@ end
 
 --- Applies a real-world-oriented spec and reusable behaviors to a material.
 -- @param material table Material definition to configure.
--- @param definition table Spec, behavior, legacy, and resolver options.
+-- @param definition table `{spec = ArmorSpecFields, behaviors = module IDs or entries,
+-- behaviorConfig = module parameter tables, legacy = compatibility fields,
+-- resolver = "modular"}`.
 -- @return table material The configured material definition.
 function ACE.ConfigureArmorMaterial(material, definition)
 	definition = definition or {}
@@ -251,7 +259,8 @@ function ACE.ConfigureArmorMaterial(material, definition)
 end
 
 --- Defines and registers a declarative armor material.
--- @param definition table Material identity, spec, behavior, and legacy options.
+-- @param definition table Material identity plus `spec`, `behaviors`, `behaviorConfig`,
+-- `legacy`, and `resolver = "modular"`; modular definitions require density/mass and kinetic RHAe/effectiveness.
 -- @return table material The registered material definition.
 function ACE.DefineArmorMaterial(definition)
 	assert(type(definition) == "table", "armor material definition must be a table")
@@ -351,13 +360,14 @@ if SERVER then
 		local effectiveArmor = armor ^ curve
 		local effectiveLosArmor = losArmor ^ curve
 		local breachProbability = math.Clamp((caliber / effectiveArmor / effectiveness - 1.3) / (overmatchRatio - 1.3), 0, 1)
+		local breachArmor = effectiveArmor * effectiveness
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 
-		if breachProbability > math.random() and maxPenetration > effectiveArmor then
+		if breachProbability > math.random() and maxPenetration > breachArmor then
 			return {
 				Damage = FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
-				Overkill = maxPenetration - effectiveArmor,
-				Loss = effectiveArmor / maxPenetration
+				Overkill = maxPenetration - breachArmor,
+				Loss = breachArmor / maxPenetration
 			}
 		end
 

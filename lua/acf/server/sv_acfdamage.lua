@@ -3,6 +3,8 @@ ACE.SpallTraces	= ACE.SpallTraces or {}
 ACE.CurSpallIndex = 0
 ACE.SpallMax	= 250
 ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
+ACE.SpallFragmentMax = ACE.SpallFragmentMax or ACE.SpallMax
+ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth
 
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
@@ -491,7 +493,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 		-- print("VEL: " .. SpallVel)
 
 
-		for i = 1,Spall do
+		for i = 1, math.min(Spall, ACE.SpallFragmentMax or ACE.SpallMax) do
 
 			ACE.CurSpallIndex = ACE.CurSpallIndex + 1
 			if ACE.CurSpallIndex > ACE.SpallMax then
@@ -748,7 +750,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 	State = State or { Depth = 0, Visited = {} }
 	State.Depth = State.Depth + 1
 
-	if State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
+	if State.Depth > (ACE.SpallLayerMax or ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
 		SetSpallTermination(Index, "depth_budget")
 		return false, State
 	end
@@ -766,10 +768,18 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 end
 
 --Spall trace core. For HESH and normal spalling
+local function CopySpallEnergy( Energy )
+	return {
+		Kinetic = tonumber(Energy and Energy.Kinetic) or 0,
+		Momentum = tonumber(Energy and Energy.Momentum) or 0,
+		Penetration = tonumber(Energy and Energy.Penetration) or 0
+	}
+end
+
 function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
 	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
 	-- while later fragments must start from the original energy.
-	SpallEnergy = table.Copy(SpallEnergy)
+	SpallEnergy = CopySpallEnergy(SpallEnergy)
 
 	local Entity_Crit_Hit_Factor = 1.01
 

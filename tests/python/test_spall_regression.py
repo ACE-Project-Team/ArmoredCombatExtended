@@ -245,7 +245,7 @@ class SpallSourceContractTests(unittest.TestCase):
         cls.behavior_source = ARMOR_BEHAVIORS.read_text(encoding="utf-8")
 
     def test_trace_owns_a_copy_before_mutating_penetration(self):
-        copy_pos = self.body.index("SpallEnergy = table.Copy(SpallEnergy)")
+        copy_pos = self.body.index("SpallEnergy = CopySpallEnergy(SpallEnergy)")
         mutation_pos = self.body.index("SpallEnergy.Penetration =")
 
         self.assertLess(copy_pos, mutation_pos)
@@ -256,7 +256,8 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_spall_trace_depth_budget_is_tied_to_existing_spall_cap(self):
         self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax", self.source)
-        self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
+        self.assertIn("ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth", self.source)
+        self.assertIn("State.Depth > (ACE.SpallLayerMax or ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
 
     def test_spall_trace_records_explicit_termination_reasons(self):
         for reason in (
@@ -299,7 +300,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()", self.body)
 
     def test_trace_has_no_shared_penetration_assignment_before_copy(self):
-        self.assertEqual(self.body.count("SpallEnergy = table.Copy(SpallEnergy)"), 1)
+        self.assertEqual(self.body.count("SpallEnergy = CopySpallEnergy(SpallEnergy)"), 1)
         self.assertGreaterEqual(self.body.count("SpallEnergy.Penetration ="), 2)
 
     def test_resolver_loss_is_applied_once_before_the_single_retry(self):

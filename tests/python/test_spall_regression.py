@@ -328,7 +328,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("spallresist = 0.15", self.rubber_source)
         self.assertIn('resolver = "modular"', self.rubber_source)
         self.assertNotIn('legacyMode = "rubber"', self.rubber_source)
-        self.assertIn('if Type == "Spall" then', self.behavior_source)
+        self.assertIn('threat = "fragment"', self.behavior_source)
         self.assertNotIn("specialresiliance = Material.spallresist", self.behavior_source)
 
     def test_rubber_preserves_non_spall_overmatch_behavior(self):

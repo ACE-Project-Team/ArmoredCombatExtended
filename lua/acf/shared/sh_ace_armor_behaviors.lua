@@ -56,7 +56,8 @@ ACE.ArmorBehaviorModules = {
 	}
 }
 
--- These are physical/test-facing inputs, not replacements for ACE's legacy coefficients.
+-- These are physical/test-facing inputs. The legacy coefficient fields remain exposed as
+-- numeric tuning/API compatibility fields, while the resolver consumes this normalized spec.
 -- RHAe values should come from a stated test threat or a deliberately chosen game balance
 -- baseline; hardness and density alone do not predict ballistic equivalence.
 ACE.ArmorSpecFields = {
@@ -359,17 +360,6 @@ if SERVER then
 		THEATFS = true
 	}
 
-	local CeramicBlastTypes = {
-		HE = true,
-		HESH = true
-	}
-
-	local TextoliteOtherImpactTypes = {
-		HE = true,
-		HESH = true,
-		Spall = true
-	}
-
 	local function Probability(penetration, armor, effectiveness)
 		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 	end
@@ -378,8 +368,8 @@ if SERVER then
 		return ACE.ImpactRandom and ACE.ImpactRandom() or math.random()
 	end
 
-	-- Keep the resolver's physical result in one shape. Loss remains the legacy
-	-- compatibility field, while the explicit spent/remaining values give
+	-- Keep the resolver's physical result in one shape. Loss remains a numeric
+	-- compatibility field, while explicit spent/remaining values give
 	-- post-penetration callers a canonical contract to consume.
 	local function ImpactResult(damage, overkill, loss, outcome, maxPenetration)
 		local spentFraction = math.Clamp(loss or 1, 0, 1)
@@ -443,164 +433,6 @@ if SERVER then
 		end
 	end
 
-	local function LegacyResult(armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, originalArmor)
-		local breachCaliber = caliber * (options.breachCaliberMultiplier or 1)
-		local breachLimit = options.breachLimit or 7
-		local breachProbability = math.Clamp((breachCaliber / armor / effectiveness - 1.3) / (breachLimit - 1.3), 0, 1)
-		local penetrationProbability = Probability(maxPenetration, losArmor, effectiveness)
-		local damageFactor = options.damageFactor or 1
-		local passedDamageMult = options.ignoreDamageMult and 1 or damageMult
-		local breachArmor = options.breachUsesRawArmor and armor or armor * effectiveness
-
-		if not options.ignoreBreach and breachProbability > ImpactRandom() and maxPenetration > breachArmor then
-			if options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
-			return ImpactResult(
-				FrArea * resilience * passedDamageMult * damageFactor * (options.breachDuctility == false and 1 or ductility),
-				maxPenetration - breachArmor,
-				breachArmor / maxPenetration,
-				"breached",
-				maxPenetration
-			)
-		end
-
-		if penetrationProbability > ImpactRandom() then
-			local penetration = math.min(maxPenetration, losArmor * effectiveness)
-			local denominator = options.penetrationDamageDenominator == "los" and losArmor or losArmorHealth
-			local penetrationDamageFactor = maxPenetration > losArmor * effectiveness and (options.penetrationDamageFactor or 1) or 1
-			if (penetrationDamageFactor ~= 1 or (options.triggerOnPenetration and maxPenetration > losArmor * effectiveness)) and options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
-			return ImpactResult(
-				(penetration / denominator / effectiveness) ^ (options.penetrationDamagePower or 2) * FrArea * resilience * passedDamageMult * damageFactor * penetrationDamageFactor * ductility,
-				maxPenetration - penetration,
-				penetration / maxPenetration,
-				"penetrated",
-				maxPenetration
-			)
-		end
-
-		local penetration = math.min(maxPenetration, losArmor * effectiveness)
-		local denominator = options.failedDamageDenominator == "los" and losArmor or losArmorHealth
-		return ImpactResult(
-			(penetration / denominator / effectiveness) ^ (options.failedDamagePower or 1) * FrArea * resilience * passedDamageMult * damageFactor * (options.failedDamageFactor or 1) * ductility,
-			0,
-			1,
-			"stopped",
-			maxPenetration
-		)
-	end
-
-	local function ResolveLegacy(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
-		local config = material.ArmorResolverConfig or {}
-		local mode = config.legacyMode or "common"
-		local legacy = material
-		local curve = legacy.curve or 1
-		local effectiveArmor = armor ^ curve
-		local effectiveLosArmor = losArmor ^ curve
-		local ductility = LegacyDuctility(Entity, config)
-
-		if mode == "ceramic" then
-			local factor = effectiveLosArmor / effectiveArmor
-			if CeramicBlastTypes[Type] then factor = factor * 15 end
-			local result = LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.effectiveness, legacy.resiliance, ductility, config, {
-				breachLimit = 0,
-				breachCaliberMultiplier = 0,
-				damageFactor = factor,
-				penetrationDamageFactor = 4,
-				impactHook = config.impactHook,
-				ignoreBreach = true
-			}, Entity, armor)
-			return result
-		end
-
-		if mode == "textolite" then
-			local heat = HEATTypes[Type]
-			local other = TextoliteOtherImpactTypes[Type]
-			local effectiveness = heat and legacy.HEATeffectiveness or other and legacy.HEeffectiveness or legacy.effectiveness
-			local resilience = heat and legacy.HEATresiliance or other and legacy.HEresiliance or legacy.resiliance
-			local options = {
-				breachCaliberMultiplier = heat and 1 or 10,
-				breachUsesRawArmor = not heat,
-				failedDamageDenominator = heat and "los" or nil,
-				failedDamagePower = (heat or other) and 2 or 1,
-				ignoreDamageMult = true
-			}
-			return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
-		end
-
-		if mode == "rubber" then
-			if Type == "Spall" then
-				effectiveArmor = armor ^ curve
-				effectiveLosArmor = losArmor ^ curve
-				return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.spallresist, legacy.resiliance, ductility, config, {
-					breachCaliberMultiplier = 1,
-					breachUsesRawArmor = true,
-					failedDamageDenominator = "los",
-					failedDamagePower = 2,
-					failedDamageFactor = legacy.Catchresiliance
-				}, Entity, armor)
-			end
-
-			local heat = HEATTypes[Type]
-			local effectiveness = heat and legacy.HEATeffectiveness or legacy.effectiveness
-			local resilience = heat and legacy.HEATresiliance or Type == "HE" and legacy.HEresiliance or legacy.resiliance
-			local options = {
-				breachCaliberMultiplier = heat and 1 or 10,
-				breachUsesRawArmor = true,
-				failedDamageDenominator = heat and "los" or nil,
-				failedDamagePower = heat and 2 or 2,
-				damageFactor = Type == "HE" and 1 or 1
-			}
-			if not heat and Type ~= "HE" then
-				options.breachCaliberMultiplier = Type == "Spall" and 1 or 10
-				options.failedDamageFactor = legacy.Catchresiliance
-			end
-			return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
-		end
-
-		if mode == "era" then
-			local health = Entity and Entity.ACF and Entity.ACF.Health or 1
-			local maxHealth = Entity and Entity.ACF and Entity.ACF.MaxHealth or 1
-			local condition = math.Clamp(health / math.max(maxHealth, 1), 0, 1)
-			local blastArmor = legacy.effectiveness * losArmor * condition
-			local sensor = legacy.APSensorFactor or 4
-			local resilience = legacy.resiliance
-
-			if HEATTypes[Type] then
-				blastArmor = legacy.HEATeffectiveness * losArmor
-				resilience = legacy.HEATresiliance
-				sensor = legacy.HEATSensorFactor or 16
-			elseif HETypes[Type] then
-				blastArmor = legacy.Neffectiveness * armor
-				resilience = legacy.Nresiliance
-				sensor = 1
-			end
-
-			if (not HETypes[Type] and maxPenetration > blastArmor / sensor) or condition < 0.15 then
-				TriggerImpactHook(config.impactHook, Entity, armor, maxPenetration)
-				return ImpactResult(
-					9999999999999,
-					math.Clamp(maxPenetration - blastArmor, 0, 1),
-					math.Clamp(blastArmor / maxPenetration, 0, 0.98),
-					"detonated",
-					maxPenetration
-				)
-			end
-
-			return LegacyResult(armor ^ (legacy.NCurve or 1), losArmor ^ (legacy.NCurve or 1), losArmorHealth, maxPenetration, FrArea, caliber, damageMult, legacy.Neffectiveness, legacy.Nresiliance, 1, config, { breachLimit = 7, breachUsesRawArmor = true }, Entity, armor)
-		end
-
-		local effectiveness = legacy.effectiveness
-		local resilience = legacy.resiliance
-		local options = { breachCaliberMultiplier = 1, breachUsesRawArmor = true }
-		options.impactHook = config.impactHook
-		options.triggerOnPenetration = config.triggerOnPenetration
-		options.breachDuctility = config.breachDuctility
-		if HEATTypes[Type] then
-			effectiveness = legacy.effectiveness
-			if legacy.HEATMul then options.damageFactor = legacy.HEATMul end
-		end
-		return LegacyResult(effectiveArmor, effectiveLosArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, effectiveness, resilience, ductility, config, options, Entity, armor)
-	end
-
 	local function ThreatValues(material, Type)
 		local spec = material.ArmorSpec or {}
 		local threat = "kinetic"
@@ -627,8 +459,8 @@ if SERVER then
 	end
 
 	--- Resolves a declarative armor material using test-facing RHAe and failure inputs.
-	-- New materials opt in through `resolver = "modular"`; the built-in profiles also use
-	-- this path with explicit compatibility modes for their former branch behavior.
+	-- All registered materials use this normalized modular resolver. Legacy coefficient names
+	-- remain exposed for tuning/API compatibility, but do not select old resolver behavior.
 	-- @param material table Configured material definition.
 	-- @param Entity entity Impacted armor entity.
 	-- @param armor number Normal armor thickness.
@@ -732,7 +564,7 @@ if SERVER then
 	end
 end
 
---- Attaches the standard behavior profile to loaded legacy materials.
+--- Attaches the standard behavior profile to loaded material definitions.
 -- @param materials table Loaded ACE armor material definitions.
 function ACE.ApplyArmorBehaviorModules(materials)
 	for materialId, behaviorIds in pairs(ACE.ArmorBehaviorSets) do

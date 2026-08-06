@@ -988,9 +988,10 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 
 	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
 	local PreviousImpactRandom = BeginImpactRandom(Bullet, Target)
-	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
+	local ok, HitRes = pcall(ACE.Damage, Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"])
 	local impactRoll = ACE.ImpactRandom and ACE.ImpactRandom() or math.Rand(0, 1)
 	EndImpactRandom(PreviousImpactRandom)
+	if not ok then error(HitRes, 0) end
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false

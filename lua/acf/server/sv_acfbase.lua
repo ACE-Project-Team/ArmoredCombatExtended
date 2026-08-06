@@ -192,14 +192,20 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	local armorData		= Entity and Entity.ACF
 	local incomingArea	= tonumber(FrArea) or 0
 	local incomingAngle	= tonumber(Angle) or 0
+	local rawArmor		= armorData and tonumber(armorData.Armour) or 0
+	local isFinite		= function(Value)
+		return Value == Value and Value ~= math.huge and Value ~= -math.huge
+	end
 
 	-- Custom damage entities can reach this path with incomplete state. Fail
 	-- closed with a normalized impact instead of emitting NaN/Inf downstream.
-	if not armorData or incomingArea <= 0 then
+	if not armorData or not isFinite(incomingArea) or incomingArea <= 0
+		or not isFinite(incomingAngle) or not isFinite(rawArmor) then
 		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
 	end
 	Angle = incomingAngle
 	FrArea = incomingArea
+	armorData.Armour = rawArmor
 
 	local armor			= Entity.ACF.Armour																						-- Armor
 	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
@@ -271,6 +277,9 @@ function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
 	HitRes.Kill = false
 
+	local safeArea = tonumber(FrArea) or 0
+	if safeArea ~= safeArea or safeArea == math.huge or safeArea == -math.huge or safeArea < 0 then safeArea = 0 end
+	FrArea = safeArea
 	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
 	local BaseDamage = caliber * (4 + 0.1 * caliber)
 

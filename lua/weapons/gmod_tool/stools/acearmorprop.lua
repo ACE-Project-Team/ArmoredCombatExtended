@@ -530,8 +530,11 @@ if CLIENT then
 	local function ArmorSpecText( material )
 		local spec = material.ArmorSpec or {}
 		local fields = {
-			"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "kineticRHAe", "chemicalRHAe",
-			"heRHAe", "overmatchRatio", "multiHitRetention", "spallCapture", "shockAttenuation"
+			"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "ductility", "kineticRHAe",
+			"chemicalRHAe", "heRHAe", "kineticResilience", "chemicalResilience", "heResilience", "curve",
+			"overmatchRatio", "penetrationDamageMultiplier", "multiHitRetention", "spallProduction",
+			"spallResistance", "spallCapture", "shockTransmission", "residualDamageMultiplier", "tileMassKgM2",
+			"singleUse", "degradation"
 		}
 		local values = {}
 

@@ -51,7 +51,9 @@ local modular = ACE.DefineArmorMaterial({
 		chemicalRHAe = 1.1,
 		heRHAe = 0.8,
 		curve = 1,
-		ductility = 0.2
+		ductility = 0.2,
+		multiHitRetention = 0.5,
+		degradation = 0.5
 	},
 	resolver = "modular"
 })
@@ -66,5 +68,17 @@ assert(type(modular.ArmorResolution) == "function", "modular resolver missing")
 
 local valid, errors = ACE.ValidateArmorSpec({ densityKgM3 = -1 })
 assert(not valid and #errors == 1, "invalid armor specs were accepted")
+
+local incomplete = pcall(ACE.DefineArmorMaterial, { id = "Incomplete", resolver = "modular", spec = { kineticRHAe = 1 } })
+assert(not incomplete, "incomplete modular material was registered")
+
+local oldRandom = math.random
+math.random = function() return 0 end
+local target = { ACF = { Health = 100, MaxHealth = 100 } }
+local intact = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
+target.ACF.Health = 0
+local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
+math.random = oldRandom
+assert(degraded.Overkill >= intact.Overkill, "multi-hit retention did not reduce degraded protection")
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

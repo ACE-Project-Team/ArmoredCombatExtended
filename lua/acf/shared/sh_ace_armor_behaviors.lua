@@ -1,5 +1,5 @@
--- Shared, data-only behavior vocabulary for armor materials.
--- This metadata layer deliberately does not alter legacy armor coefficients or resolvers.
+-- Shared behavior vocabulary and opt-in resolver for armor materials.
+-- Existing material definitions remain on their legacy coefficients and resolvers.
 AddCSLuaFile()
 
 ACE = ACE or {}
@@ -32,7 +32,7 @@ ACE.ArmorBehaviorModules = {
 	elastomer_liner = {
 		label = "Elastomer liner",
 		description = "Deformable layer focused on shock, fragment, and spall control.",
-		fields = { "densityKgM3", "shockAttenuation", "spallCapture" }
+		fields = { "densityKgM3", "shockTransmission", "spallCapture" }
 	},
 	reactive_tile = {
 		label = "Reactive tile",
@@ -47,7 +47,7 @@ ACE.ArmorBehaviorModules = {
 	shock_barrier = {
 		label = "Shock barrier",
 		description = "Limits blast or shock continuation through layered armor.",
-		fields = { "shockAttenuation" }
+		fields = { "shockTransmission" }
 	},
 	failure_state = {
 		label = "Impact state",
@@ -77,7 +77,7 @@ ACE.ArmorSpecFields = {
 	spallProduction = { label = "Spall production", unit = "×" },
 	spallResistance = { label = "Spall resistance", unit = "×" },
 	spallCapture = { label = "Spall capture", unit = "0–1" },
-	shockAttenuation = { label = "Shock attenuation", unit = "0–1" },
+	shockTransmission = { label = "Shock transmission", unit = "0–1" },
 	residualDamageMultiplier = { label = "Residual damage", unit = "×" },
 	tileMassKgM2 = { label = "Tile mass", unit = "kg/m²" },
 	singleUse = { label = "Single-use", unit = "boolean" },
@@ -114,10 +114,20 @@ function ACE.ValidateArmorSpec(spec)
 		end
 	end
 
-	for _, field in ipairs({ "ductility", "multiHitRetention", "spallCapture", "shockAttenuation" }) do
+	for _, field in ipairs({ "ductility", "multiHitRetention", "spallCapture", "shockTransmission", "degradation" }) do
 		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] < 0 or spec[field] > 1) then
 			errors[#errors + 1] = field .. " must be between 0 and 1"
 		end
+	end
+
+	for _, field in ipairs({ "kineticResilience", "chemicalResilience", "heResilience", "penetrationDamageMultiplier", "residualDamageMultiplier" }) do
+		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] <= 0) then
+			errors[#errors + 1] = field .. " must be a positive number"
+		end
+	end
+
+	if spec.overmatchRatio and spec.overmatchRatio <= 1.3 then
+		errors[#errors + 1] = "overmatchRatio must be greater than 1.3"
 	end
 
 	return #errors == 0, errors
@@ -135,19 +145,16 @@ ACE.ArmorBehaviorSets = {
 	Texto = { "composite_backing", "spall_response", "failure_state" }
 }
 
---- Attaches descriptive armor behavior metadata to loaded materials.
--- @param materials table Loaded ACE armor material definitions.
 local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 	material.BehaviorModules = {}
 	material.BehaviorConfig = CopyValues(behaviorConfig)
 
 	for index, behavior in ipairs(behaviorIds or {}) do
 		local behaviorId = type(behavior) == "table" and behavior.id or behavior
-		if ACE.ArmorBehaviorModules[behaviorId] then
-			material.BehaviorModules[#material.BehaviorModules + 1] = behaviorId
-			if type(behavior) == "table" and behavior.parameters then
-				material.BehaviorConfig[behaviorId] = CopyValues(behavior.parameters)
-			end
+		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior module: " .. tostring(behaviorId))
+		material.BehaviorModules[#material.BehaviorModules + 1] = behaviorId
+		if type(behavior) == "table" and behavior.parameters then
+			material.BehaviorConfig[behaviorId] = CopyValues(behavior.parameters)
 		end
 	end
 
@@ -156,6 +163,20 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 	for _, behaviorId in ipairs(material.BehaviorModules) do
 		local behavior = ACE.ArmorBehaviorModules[behaviorId]
 		material.BehaviorLabels[#material.BehaviorLabels + 1] = behavior.label
+	end
+
+	for _, parameters in pairs(material.BehaviorConfig) do
+		if type(parameters) == "table" then
+			for _, field in ipairs({ "penetrationDamageMultiplier", "residualDamageMultiplier" }) do
+				if parameters[field] ~= nil then
+					assert(type(parameters[field]) == "number" and parameters[field] > 0, field .. " must be a positive number")
+				end
+			end
+
+			if parameters.shockTransmission ~= nil then
+				assert(type(parameters.shockTransmission) == "number" and parameters.shockTransmission >= 0 and parameters.shockTransmission <= 1, "shockTransmission must be between 0 and 1")
+			end
+		end
 	end
 end
 
@@ -175,6 +196,18 @@ function ACE.ConfigureArmorMaterial(material, definition)
 	end
 
 	local spec = material.ArmorSpec
+	local modular = definition.resolver == "modular" or material.ArmorResolver == "modular"
+	if modular then
+		material.massMod = material.massMod or (spec.densityKgM3 and spec.densityKgM3 / 7850)
+		material.curve = material.curve or spec.curve or 1
+		material.effectiveness = material.effectiveness or spec.kineticRHAe
+		material.resiliance = material.resiliance or spec.kineticResilience or 1
+		material.HEATeffectiveness = material.HEATeffectiveness or spec.chemicalRHAe or material.effectiveness
+		material.HEeffectiveness = material.HEeffectiveness or spec.heRHAe or material.effectiveness
+		assert(type(material.massMod) == "number" and material.massMod > 0, "modular armor requires densityKgM3 or massMod")
+		assert(type(material.effectiveness) == "number" and material.effectiveness > 0, "modular armor requires kineticRHAe or effectiveness")
+	end
+
 	if spec.densityKgM3 and material.massMod == nil then material.massMod = spec.densityKgM3 / 7850 end
 	if spec.kineticRHAe and material.effectiveness == nil then material.effectiveness = spec.kineticRHAe end
 	if spec.chemicalRHAe and material.HEATeffectiveness == nil then material.HEATeffectiveness = spec.chemicalRHAe end
@@ -182,7 +215,7 @@ function ACE.ConfigureArmorMaterial(material, definition)
 	if spec.curve and material.curve == nil then material.curve = spec.curve end
 	if spec.spallResistance and material.spallresist == nil then material.spallresist = spec.spallResistance end
 	if spec.spallProduction and material.spallmult == nil then material.spallmult = spec.spallProduction end
-	if spec.shockAttenuation and material.Stopshock == nil then material.Stopshock = spec.shockAttenuation <= 0 end
+	if spec.shockTransmission and material.Stopshock == nil then material.Stopshock = spec.shockTransmission <= 0 end
 
 	AttachBehaviorModules(material, definition.behaviors or material.BehaviorModules, definition.behaviorConfig or material.BehaviorConfig)
 
@@ -213,6 +246,7 @@ function ACE.DefineArmorMaterial(definition)
 	material.year = definition.year or material.year
 
 	ACE.ConfigureArmorMaterial(material, definition)
+	assert(definition.resolver == "modular" or type(material.ArmorResolution) == "function", "armor material requires resolver = modular or ArmorResolution")
 	ACE.ArmorTypes[material.id] = material
 
 	return material
@@ -245,6 +279,17 @@ if SERVER then
 	--- Resolves a declarative armor material using test-facing RHAe and failure inputs.
 	-- Existing ACE materials retain their bespoke ArmorResolution functions; this resolver is
 	-- opt-in through `resolver = "modular"` in ACE.DefineArmorMaterial.
+	-- @param material table Configured material definition.
+	-- @param Entity entity Impacted armor entity.
+	-- @param armor number Normal armor thickness.
+	-- @param losArmor number Line-of-sight armor thickness.
+	-- @param losArmorHealth number Current armor-health normalization.
+	-- @param maxPenetration number Incoming RHA penetration.
+	-- @param FrArea number Impact area.
+	-- @param caliber number Projectile caliber.
+	-- @param damageMult number ACE threat damage multiplier.
+	-- @param Type string ACE threat type.
+	-- @return table result ACE-compatible damage result.
 	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
 		local spec = material.ArmorSpec or {}
 		local _, effectiveness, resilience = ThreatValues(material, Type)
@@ -265,8 +310,18 @@ if SERVER then
 
 		if Type == "HE" or Type == "HESH" then
 			local config = behaviorConfig.shock_barrier or {}
-			damageMultiplier = damageMultiplier * (config.shockAttenuation or 1)
+			damageMultiplier = damageMultiplier * (config.shockTransmission or 1)
 		end
+
+		local condition = 1
+		if Entity and Entity.ACF and Entity.ACF.MaxHealth and Entity.ACF.MaxHealth > 0 then
+			condition = math.Clamp((Entity.ACF.Health or Entity.ACF.MaxHealth) / Entity.ACF.MaxHealth, 0, 1)
+		end
+
+		local retention = spec.multiHitRetention or 1
+		local degradation = spec.degradation or 0
+		effectiveness = effectiveness * (retention + (1 - retention) * condition)
+		effectiveness = effectiveness * (1 - degradation * (1 - condition))
 
 		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
 		local ductilityMultiplier = 2 / (2 + ductility * 1.5)
@@ -301,6 +356,8 @@ if SERVER then
 	end
 end
 
+--- Attaches the standard behavior profile to loaded legacy materials.
+-- @param materials table Loaded ACE armor material definitions.
 function ACE.ApplyArmorBehaviorModules(materials)
 	for materialId, behaviorIds in pairs(ACE.ArmorBehaviorSets) do
 		local material = materials[materialId]

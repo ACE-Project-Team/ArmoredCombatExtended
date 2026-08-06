@@ -100,6 +100,10 @@ local function HasBehavior(material, behaviorId)
 	return false
 end
 
+local function IsFiniteNumber(value)
+	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 --- Validates optional physical/test inputs before registering a material.
 -- @param spec table Physical/test specification.
 -- @return boolean valid Whether all supplied values are usable.
@@ -118,18 +122,18 @@ function ACE.ValidateArmorSpec(spec)
 	end
 
 	for _, field in ipairs(positive) do
-		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] <= 0) then
+		if spec[field] ~= nil and (not IsFiniteNumber(spec[field]) or spec[field] <= 0) then
 			errors[#errors + 1] = field .. " must be a positive number"
 		end
 	end
 
 	for _, field in ipairs(fractions) do
-		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] < 0 or spec[field] > 1) then
+		if spec[field] ~= nil and (not IsFiniteNumber(spec[field]) or spec[field] < 0 or spec[field] > 1) then
 			errors[#errors + 1] = field .. " must be between 0 and 1"
 		end
 	end
 
-	if spec.overmatchRatio and spec.overmatchRatio <= 1.3 then
+	if IsFiniteNumber(spec.overmatchRatio) and spec.overmatchRatio <= 1.3 then
 		errors[#errors + 1] = "overmatchRatio must be greater than 1.3"
 	end
 
@@ -173,15 +177,17 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 	for behaviorId, parameters in pairs(material.BehaviorConfig) do
 		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior configuration: " .. tostring(behaviorId))
 		assert(type(parameters) == "table", "behavior configuration must be a table: " .. tostring(behaviorId))
+		local declaredFields = {}
+		for _, field in ipairs(ACE.ArmorBehaviorModules[behaviorId].fields or {}) do declaredFields[field] = true end
 
 		for field, value in pairs(parameters) do
-			assert(ACE.ArmorSpecFields[field], "unknown armor behavior parameter: " .. tostring(field))
+			assert(declaredFields[field], "unsupported " .. behaviorId .. " parameter: " .. tostring(field))
 			if field == "singleUse" then
 				assert(type(value) == "boolean", "singleUse must be boolean")
 			elseif field == "ductility" or field == "multiHitRetention" or field == "spallCapture" or field == "shockTransmission" or field == "degradation" then
-				assert(type(value) == "number" and value >= 0 and value <= 1, field .. " must be between 0 and 1")
+				assert(IsFiniteNumber(value) and value >= 0 and value <= 1, field .. " must be between 0 and 1")
 			else
-				assert(type(value) == "number" and value > 0, field .. " must be a positive number")
+				assert(IsFiniteNumber(value) and value > 0, field .. " must be a positive number")
 			end
 		end
 	end
@@ -217,8 +223,8 @@ function ACE.ConfigureArmorMaterial(material, definition)
 		material.spallmult = material.spallmult or spec.spallProduction or 1
 		material.ArmorMul = material.ArmorMul or 1
 		material.NormMult = material.NormMult or 1
-		assert(type(material.massMod) == "number" and material.massMod > 0, "modular armor requires densityKgM3 or massMod")
-		assert(type(material.effectiveness) == "number" and material.effectiveness > 0, "modular armor requires kineticRHAe or effectiveness")
+		assert(IsFiniteNumber(material.massMod) and material.massMod > 0, "modular armor requires densityKgM3 or massMod")
+		assert(IsFiniteNumber(material.effectiveness) and material.effectiveness > 0, "modular armor requires kineticRHAe or effectiveness")
 	end
 
 	if spec.densityKgM3 and material.massMod == nil then material.massMod = spec.densityKgM3 / 7850 end
@@ -250,6 +256,8 @@ end
 function ACE.DefineArmorMaterial(definition)
 	assert(type(definition) == "table", "armor material definition must be a table")
 	assert(definition.id, "armor material definition requires id")
+	local allowed = { id = true, name = true, sname = true, desc = true, year = true, material = true, spec = true, behaviors = true, behaviorConfig = true, legacy = true, resolver = true }
+	for key in pairs(definition) do assert(allowed[key], "unknown armor material definition key: " .. tostring(key)) end
 
 	local material = CopyValues(definition.material)
 	material.id = definition.id
@@ -331,11 +339,12 @@ if SERVER then
 			condition = math.Clamp((Entity.ACF.Health or Entity.ACF.MaxHealth) / Entity.ACF.MaxHealth, 0, 1)
 		end
 
-		local retention = spec.multiHitRetention or 1
+		-- Degradation is the linear loss as health falls; retention is the hard floor
+		-- that repeated impacts cannot reduce past.
+		local retention = spec.multiHitRetention or 0
 		local degradation = spec.degradation or 0
-		local retentionFactor = retention + (1 - retention) * condition
 		local degradationFactor = 1 - degradation * (1 - condition)
-		effectiveness = effectiveness * math.min(retentionFactor, degradationFactor)
+		effectiveness = effectiveness * math.max(retention, degradationFactor)
 
 		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
 		local ductilityMultiplier = 2 / (2 + ductility * 1.5)

@@ -552,6 +552,25 @@ if CLIENT then
 		return #values > 0 and table.concat(values, " | ") or "No physical test spec declared"
 	end
 
+	local function ArmorBehaviorConfigText( material )
+		local values = {}
+
+		for _, behaviorId in ipairs(material.BehaviorModules or {}) do
+			local parameters = material.BehaviorConfig and material.BehaviorConfig[behaviorId]
+			local keys = {}
+			for key in pairs(parameters or {}) do keys[#keys + 1] = key end
+			table.sort(keys)
+
+			for _, key in ipairs(keys) do
+				local value = parameters[key]
+				if type(value) == "number" then value = math.Round(value, 3) end
+				values[#values + 1] = behaviorId .. "." .. key .. "=" .. tostring(value)
+			end
+		end
+
+		return #values > 0 and table.concat(values, " | ") or "No behavior overrides"
+	end
+
 	-- Build or refresh the material combo box.
 	local function MaterialTable( panel )
 
@@ -594,6 +613,7 @@ if CLIENT then
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MaterialData.BehaviorLabels or {}) > 0 and table.concat(MaterialData.BehaviorLabels, ", ") or "none") )
+		ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MaterialData) )
 		ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MaterialData) )
 
 		-- Update material selection from UI.
@@ -705,6 +725,7 @@ if CLIENT then
 				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
 				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
 				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MatData.BehaviorLabels or {}) > 0 and table.concat(MatData.BehaviorLabels, ", ") or "none") )
+				ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MatData) )
 				ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MatData) )
 
 			end

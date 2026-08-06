@@ -75,6 +75,15 @@ local incomplete = pcall(ACE.DefineArmorMaterial, { id = "Incomplete", resolver 
 assert(not incomplete, "incomplete modular material was registered")
 local malformed = pcall(ACE.DefineArmorMaterial, { id = "Malformed", resolver = "modular", spec = { densityKgM3 = 2400, kineticRHAe = 1, hardnessHB = "unknown" } })
 assert(not malformed, "malformed modular material was registered")
+local badOvermatch = pcall(ACE.DefineArmorMaterial, { id = "BadOvermatch", resolver = "modular", spec = { densityKgM3 = 2400, kineticRHAe = 1, overmatchRatio = "unknown" } })
+assert(not badOvermatch, "nonnumeric overmatch was registered")
+local badBehaviorParameter = pcall(ACE.DefineArmorMaterial, {
+	id = "BadBehaviorParameter",
+	resolver = "modular",
+	behaviors = { { id = "homogeneous_metal", parameters = { shockTransmission = 0.5 } } },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
+})
+assert(not badBehaviorParameter, "unsupported module parameter was registered")
 
 local oldRandom = math.random
 math.random = function() return 0 end
@@ -84,7 +93,7 @@ local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")
 target.ACF.Health = 0
 local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 math.random = oldRandom
-assert(degraded.Overkill >= intact.Overkill, "multi-hit retention did not reduce degraded protection")
+assert(degraded.Overkill > intact.Overkill, "multi-hit retention did not reduce degraded protection")
 assert(heat.Damage < intact.Damage, "shock transmission did not reduce HE damage")
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

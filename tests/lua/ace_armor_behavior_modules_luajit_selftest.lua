@@ -53,7 +53,8 @@ local modular = ACE.DefineArmorMaterial({
 		curve = 1,
 		ductility = 0.2,
 		multiHitRetention = 0.5,
-		degradation = 0.5
+		degradation = 0.5,
+		shockTransmission = 0.5
 	},
 	resolver = "modular"
 })
@@ -63,6 +64,7 @@ assert(modular.massMod == 2400 / 7850, "density did not derive mass modifier")
 assert(modular.effectiveness == 1.6, "kinetic RHAe did not derive effectiveness")
 assert(modular.HEATeffectiveness == 1.1, "chemical RHAe did not derive HEAT effectiveness")
 assert(modular.HEeffectiveness == 0.8, "HE RHAe did not derive HE effectiveness")
+assert(modular.spallresist == 1 and modular.spallmult == 1, "legacy spall defaults missing")
 assert(modular.BehaviorConfig.composite_backing.residualDamageMultiplier == 0.75, "behavior parameters missing")
 assert(type(modular.ArmorResolution) == "function", "modular resolver missing")
 
@@ -71,14 +73,18 @@ assert(not valid and #errors == 1, "invalid armor specs were accepted")
 
 local incomplete = pcall(ACE.DefineArmorMaterial, { id = "Incomplete", resolver = "modular", spec = { kineticRHAe = 1 } })
 assert(not incomplete, "incomplete modular material was registered")
+local malformed = pcall(ACE.DefineArmorMaterial, { id = "Malformed", resolver = "modular", spec = { densityKgM3 = 2400, kineticRHAe = 1, hardnessHB = "unknown" } })
+assert(not malformed, "malformed modular material was registered")
 
 local oldRandom = math.random
 math.random = function() return 0 end
 local target = { ACF = { Health = 100, MaxHealth = 100 } }
 local intact = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
+local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")
 target.ACF.Health = 0
 local degraded = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 math.random = oldRandom
 assert(degraded.Overkill >= intact.Overkill, "multi-hit retention did not reduce degraded protection")
+assert(heat.Damage < intact.Damage, "shock transmission did not reduce HE damage")
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

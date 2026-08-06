@@ -106,7 +106,16 @@ end
 -- @return table errors Human-readable validation errors.
 function ACE.ValidateArmorSpec(spec)
 	local errors = {}
-	local positive = { "densityKgM3", "kineticRHAe", "chemicalRHAe", "heRHAe", "curve", "overmatchRatio" }
+	local positive = {
+		"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "kineticRHAe", "chemicalRHAe", "heRHAe",
+		"curve", "overmatchRatio", "kineticResilience", "chemicalResilience", "heResilience", "penetrationDamageMultiplier",
+		"spallProduction", "spallResistance", "residualDamageMultiplier", "tileMassKgM2"
+	}
+	local fractions = { "ductility", "multiHitRetention", "spallCapture", "shockTransmission", "degradation" }
+
+	for field in pairs(spec) do
+		if not ACE.ArmorSpecFields[field] then errors[#errors + 1] = "unknown armor spec field: " .. tostring(field) end
+	end
 
 	for _, field in ipairs(positive) do
 		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] <= 0) then
@@ -114,21 +123,17 @@ function ACE.ValidateArmorSpec(spec)
 		end
 	end
 
-	for _, field in ipairs({ "ductility", "multiHitRetention", "spallCapture", "shockTransmission", "degradation" }) do
+	for _, field in ipairs(fractions) do
 		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] < 0 or spec[field] > 1) then
 			errors[#errors + 1] = field .. " must be between 0 and 1"
-		end
-	end
-
-	for _, field in ipairs({ "kineticResilience", "chemicalResilience", "heResilience", "penetrationDamageMultiplier", "residualDamageMultiplier" }) do
-		if spec[field] ~= nil and (type(spec[field]) ~= "number" or spec[field] <= 0) then
-			errors[#errors + 1] = field .. " must be a positive number"
 		end
 	end
 
 	if spec.overmatchRatio and spec.overmatchRatio <= 1.3 then
 		errors[#errors + 1] = "overmatchRatio must be greater than 1.3"
 	end
+
+	if spec.singleUse ~= nil and type(spec.singleUse) ~= "boolean" then errors[#errors + 1] = "singleUse must be boolean" end
 
 	return #errors == 0, errors
 end
@@ -165,16 +170,18 @@ local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
 		material.BehaviorLabels[#material.BehaviorLabels + 1] = behavior.label
 	end
 
-	for _, parameters in pairs(material.BehaviorConfig) do
-		if type(parameters) == "table" then
-			for _, field in ipairs({ "penetrationDamageMultiplier", "residualDamageMultiplier" }) do
-				if parameters[field] ~= nil then
-					assert(type(parameters[field]) == "number" and parameters[field] > 0, field .. " must be a positive number")
-				end
-			end
+	for behaviorId, parameters in pairs(material.BehaviorConfig) do
+		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior configuration: " .. tostring(behaviorId))
+		assert(type(parameters) == "table", "behavior configuration must be a table: " .. tostring(behaviorId))
 
-			if parameters.shockTransmission ~= nil then
-				assert(type(parameters.shockTransmission) == "number" and parameters.shockTransmission >= 0 and parameters.shockTransmission <= 1, "shockTransmission must be between 0 and 1")
+		for field, value in pairs(parameters) do
+			assert(ACE.ArmorSpecFields[field], "unknown armor behavior parameter: " .. tostring(field))
+			if field == "singleUse" then
+				assert(type(value) == "boolean", "singleUse must be boolean")
+			elseif field == "ductility" or field == "multiHitRetention" or field == "spallCapture" or field == "shockTransmission" or field == "degradation" then
+				assert(type(value) == "number" and value >= 0 and value <= 1, field .. " must be between 0 and 1")
+			else
+				assert(type(value) == "number" and value > 0, field .. " must be a positive number")
 			end
 		end
 	end
@@ -204,6 +211,12 @@ function ACE.ConfigureArmorMaterial(material, definition)
 		material.resiliance = material.resiliance or spec.kineticResilience or 1
 		material.HEATeffectiveness = material.HEATeffectiveness or spec.chemicalRHAe or material.effectiveness
 		material.HEeffectiveness = material.HEeffectiveness or spec.heRHAe or material.effectiveness
+		material.HEATresiliance = material.HEATresiliance or spec.chemicalResilience or material.resiliance
+		material.HEresiliance = material.HEresiliance or spec.heResilience or material.resiliance
+		material.spallresist = material.spallresist or spec.spallResistance or 1
+		material.spallmult = material.spallmult or spec.spallProduction or 1
+		material.ArmorMul = material.ArmorMul or 1
+		material.NormMult = material.NormMult or 1
 		assert(type(material.massMod) == "number" and material.massMod > 0, "modular armor requires densityKgM3 or massMod")
 		assert(type(material.effectiveness) == "number" and material.effectiveness > 0, "modular armor requires kineticRHAe or effectiveness")
 	end
@@ -310,7 +323,7 @@ if SERVER then
 
 		if Type == "HE" or Type == "HESH" then
 			local config = behaviorConfig.shock_barrier or {}
-			damageMultiplier = damageMultiplier * (config.shockTransmission or 1)
+			damageMultiplier = damageMultiplier * (config.shockTransmission or spec.shockTransmission or 1)
 		end
 
 		local condition = 1
@@ -320,8 +333,9 @@ if SERVER then
 
 		local retention = spec.multiHitRetention or 1
 		local degradation = spec.degradation or 0
-		effectiveness = effectiveness * (retention + (1 - retention) * condition)
-		effectiveness = effectiveness * (1 - degradation * (1 - condition))
+		local retentionFactor = retention + (1 - retention) * condition
+		local degradationFactor = 1 - degradation * (1 - condition)
+		effectiveness = effectiveness * math.min(retentionFactor, degradationFactor)
 
 		local ductility = math.Clamp(spec.ductility or 0, 0, 1)
 		local ductilityMultiplier = 2 / (2 + ductility * 1.5)

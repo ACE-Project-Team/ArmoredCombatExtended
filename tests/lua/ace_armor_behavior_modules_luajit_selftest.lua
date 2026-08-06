@@ -68,6 +68,15 @@ assert(modular.spallresist == 1 and modular.spallmult == 1, "legacy spall defaul
 assert(modular.BehaviorConfig.composite_backing.residualDamageMultiplier == 0.75, "behavior parameters missing")
 assert(type(modular.ArmorResolution) == "function", "modular resolver missing")
 
+local customImpactHook = ACE.DefineArmorMaterial({
+	id = "CustomImpactHook",
+	resolver = "modular",
+	behaviors = { "homogeneous_metal" },
+	resolverConfig = { impactHook = "du_secondary_blast", triggerOnPenetration = true },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1.2 }
+})
+assert(customImpactHook.ArmorResolverConfig.impactHook == "du_secondary_blast", "custom impact-hook compatibility was removed")
+
 local valid, errors = ACE.ValidateArmorSpec({ densityKgM3 = -1 })
 assert(not valid and #errors == 1, "invalid armor specs were accepted")
 
@@ -109,6 +118,11 @@ assert(not orphanBehaviorParameter, "inactive module parameter was registered")
 
 local oldRandom = math.random
 math.random = function() return 0 end
+local customHookCalls = 0
+ACE.HE = function() customHookCalls = customHookCalls + 1 end
+local customHookEntity = { GetPos = function() return {} end, ACF = { Health = 100, MaxHealth = 100 } }
+customImpactHook.ArmorResolution(customHookEntity, 10, 10, 10, 100, 1, 1, 100, "AP")
+assert(customHookCalls > 0, "custom impact-hook dispatch was removed")
 local target = { ACF = { Health = 100, MaxHealth = 100 } }
 local intact = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "AP")
 local heat = modular.ArmorResolution(target, 10, 10, 10, 100, 1, 1, 1, "HE")

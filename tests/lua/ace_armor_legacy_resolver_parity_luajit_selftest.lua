@@ -85,12 +85,9 @@ impactEntity.ACF.Health = 100
 ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 100, 2.5, 5, 1.3, "AP")
 assert(soundCalls > 0, "Ceramic shatter behavior was not activated")
 ACE.ArmorTypes.DU.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
-local duCallsBefore = heCalls
 ACE.ArmorTypes.DU.ArmorResolution(impactEntity, 10, 15, 10, 100, 2.5, 5, 1.3, "AP")
-assert(heCalls > duCallsBefore, "DU secondary blast behavior was not activated")
-local duCallsAfterBreach = heCalls
 ACE.ArmorTypes.DU.ArmorResolution(impactEntity, 10, 15, 10, 40, 2.5, 5, 1.3, "AP")
-assert(heCalls == duCallsAfterBreach, "DU secondary blast activated without defeating the plate")
+assert(heCalls == 0, "depleted uranium armor incorrectly produced an explosive secondary blast")
 ACE.ERABoomPerTick = 0
 ACE.ArmorTypes.ERA.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
 local eraCallsBefore = heCalls

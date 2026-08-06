@@ -559,7 +559,7 @@ if SERVER then
 		if penetrationProbability > ImpactRandom() then
 			local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
 			-- A penetrator must defeat the full effective layer before triggering
-			-- material effects such as DU's secondary blast. A stopped projectile
+			-- material effects such as a custom penetrator-impact hook. A stopped projectile
 			-- can still produce normal damage/spall, but it did not perforate the
 			-- plate and should not consume a reactive or penetrator-effect hook.
 			local defeated = maxPenetration >= layerCapacity

@@ -527,6 +527,28 @@ if CLIENT then
 
 	end
 
+	local function ArmorSpecText( material )
+		local spec = material.ArmorSpec or {}
+		local fields = {
+			"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "kineticRHAe", "chemicalRHAe",
+			"heRHAe", "overmatchRatio", "multiHitRetention", "spallCapture", "shockAttenuation"
+		}
+		local values = {}
+
+		for _, field in ipairs(fields) do
+			local value = spec[field]
+			if value ~= nil then
+				local info = ACE.ArmorSpecFields and ACE.ArmorSpecFields[field]
+				local label = info and info.label or field
+				local unit = info and (" " .. info.unit) or ""
+				if type(value) == "number" then value = math.Round(value, 3) end
+				values[#values + 1] = label .. ": " .. tostring(value) .. unit
+			end
+		end
+
+		return #values > 0 and table.concat(values, " | ") or "No physical test spec declared"
+	end
+
 	-- Build or refresh the material combo box.
 	local function MaterialTable( panel )
 
@@ -568,7 +590,8 @@ if CLIENT then
 		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
 		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
 		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
-		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. table.concat(MaterialData.BehaviorLabels or {}, ", ") )
+		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MaterialData.BehaviorLabels or {}) > 0 and table.concat(MaterialData.BehaviorLabels, ", ") or "none") )
+		ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MaterialData) )
 
 		-- Update material selection from UI.
 		function ToolPanel.ComboMat:OnSelect(_, value, data)
@@ -678,7 +701,8 @@ if CLIENT then
 				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
 				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
 				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
-				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. table.concat(MatData.BehaviorLabels or {}, ", ") )
+				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules: " .. (#(MatData.BehaviorLabels or {}) > 0 and table.concat(MatData.BehaviorLabels, ", ") or "none") )
+				ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MatData) )
 
 			end
 	end, "acearmorprop_material")

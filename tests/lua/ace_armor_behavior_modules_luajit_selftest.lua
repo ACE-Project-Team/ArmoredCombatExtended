@@ -3,11 +3,11 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 ACE = {}
 AddCSLuaFile = function() end
-table.Copy = function(value)
-	local copy = {}
-	for key, item in pairs(value) do copy[key] = item end
-	return copy
+SERVER = true
+math.Clamp = math.Clamp or function(value, minimum, maximum)
+	return math.max(minimum, math.min(maximum, value))
 end
+ACE.ArmorTypes = {}
 
 assert(dofile(root .. "/lua/acf/shared/sh_ace_armor_behaviors.lua") == nil)
 
@@ -37,5 +37,34 @@ for materialId, behaviorIds in pairs(expected) do
 end
 
 assert(#ACE.GetArmorBehaviorModules(nil) == 0, "missing material lookup changed")
+
+local modular = ACE.DefineArmorMaterial({
+	id = "TestComposite",
+	name = "Test composite",
+	behaviors = {
+		"brittle_strike_face",
+		{ id = "composite_backing", parameters = { residualDamageMultiplier = 0.75 } }
+	},
+	spec = {
+		densityKgM3 = 2400,
+		kineticRHAe = 1.6,
+		chemicalRHAe = 1.1,
+		heRHAe = 0.8,
+		curve = 1,
+		ductility = 0.2
+	},
+	resolver = "modular"
+})
+
+assert(ACE.ArmorTypes.TestComposite == modular, "material was not registered")
+assert(modular.massMod == 2400 / 7850, "density did not derive mass modifier")
+assert(modular.effectiveness == 1.6, "kinetic RHAe did not derive effectiveness")
+assert(modular.HEATeffectiveness == 1.1, "chemical RHAe did not derive HEAT effectiveness")
+assert(modular.HEeffectiveness == 0.8, "HE RHAe did not derive HE effectiveness")
+assert(modular.BehaviorConfig.composite_backing.residualDamageMultiplier == 0.75, "behavior parameters missing")
+assert(type(modular.ArmorResolution) == "function", "modular resolver missing")
+
+local valid, errors = ACE.ValidateArmorSpec({ densityKgM3 = -1 })
+assert(not valid and #errors == 1, "invalid armor specs were accepted")
 
 print("ACE armor behavior modules LuaJIT self-test: PASS")

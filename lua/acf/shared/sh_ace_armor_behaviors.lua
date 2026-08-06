@@ -86,9 +86,12 @@ ACE.ArmorSpecFields = {
 
 ACE.ArmorResolvers = ACE.ArmorResolvers or {}
 
-local function CopyValues(source)
+local CopyValues
+CopyValues = function(source)
 	local copy = {}
-	for key, value in pairs(source or {}) do copy[key] = value end
+	for key, value in pairs(source or {}) do
+		copy[key] = type(value) == "table" and CopyValues(value) or value
+	end
 	return copy
 end
 
@@ -162,18 +165,26 @@ ACE.ArmorBehaviorSets = {
 }
 
 local function AttachBehaviorModules(material, behaviorIds, behaviorConfig)
+	assert(type(behaviorIds) == "table", "armor behaviors must be a table")
 	material.BehaviorModules = {}
 	material.BehaviorConfig = CopyValues(behaviorConfig)
+	local behaviorCount = 0
+	for key in pairs(behaviorIds) do
+		assert(type(key) == "number" and key >= 1 and key % 1 == 0, "armor behavior list must use contiguous numeric keys")
+		behaviorCount = behaviorCount + 1
+	end
+	assert(behaviorCount == #behaviorIds, "armor behavior list must be contiguous")
 
-	for index, behavior in ipairs(behaviorIds or {}) do
+	for _, behavior in ipairs(behaviorIds) do
 		assert(type(behavior) == "string" or type(behavior) == "table", "armor behavior entry must be a module ID or table")
 		if type(behavior) == "table" then
 			for key in pairs(behavior) do assert(key == "id" or key == "parameters", "unknown armor behavior entry key: " .. tostring(key)) end
+			if behavior.parameters ~= nil then assert(type(behavior.parameters) == "table", "behavior parameters must be a table") end
 		end
 		local behaviorId = type(behavior) == "table" and behavior.id or behavior
 		assert(ACE.ArmorBehaviorModules[behaviorId], "unknown armor behavior module: " .. tostring(behaviorId))
 		material.BehaviorModules[#material.BehaviorModules + 1] = behaviorId
-		if type(behavior) == "table" and behavior.parameters then
+		if type(behavior) == "table" and behavior.parameters ~= nil then
 			material.BehaviorConfig[behaviorId] = CopyValues(behavior.parameters)
 		end
 	end
@@ -226,8 +237,9 @@ function ACE.ConfigureArmorMaterial(material, definition)
 	end
 
 	AttachBehaviorModules(material, definition.behaviors or material.BehaviorModules, definition.behaviorConfig or material.BehaviorConfig)
-	for _, parameters in pairs(material.BehaviorConfig) do
-		for field, value in pairs(parameters) do material.ArmorSpec[field] = value end
+	for _, behaviorId in ipairs(material.BehaviorModules) do
+		local parameters = material.BehaviorConfig[behaviorId]
+		for field, value in pairs(parameters or {}) do material.ArmorSpec[field] = value end
 	end
 
 	local valid, errors = ACE.ValidateArmorSpec(material.ArmorSpec)

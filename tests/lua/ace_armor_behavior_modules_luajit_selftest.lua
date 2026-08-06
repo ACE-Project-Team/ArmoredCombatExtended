@@ -84,6 +84,20 @@ local badBehaviorParameter = pcall(ACE.DefineArmorMaterial, {
 	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
 })
 assert(not badBehaviorParameter, "unsupported module parameter was registered")
+local badBehaviorShape = pcall(ACE.DefineArmorMaterial, {
+	id = "BadBehaviorShape",
+	resolver = "modular",
+	behaviors = { { id = "homogeneous_metal", parameters = false } },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
+})
+assert(not badBehaviorShape, "malformed behavior parameters were registered")
+local sparseBehaviors = pcall(ACE.DefineArmorMaterial, {
+	id = "SparseBehaviors",
+	resolver = "modular",
+	behaviors = { [2] = "homogeneous_metal" },
+	spec = { densityKgM3 = 2400, kineticRHAe = 1 }
+})
+assert(not sparseBehaviors, "sparse behavior list was registered")
 local orphanBehaviorParameter = pcall(ACE.DefineArmorMaterial, {
 	id = "OrphanBehaviorParameter",
 	resolver = "modular",

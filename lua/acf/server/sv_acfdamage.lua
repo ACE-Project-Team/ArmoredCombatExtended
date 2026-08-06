@@ -821,6 +821,16 @@ local function CopySpallEnergy( Energy )
 	}
 end
 
+local function ApplySpallCapture( Energy, MatData )
+	local spec = MatData and MatData.ArmorSpec
+	local capture = math.Clamp(tonumber(spec and spec.spallCapture) or 0, 0, 1)
+	if capture <= 0 then return end
+
+	local retained = 1 - capture
+	Energy.Kinetic = Energy.Kinetic * retained
+	Energy.Penetration = Energy.Penetration * retained
+end
+
 function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
 	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
 	-- while later fragments must start from the original energy.
@@ -878,6 +888,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
 		local MatData	= ACE.GetMaterialData( Mat )
+		ApplySpallCapture(SpallEnergy, MatData)
 
 		local spall_resistance = MatData.spallresist
 

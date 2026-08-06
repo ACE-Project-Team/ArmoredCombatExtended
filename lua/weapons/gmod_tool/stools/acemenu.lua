@@ -31,7 +31,6 @@ TOOL.SelectedEntities = {}
 cleanup.Register( "acemenu" )
 
 local APSClasses = {
-	ace_aps = true,
 	ace_aps_static = true,
 	ace_aps_gimbal = true,
 }
@@ -130,12 +129,14 @@ end
 function TOOL:SelectEntity(ent)
 	if CLIENT then return end
 
-	if not self.SelectedEntities[ent] then
-		self.SelectedEntities[ent] = ent:GetColor()
-		ent:SetColor(Color(0, 255, 0))
-	else
+	local deselect = self.SelectedEntities[ent] ~= nil
+
+	if deselect then
 		ent:SetColor(self.SelectedEntities[ent])
 		self.SelectedEntities[ent] = nil
+	else
+		self.SelectedEntities[ent] = ent:GetColor()
+		ent:SetColor(Color(0, 255, 0))
 	end
 end
 

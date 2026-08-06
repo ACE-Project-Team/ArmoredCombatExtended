@@ -475,6 +475,34 @@ function PANEL:QueueRoundCostPreview()
 
 end
 
+function ACE.APSMenuGUICreate(data)
+	local defaults = data.apsconfig or {1, 3, 5, 1, 90, 45}
+	local labels = {"Charges", "Kill range (m)", "Reload time (s)", "Radar size", "Yaw coverage", "Pitch coverage"}
+	local minimums = {1, 0.5, 0.1, 1, 1, 1}
+	local maximums = {8, 30, 60, 3, 180, 90}
+	local decimals = {0, 1, 1, 0, 0, 0}
+
+	acemenupanel:CPanelText("APSDescription", data.desc or "Configure this active protection system.")
+
+	for index, label in ipairs(labels) do
+		local slider = vgui.Create("DNumSlider")
+		slider:SetText(label)
+		slider:SetDark(true)
+		slider:SetMin(minimums[index])
+		slider:SetMax(maximums[index])
+		slider:SetDecimals(decimals[index])
+		slider:SetValue(defaults[index])
+		function slider:OnValueChanged(value)
+			RunConsoleCommand("acemenu_data" .. index, tostring(value))
+		end
+		acemenupanel.CustomDisplay:AddItem(slider)
+		RunConsoleCommand("acemenu_data" .. index, tostring(defaults[index]))
+	end
+	RunConsoleCommand("acemenu_data7", data.apspreset or "Custom Static")
+
+	acemenupanel:CPanelText("APSRadarSizes", "Radar size: 1 = small, 2 = medium, 3 = large.")
+end
+
 function PANEL:UpdateDisplay( Table )
 
 	RunConsoleCommand( "acemenu_id", Table.id or 0 )

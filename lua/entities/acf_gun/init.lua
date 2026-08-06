@@ -942,16 +942,86 @@ do
 		CAP	= true
 	}
 
+	local DirectExplosionFiller = {
+		APHE = 1,
+		HE = 1,
+	}
+
+	--- Applies a linked round directly to an APS target without registering a ballistic projectile.
+	-- @param Gun Gun providing the round and impact owner.
+	-- @param Intercept APS target and outward-ray state.
+	function ACE.SimulateAPSImpact(Gun, Intercept)
+		local Target = Intercept and Intercept.Target
+		local BulletData = Gun.BulletData
+		if not IsValid(Target) or not BulletData then return false end
+
+		local Direction = Intercept.Direction or Gun:GetForward()
+		local HitPos = Intercept.HitPosition or Target:WorldSpaceCenter()
+		local HitNormal = -Direction
+
+		local Round = ACE.RoundTypes[BulletData.Type]
+		if not Round or not Round.propimpact then return false end
+
+		local function ApplyImpact(Data, ImpactRound)
+			if not IsValid(Target) then return end
+
+			Data.Pos = HitPos
+			Data.SimPos = HitPos
+			Data.Flight = Direction * (Data.MuzzleVel or BulletData.MuzzleVel or 0) * 39.37
+			Data.SimFlight = Data.Flight
+			Data.LastThink = SysTime()
+			Data.RoundMass = Data.ProjMass or 0
+			Data.Owner = Gun.User
+			Data.Gun = Gun
+			Data.Filter = { Gun }
+
+			if ImpactRound.propimpact then
+				ImpactRound.propimpact(Gun, Data, Target, HitNormal, HitPos, 0)
+			end
+
+			local fillerMultiplier = DirectExplosionFiller[Data.Type]
+			if fillerMultiplier then
+					ACE.HE(HitPos, HitNormal, Data.FillerMass * fillerMultiplier, Data.ProjMass - Data.FillerMass * fillerMultiplier, Data.Owner, nil, Data.Gun)
+			end
+		end
+
+		if BulletData.Type == "FL" then
+			local FlechetteRound = ACE.RoundTypes.AP
+			if not FlechetteRound or not FlechetteRound.propimpact then return false end
+
+				local Count = math.Clamp(math.floor(BulletData.Flechettes or 1), 1, 96)
+				local HitCount = math.Clamp(math.ceil(Count * math.Clamp(Intercept.FlechetteFraction or 1, 0, 1)), 1, Count)
+
+				for _ = 1, HitCount do
+				local FlechetteData = table.Copy(BulletData)
+				FlechetteData.Type = "AP"
+				FlechetteData.Caliber = (BulletData.FlechetteRadius or BulletData.Caliber or 0) * 0.2
+				FlechetteData.FrArea = BulletData.FlechetteArea
+				FlechetteData.ProjMass = BulletData.FlechetteMass
+				FlechetteData.PenArea = BulletData.FlechettePenArea
+				FlechetteData.LimitVel = BulletData.LimitVel
+				ApplyImpact(FlechetteData, FlechetteRound)
+			end
+		else
+			ApplyImpact(table.Copy(BulletData), Round)
+		end
+
+		return true
+	end
+
 	function ENT:FireShell()
 
 		local CanDo = hook.Run("ACE_FireShell", self, self.BulletData )
 		if CanDo == false then return end
 
+		local APSDirectHit = self.ACE_APSDirectHit
+		self.ACE_APSDirectHit = nil
+
 		if self.IsUnderWeight == nil then
 			self.IsUnderWeight = true
 		end
 
-		if self.RequiresGunner and not self.HasGunner then
+		if self.RequiresGunner and not self.HasGunner and not APSDirectHit then
 			local HasWarned = self.OTWarnings.WarnedGunner or false
 			--self.OTWarnings
 			if not HasWarned then
@@ -1013,8 +1083,14 @@ do
 					self.BulletData.FuseLength = self.FuseTime
 				end
 
-				self.CreateShell = ACE.RoundTypes[self.BulletData.Type].create
-				self:CreateShell( self.BulletData )
+				if APSDirectHit then
+					local impactSuccess = ACE.SimulateAPSImpact(self, APSDirectHit)
+					if not impactSuccess then return false end
+					self.ACE_APSLastFire = true
+				else
+					self.CreateShell = ACE.RoundTypes[self.BulletData.Type].create
+					self:CreateShell( self.BulletData )
+				end
 
 				self.CurrentRecoil = 1
 

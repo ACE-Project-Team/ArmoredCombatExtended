@@ -19,20 +19,36 @@ ACE.DefineExtras("GForceMeter", {
 })
 
 ACE.DefineExtras("APS_Static", {
-	name = "APS (Static)",
+	name = "Static APS",
 	ent = "ace_aps_static",
 	category = "APS",
-	desc = "A static active protection system mount scaffold. Link to one or more missile radars and one ACF gun.",
+	desc = "Configurable static APS with onboard directional anti-missile radar. Link ACF guns and compatible ammunition, then configure charges, range, reload, radar size, and coverage.",
 	model = "models/golem/Zaslin_APS.mdl",
 	weight = 25,
 	acepoints = 0,
+	apsconfig = {1, 3, 5, 1, 90, 45},
+	apspreset = "Static",
+	guicreate = function(_, data) ACE.APSMenuGUICreate(data) end,
+})
+
+ACE.DefineExtras("APS_Zaslin", {
+	name = "Zaslin APS",
+	ent = "ace_aps_static",
+	category = "APS",
+	desc = "Zaslin preset: small onboard directional anti-missile radar, linked ammunition, and a 15-second APS reload.",
+	model = "models/golem/Zaslin_APS.mdl",
+	weight = 25,
+	acepoints = 0,
+	apsconfig = {1, 3, 15, 1, 90, 45},
+	apspreset = "Zaslin",
+	guicreate = function(_, data) ACE.APSMenuGUICreate(data) end,
 })
 
 ACE.DefineExtras("APS_Gimbal", {
 	name = "APS (Gimbal)",
 	ent = "ace_aps_gimbal",
 	category = "APS",
-	desc = "A gimbal active protection system mount scaffold. Link to one or more missile radars and one ACF gun.",
+	desc = "A gimbal active protection system. Link missile radars and the configured number of ACF guns; yaw and pitch limits determine when each gun can fire.",
 	model = "models/props_lab/reciever01a.mdl",
 	weight = 25,
 	acepoints = 0,

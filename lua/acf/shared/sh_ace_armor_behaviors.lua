@@ -116,7 +116,6 @@ end
 
 local function ValidateResolverConfig(config)
 	local allowed = {
-		legacyMode = true,
 		ductilityFactor = true,
 		ductilityBase = true,
 		ductilityScale = true,
@@ -127,11 +126,9 @@ local function ValidateResolverConfig(config)
 		threats = true,
 		defaultThreat = true
 	}
-	local modes = { common = true, ceramic = true, rubber = true, textolite = true, era = true }
 	local hooks = { du_secondary_blast = true, ceramic_shatter = true, era_detonation = true }
 
 	for key in pairs(config or {}) do assert(allowed[key], "unknown armor resolver configuration: " .. tostring(key)) end
-	if config.legacyMode ~= nil then assert(modes[config.legacyMode], "unknown armor resolver mode: " .. tostring(config.legacyMode)) end
 	for _, key in ipairs({ "ductilityFactor", "ductilityBase", "ductilityScale", "breachCaliberMultiplier" }) do
 		if config[key] ~= nil then assert(IsFiniteNumber(config[key]) and config[key] > 0, key .. " must be a positive number") end
 	end

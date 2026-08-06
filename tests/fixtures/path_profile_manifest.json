@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "artifact_schema": 2,
+  "modes": ["correctness", "timing", "attribution", "scaling", "soak"],
+  "gprofiler_views": ["Functions", "Hooks", "Timers", "Networking", "Commands", "Entity Variables", "Network Variables", "File I/O", "JIT"],
+  "scenarios": [
+    {"id": "boot_idle", "realm": "server", "scale": "idle_seconds", "fixture": "empty_server"},
+    {"id": "generic_entity_lifecycle", "realm": "server", "scale": "instances_per_class", "fixture": "registered_entities"},
+    {"id": "contraption_lifecycle", "realm": "server", "scale": "props_and_constraints", "fixture": "scratch_contraption"},
+    {"id": "points_costs_legality", "realm": "server", "scale": "contraption_entities", "fixture": "points_matrix"},
+    {"id": "combat_core", "realm": "server", "scale": "active_projectiles", "fixture": "deterministic_rounds"},
+    {"id": "vehicle_systems", "realm": "server", "scale": "active_vehicles", "fixture": "missile_propulsion_sensor_aps"},
+    {"id": "network_permissions", "realm": "isolated-server", "scale": "clients_and_bytes", "fixture": "bounded_net_contracts"},
+    {"id": "public_integrations", "realm": "server", "scale": "adapter_calls", "fixture": "wire_e2_starfall_cfw"},
+    {"id": "dupe_large_fixtures", "realm": "server", "scale": "dupe_entities", "fixture": "jp_ipm1_mt7"},
+    {"id": "teardown_soak", "realm": "server", "scale": "cycles", "fixture": "create_use_remove"}
+  ]
+}

@@ -59,6 +59,7 @@ end
 
 function ACE_RegisterBullet(Index, Bullet)
 	if Bullet.ActiveSlot then return end
+	Bullet.ACEImpactSeed = Bullet.ACEImpactSeed or Index
 	local Existing = ACE.Bullet[Index]
 	if Existing and Existing ~= Bullet then ACE.RemoveBullet(Index) end
 

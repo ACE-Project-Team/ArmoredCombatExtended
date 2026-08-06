@@ -349,7 +349,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_ricochet_keeps_incoming_energy_for_the_shared_contract(self):
         ricochet = re.search(
-            r"if ricoProb < math\.Rand\(0,1\).*?\n\tend\n\n\t-- Record the selected outcome",
+            r"if ricoProb < impactRoll.*?\n\tend\n\n\t-- Record the selected outcome",
             self.source,
             re.DOTALL,
         )

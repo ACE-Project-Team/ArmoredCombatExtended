@@ -383,6 +383,10 @@ if SERVER then
 		return (math.Clamp(1 / (1 + math.exp(-43.9445 * (penetration / armor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 	end
 
+	local function ImpactRandom()
+		return ACE.ImpactRandom and ACE.ImpactRandom() or math.random()
+	end
+
 	-- Keep the resolver's physical result in one shape. Loss remains the legacy
 	-- compatibility field, while the explicit spent/remaining values give
 	-- post-penetration callers a canonical contract to consume.
@@ -463,7 +467,7 @@ if SERVER then
 		local passedDamageMult = options.ignoreDamageMult and 1 or damageMult
 		local breachArmor = options.breachUsesRawArmor and armor or armor * effectiveness
 
-		if not options.ignoreBreach and breachProbability > math.random() and maxPenetration > breachArmor then
+		if not options.ignoreBreach and breachProbability > ImpactRandom() and maxPenetration > breachArmor then
 			if options.impactHook then TriggerImpactHook(options.impactHook, Entity, originalArmor, maxPenetration) end
 			return ImpactResult(
 				FrArea * resilience * passedDamageMult * damageFactor * (options.breachDuctility == false and 1 or ductility),
@@ -474,7 +478,7 @@ if SERVER then
 			)
 		end
 
-		if penetrationProbability > math.random() then
+		if penetrationProbability > ImpactRandom() then
 			local penetration = math.min(maxPenetration, losArmor * effectiveness)
 			local denominator = options.penetrationDamageDenominator == "los" and losArmor or losArmorHealth
 			local penetrationDamageFactor = maxPenetration > losArmor * effectiveness and (options.penetrationDamageFactor or 1) or 1
@@ -704,7 +708,7 @@ if SERVER then
 		local breachArmor = effectiveArmor * effectiveness
 		local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / effectiveLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
 
-		if breachProbability > math.random() and maxPenetration > breachArmor then
+		if breachProbability > ImpactRandom() and maxPenetration > breachArmor then
 			return ImpactResult(
 				FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,
 				maxPenetration - breachArmor,
@@ -714,7 +718,7 @@ if SERVER then
 			)
 		end
 
-		if penetrationProbability > math.random() then
+		if penetrationProbability > ImpactRandom() then
 			local penetration = math.min(maxPenetration, effectiveLosArmor * effectiveness)
 			return ImpactResult(
 				(penetration / losArmorHealth / effectiveness) ^ 2 * FrArea * resilience * damageMult * ductilityMultiplier * damageMultiplier,

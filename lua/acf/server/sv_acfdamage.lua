@@ -6,6 +6,37 @@ ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
 ACE.SpallFragmentMax = ACE.SpallFragmentMax or ACE.SpallMax
 ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth
 
+local DeterministicImpacts = GetConVar("ace_deterministic_impacts") or CreateConVar(
+	"ace_deterministic_impacts", "0", FCVAR_ARCHIVE,
+	"Use reproducible per-bullet armor and ricochet rolls for replay/debugging."
+)
+
+local function CreateImpactRandom(Seed)
+	local State = math.abs(math.floor(tonumber(Seed) or 1)) % 2147483647
+	if State == 0 then State = 1 end
+
+	return function()
+		State = (State * 48271) % 2147483647
+		return State / 2147483647
+	end
+end
+
+local function BeginImpactRandom( Bullet, Target )
+	if not DeterministicImpacts:GetBool() then return end
+
+	Bullet.ACEImpactCount = (Bullet.ACEImpactCount or 0) + 1
+	local entitySeed = IsValid(Target) and Target:EntIndex() or 0
+	local seed = (Bullet.ACEImpactSeed or 1) * 104729 + Bullet.ACEImpactCount * 1009 + entitySeed * 9176
+	local Previous = ACE.ImpactRandom
+	ACE.ImpactRandom = CreateImpactRandom(seed)
+
+	return Previous
+end
+
+local function EndImpactRandom( Previous )
+	ACE.ImpactRandom = Previous
+end
+
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
 local TraceInit = { output = TraceRes }
@@ -931,7 +962,10 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	Bullet.Ricochets = Bullet.Ricochets or 0
 
 	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
+	local PreviousImpactRandom = BeginImpactRandom(Bullet, Target)
 	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
+	local impactRoll = ACE.ImpactRandom and ACE.ImpactRandom() or math.Rand(0, 1)
+	EndImpactRandom(PreviousImpactRandom)
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false
@@ -958,7 +992,7 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	end
 
 	-- Checking for ricochet. The angle value is clamped but can cause game crashes if this overflow check doesnt exist. Why?
-	if ricoProb < math.Rand(0,1) and Angle < 90 then
+	if ricoProb < impactRoll and Angle < 90 then
 		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
 		HitRes.Loss	= 1 - Ricochet
 		-- Keep Energy as the incoming impact budget. The shared post-penetration

@@ -5,17 +5,9 @@ include("shared.lua")
 
 DEFINE_BASECLASS("ace_aps")
 
-local function GetMountTransform(APS)
-	return APS:LocalToWorld(APS.GunMountOffset), APS:LocalToWorldAngles(APS.GunMountAngle)
-end
-
 local function GetParentRoot(entity)
 	local root = entity
-
-	while IsValid(root:GetParent()) do
-		root = root:GetParent()
-	end
-
+	while IsValid(root:GetParent()) do root = root:GetParent() end
 	return root
 end
 
@@ -23,53 +15,76 @@ function ENT:Initialize()
 	BaseClass.Initialize(self)
 	self.Gimbal = false
 	self.GunMountPending = false
-	self.MountedGun = nil
+	self.MountedGuns = {}
+	self:UpdateTubeBodygroup()
 	self:UpdateWireOutputs()
 	self:UpdateOverlayText()
 end
 
---- Moves and parents the linked gun to the static APS tube mount.
--- @return boolean Whether a gun was mounted.
-function ENT:MountLinkedGun()
-	local gun = self.LinkedGun
-	if not IsValid(gun) then return false end
-
-	if IsValid(self.MountedGun) and self.MountedGun ~= gun then
-		self:DetachMountedGun(self.MountedGun)
-	end
-
-	local worldPosition, worldAngle = GetMountTransform(self)
-	local physics = gun:GetPhysicsObject()
-	if IsValid(physics) then
-		physics:EnableMotion(false)
-		physics:Wake()
-	end
-
-	gun:SetParent(self)
-	gun:SetLocalPos(self:WorldToLocal(worldPosition))
-	gun:SetLocalAngles(self:WorldToLocalAngles(worldAngle))
-	gun.acfphysparent = nil
-	gun.acfphysstale = 0
-	self.MountedGun = gun
-	self.GunMountPending = false
-
-	return true
+function ENT:GetGunAim(gun)
+	local origin = gun:LocalToWorld(gun.Muzzle or vector_origin)
+	return origin, gun:GetForward(), 0
 end
 
---- Unparents a gun mounted to this APS and restores its movable physics.
--- @param gun Entity to detach.
--- @return boolean Whether the gun was attached to this APS.
+--- Shows the Zaslin tube while at least one linked gun has a round loaded.
+function ENT:UpdateTubeBodygroup()
+	local loaded = false
+	for _, gun in ipairs(self.LinkedGuns or {}) do
+		if IsValid(gun) and gun.BulletData and gun.BulletData.Type ~= "Empty" then
+			loaded = true
+			break
+		end
+	end
+
+	local submodel = loaded and self.TubeLoadedSubmodel or self.TubeEmptySubmodel
+	if self.TubeLoaded == loaded and self:GetBodygroup(self.TubeBodygroup) == submodel then return end
+
+	self:SetBodygroup(self.TubeBodygroup, submodel)
+	self.TubeLoaded = loaded
+end
+
+function ENT:MountLinkedGuns()
+	local active = {}
+	for _, gun in ipairs(self.LinkedGuns or {}) do
+		if IsValid(gun) then
+			local physics = gun:GetPhysicsObject()
+			if IsValid(physics) then
+				physics:EnableMotion(false)
+				physics:Wake()
+			end
+
+			gun:SetParent(self)
+			gun:SetLocalPos(self.GunMountOffset)
+			gun:SetLocalAngles(self.GunMountAngle)
+			gun.acfphysparent = nil
+			gun.acfphysstale = 0
+			active[gun] = true
+			self.MountedGuns[gun] = true
+		end
+	end
+
+	for gun in pairs(self.MountedGuns or {}) do
+		if not active[gun] and IsValid(gun) and gun:GetParent() == self then
+			self:DetachMountedGun(gun)
+		end
+		if not IsValid(gun) then self.MountedGuns[gun] = nil end
+	end
+
+	self.GunMountPending = false
+	self:UpdateTubeBodygroup()
+	return next(active) ~= nil
+end
+
 function ENT:DetachMountedGun(gun)
 	if not IsValid(gun) or gun:GetParent() ~= self then
-		if self.MountedGun == gun then self.MountedGun = nil end
+		self.MountedGuns[gun] = nil
 		return false
 	end
 
-	local worldPosition = gun:GetPos()
-	local worldAngle = gun:GetAngles()
+	local position, angle = gun:GetPos(), gun:GetAngles()
 	gun:SetParent(nil)
-	gun:SetPos(worldPosition)
-	gun:SetAngles(worldAngle)
+	gun:SetPos(position)
+	gun:SetAngles(angle)
 
 	local physics = gun:GetPhysicsObject()
 	if IsValid(physics) then
@@ -79,70 +94,64 @@ function ENT:DetachMountedGun(gun)
 
 	gun.acfphysparent = nil
 	gun.acfphysstale = 0
-	if self.MountedGun == gun then self.MountedGun = nil end
-
+	self.MountedGuns[gun] = nil
 	return true
 end
 
-function ENT:Unlink(Target)
-	local wasMounted = self.MountedGun == Target
-	local success, message = BaseClass.Unlink(self, Target)
-
-	if success and wasMounted then
-		self:DetachMountedGun(Target)
+function ENT:Link(target)
+	local success, message = BaseClass.Link(self, target)
+	if success and target:GetClass() == "acf_gun" then
+		self.GunMountPending = true
+		self:MountLinkedGuns()
 	end
-
 	return success, message
 end
 
-function ENT:Update(ArgsTable)
-	local success, message = BaseClass.Update(self, ArgsTable)
-	self.GunMountPending = true
-	self:MountLinkedGun()
+function ENT:Unlink(target)
+	local success, message = BaseClass.Unlink(self, target)
+	if success then self:DetachMountedGun(target) end
+	return success, message
+end
 
+function ENT:Update(args)
+	local success, message = BaseClass.Update(self, args)
+	self.GunMountPending = true
+	self:MountLinkedGuns()
 	return success, message
 end
 
 function ENT:Think()
 	BaseClass.Think(self)
-
-	if self.GunMountPending then
-		self:MountLinkedGun()
-	end
-
+	self:UpdateTubeBodygroup()
+	if self.GunMountPending then self:MountLinkedGuns() end
+	self:NextThink(CurTime() + 0.05)
 	return true
 end
 
 function ENT:OnRemove()
-	self:DetachMountedGun(self.MountedGun)
-
+	for gun in pairs(self.MountedGuns or {}) do self:DetachMountedGun(gun) end
 	BaseClass.OnRemove(self)
 end
 
---- Spawns the static APS through the shared ACE factory.
--- @param Owner Player spawning the entity.
--- @param Trace Spawn trace.
--- @param ClassName Entity class requested by the spawn menu.
--- @return Entity spawned APS, or nil when the trace misses or creation is denied.
-function ENT:SpawnFunction(Owner, Trace, ClassName)
-	if not Trace.Hit then return end
-
-	local APS = ACE.MakeAPS(Owner, Trace.HitPos + Trace.HitNormal * 16, Trace.HitNormal:Angle(), ClassName or "ace_aps_static")
-	if IsValid(APS) then APS:DropToFloor() end
-
-	return APS
+function ENT:SpawnFunction(owner, trace, className)
+	if not trace.Hit then return end
+	local aps = ACE.MakeAPS(owner, trace.HitPos + trace.HitNormal * 16, trace.HitNormal:Angle(), className or "ace_aps_static")
+	if IsValid(aps) then aps:DropToFloor() end
+	return aps
 end
 
-list.Set("ACFCvars", "ace_aps_static", {})
-duplicator.RegisterEntityClass("ace_aps_static", function(Owner, Pos, Angle)
-	return ACE.MakeAPS(Owner, Pos, Angle, "ace_aps_static")
-end, "Pos", "Angle")
+list.Set("ACFCvars", "ace_aps_static", {"data1", "data2", "data3", "data4", "data5", "data6", "data7"})
+duplicator.RegisterEntityClass("ace_aps_static", function(owner, pos, angle, charges, killRange, reloadTime,
+	radarSize, yawCoverage, pitchCoverage, preset)
+	return ACE.MakeAPS(owner, pos, angle, "ace_aps_static", charges, killRange, reloadTime, radarSize,
+		yawCoverage, pitchCoverage, preset)
+end, "Pos", "Angle", "Charges", "KillRange", "ReloadTime", "RadarSize", "YawCoverage", "PitchCoverage",
+	"APSPreset")
 
-
-local function MountStaticAPS(APS)
-	if IsValid(APS) and APS:GetClass() == "ace_aps_static" then
-		APS.GunMountPending = true
-		APS:MountLinkedGun()
+local function MountStaticAPS(aps)
+	if IsValid(aps) then
+		aps.GunMountPending = true
+		aps:MountLinkedGuns()
 	end
 end
 
@@ -151,24 +160,17 @@ hook.Add("PlayerUnfrozeObject", "ACE_APS_StaticMountGun", function(_, entity)
 
 	local root = GetParentRoot(entity)
 	local candidates = {}
+	if entity:GetClass() == "ace_aps_static" then candidates[entity] = true end
 
-	if entity:GetClass() == "ace_aps_static" then
-		candidates[entity] = true
-	end
-
-	for _, constrained in pairs(constraint.GetAllConstrainedEntities(root) or {}) do
+	for constrained in pairs(constraint.GetAllConstrainedEntities(root) or {}) do
 		if IsValid(constrained) and constrained:GetClass() == "ace_aps_static" then
 			candidates[constrained] = true
 		end
 	end
 
-	for _, APS in ipairs(ents.FindByClass("ace_aps_static")) do
-		if IsValid(APS) and GetParentRoot(APS) == root then
-			candidates[APS] = true
-		end
+	for _, aps in ipairs(ents.FindByClass("ace_aps_static")) do
+		if IsValid(aps) and GetParentRoot(aps) == root then candidates[aps] = true end
 	end
 
-	for APS in pairs(candidates) do
-		MountStaticAPS(APS)
-	end
+	for aps in pairs(candidates) do MountStaticAPS(aps) end
 end)

@@ -20,6 +20,7 @@ class EngineActivationContractTests(unittest.TestCase):
         self.assertIn("self.Active = true", active_input)
         self.assertIn('"No Fuel"', active_input)
         self.assertIn('"No Driver"', active_input)
+        self.assertIn("and self.Legal then", active_input)
         self.assertIn("if self.ActivationIssue then", engine)
         self.assertNotIn('and ACE.RequireEntityLegal(self)) then', active_input)
 
@@ -34,6 +35,13 @@ class EngineActivationContractTests(unittest.TestCase):
         self.assertIn('self.ActivationIssue = table.concat(Missing, "\\n")', calc)
         self.assertIn("self:ClearEngineOutput()", calc)
         self.assertNotIn('self:TriggerInput( "Active", 0 )', calc)
+
+    def test_heat_tracks_operational_state(self):
+        heat = source("lua/acf/server/sv_heat.lua")
+        heat_function = heat[heat.index("function ACE_HeatFromEngine") : heat.index("function ACE_HeatFromRadar")]
+
+        self.assertIn("if Engine.Operational then", heat_function)
+        self.assertNotIn("if Engine.Active then", heat_function)
 
     def test_gunner_popup_is_only_an_operational_failure(self):
         gun = source("lua/entities/acf_gun/init.lua")
@@ -52,6 +60,11 @@ class EngineActivationContractTests(unittest.TestCase):
                 seat = source(relative)
                 think = seat[seat.index("function ENT:Think()") :]
                 self.assertNotIn(":Unlink(", think)
+
+                if "driver" in relative:
+                    self.assertIn("table.HasValue( Link.CrewLink, self )", seat)
+                elif "gunner" in relative:
+                    self.assertIn("table.HasValue(Link.CrewLink, self)", seat)
 
 
 if __name__ == "__main__":

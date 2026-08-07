@@ -399,7 +399,7 @@ function ENT:TriggerInput( iname, value )
 			-- Activation is a requested state. Fuel, driver, and legality determine whether
 			-- the active engine can produce output, not whether it can be activated.
 			self.Active = true
-			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver then
+			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver and self.Legal then
 				self.ActivationIssue = nil
 				self:StartEngineOutput()
 			else

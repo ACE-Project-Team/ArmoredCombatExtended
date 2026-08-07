@@ -108,7 +108,7 @@ function ACE_HeatFromEngine( Engine )
 	local Temp = Engine.Heat	--> Current Temperature
 
 
-	if Engine.Active then
+	if Engine.Operational then
 
 		local RPM  = Engine.FlyRPM  --> RPM of said engin
 		local Heat = 0			--> Heat from engine

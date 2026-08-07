@@ -217,7 +217,9 @@ function ENT:ResetLinks()
 
 	for _, Link in pairs( self.Master ) do
 		if IsValid( Link ) then
-			table.insert( Link.CrewLink, self )
+			if not table.HasValue( Link.CrewLink, self ) then
+				table.insert( Link.CrewLink, self )
+			end
 			Link.HasDriver = true
 
 			-- Only restore engine to active if it was previously active

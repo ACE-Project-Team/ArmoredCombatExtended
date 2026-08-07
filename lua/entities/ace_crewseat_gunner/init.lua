@@ -210,7 +210,9 @@ function ENT:ResetLinks()
 
 	for _, Link in pairs(self.Master) do
 		if IsValid(Link) then
-			table.insert(Link.CrewLink, self)
+			if not table.HasValue(Link.CrewLink, self) then
+				table.insert(Link.CrewLink, self)
+			end
 			Link.HasGunner = true
 			if ACE_PointsInputChanged then
 				ACE_PointsInputChanged({ Link, self }, "gunner-status-changed")

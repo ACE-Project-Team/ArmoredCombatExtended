@@ -791,11 +791,14 @@ function ENT:Think()
 	if not self.BulletData then return false end
 
 	if not ACE_IsDefaultActiveInputWired(self) then
-		self.Active = true
+		local active = ACE_GetDefaultActiveInputState(self)
+		self.Active = active
 
-		if ACE.RequireEntityLegal(self) and not self.Load then
+		if active and ACE.RequireEntityLegal(self) and not self.Load then
 			self.Load = true
 			self:FirstLoad()
+		elseif not active then
+			self.Load = false
 		end
 	end
 

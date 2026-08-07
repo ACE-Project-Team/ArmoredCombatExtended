@@ -399,7 +399,7 @@ function ENT:TriggerInput( iname, value )
 			-- Activation is a requested state. Fuel, driver, and legality determine whether
 			-- the active engine can produce output, not whether it can be activated.
 			self.Active = true
-			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver and self.Legal then
+			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver and ACE.RequireEntityLegal(self) then
 				self.ActivationIssue = nil
 				self:StartEngineOutput()
 			else
@@ -495,7 +495,7 @@ end
 -- A linked driver seat that has gone illegal stays linked (so it recovers once legal again), so
 -- the torque boost and driver requirement ask for a *legal* driver rather than the link flag alone.
 function ENT:HasLegalDriver()
-	return self.HasDriver and IsValid(self.LinkedDriver) and self.LinkedDriver.Legal and true or false
+	return self.HasDriver and IsValid(self.LinkedDriver) and ACE.RequireEntityLegal(self.LinkedDriver) and true or false
 end
 
 function ENT:Think()
@@ -539,10 +539,20 @@ function ENT:Think()
 		self.NextUpdate = ACE.CurTime + 0.5
 	end
 
-	if self.Active and self.Legal then
+	local EntityLegal = self.Active and ACE.RequireEntityLegal(self)
+	if EntityLegal then
 		self:CalcRPM()
 	elseif self.Active then
 		self:ClearEngineOutput()
+		local Missing = {}
+		if ACE.EnginesRequireFuel == 1 and self:GetMaxFuel() <= 0 then
+			Missing[#Missing + 1] = "No Fuel"
+		end
+		if self.RequiresDriver and not (self:HasLegalDriver() or self.HasSeatDriver) then
+			Missing[#Missing + 1] = "No Driver"
+		end
+		self.ActivationIssue = #Missing > 0 and table.concat(Missing, "\n") or nil
+		self:UpdateOverlayText()
 	end
 
 	self.LastThink = ACE.CurTime
@@ -647,6 +657,7 @@ function ENT:GetMaxFuel()
 	for _, Tank in pairs(self.FuelLink) do
 		if not IsValid(Tank) then continue end
 		if not Tank.Active then continue end
+		if not ACE.RequireEntityLegal(Tank) then continue end
 
 		TFuel = TFuel + Tank.Fuel
 	end

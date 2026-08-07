@@ -20,7 +20,8 @@ class EngineActivationContractTests(unittest.TestCase):
         self.assertIn("self.Active = true", active_input)
         self.assertIn('"No Fuel"', active_input)
         self.assertIn('"No Driver"', active_input)
-        self.assertIn("and self.Legal then", active_input)
+        self.assertIn("and ACE.RequireEntityLegal(self) then", active_input)
+        self.assertIn("local EntityLegal = self.Active and ACE.RequireEntityLegal(self)", engine)
         self.assertIn("if self.ActivationIssue then", engine)
         self.assertNotIn('and ACE.RequireEntityLegal(self)) then', active_input)
 
@@ -35,6 +36,7 @@ class EngineActivationContractTests(unittest.TestCase):
         self.assertIn('self.ActivationIssue = table.concat(Missing, "\\n")', calc)
         self.assertIn("self:ClearEngineOutput()", calc)
         self.assertNotIn('self:TriggerInput( "Active", 0 )', calc)
+        self.assertIn('self.ActivationIssue = #Missing > 0 and table.concat(Missing, "\\n") or nil', engine)
 
     def test_heat_tracks_operational_state(self):
         heat = source("lua/acf/server/sv_heat.lua")

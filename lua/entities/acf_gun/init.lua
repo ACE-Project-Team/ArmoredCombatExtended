@@ -936,7 +936,8 @@ do
 		if not self.HasGunner then return false end
 
 		for _, crewEnt in ipairs(self.CrewLink) do
-			if crewEnt:GetClass() == "ace_crewseat_gunner" and crewEnt.Legal then
+			if crewEnt:GetClass() == "ace_crewseat_gunner" and ACE.RequireEntityLegal(crewEnt) then
+				self.CrewIssue = nil
 				return true
 			end
 		end

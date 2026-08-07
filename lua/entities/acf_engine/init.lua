@@ -502,6 +502,14 @@ end
 
 function ENT:Think()
 
+	if ACF.HasDefaultActiveInputState(self) and not ACE_IsDefaultActiveInputWired(self) then
+		local active = ACE_GetDefaultActiveInputState(self)
+
+		if self.Active ~= active then
+			self:TriggerInput("Active", active and 1 or 0)
+		end
+	end
+
 	if ACE.CurTime > self.NextLegalCheck then
 		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
@@ -518,10 +526,10 @@ function ENT:Think()
 			self:TriggerInput("Active",0) -- disable if not legal and active
 			self.LockOnActive = true
 		else
-			--turn on the engine back as it was before the lockdown. IK that then engine could turn on when the user turned off by himself after of flagged illegal, i prefer that it turns on though
+			-- Restore the requested state after a legality lockdown.
 			if self.LockOnActive then
 				self.LockOnActive = false
-				self:TriggerInput("Active",1)
+				self:TriggerInput("Active", ACE_GetDefaultActiveInputState(self) and 1 or 0)
 			end
 		end
 	end

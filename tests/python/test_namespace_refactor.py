@@ -566,6 +566,25 @@ class NamespaceRefactorTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(f"ACE.{name} = ACE_{name}", globals_source)
 
+    def test_legacy_mark_armor_dirty_wrapper_survives_compatibility_alias(self):
+        source = (LUA_ROOT / "acf" / "server" / "sv_contraptionlegality.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn(
+            "local ACE_MarkArmorDirtyImplementation = ACE.MarkArmorDirty",
+            source,
+        )
+        self.assertRegex(
+            source,
+            r"function ACE_MarkArmorDirty\(con, ent, reason\)\s*"
+            r"return ACE_MarkArmorDirtyImplementation\(con, ent, reason\)",
+        )
+        self.assertNotRegex(
+            source,
+            r"function ACE_MarkArmorDirty\(con, ent, reason\)\s*"
+            r"return ACE\.MarkArmorDirty\(con, ent, reason\)",
+        )
+
     def test_ace_does_not_auto_register_flat_function_exports(self):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
             encoding="utf-8", errors="replace"

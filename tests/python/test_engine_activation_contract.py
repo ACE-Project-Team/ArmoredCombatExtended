@@ -28,9 +28,19 @@ class EngineActivationContractTests(unittest.TestCase):
         calc = engine[engine.index("function ENT:CalcRPM()") :]
 
         self.assertIn("function ENT:ClearEngineOutput()", engine)
+        self.assertIn("function ENT:StartEngineOutput()", engine)
+        self.assertIn("self.Operational = false", engine)
+        self.assertIn("self:StartEngineOutput()", calc)
         self.assertIn('self.ActivationIssue = table.concat(Missing, "\\n")', calc)
         self.assertIn("self:ClearEngineOutput()", calc)
         self.assertNotIn('self:TriggerInput( "Active", 0 )', calc)
+
+    def test_gunner_popup_is_only_an_operational_failure(self):
+        gun = source("lua/entities/acf_gun/init.lua")
+        overlay = gun[gun.index("function ENT:UpdateOverlayText()") :]
+
+        self.assertIn("if self.CrewIssue then", overlay)
+        self.assertNotIn("or (\"Won't fire: needs a gunner", overlay)
 
     def test_illegal_crew_seats_remain_linked_for_recovery(self):
         for relative in (

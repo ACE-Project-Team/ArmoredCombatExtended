@@ -398,8 +398,8 @@ function ENT:UpdateOverlayText()
 		text = text .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
-	if self.RequiresGunner and not self:HasLegalGunner() then
-		text = text .. "\n\n" .. (self.CrewIssue or ("Won't fire: needs a gunner (gun is above " .. ACF.LargeGunsThreshold .. " mm)."))
+	if self.CrewIssue then
+		text = text .. "\n\n" .. self.CrewIssue
 	end
 
 	self:SetOverlayText( text )

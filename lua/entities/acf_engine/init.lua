@@ -26,6 +26,7 @@ do
 
 		self.Throttle       = 0
 		self.Active         = false
+		self.Operational    = false
 		self.IsMaster       = true
 		self.GearLink       = {} -- a "Link" has these components: Ent, Rope, RopeLen, ReqTq
 		self.FuelLink       = {}
@@ -400,17 +401,7 @@ function ENT:TriggerInput( iname, value )
 			self.Active = true
 			if (HasFuel or ACE.EnginesRequireFuel == 0) and HasDriver then
 				self.ActivationIssue = nil
-				if self.SoundPath ~= "" then
-
-					--stupid workaround for the engine sound. THANK YOU garry
-					filter = RecipientFilter(true)
-					filter:AddAllPlayers()
-
-					self.Sound = CreateSound(self, self.SoundPath , filter)
-					self.Sound:PlayEx(0.5,100)
-
-				end
-				self:ACFInit()
+				self:StartEngineOutput()
 			else
 
 				-- Keep activation state independent from operational prerequisites. The reason is
@@ -431,6 +422,7 @@ function ENT:TriggerInput( iname, value )
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
 			self.ActivationIssue = nil
+			self.Operational = false
 			self.FlyRPM = 0
 			self.RPM = {}
 			self.RPM[1] = self.IdleRPM
@@ -633,6 +625,22 @@ function ENT:ACFInit()
 
 end
 
+function ENT:StartEngineOutput()
+	if self.Operational then return end
+
+	if self.SoundPath ~= "" then
+		--stupid workaround for the engine sound. THANK YOU garry
+		filter = RecipientFilter(true)
+		filter:AddAllPlayers()
+
+		self.Sound = CreateSound(self, self.SoundPath, filter)
+		self.Sound:PlayEx(0.5, 100)
+	end
+
+	self:ACFInit()
+	self.Operational = true
+end
+
 function ENT:GetMaxFuel()
 	local TFuel = 0
 
@@ -647,6 +655,7 @@ function ENT:GetMaxFuel()
 end
 
 function ENT:ClearEngineOutput()
+	self.Operational = false
 	self.FlyRPM = 0
 	self.Torque = 0
 	self.PeakTorque = 0
@@ -723,6 +732,8 @@ function ENT:CalcRPM()
 		self.ActivationIssue = nil
 		self:UpdateOverlayText()
 	end
+
+	self:StartEngineOutput()
 
 	------------------------ Torque & RPM calculation ------------------------
 

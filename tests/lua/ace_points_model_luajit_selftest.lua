@@ -7,6 +7,13 @@ function ACE.IsEnt(value) return value ~= nil end
 
 dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
 
+assert(ACE.PointsModel.ArmorMassAlpha == 0.5, "armor mass alpha must default to 0.5")
+local expectedBaseArmorCost = ACE.PointsModel.kArmor * 100.0 * ACE.PointsModel.Scale * 10.0
+assert(math.abs(ACE.Points.ArmorProp(50, 75, 1) - expectedBaseArmorCost) < 1e-9,
+	"armor HP pricing must use the 10x balance multiplier")
+assert(math.abs(ACE.Points.ArmorProp(50, 150, 1) / ACE.Points.ArmorProp(50, 75, 1) - 2.0) < 1e-9,
+	"linear HP pricing must remain split-neutral")
+
 local empty = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 0 }
 local loaded = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 60 }
 
@@ -32,12 +39,13 @@ primitive.ACE_PrimitivePropertiesPending = true
 assert(ACE.Points.PropArmor(primitive) == nil,
 	"Primitive armor must stay out of pricing while its properties are pending")
 
+ACE.PointsModel.ArmorMassAlpha = 1.0
 local titanium = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
 ACE.PointsModel.ArmorMassAlpha = 0.5
 local relaxed = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
 ACE.PointsModel.ArmorMassAlpha = 2.0
 local strict = ACE.Points.ArmorProp(threatRHAe, health, massEfficiency)
-ACE.PointsModel.ArmorMassAlpha = 1.0
+ACE.PointsModel.ArmorMassAlpha = 0.5
 assert(relaxed < titanium and strict > titanium,
 	"armor mass alpha must control the lightweight-material premium")
 

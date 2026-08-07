@@ -456,7 +456,7 @@ function PANEL:UpdateRoundCostPreview()
 	if not Round then return end
 
 	local Cost = string.Comma(math.Round(ACE.Points.BaseRoundCost(Round)))
-	self:CPanelText("ACEBaseRoundCost", "Base Round Cost: " .. Cost .. "\nCrate Inventory Points: 0", "DermaDefaultBold")
+	self:CPanelText("ACEBaseRoundCost", "Points: " .. Cost, "DermaDefaultBold")
 	self.CustomDisplay:PerformLayout()
 
 end

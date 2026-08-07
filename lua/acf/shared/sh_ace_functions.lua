@@ -1285,22 +1285,8 @@ end
 
 function ACE_GetGunFirepowerPricingLine(readout, menuFormat)
 	if not istable(readout) then return end
-	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
-
-	if not menuFormat then
-		return string.format("%.3f/s x %.1f%% threat x %s base x %.4f scale = %s pts",
-			readout.Rate,
-			readout.Threat * 100,
-			string.Comma(math.Round(readout.BaseRoundCost)),
-			readout.FirepowerScale * (readout.GunnerMultiplier or 1),
-			string.Comma(math.Round(readout.RawPoints)))
-	end
-
-	return string.format("%.1f rpm / 60 x %.1f%% threat x %.1f base x %.1f scale",
-		readout.Rate * 60,
-		readout.Threat * 100,
-		readout.BaseRoundCost,
-		readout.FirepowerScale * (readout.GunnerMultiplier or 1))
+	if readout.Points == nil then return end
+	return "Points: " .. string.Comma(math.Round(readout.Points))
 end
 
 function ACE_GetGunnerMultiplierLine(readout)

@@ -514,10 +514,7 @@ function ENT:UpdateOverlayText()
 		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost then
 			local round = ACE.Points.RoundFromBullet( self.BulletData )
 			if round then
-				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine( round )
-				if roundLine then text = text .. "\nLethality: " .. roundLine end
-				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE.Points.BaseRoundCost(round)))
-				text = text .. "\nCrate Inventory Points: 0"
+				text = text .. "\nPoints: " .. string.Comma(math.Round(ACE.Points.BaseRoundCost(round)))
 			end
 		end
 

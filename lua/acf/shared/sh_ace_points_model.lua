@@ -21,10 +21,10 @@ ACE.PointsModel = ACE.PointsModel or {
 	P50    = 548.5,            -- gate half-point: pen where a round defeats half the meta
 	Scale  = 0.65,             -- global display scale; sets how much of PointsLimit real fielded
 	                           -- vehicles use, deliberately independent of the corpus fit below
-	ArmorMassAlpha = 1.0,      -- mass-efficiency premium; 1.0 charges mass loss linearly
+	ArmorMassAlpha = 0.5,      -- mass-efficiency premium; softened for the upstream balance pass
 }
 
-ACE.PointsModel.ArmorMassAlpha = ACE.PointsModel.ArmorMassAlpha or 1.0
+ACE.PointsModel.ArmorMassAlpha = ACE.PointsModel.ArmorMassAlpha or 0.5
 
 local Model = ACE.PointsModel
 
@@ -63,6 +63,7 @@ local EXP_MM = 1.4                -- armor thickness exponent (intensive term --
 -- identically to 1 prop, so splitting armor into fragments is points-neutral. A sub-linear
 -- exponent would reward that split as a pricing exploit.
 local EXP_HP = 1.0
+local HP_COST_MULTIPLIER = 10.0 -- HP is more expensive; scaling remains linear.
 
 -- --- type tables ---
 local DAMAGE_MULT = {   -- post-pen damage multipliers (acf_globals.lua:253-261 ACE.*DamageMult)
@@ -275,7 +276,8 @@ function ACE.Points.ArmorProp(effMm, maxHealth, massEfficiency)
 	return Model.kArmor * 100.0
 		* ((tonumber(effMm) or 0) / 50.0) ^ EXP_MM
 		* ((tonumber(maxHealth) or 0) / 75.0) ^ EXP_HP
-		* (tonumber(massEfficiency) or 1.0) ^ (tonumber(Model.ArmorMassAlpha) or 1.0)
+		* HP_COST_MULTIPLIER
+		* (tonumber(massEfficiency) or 1.0) ^ (tonumber(Model.ArmorMassAlpha) or 0.5)
 		* Model.Scale
 end
 

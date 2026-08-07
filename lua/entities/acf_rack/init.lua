@@ -967,15 +967,7 @@ function ENT:GetOverlayText()
 	if ACE_GetGunFirepowerReadout then
 		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
-			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine
-				and ACE_GetRoundLethalityLine(readout.Round, true)
-			if roundLine then txt = txt .. "\nBest Round: " .. roundLine end
-			if readout.MinimumApplied then
-				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
-			if floorLine then txt = txt .. "\n" .. floorLine end
+			txt = txt .. "\nPoints: " .. string.Comma(math.Round(readout.Points))
 		end
 	end
 

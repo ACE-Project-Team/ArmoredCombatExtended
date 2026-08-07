@@ -321,31 +321,10 @@ local function getPopupPoints(ent)
 			or (ACE_GetGunFirepowerPoints and ACE_GetGunFirepowerPoints(ent)) or 0
 		componentLabel = CostLabelByCategory.Firepower
 
-		if readout then
-			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout, true)
-			if pricing then lines[#lines + 1] = pricing end
-			if readout.MinimumApplied then
-				lines[#lines + 1] = "Weapon Minimum Applied: " .. formatPoints(readout.Points)
-			end
-			local gunnerLine = ACE_GetGunnerMultiplierLine and ACE_GetGunnerMultiplierLine(readout)
-			if gunnerLine then lines[#lines + 1] = gunnerLine end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
-			if floorLine then lines[#lines + 1] = floorLine end
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(readout.Round, true)
-			if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
-		end
+		lines[#lines + 1] = "Points: " .. formatPoints(componentPoints)
 	elseif cls == "acf_ammo" then
 		componentPoints = 0
-		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost and istable(ent.BulletData) then
-			local round = ACE.Points.RoundFromBullet(ent.BulletData)
-			if round then
-				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round, true)
-				lines[#lines + 1] = "Crate Inventory Points: 0"
-				if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
-				lines[#lines + 1] = "Base Round Cost: "
-					.. string.format("%.1f", ACE.Points.BaseRoundCost(round))
-			end
-		end
+		lines[#lines + 1] = "Points: 0"
 	else
 		local category = getPointsCategory(ent)
 		if category == "Crew" and ACE_GetCrewSeatPointCost then
@@ -527,68 +506,6 @@ if CLIENT then
 
 	end
 
-	local function ArmorResolverText(material)
-		if material.ArmorResolver == "modular" then return "modular" end
-		if type(material.ArmorResolution) == "function" then return "custom" end
-		return "unregistered"
-	end
-
-	local function ArmorPointEffectivenessText(material)
-		local materialId = material.id or "RHA"
-		local effectiveness = ACE.Points and ACE.Points.MaterialPointEffectiveness
-			and ACE.Points.MaterialPointEffectiveness(materialId)
-		return string.format("%.1f%% (RHA baseline; 50 mm / 75 HP reference)", tonumber(effectiveness) or 100)
-	end
-
-	local function ArmorSpecText( material )
-		local spec = material.ArmorSpec or {}
-		local fields = {
-			"densityKgM3", "hardnessHB", "fractureToughnessMPaSqrtM", "ductility", "kineticRHAe",
-			"chemicalRHAe", "heRHAe", "kineticResilience", "chemicalResilience", "heResilience", "curve",
-			"overmatchRatio", "penetrationDamageMultiplier", "multiHitRetention", "spallProduction",
-			"spallResistance", "spallCapture", "spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing",
-			"shockTransmission", "residualDamageMultiplier", "tileMassKgM2",
-			"singleUse", "degradation"
-		}
-		local values = {}
-
-		for _, field in ipairs(fields) do
-			local value = spec[field]
-			if value ~= nil then
-				local info = ACE.ArmorSpecFields and ACE.ArmorSpecFields[field]
-				local label = info and info.label or field
-				local unit = info and (" " .. info.unit) or ""
-				if type(value) == "number" then value = math.Round(value, 3) end
-				values[#values + 1] = label .. ": " .. tostring(value) .. unit
-			end
-		end
-
-		return #values > 0 and table.concat(values, " | ") or "No physical test spec declared"
-	end
-
-	local function ArmorBehaviorConfigText( material )
-		local values = {}
-
-		for _, behaviorId in ipairs(material.BehaviorModules or {}) do
-			local parameters = material.BehaviorConfig and material.BehaviorConfig[behaviorId]
-			local keys = {}
-			for key in pairs(parameters or {}) do keys[#keys + 1] = key end
-			table.sort(keys)
-
-			for _, key in ipairs(keys) do
-				local value = parameters[key]
-				if type(value) == "number" then value = math.Round(value, 3) end
-				local behavior = ACE.ArmorBehaviorModules and ACE.ArmorBehaviorModules[behaviorId]
-				local field = ACE.ArmorSpecFields and ACE.ArmorSpecFields[key]
-				local label = (behavior and behavior.label or behaviorId) .. " / " .. (field and field.label or key)
-				local unit = field and (" " .. field.unit) or ""
-				values[#values + 1] = label .. "=" .. tostring(value) .. unit
-			end
-		end
-
-		return #values > 0 and table.concat(values, " | ") or "No behavior overrides"
-	end
-
 	local function ArmorBehaviorText( material )
 		local values = {}
 
@@ -638,16 +555,7 @@ if CLIENT then
 		ArmorPanelText( "ComboTitle", ToolPanel.panel, MaterialData.name , "DermaDefaultBold" )
 		ArmorPanelText( "ComboDesc" , ToolPanel.panel, MaterialData.desc .. "\n" )
 
-		ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acearmorprop.curve") .. ": " .. MaterialData.curve )
-		ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass") .. ": " .. MaterialData.massMod .. "x RHA" )
-		ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. ": " .. MaterialData.effectiveness .. "x RHA" )
-		ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MaterialData.HEATeffectiveness or MaterialData.effectiveness) .. "x RHA" )
-		ArmorPanelText( "ComboPointEffectiveness", ToolPanel.panel, "Point effectiveness: " .. ArmorPointEffectivenessText(MaterialData) )
-		ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MaterialData.year or "unknown") )
 		ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MaterialData) )
-		ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. ArmorResolverText(MaterialData) )
-		ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MaterialData) )
-		ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MaterialData) )
 
 		-- Update material selection from UI.
 		function ToolPanel.ComboMat:OnSelect(_, value, data)
@@ -752,16 +660,7 @@ if CLIENT then
 				ArmorPanelText( "ComboTitle", ToolPanel.panel, MatData.name , "DermaDefaultBold" )
 				ArmorPanelText( "ComboDesc" , ToolPanel.panel, MatData.desc .. "\n" )
 
-				ArmorPanelText( "ComboCurve", ToolPanel.panel, getPhrase("tool.acearmorprop.curve") .. ": " .. MatData.curve )
-				ArmorPanelText( "ComboMass" , ToolPanel.panel, getPhrase("tool.acearmorprop.mass_scale") .. ": " .. MatData.massMod .. "x RHA")
-				ArmorPanelText( "ComboKE"	, ToolPanel.panel, getPhrase("tool.acearmorprop.keprot") .. " : " .. MatData.effectiveness .. "x RHA" )
-				ArmorPanelText( "ComboCHE"  , ToolPanel.panel, getPhrase("tool.acearmorprop.chemprot") .. ": " .. (MatData.HEATeffectiveness or MatData.effectiveness) .. "x RHA" )
-				ArmorPanelText( "ComboPointEffectiveness", ToolPanel.panel, "Point effectiveness: " .. ArmorPointEffectivenessText(MatData) )
-				ArmorPanelText( "ComboYear" , ToolPanel.panel, getPhrase("tool.acearmorprop.year") .. ": " .. (MatData.year or "unknown") )
 				ArmorPanelText( "ComboBehavior", ToolPanel.panel, "Behavior modules:\n" .. ArmorBehaviorText(MatData) )
-				ArmorPanelText( "ComboResolver", ToolPanel.panel, "Resolver: " .. ArmorResolverText(MatData) )
-				ArmorPanelText( "ComboBehaviorConfig", ToolPanel.panel, "Behavior parameters: " .. ArmorBehaviorConfigText(MatData) )
-				ArmorPanelText( "ComboSpec", ToolPanel.panel, "Physical/test spec: " .. ArmorSpecText(MatData) )
 
 			end
 	end, "acearmorprop_material")

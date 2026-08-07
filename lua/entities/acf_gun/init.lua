@@ -369,17 +369,7 @@ function ENT:UpdateOverlayText()
 	if ACE_GetGunFirepowerReadout then
 		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
-			text = text .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine
-				and ACE_GetRoundLethalityLine(readout.Round, true)
-			if roundLine then text = text .. "\nBest Round: " .. roundLine end
-			if readout.MinimumApplied then
-				text = text .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			end
-			local gunnerLine = ACE_GetGunnerMultiplierLine and ACE_GetGunnerMultiplierLine(readout)
-			if gunnerLine then text = text .. "\n" .. gunnerLine end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
-			if floorLine then text = text .. "\n" .. floorLine end
+			text = text .. "\nPoints: " .. string.Comma(math.Round(readout.Points))
 		end
 	end
 

@@ -299,13 +299,11 @@ class SpallSourceContractTests(unittest.TestCase):
             self.assertIn(field, self.rubber_source)
             self.assertIn(field, self.behavior_source)
 
-    def test_armor_menu_explains_capture_context_and_custom_resolvers(self):
-        self.assertIn("ArmorResolverText", self.armor_tool_source)
-        self.assertIn('type(material.ArmorResolution) == "function"', self.armor_tool_source)
-        self.assertIn("ComboPointEffectiveness", self.armor_tool_source)
-        self.assertIn("50 mm / 75 HP reference", self.armor_tool_source)
-        for field in ("spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"):
-            self.assertIn(f'"{field}"', self.armor_tool_source)
+    def test_armor_menu_lists_behavior_modules_without_dense_pricing_details(self):
+        self.assertIn("ArmorBehaviorText", self.armor_tool_source)
+        self.assertIn("ComboBehavior", self.armor_tool_source)
+        self.assertNotIn("ComboPointEffectiveness", self.armor_tool_source)
+        self.assertNotIn("ComboSpec", self.armor_tool_source)
 
     def test_spall_trace_repeated_visit_guard_runs_before_damage(self):
         guard = self.body.index("CanContinue, State = CanContinueSpallTrace")

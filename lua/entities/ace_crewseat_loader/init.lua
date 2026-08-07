@@ -134,11 +134,8 @@ function ENT:Think()
 		self:IncreaseStamina()
 	end
 
-	local gun = self.LinkedGun
-	if not legal and IsValid(gun) then
-		gun:Unlink(self)
-	end
-
+	-- An illegal crewseat stays linked: ChooseLoader already skips illegal loaders when picking a
+	-- reload, so the link simply becomes inert until the seat is legal again.
 	self:UpdateWireOutputs()
 	self:UpdateOverlayText()
 end

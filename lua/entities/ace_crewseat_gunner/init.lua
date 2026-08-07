@@ -88,11 +88,8 @@ function ENT:Think()
 	ACE_UpdateGForcePenalty(self)
 	local legal = ACE.RequireEntityLegal(self)
 
-	local gun = self.LinkedGun
-	if not legal and IsValid(gun) then
-		gun:Unlink(self)
-	end
-
+	-- An illegal crewseat stays linked: the gun already ignores illegal crew for its rate of fire
+	-- and gunner checks, so the link recovers on its own once the seat is legal again.
 	self:UpdateWireOutputs()
 	self:UpdateOverlayText()
 end

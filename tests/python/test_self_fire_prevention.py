@@ -50,6 +50,14 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("BulletData.LaunchFilter = BuildLaunchFilter(BulletData.Filter, BulletData.LaunchFilter)", ballistics)
         self.assertIn("return BulletData.LaunchFilter", ballistics)
 
+    def test_temporary_retry_filters_are_removed_by_entity(self):
+        ballistics = source("lua/acf/server/sv_acfballistics.lua")
+
+        self.assertIn("for Index = #Bullet.Filter, 1, -1 do", ballistics)
+        self.assertIn("if Bullet.Filter[Index] == Ent then", ballistics)
+        self.assertIn("table.insert(Bullet.FilterKeysToRemove, HitEnt)", ballistics)
+        self.assertNotIn("table.insert(Bullet.FilterKeysToRemove, #Bullet.Filter)", ballistics)
+
     def test_gun_passes_the_live_filter_to_the_bullet_snapshot(self):
         gun = source("lua/entities/acf_gun/init.lua")
         ballistics = source("lua/acf/server/sv_acfballistics.lua")

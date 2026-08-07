@@ -490,8 +490,13 @@ do
 
 		-- Table to hold temporary filter keys that should be removed after the below while loop is completed
 		if not Bullet.FilterKeysToRemove then Bullet.FilterKeysToRemove = {} end
-		for k, v in ipairs(Bullet.FilterKeysToRemove) do
-			table.remove(Bullet.Filter, v)
+		for k, Ent in ipairs(Bullet.FilterKeysToRemove) do
+			for Index = #Bullet.Filter, 1, -1 do
+				if Bullet.Filter[Index] == Ent then
+					table.remove(Bullet.Filter, Index)
+					break
+				end
+			end
 			Bullet.FilterKeysToRemove[k] = nil
 		end
 
@@ -551,7 +556,7 @@ do
 
 				if HitEnt ~= PlayerHitCheck.Entity then
 					table.insert(Bullet.Filter, HitEnt)
-					table.insert(Bullet.FilterKeysToRemove, #Bullet.Filter)
+					table.insert(Bullet.FilterKeysToRemove, HitEnt)
 
 					RetryTrace = true
 

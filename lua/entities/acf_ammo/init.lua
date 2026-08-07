@@ -786,15 +786,13 @@ function ENT:FirstLoad()
 end
 
 function ENT:Think()
-	local currentLegal = ACE.RequireEntityLegal(self)
-
 	if not self.BulletData then return false end
 
 	if not ACE_IsDefaultActiveInputWired(self) then
 		local active = ACE_GetDefaultActiveInputState(self)
 		self.Active = active
 
-		if active and ACE.RequireEntityLegal(self) and not self.Load then
+		if active and self.Legal and not self.Load then
 			self.Load = true
 			self:FirstLoad()
 		elseif not active then
@@ -808,7 +806,7 @@ function ENT:Think()
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 
-		if not currentLegal then
+		if not self.Legal then
 			self.Load = false
 		else
 			--if legal, go back to the action
@@ -823,7 +821,7 @@ function ENT:Think()
 
 		self:UpdateMass()
 
-		if self.Ammo ~= self.AmmoLast or not currentLegal then
+		if self.Ammo ~= self.AmmoLast or not self.Legal then
 			self:UpdateOverlayText()
 			self.AmmoLast = self.Ammo
 		end

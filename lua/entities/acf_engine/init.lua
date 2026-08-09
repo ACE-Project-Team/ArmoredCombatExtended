@@ -1167,6 +1167,7 @@ do
 	end
 
 	function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
+		local deferredFuelLinks
 
 		--Link Pasting
 		if Ent.EntityMods and Ent.EntityMods.GearLink and Ent.EntityMods.GearLink.entities then
@@ -1187,6 +1188,7 @@ do
 		if Ent.EntityMods and Ent.EntityMods.FuelLink and Ent.EntityMods.FuelLink.entities then
 			local FuelLink = Ent.EntityMods.FuelLink
 			if FuelLink.entities and next(FuelLink.entities) then
+				deferredFuelLinks = table.Copy(FuelLink.entities)
 				for _,ID in pairs(FuelLink.entities) do
 					local Linked = CreatedEntities[ ID ]
 					if IsValid( Linked ) then
@@ -1195,6 +1197,19 @@ do
 				end
 			end
 			Ent.EntityMods.FuelLink = nil
+		end
+		if deferredFuelLinks then
+			local function RestoreFuelLinks()
+				if not IsValid(self) then return end
+				for _, ID in pairs(deferredFuelLinks) do
+					local Linked = CreatedEntities[ID] or CreatedEntities[tostring(ID)]
+					if IsValid(Linked) then self:Link(Linked) end
+				end
+			end
+
+			-- Retry after ACE's enforced parent restoration so distance checks use final positions.
+			timer.Simple(0, RestoreFuelLinks)
+			timer.Simple(0.1, RestoreFuelLinks)
 		end
 		--ace_crewseat_gunner
 		if Ent.EntityMods and Ent.EntityMods.CrewLink and Ent.EntityMods.CrewLink.entities then

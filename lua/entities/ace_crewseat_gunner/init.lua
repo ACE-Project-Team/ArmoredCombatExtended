@@ -144,7 +144,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		str = str .. "\n\nNot legal, disabled for " .. ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		str = str .. "\n\nNot legal, disabled for " .. math.max(0, ceil(self.NextLegalCheck - ACE.CurTime)) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(str)

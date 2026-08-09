@@ -86,7 +86,9 @@ end
 ACE.Legal.Contracts["acf_gun"] = Contract("Model", "Mass", "ModelInertia", false)
 ACE.Legal.Contracts["acf_rack"] = Contract(nil, "Mass", "ModelInertia", false)
 ACE.Legal.Contracts["acf_ammo"] = function(ent)
-		return ent.Model, math.min(math.Round(ent.EmptyMass or 0, 2), 50000), nil, true, true
+		-- EmptyMass is the real empty-crate requirement. Do not clamp it to the old
+		-- 50,000 kg warning ceiling: that value is a limit, not an entity mass.
+		return ent.Model, math.Round(ent.EmptyMass or 0, 2), nil, true, true
 	end
 ACE.Legal.Contracts["acf_engine"] = Contract("Model", "Weight", "ModelInertia", true)
 ACE.Legal.Contracts["acf_fueltank"] = Contract("Model", "EmptyMass", nil, true)
@@ -290,6 +292,19 @@ do
 		if not old then return end
 
 		ENTITY[name] = function(self, ...)
+			local value = ...
+			-- Repeating an already-applied state during entity initialization or paste
+			-- is not an external legality mutation.
+			if IsManagedLegalEntity(self) and name == "SetSolid" and self.GetSolid
+				and self:GetSolid() == value then
+				return true
+			end
+			if IsManagedLegalEntity(self) and name == "SetNotSolid" and not self:IsSolid() then
+				return true
+			end
+			if IsManagedLegalEntity(self) and name == "SetParent" and self:GetParent() == value then
+				return true
+			end
 			if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) then
 				ACE.InvalidateLegal(self, reason .. " rejected")
 				return false
@@ -313,23 +328,38 @@ end
 -- correctly rejects that external-looking mutation, but the result is a partially parented
 -- dupe: ACE/ACF children can be left at their paste position in the sky. Repair every saved
 -- parent link after the queue completes through the same narrowly-scoped ACE mutation gate.
-hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
-	local dupe = istable(data) and (data[1] or data) or nil
+local function RestoreAdvDupeParents(dupe)
 	if not istable(dupe) or not istable(dupe.EntityList) or not istable(dupe.CreatedEntities) then return end
-
-	local player = dupe.Player
-	if IsValid(player) and player.GetInfo and not tobool(player:GetInfo("advdupe2_paste_parents")) then return end
 
 	for sourceId, source in pairs(dupe.EntityList) do
 		local parentId = istable(source) and source.BuildDupeInfo and source.BuildDupeInfo.DupeParentID
-		local child = dupe.CreatedEntities[sourceId]
-		local parent = parentId and dupe.CreatedEntities[parentId]
+		local child = dupe.CreatedEntities[sourceId] or dupe.CreatedEntities[tostring(sourceId)]
+		local parent = parentId and (dupe.CreatedEntities[parentId] or dupe.CreatedEntities[tostring(parentId)])
 		if parentId and IsValid(child) and IsValid(parent) and child:GetParent() ~= parent then
 			ACE.WithMutationScope(child, "advdupe-parent-restore", function()
 				child:SetParent(parent)
 			end)
 		end
 	end
+end
+
+hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
+	local dupe = istable(data) and (data[1] or data) or nil
+	if not istable(dupe) then return end
+
+	local player = dupe.Player
+	if IsValid(player) and player.GetInfo then
+		local setting = player:GetInfo("advdupe2_paste_parents")
+		if setting ~= nil and setting ~= "" and not tobool(setting) then return end
+	end
+
+	-- AdvDupe can finish entity callbacks after this hook. Retry once on the next
+	-- tick so gun/rack children are present before the enforced SetParent call.
+	RestoreAdvDupeParents(dupe)
+	timer.Simple(0, function()
+		RestoreAdvDupeParents(dupe)
+		hook.Run("ACE_AdvDupeParentsRestored", dupe)
+	end)
 end)
 
 do

@@ -52,6 +52,13 @@ class EngineActivationContractTests(unittest.TestCase):
         self.assertIn("if self.CrewIssue then", overlay)
         self.assertNotIn("or (\"Won't fire: needs a gunner", overlay)
 
+    def test_pasted_fuel_links_retry_after_parent_restoration(self):
+        engine = source("lua/entities/acf_engine/init.lua")
+        paste = engine[engine.index("function ENT:PostEntityPaste") :]
+
+        self.assertIn("deferredFuelLinks", paste)
+        self.assertIn("timer.Simple(0.1, RestoreFuelLinks)", paste)
+
     def test_illegal_crew_seats_remain_linked_for_recovery(self):
         for relative in (
             "lua/entities/ace_crewseat_driver/init.lua",

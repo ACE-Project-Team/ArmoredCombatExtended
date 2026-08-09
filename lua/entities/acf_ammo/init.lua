@@ -792,7 +792,7 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.RequireLegal(self, self.Model, math.Round(self.EmptyMass, 2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 

@@ -462,7 +462,11 @@ function ACE.Points.RoundFromBullet(bdata)
 		SlugCaliber = SafeNonNegative(bdata.SlugCaliber), -- HEAT family only; nil otherwise
 		blastMass   = SafeNonNegative(ACE.GetAmmoBlastMass(bdata)),
 	}
-	if not round.Type or (round.maxPen <= 0 and round.blastMass <= 0) then return nil end
+	local family = round.Type and TYPE_MAP[round.Type] or nil
+	-- Utility rounds (smoke/chaff/flare/refill) have no penetration or blast value,
+	-- but still need a cadence readout so the weapon UI can explain their configured
+	-- delivery rate. Their point contribution remains the established floor.
+	if not round.Type or (round.maxPen <= 0 and round.blastMass <= 0 and family ~= "SM") then return nil end
 
 	-- Guidance folds the old per-missile pricing premium into baseRoundCost. Candidates:
 	-- BulletData.guidance/Guidance, else Data7 (the runtime-configured guidance object the

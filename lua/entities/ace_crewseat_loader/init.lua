@@ -128,6 +128,7 @@ end
 function ENT:Think()
 	ACE_UpdateCrewseatAnglePenalty(self)
 	ACE_UpdateGForcePenalty(self)
+	ACE_EnsureCrewseatPhysics(self)
 	local legal = ACE.RequireEntityLegal(self)
 
 	if legal then

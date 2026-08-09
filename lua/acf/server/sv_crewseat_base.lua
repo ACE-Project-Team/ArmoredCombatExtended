@@ -356,6 +356,84 @@ function ACE_InitializeCrewseat(ent, modelType)
 	return model
 end
 
+-- AdvDupe applies the saved physics state after the crewseat factory has set its
+-- configured human mass.  Some legacy dupes contain the model default (50,000 kg)
+-- and non-solid state, which leaves the seat permanently illegal after a paste.
+-- Restore the seat's own physics contract after the legality parent repair has
+-- completed, then force the normal periodic legality pass to validate it.
+local CrewseatClasses = {
+	ace_crewseat_driver = true,
+	ace_crewseat_gunner = true,
+	ace_crewseat_loader = true,
+}
+
+local function RestoreCrewseatPastePhysics(dupe)
+	if not istable(dupe) or not istable(dupe.CreatedEntities) then return end
+
+	for _, ent in pairs(dupe.CreatedEntities) do
+		if not IsValid(ent) or not CrewseatClasses[ent:GetClass()] then continue end
+
+		local weight = tonumber(ent.Weight)
+	ACE.WithMutationScope(ent, "crewseat-paste-physics", function()
+			ent:SetSolid(SOLID_VPHYSICS)
+			ent:SetNotSolid(false)
+		end)
+
+		local phys = ent:GetPhysicsObject()
+		if IsValid(phys) and weight and weight > 0 then
+			phys:SetMass(weight)
+		end
+
+		ent.Legal = false
+		ent.LegalIssues = "Awaiting legality validation"
+		ent.NextLegalCheck = ACE.CurTime
+	end
+end
+
+local function RestoreCrewseatPastePhysicsFromHook(data)
+	local dupe = istable(data) and (data[1] or data) or nil
+	if not istable(dupe) then return end
+
+	-- Run after AdvDupe's final entity-modifier pass.  This intentionally does not
+	-- depend on advdupe2_paste_parents: crew mass/solidity is an ACE entity contract,
+	-- not an optional parenting preference.
+	timer.Simple(0, function()
+		RestoreCrewseatPastePhysics(dupe)
+	end)
+	timer.Simple(0.1, function()
+		RestoreCrewseatPastePhysics(dupe)
+	end)
+end
+
+hook.Add("AdvDupe_FinishPasting", "ACE Restore Crewseat Paste Physics", RestoreCrewseatPastePhysicsFromHook)
+hook.Add("ACE_AdvDupeParentsRestored", "ACE Restore Crewseat Paste Physics", RestoreCrewseatPastePhysics)
+
+-- AdvDupe versions vary in whether their final entity-modifier callback runs
+-- before or after AdvDupe_FinishPasting.  Reassert the contract at the crewseat
+-- operational boundary as well, so a seat can never remain at a model-default
+-- 50,000 kg or non-solid state between paste and its first legality check.
+function ACE_EnsureCrewseatPhysics(ent)
+	if not IsValid(ent) or ent.LegalIssues == "Apparently He Died" then return end
+
+	local weight = tonumber(ent.Weight)
+	local phys = ent:GetPhysicsObject()
+	local massChanged = IsValid(phys) and weight and math.abs(phys:GetMass() - weight) > 0.01
+	local solidChanged = not ent:IsSolid()
+	if not massChanged and not solidChanged then return end
+
+	ACE.WithMutationScope(ent, "crewseat-operational-physics", function()
+		if solidChanged then
+			ent:SetSolid(SOLID_VPHYSICS)
+			ent:SetNotSolid(false)
+		end
+		if IsValid(phys) and weight and weight > 0 then phys:SetMass(weight) end
+	end)
+
+	ent.Legal = false
+	ent.LegalIssues = "Awaiting legality validation"
+	ent.NextLegalCheck = ACE.CurTime
+end
+
 -- Shared angle penalty calculation
 local startPenalty = 45
 local maxPenalty = 90

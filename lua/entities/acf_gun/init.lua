@@ -1227,6 +1227,7 @@ end
 function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 	local pointSources = { self }
 	self._ACEPointsSuppress = true
+	local pendingLinkIDs = {}
 
 	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
 
@@ -1235,21 +1236,12 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 		if AmmoLink.entities and table.Count(AmmoLink.entities) > 0 then
 
 			for _, AmmoID in pairs(AmmoLink.entities) do
+				pendingLinkIDs[#pendingLinkIDs + 1] = AmmoID
 
-				local Ammo = CreatedEntities[ AmmoID ]
+				local Ammo = CreatedEntities[ AmmoID ] or CreatedEntities[ tostring(AmmoID) ]
 
 				if IsValid(Ammo) then
 					pointSources[#pointSources + 1] = Ammo
-
-					if Ammo:GetClass() == "acf_ammo" then
-						self:Link( Ammo )
-					elseif Ammo:GetClass() == "ace_crewseat_gunner" then
-						self:Link( Ammo )
-					elseif Ammo:GetClass() == "ace_crewseat_loader" then
-						if not self.noloaders then
-							self:Link( Ammo )
-						end
-					end
 				end
 			end
 		end
@@ -1258,6 +1250,20 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 	end
 
 	self._ACEPointsSuppress = nil
+	self.ACE_DupePendingLinkIDs = pendingLinkIDs
+	self.ACE_DupePendingLinkMap = CreatedEntities
+	if #pendingLinkIDs > 0 then
+		timer.Simple(0, function() self:RestoreDupeLinks() end)
+		timer.Simple(0.25, function() self:RestoreDupeLinks() end)
+		timer.Simple(1, function() self:RestoreDupeLinks() end)
+		timer.Create("ACE_DupeGunLinks_" .. self:EntIndex(), 0.1, 60, function()
+			if not IsValid(self) or not self.ACE_DupePendingLinkIDs then
+				timer.Remove("ACE_DupeGunLinks_" .. self:EntIndex())
+				return
+			end
+			self:RestoreDupeLinks()
+		end)
+	end
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste( self, Player, Ent, CreatedEntities )
@@ -1265,3 +1271,81 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 		ACE_PointsInputChanged(pointSources, "gun-links-pasted")
 	end
 end
+
+function ENT:RestoreDupeLinks(CreatedEntities)
+	if not IsValid(self) or not self.ACE_DupePendingLinkIDs then return end
+	local entityMap = CreatedEntities or self.ACE_DupePendingLinkMap or {}
+
+	local pending = {}
+	for _, targetID in ipairs(self.ACE_DupePendingLinkIDs) do
+		local target = entityMap[targetID] or entityMap[tostring(targetID)]
+		if not IsValid(target) then
+			pending[#pending + 1] = targetID
+			continue
+		end
+
+		local linked = false
+		for _, existing in pairs(self.AmmoLink or {}) do
+			if existing == target then linked = true break end
+		end
+		for _, existing in pairs(self.CrewLink or {}) do
+			if existing == target then linked = true break end
+		end
+		if linked then continue end
+
+		local class = target:GetClass()
+		if class == "ace_crewseat_loader" and self.noloaders then continue end
+
+		local accepted = false
+		if class == "acf_ammo" or class == "ace_crewseat_gunner" or class == "ace_crewseat_loader" then
+			accepted = self:Link(target)
+		end
+		if not accepted then
+			pending[#pending + 1] = targetID
+		end
+	end
+
+	if #pending > 0 then
+		self.ACE_DupePendingLinkIDs = pending
+	else
+		self.ACE_DupePendingLinkIDs = nil
+		self.ACE_DupePendingLinkMap = nil
+		timer.Remove("ACE_DupeGunLinks_" .. self:EntIndex())
+	end
+end
+
+hook.Add("ACE_AdvDupeParentsRestored", "ACE Restore Pasted Gun Links", function(dupe)
+	if not istable(dupe) or not istable(dupe.CreatedEntities) then return end
+	local processed = {}
+	local function restoreGun(ent, source)
+		if not IsValid(ent) or ent:GetClass() ~= "acf_gun" or not ent.RestoreDupeLinks then return end
+		processed[ent] = true
+		local modifier = source and source.EntityMods and source.EntityMods.ACFAmmoLink
+		if istable(modifier) and istable(modifier.entities) and #modifier.entities > 0
+			and not ent.ACE_DupePendingLinkIDs then
+			ent.ACE_DupePendingLinkIDs = table.Copy(modifier.entities)
+			ent.ACE_DupePendingLinkMap = dupe.CreatedEntities
+		end
+		if not ent.ACE_DupePendingLinkIDs then
+			local candidates = {}
+			for targetID, target in pairs(dupe.CreatedEntities) do
+				if IsValid(target) and target:GetClass() == "acf_ammo" then
+					candidates[#candidates + 1] = targetID
+				end
+			end
+			if #candidates > 0 then
+				ent.ACE_DupePendingLinkIDs = candidates
+				ent.ACE_DupePendingLinkMap = dupe.CreatedEntities
+			end
+		end
+		ent:RestoreDupeLinks(dupe.CreatedEntities)
+	end
+
+	for sourceID, source in pairs(dupe.EntityList or {}) do
+		local ent = dupe.CreatedEntities[sourceID] or dupe.CreatedEntities[tostring(sourceID)]
+		restoreGun(ent, source)
+	end
+	for _, ent in pairs(dupe.CreatedEntities) do
+		if not processed[ent] then restoreGun(ent) end
+	end
+end)

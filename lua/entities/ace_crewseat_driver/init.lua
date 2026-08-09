@@ -68,6 +68,7 @@ end
 
 function ENT:Think()
 	ACE_UpdateCrewseatAnglePenalty(self)
+	ACE_EnsureCrewseatPhysics(self)
 	local legal = ACE.RequireEntityLegal(self)
 
 	-- An illegal crewseat stays linked: the engine only counts a legal driver for its torque boost

@@ -299,7 +299,7 @@ do
 				and self:GetSolid() == value then
 				return true
 			end
-			if IsManagedLegalEntity(self) and name == "SetNotSolid" and not self:IsSolid() then
+			if IsManagedLegalEntity(self) and name == "SetNotSolid" and value == true and not self:IsSolid() then
 				return true
 			end
 			if IsManagedLegalEntity(self) and name == "SetParent" and self:GetParent() == value then
@@ -328,6 +328,20 @@ end
 -- correctly rejects that external-looking mutation, but the result is a partially parented
 -- dupe: ACE/ACF children can be left at their paste position in the sky. Repair every saved
 -- parent link after the queue completes through the same narrowly-scoped ACE mutation gate.
+function ACE_ReconcileParentContraption(child, oldParent, newParent)
+	if not IsValid(child) or not CFW then return end
+	if IsValid(newParent) and CFW.connect and child.GetCFWLink
+		and not child:GetCFWLink(newParent) then
+		CFW.connect(child, newParent)
+	end
+	local childCon = child.CFW_GetContraption and child:CFW_GetContraption()
+	local parentCon = IsValid(newParent) and newParent.CFW_GetContraption
+		and newParent:CFW_GetContraption()
+	if childCon and parentCon and childCon ~= parentCon and parentCon.Merge then
+		parentCon:Merge(childCon)
+	end
+end
+
 local function RestoreAdvDupeParents(dupe)
 	if not istable(dupe) or not istable(dupe.EntityList) or not istable(dupe.CreatedEntities) then return end
 
@@ -339,6 +353,26 @@ local function RestoreAdvDupeParents(dupe)
 			ACE.WithMutationScope(child, "advdupe-parent-restore", function()
 				child:SetParent(parent)
 			end)
+			ACE_ReconcileParentContraption(child, nil, parent)
+		end
+	end
+end
+
+-- AdvDupe can restore a saved non-solid state after an ACF ammo crate has initialized.
+-- Ammo is a physical, legality-gated link target; leave its serialized mass/content intact,
+-- but restore the entity solidity contract before the first operational link retry.
+local function RestoreAmmoPastePhysics(dupe)
+	if not istable(dupe) or not istable(dupe.CreatedEntities) then return end
+
+	for _, ent in pairs(dupe.CreatedEntities) do
+		if IsValid(ent) and ent:GetClass() == "acf_ammo" and not ent:IsSolid() then
+			ACE.WithMutationScope(ent, "ammo-paste-physics", function()
+				ent:SetSolid(SOLID_VPHYSICS)
+				ent:SetNotSolid(false)
+			end)
+			ent.Legal = false
+			ent.LegalIssues = "Awaiting legality validation"
+			ent.NextLegalCheck = ACE.CurTime
 		end
 	end
 end
@@ -348,16 +382,19 @@ hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
 	if not istable(dupe) then return end
 
 	local player = dupe.Player
+	local restoreParents = true
 	if IsValid(player) and player.GetInfo then
 		local setting = player:GetInfo("advdupe2_paste_parents")
-		if setting ~= nil and setting ~= "" and not tobool(setting) then return end
+		if setting ~= nil and setting ~= "" and not tobool(setting) then restoreParents = false end
 	end
 
 	-- AdvDupe can finish entity callbacks after this hook. Retry once on the next
 	-- tick so gun/rack children are present before the enforced SetParent call.
-	RestoreAdvDupeParents(dupe)
+	if restoreParents then RestoreAdvDupeParents(dupe) end
+	RestoreAmmoPastePhysics(dupe)
 	timer.Simple(0, function()
-		RestoreAdvDupeParents(dupe)
+		if restoreParents then RestoreAdvDupeParents(dupe) end
+		RestoreAmmoPastePhysics(dupe)
 		hook.Run("ACE_AdvDupeParentsRestored", dupe)
 	end)
 end)

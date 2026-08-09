@@ -96,6 +96,7 @@ class PrimitiveArmorSnapshotTests(unittest.TestCase):
         )
 
         self.assertIsNotNone(hook)
+        self.assertIn("ent.primitive and ent.primitive.init", hook.group("body"))
         self.assertIn("FinalizePrimitiveArmor(ent)", hook.group("body"))
         self.assertNotIn("timer.Simple", hook.group("body"))
 

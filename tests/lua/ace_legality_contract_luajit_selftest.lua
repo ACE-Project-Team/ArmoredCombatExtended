@@ -46,18 +46,45 @@ assert(crew:find("crewseat-construction", 1, true),
 	"crewseat construction mutations must use the legality mutation scope")
 assert(crew:find("crewseat-deferred-model-sync", 1, true),
 	"deferred crewseat model mutations must use the legality mutation scope")
+assert(crew:find("ACE Restore Crewseat Paste Physics", 1, true),
+	"AdvDupe crewseats must restore their configured physics contract")
+assert(crew:find("AdvDupe_FinishPasting", 1, true),
+	"crewseat physics restoration must not depend on the optional parent preference")
+assert(crew:find("crewseat-paste-physics", 1, true) and crew:find("phys:SetMass(weight)", 1, true),
+	"AdvDupe crewseats must restore solidity and configured mass before legality validation")
+assert(crew:find("ent:SetNotSolid(false)", 1, true),
+	"crewseat physics restoration must explicitly clear the not-solid state")
+assert(crew:find("function ACE_EnsureCrewseatPhysics", 1, true)
+	and crew:find("crewseat-operational-physics", 1, true),
+	"crewseat legality checks must repair late AdvDupe physics state")
+assert(read("/lua/entities/ace_crewseat_driver/init.lua"):find("ACE_EnsureCrewseatPhysics(self)", 1, true),
+	"driver legality must repair crewseat physics before checking it")
+assert(read("/lua/entities/ace_crewseat_gunner/init.lua"):find("ACE_EnsureCrewseatPhysics(self)", 1, true),
+	"gunner legality must repair crewseat physics before checking it")
+assert(read("/lua/entities/ace_crewseat_loader/init.lua"):find("ACE_EnsureCrewseatPhysics(self)", 1, true),
+	"loader legality must repair crewseat physics before checking it")
+assert(gun:find("CreatedEntities[ tostring(AmmoID) ]", 1, true),
+	"pasted gun links must resolve serialized string entity IDs")
+assert(gun:find("ACE_DupePendingLinkIDs", 1, true) and gun:find("RestoreDupeLinks", 1, true),
+	"pasted gun links must retry after deferred legality validation")
 assert(read("/lua/entities/ace_scalability/init.lua"):find("scalable-dupe-parent", 1, true),
 	"scalable dupe parenting must use the legality mutation scope")
 assert(rack:find("rack-missile-parent", 1, true) and rack:find("rack-missile-detach", 1, true),
 	"rack missile parent/detach mutations must use the legality mutation scope")
 assert(legality:find("ACE Restore Enforced Parents", 1, true),
 	"AdvDupe2 parent restoration must repair rejected legality mutations")
+assert(legality:find("ammo-paste-physics", 1, true),
+	"pasted ammo must restore solidity before deferred legality-gated links")
+assert(legality:find("ACE_ReconcileParentContraption", 1, true),
+	"parent repair must reconcile CFW contraption ownership")
 assert(legality:find("advdupe-parent-restore", 1, true),
 	"AdvDupe2 parent restoration must use the legality mutation scope")
 assert(legality:find("tostring(sourceId)", 1, true),
 	"AdvDupe2 parent restoration must handle serialized string entity IDs")
 assert(legality:find("self:GetSolid() == value", 1, true),
 	"idempotent solidity calls must not invalidate legal entities")
+assert(legality:find('name == "SetNotSolid" and value == true', 1, true),
+	"SetNotSolid(false) must be allowed to restore solidity")
 assert(not gun:find("self.legal", 1, true), "gun legality scheduling must use the live Legal field")
 assert(not rack:find("self.legal", 1, true), "rack legality scheduling must use the live Legal field")
 assert(pointEvents:find("ACE_IsFiniteNumber", 1, true),

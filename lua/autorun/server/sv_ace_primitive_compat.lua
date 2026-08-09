@@ -263,10 +263,13 @@ hook.Add("AdvDupe_FinishPasting", "ACE_CapturePrimitiveArmor", function(data)
 				CaptureSavedArmor(ent)
 			end
 
-			-- AdvDupe fires after duplicator.Paste returns. Some Primitive revisions have
-			-- already completed their final SetMass callback by then, so this is the only
-			-- lifecycle point that can restore their serialized armor state.
-			FinalizePrimitiveArmor(ent)
+			-- Primitive intentionally reconstructs parented duped entities about one second
+			-- after AdvDupe finishes. Keep the serialized snapshot alive through that rebuild;
+			-- Primitive_PostRebuildPhysics followed by the final SetMass callback is the
+			-- authoritative point at which the new physics object and saved armor can agree.
+			if not (ent.primitive and ent.primitive.init) then
+				FinalizePrimitiveArmor(ent)
+			end
 		end
 	end
 end)

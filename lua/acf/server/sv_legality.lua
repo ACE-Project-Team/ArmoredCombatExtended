@@ -378,10 +378,19 @@ function ACE.RequireEntityLegal(ent)
 	-- contraption total at the same boundary that gates firing/activation so a stale periodic
 	-- legality scan cannot be used to operate an over-limit entity.
 	local pointVersion = ACE.PointsOperationalVersion or 0
+	local pointsLimitEnforced = ACE.PointsLimitEnforced ~= false
 	local pointCache = ent.ACEPointsOperationalCache
 	local pointIssue
-	if pointCache and pointCache.Version == pointVersion and pointCache.Limit == ACE.PointsLimit then
+	if pointCache and pointCache.Version == pointVersion and pointCache.Limit == ACE.PointsLimit
+		and pointCache.Enforced == pointsLimitEnforced then
 		pointIssue = pointCache.Issue
+	elseif not pointsLimitEnforced then
+		-- Keep the point model and advisory warnings active, but allow servers to
+		-- opt out of making the points limit an operational gate.
+		ent.ACEPointsOperationalCache = {
+			Version = pointVersion, Limit = ACE.PointsLimit,
+			Enforced = false, Issue = nil
+		}
 	else
 		local pointCons = {}
 		local pointQueue = {}
@@ -440,7 +449,10 @@ function ACE.RequireEntityLegal(ent)
 				pointIssue = string.format("Linked contraption group over points limit (%d / %d)", math.ceil(points), math.ceil(limit))
 			end
 		end
-		ent.ACEPointsOperationalCache = { Version = pointVersion, Limit = ACE.PointsLimit, Issue = pointIssue }
+		ent.ACEPointsOperationalCache = {
+			Version = pointVersion, Limit = ACE.PointsLimit,
+			Enforced = true, Issue = pointIssue
+		}
 	end
 
 	if pointIssue then return false, pointIssue end

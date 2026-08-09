@@ -20,6 +20,11 @@ assert(legality:find("return false, \"Invalid Ent\"", 1, true), "invalid entitie
 assert(legality:find("Invalid mass", 1, true), "invalid mass must fail legality")
 assert(legality:find("Linked contraption group over points limit", 1, true),
 	"linked weapon/ammo contraptions must share the operational points limit")
+assert(legality:find("PointsLimitEnforced", 1, true),
+	"points enforcement must be controlled by the server setting")
+local globals = read("/lua/autorun/acf_globals.lua")
+assert(globals:find("ace_legality_pointslimit_enforced", 1, true),
+	"points enforcement convar is missing")
 assert(legality:find("pointQueue", 1, true), "points enforcement must traverse linked contraptions")
 assert(pointEvents:find("ACEPointsOperationalCache = nil", 1, true),
 	"point mutations must clear operational legality caches only on affected entities")
@@ -39,5 +44,13 @@ assert(rack:find("ACE.RequireLegal(self", 1, true), "racks need a synchronous pr
 assert(crew:find("BumpOperationalVersion", 1, true), "crew legality transitions must invalidate operational points")
 assert(not gun:find("self.legal", 1, true), "gun legality scheduling must use the live Legal field")
 assert(not rack:find("self.legal", 1, true), "rack legality scheduling must use the live Legal field")
+assert(pointEvents:find("ACE_IsFiniteNumber", 1, true),
+	"point warnings must reject non-finite transient totals")
+assert(pointEvents:find("ACE_DeferPointWarningCheck", 1, true),
+	"point warnings must settle after contraption transitions")
+assert(pointEvents:find("ACEPointWarningCheckPending", 1, true),
+	"point warning debounce must block same-tick emission")
+assert(pointEvents:find("pointsLimit ~= math.huge", 1, true),
+	"point warning checks must preserve the no-limit sentinel")
 
 print("ACE legality contract LuaJIT self-test: PASS")

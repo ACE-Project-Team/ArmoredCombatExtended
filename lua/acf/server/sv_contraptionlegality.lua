@@ -91,6 +91,21 @@ ACE_DoContraptionLegalCheck = ACE.DoContraptionLegalCheck
 -- ------------------------------------------------------------
 
 -- Evaluate legality for a contraption.
+local function ACE_IsFiniteNumber(value)
+	return isnumber(value) and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+local function ACE_DeferPointWarningCheck(con)
+	if con.ACEPointWarningCheckPending or not timer then return end
+
+	con.ACEPointWarningCheckPending = true
+	timer.Simple(0, function()
+		con.ACEPointWarningCheckPending = nil
+		if con._removed or con.ACERemoving or not con.ents then return end
+		if ACE.CheckLegalCont then ACE.CheckLegalCont(con) end
+	end)
+end
+
 function ACE.CheckLegalCont(con)
 	if not con or con._removed or con.ACERemoving then return end
 	con.OTWarnings = con.OTWarnings or {}
@@ -101,7 +116,36 @@ function ACE.CheckLegalCont(con)
 
 	local points = con.ACEPoints or 0
 	local pointsLimit = ACE.PointsLimit or math.huge
+	if not ACE_IsFiniteNumber(points) or (not ACE_IsFiniteNumber(pointsLimit) and pointsLimit ~= math.huge) then
+		-- Never turn a transient NaN/Inf produced during a CFW transition into
+		-- a persistent player-facing warning. The next dirty rebuild will retry.
+		con.ACEWarningsDirty = true
+		return
+	end
+
+	if not con.OTWarnings.WarnedOverPoints and con.ACEPointWarningCheckPending then
+		-- A scheduled recheck is the stabilization barrier. Do not emit from
+		-- another same-tick invalidation before that callback runs.
+		return
+	end
+
 	if points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
+		-- CFW can expose an intermediate membership snapshot while a physgun
+		-- operation is settling. Re-read on the next tick before announcing it.
+		if not con.ACEPointWarningStable then
+			con.ACEPointWarningStable = points
+			con.ACEWarningsDirty = true
+			ACE_DeferPointWarningCheck(con)
+			return
+		end
+
+		if con.ACEPointWarningStable ~= points then
+			con.ACEPointWarningStable = points
+			con.ACEWarningsDirty = true
+			ACE_DeferPointWarningCheck(con)
+			return
+		end
+
 		local name  = ACE.GetOwnerName(ACE.GetContraptionOwner(con))
 		local above = points - pointsLimit
 		ACE.ChatMessageGlobal(
@@ -111,6 +155,7 @@ function ACE.CheckLegalCont(con)
 		)
 		con.OTWarnings.WarnedOverPoints = true
 	end
+	con.ACEPointWarningStable = points
 
 	local maxWeight = ACE.MaxWeight or math.huge
 	if (con.totalMass or 0) > maxWeight and not con.OTWarnings.WarnedOverWeight then

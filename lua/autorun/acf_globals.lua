@@ -204,6 +204,7 @@ ACE.LargeGunsRequireGunners = 1 --Should engines over a certain hp need a driver
 ACE.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 
 ACE.PointsLimit = 10000 -- The maximum legal point value.
+ACE.PointsLimitEnforced = true -- Whether the points limit blocks operational use.
 ACE.MaxWeight   = 200000 -- The max weight in kg.
 
 ---------------------------------- Misc & other ----------------------------------
@@ -306,6 +307,8 @@ if SERVER then
 
     CreateConVar( "ace_legality_largegunsneedgunner", 1 , FCVAR_ARCHIVE)
     CreateConVar( "ace_legality_largegunthreshold", 40 , FCVAR_ARCHIVE)
+    CreateConVar( "ace_legality_pointslimit_enforced", 1, FCVAR_ARCHIVE,
+        "Enforce the ACE points limit at operational legality gates." )
 
     -- Cvars for legality checking
     CreateConVar( "ace_legalcheck", 1 , FCVAR_ARCHIVE)
@@ -384,6 +387,13 @@ if SERVER then
             ACE.LargeGunsRequireGunners = math.ceil(math.Clamp(New, 0, 1))
         elseif CVar == "ace_legality_largegunthreshold" then
             ACE.LargeGunsThreshold = math.ceil(math.Clamp(New, 0, 10000))
+        elseif CVar == "ace_legality_pointslimit_enforced" then
+            ACE.PointsLimitEnforced = math.floor(math.Clamp(New, 0, 1)) == 1
+            if ACE.Points and ACE.Points.BumpOperationalVersion then
+                ACE.Points.BumpOperationalVersion()
+            else
+                ACE.PointsOperationalVersion = (ACE.PointsOperationalVersion or 0) + 1
+            end
         elseif CVar == "ace_enable_dp" then
             if ACE.SendDPStatus then
                 ACE.SendDPStatus()
@@ -407,6 +417,7 @@ cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE_CVarChangeCal
 cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE_CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_pointslimit_enforced", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_enable_dp", ACE_CVarChangeCallback)
 
 -- Apply archived/server convars at startup so values persist across restarts and reconnects.
@@ -427,6 +438,7 @@ local startupSync = {
     "ace_legality_largeenginethreshold",
     "ace_legality_largegunsneedgunner",
     "ace_legality_largegunthreshold",
+    "ace_legality_pointslimit_enforced",
     "ace_enable_dp"
 }
 

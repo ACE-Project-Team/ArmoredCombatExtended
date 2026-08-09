@@ -880,7 +880,9 @@ ACE.ClassToType = ACE.ClassToType or {
 	-- engine peak-power only and whose Electronics category is the catch-all ACEPoints sum.
 	acf_gearbox = "Electronics",
 	acf_fueltank = "Ignore",
-	acf_ammo = "Ignore",   -- Ammo is free: crates contribute zero points.
+	-- A configured crate bills one engagement-window delivery of its round (the "actual
+	-- ammunition configured" charge); round COUNT stays unbilled.
+	acf_ammo = "Firepower",
 	-- Scalable explosives / bombs: MOUNTED ordnance costs points, stored ammo stays free. A
 	-- charge bolted to an airframe is independently droppable, so it prices as one rack tube of
 	-- itself (ACE.Points.ChargeEntCost, off its filler mass) rather than being free.
@@ -1124,10 +1126,22 @@ function ACE_GetGunConfiguredRps(ent, rofLimit, bdata, crate)
 		roundVolume = 0
 	end
 
-	local fireRateModifier = (tonumber(ent.RoFmod) or 1) * (tonumber(ent.PGRoFmod) or 1)
+	local safe = ACE.Points and ACE.Points.SafeNonNegative or function(value)
+		local number = tonumber(value) or 0
+		if number ~= number or number == math.huge or number == -math.huge then return 0 end
+		return math.max(number, 0)
+	end
+	local function positiveModifier(value)
+		local number = tonumber(value)
+		if not number or number ~= number or number == math.huge or number == -math.huge or number <= 0 then
+			return 1
+		end
+		return number
+	end
+	local fireRateModifier = positiveModifier(ent.RoFmod) * positiveModifier(ent.PGRoFmod)
 
 	if ACE.IsEnt(crate) and crate.RoFMul then
-		fireRateModifier = fireRateModifier * (crate.RoFMul + 1)
+		fireRateModifier = fireRateModifier * (1 + math.min(safe(crate.RoFMul), 100))
 	end
 
 	local defaultReloadTime = ((math.max(roundVolume, minRoundVolume) / 500) ^ 0.60) * fireRateModifier
@@ -1192,6 +1206,26 @@ local function resolveGunPricingCandidate(gun)
 		if ACE.IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
 end
 
+	-- Capability floor: the gun always bids its own best practical configuration, so linking
+	-- weaker (or no) ammunition can no longer discount the weapon itself. The wire ROFLimit
+	-- and crate rate modifiers only matter through the configured candidates above, which win
+	-- solely when they genuinely outscore the practical best.
+	local practical = ACE.Points.BestPracticalRound and ACE.Points.BestPracticalRound(gun.Id)
+	if practical then
+		local rate = ACE.Points.SustainedRps(practical.Rps, gun.MagSize, gun.MagReload,
+			gun.Class, ACE.Points.LegalLoaderCount(gun))
+		local candidate = {
+			Round = practical.Round,
+			Rate = rate,
+			RoundScore = practical.RoundScore,
+			FinalScore = rate * practical.RoundScore,
+			SourceIndex = math.huge,
+			Capability = true,
+		}
+
+		if ACE.Points.IsBetterCandidate(candidate, best) then best = candidate end
+	end
+
 	return best
 	end
 
@@ -1236,7 +1270,9 @@ local function resolveWeaponPricingInputs(ent)
 	local rate = candidate and candidate.Rate or 0
 	local threat = round and ACE.Points.Gate(ACE.Points.GatePen(round)) or 0
 	local baseRoundCost = round and ACE.Points.BaseRoundCost(round) or 0
-	local gunnerMultiplier = class == "acf_gun" and (ent.HasGunner and 1 or 2) or 1
+	local gunnerMultiplier = class == "acf_gun"
+		and (ACE.Points.HasLegalGunner(ent) and 1 or 2)
+		or 1
 	local roundScore = threat * baseRoundCost
 	local points = class == "acf_gun"
 		and ACE.Points.GunCost(rate, baseRoundCost, threat, gunnerMultiplier)
@@ -1265,6 +1301,8 @@ local function resolveWeaponPricingInputs(ent)
 		-- exclusive with MinimumApplied so a build shows exactly one accurate notice.
 		RateFloorApplied = not minimumApplied and rate > 0 and rate < rateFloor,
 		RateFloorSeconds = rateFloor > 0 and (1.0 / rateFloor) or 0,
+		-- True when the weapon billed its best practical configuration rather than a linked round.
+		Capability = candidate and candidate.Capability or false,
 		RoundType = round and round.Type,
 		Round = round
 	}
@@ -1307,6 +1345,33 @@ function ACE_GetRateFloorLine(readout, menuFormat)
 	return string.format("Slow-Fire Floor Applied: rate priced at %.1f rpm (true rate %.1f rpm)",
 		(readout.RateFloorSeconds or 0) > 0 and (60 / readout.RateFloorSeconds) or 0,
 		(readout.Rate or 0) * 60)
+end
+
+-- Tells a player their weapon was billed at its own best practical configuration instead of
+-- the (weaker or absent) linked round; the configured rounds bill on their crates.
+function ACE_GetCapabilityPricingLine(readout, menuFormat)
+	if not istable(readout) or not readout.Capability then return end
+
+	local lethality = readout.Round and ACE.GetRoundLethalityLine(readout.Round, menuFormat)
+	if lethality then
+		return "Priced At Best Practical Config: " .. lethality
+	end
+
+	return "Priced At Best Practical Config"
+end
+
+-- A configured crate bills as one engagement-window delivery of its configured round; round
+-- COUNT stays unbilled, so hauling more of the same configuration adds nothing.
+function ACE_GetAmmoCrateConfigCost(ent)
+	if not ACE.IsEnt(ent) or ent:GetClass() ~= "acf_ammo" then return 0 end
+
+	local round = ACE.Points.RoundFromBullet(ent.BulletData)
+	if not round then return 0 end
+	-- Utility rounds (smoke, flares, refill) deliver no damage; their filler must not leak a
+	-- token charge through the round-cost floor.
+	if ACE.Points.PostPenMult(round) <= 0 then return 0 end
+
+	return ACE.Points.CrateCost(ACE.Points.RoundScore(round))
 end
 
 -- Formats the lethality factors used by the points model.
@@ -1477,18 +1542,22 @@ function ACE_GetOwnerName(owner)
 	return ACE.IsEnt(owner) and owner:Nick() or "Unknown"
 end
 
--- Armor and firepower are priced by their dedicated passes; ammo is free. Remaining
--- component ACEPoints values are treated as electronics tiers and scaled with the model.
+-- Armor and gun/rack firepower are priced by their dedicated passes; configured crates bill
+-- their configuration (never their round count). Remaining component ACEPoints values are
+-- treated as electronics tiers and scaled with the model.
 function ACE_GetEntPoints(ent)
 	if not ACE.IsEnt(ent) then return 0 end
 
 	local class = ent:GetClass()
 	if (ACE.ArmorClasses and ACE.ArmorClasses[class])
 		or class == "acf_fueltank"
-		or class == "acf_ammo"
 		or class == "acf_gun"
 		or class == "acf_rack" then
 		return 0
+	end
+
+	if class == "acf_ammo" then
+		return ACE.GetAmmoCrateConfigCost(ent)
 	end
 
 	if class == "acf_engine" then

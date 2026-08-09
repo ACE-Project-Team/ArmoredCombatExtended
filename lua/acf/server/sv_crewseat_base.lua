@@ -391,6 +391,7 @@ function ACE_CrewseatLegalCheck(ent)
 		if ent.Legal and not (ACE.IsValidCrewseatModel and ACE.IsValidCrewseatModel(currentModel)) then
 			ent.Legal = false
 			ent.LegalIssues = "Invalid crewseat model"
+			ACE.Points.BumpOperationalVersion()
 		end
 
 		ent.NextLegalCheck = ACE.Legal.NextCheck(ent.Legal)

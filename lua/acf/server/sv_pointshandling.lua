@@ -307,9 +307,9 @@ end
 -- Point and armor calculation logic for contraption scans
 -- ============================================================
 
--- Calculate non-armor points and readout details. Ammo is free (crates contribute nothing),
--- so the categories are Engines, Firepower (guns AND racks), Crew and Electronics. The
--- contraption entity list is resolved ONCE and shared across guns.
+-- Calculate non-armor points and readout details. The categories are Engines, Firepower
+-- (guns, racks, and configured crates -- round count stays unbilled), Crew and Electronics.
+-- The contraption entity list is resolved ONCE and shared across guns.
 function ACE.CalcNonArmorPoints(con, baseEnt)
 	if not con then
 		return 0, { Engines = 0, Firepower = 0, Crew = 0, Electronics = 0 }

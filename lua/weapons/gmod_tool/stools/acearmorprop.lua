@@ -194,7 +194,9 @@ function TOOL:Reload( trace )
 
 		if ACE_GetContraptionEntities and ACE_GetPtsType then
 			for _, candidate in ipairs(ACE_GetContraptionEntities(Contraption, ent)) do
-				if IsValid(candidate) and ACE_GetPtsType(candidate:GetClass()) == "Firepower" then
+				-- Weapon count only: configured crates bill under Firepower but are not weapons.
+				if IsValid(candidate) and ACE_GetPtsType(candidate:GetClass()) == "Firepower"
+					and candidate:GetClass() ~= "acf_ammo" then
 					FirepowerCount = FirepowerCount + 1
 				end
 			end

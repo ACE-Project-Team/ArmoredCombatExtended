@@ -90,6 +90,72 @@ ACE.ArmorSpecFields = {
 
 ACE.ArmorResolvers = ACE.ArmorResolvers or {}
 
+-- Repeated stopped impacts must not uniformly dissolve an armor prop. The public armor
+-- numbers remain the configured plate values; this policy only describes localized condition
+-- damage that is allowed to affect later impacts at the same point.
+ACE.ArmorImpactPolicy = ACE.ArmorImpactPolicy or {
+	PersistentRatio = 0.65,
+	FullRatio = 1.0,
+	MaxLossPerImpact = 0.25,
+}
+
+function ACE.ArmorImpactPolicy.ConditionLoss(hitResult, penetration, losArmor, maxHealth)
+	if type(hitResult) ~= "table" then return 0 end
+	if hitResult.Outcome == "invalid" then return 0 end
+
+	penetration = tonumber(penetration) or 0
+	losArmor = tonumber(losArmor) or 0
+	maxHealth = tonumber(maxHealth) or 0
+	if penetration <= 0 or losArmor <= 0 or maxHealth <= 0 then return 0 end
+
+	local ratio = penetration / losArmor
+	local threshold = ACE.ArmorImpactPolicy.PersistentRatio
+	if ratio < threshold then return 0 end
+
+	local severity = math.Clamp((ratio - threshold) / math.max(ACE.ArmorImpactPolicy.FullRatio - threshold, 0.001), 0, 1)
+	local damage = math.max(tonumber(hitResult.Damage) or 0, 0) / maxHealth
+	local outcome = hitResult.Outcome
+	local outcomeFactor = (outcome == "penetrated" or outcome == "breached") and 1 or severity * severity
+	local loss = damage * (0.25 + 0.75 * severity) * outcomeFactor
+
+	return math.Clamp(loss, 0, ACE.ArmorImpactPolicy.MaxLossPerImpact)
+end
+
+function ACE.ArmorImpactPolicy.ApplyCellLoss(state, key, loss, now, limit)
+	if type(state) ~= "table" then return 0 end
+	state.Cells = state.Cells or {}
+	state.Count = tonumber(state.Count) or 0
+	limit = math.max(tonumber(limit) or 32, 1)
+	loss = math.Clamp(tonumber(loss) or 0, 0, 1)
+	if loss <= 0 then return state.Cells[key] and state.Cells[key].Condition or 0 end
+
+	local cell = state.Cells[key]
+	if not cell then
+		if state.Count >= limit then
+			local oldestKey
+			local oldestTime = math.huge
+			for existingKey, existing in pairs(state.Cells) do
+				if (existing.LastImpact or 0) < oldestTime then
+					oldestKey = existingKey
+					oldestTime = existing.LastImpact or 0
+				end
+			end
+			if oldestKey then
+				state.Cells[oldestKey] = nil
+				state.Count = math.max(state.Count - 1, 0)
+			end
+		end
+
+		cell = { Condition = 0 }
+		state.Cells[key] = cell
+		state.Count = state.Count + 1
+	end
+
+	cell.Condition = math.Clamp((cell.Condition or 0) + loss, 0, 1)
+	cell.LastImpact = now or 0
+	return cell.Condition
+end
+
 local CopyValues
 CopyValues = function(source)
 	local copy = {}
@@ -533,7 +599,7 @@ if SERVER then
 	-- @param damageMult number ACE threat damage multiplier.
 	-- @param Type string ACE threat type.
 	-- @return table result ACE-compatible damage result.
-	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+	function ACE.ArmorResolvers.Modular(material, Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type, impactCondition)
 		local profile = material.ACEArmorRuntime or BuildRuntimeProfile(material)
 		local spec = profile.spec
 		local resolverConfig = profile.resolverConfig
@@ -561,16 +627,20 @@ if SERVER then
 			damageMultiplier = damageMultiplier * (config.shockTransmission or spec.shockTransmission or 1)
 		end
 
-		local condition = 1
-		if Entity and Entity.ACF and Entity.ACF.MaxHealth and Entity.ACF.MaxHealth > 0 then
+		local condition = tonumber(impactCondition)
+		if condition == nil and Entity and Entity.ACF and Entity.ACF.MaxHealth and Entity.ACF.MaxHealth > 0 then
 			condition = math.Clamp((Entity.ACF.Health or Entity.ACF.MaxHealth) / Entity.ACF.MaxHealth, 0, 1)
 		end
+		condition = math.Clamp(condition or 1, 0, 1)
 
 		-- Degradation is the linear loss as health falls; retention is the hard floor
 		-- that repeated impacts cannot reduce past.
 		local retention = spec.multiHitRetention or 0
 		local degradation = spec.degradation or 0
 		local degradationFactor = 1 - degradation * (1 - condition)
+		-- The local condition feeds the established material degradation curve; it does
+		-- not replace that curve. Materials with no configured degradation retain their
+		-- legacy impact behavior even when another cell has been damaged.
 		local conditionFactor = math.max(retention, degradationFactor)
 		local singleUseState = Entity and Entity.ACEArmorBehaviorState
 		local singleUseSpent = singleUseState and singleUseState[material.id]

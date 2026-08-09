@@ -33,6 +33,26 @@ local sqrt = math.sqrt
 local max  = math.max
 local min  = math.min
 
+local function SafeNumber(value, fallback)
+	local number = tonumber(value)
+	if not number or number ~= number or number == math.huge or number == -math.huge then
+		return fallback or 0
+	end
+	return number
+end
+
+local function SafeNonNegative(value)
+	return max(SafeNumber(value, 0), 0)
+end
+
+ACE.Points.SafeNumber = SafeNumber
+ACE.Points.SafeNonNegative = SafeNonNegative
+
+function ACE.Points.BumpOperationalVersion()
+	ACE.PointsOperationalVersion = (ACE.PointsOperationalVersion or 0) + 1
+	return ACE.PointsOperationalVersion
+end
+
 -- --- FIXED structural constants (NOT calibration knobs) ---
 local FRAREA_REF = pi * 5.0 ^ 2   -- 100mm reference round cross-section (radius 5cm), cm^2
 local BLAST_REF  = 6.0            -- kg filler reference
@@ -110,15 +130,15 @@ function ACE.Points.PostPenParts(round)
 	if UTILITY[fam] then return 0.0, 0.0, 0.0 end
 
 	local mult = DAMAGE_MULT[fam] or 1.0
-	local slug = tonumber(round.SlugCaliber) or 0
+	local slug = SafeNonNegative(round.SlugCaliber)
 	local area
 	if HEAT_FAMILY[t] and slug ~= 0 then
 		area = pi * (slug / 2) ^ 2            -- shaped-charge jet, not shell body
 	else
-		area = tonumber(round.FrArea) or 0.0
+		area = SafeNonNegative(round.FrArea)
 	end
 
-	local blast = tonumber(round.blastMass) or 0.0
+	local blast = SafeNonNegative(round.blastMass)
 	return 1.0,
 		(area * mult) / (FRAREA_REF * DAMAGE_MULT.AP),    -- FrArea normalized vs 100mm AP
 		sqrt(max(blast, 0.0) / BLAST_REF)
@@ -133,10 +153,10 @@ end
 -- Penetration used for lethality: raw maxPen, but HE/APHE/HESH payloads floor it at a
 -- blast-equivalent so big fillers still register a threat even with token stated pen.
 function ACE.Points.LethalityPen(round)
-	local pen = tonumber(round.maxPen) or 0.0
+	local pen = SafeNonNegative(round.maxPen)
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
 	if hasHEPayload(round, fam) or fam == "HESH" then
-		local blast = tonumber(round.blastMass) or 0.0
+		local blast = SafeNonNegative(round.blastMass)
 		pen = max(pen, HE_EQUIV * blast ^ (2.0 / 3.0))
 	end
 	return pen
@@ -163,12 +183,12 @@ end
 function ACE.Points.BaseRoundCost(round)
 	local cost = ACE.Points.LethalityPen(round) * ACE.Points.PostPenMult(round)
 		* ACE.Points.GuidanceMul(round) * ACE.Points.IntrinsicValueMul(round)
-	return max(cost, ROUND_COST_FLOOR)
+	return max(SafeNumber(cost, ROUND_COST_FLOOR), ROUND_COST_FLOOR)
 end
 
 -- Share of the meta this pen defeats. The curve is continuous from zero with no minimum share.
 function ACE.Points.Gate(pen)
-	pen = tonumber(pen) or 0
+	pen = SafeNonNegative(pen)
 	if pen <= 0 then return 0 end
 	return pen / (pen + Model.P50)
 end
@@ -177,14 +197,14 @@ end
 -- module damage, and soft-target effects create combat value without literal armor penetration;
 -- HESH retains only the damage code's literal blast-penetration channel.
 function ACE.Points.GatePen(round)
-	local pen = tonumber(round.maxPen) or 0.0
+	local pen = SafeNonNegative(round.maxPen)
 	local fam = TYPE_MAP[round.Type or "AP"] or "AP"
 	if hasHEPayload(round, fam) then
 		pen = max(pen, ACE.Points.LethalityPen(round))
-		local blast = tonumber(round.blastMass) or 0.0
+		local blast = SafeNonNegative(round.blastMass)
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
 	elseif fam == "HESH" then
-		local blast = tonumber(round.blastMass) or 0.0
+		local blast = SafeNonNegative(round.blastMass)
 		pen = max(pen, blast * HE_BLAST_PEN_PER_KG)
 	end
 	return pen
@@ -208,10 +228,10 @@ end
 -- below applies it via ACE_GetGunConfiguredRps before calling here), so a low limit lengthens
 -- the effective cycle through this same math rather than being ignored.
 function ACE.Points.SustainedRps(baseRps, magSize, magReload, gunClass, loaders)
-	local base   = tonumber(baseRps) or 0
-	local mag    = tonumber(magSize) or 0
-	local magrel = tonumber(magReload) or 0
-	loaders      = tonumber(loaders) or 0
+	local base   = SafeNonNegative(baseRps)
+	local mag    = SafeNonNegative(magSize)
+	local magrel = SafeNonNegative(magReload)
+	loaders      = SafeNonNegative(loaders)
 
 	if mag > 1 and magrel > 0 and base > 0 then
 		base = mag / (mag / base + magrel)
@@ -225,32 +245,54 @@ end
 -- Gun firepower cost (scaled). This is called once per gun entity; identical guns therefore
 -- add linearly instead of sharing or deduplicating the round cost.
 function ACE.Points.GunCost(sustainedRps, baseRoundCost, threat, gunnerMultiplier)
-	local pricedRps = max(tonumber(sustainedRps) or 0, 1.0 / RACK_WINDOW)
+	local pricedRps = max(SafeNonNegative(sustainedRps), 1.0 / RACK_WINDOW)
 	return max(Model.kGun
 		* pricedRps
-		* (tonumber(baseRoundCost) or 0)
-		* (tonumber(threat) or 0), GUN_FLAT) * Model.Scale
-		* (tonumber(gunnerMultiplier) or 1)
+		* SafeNonNegative(baseRoundCost)
+		* SafeNonNegative(threat), GUN_FLAT) * Model.Scale
+		* max(SafeNonNegative(gunnerMultiplier), 1)
 end
 
 function ACE.Points.RackRate(reloadTime, maxMissile)
-	local rt = tonumber(reloadTime) or 0
+	local rt = SafeNonNegative(reloadTime)
 	if rt == 0 then rt = 10.0 end
-	local mm = tonumber(maxMissile) or 0
+	local mm = SafeNonNegative(maxMissile)
 	if mm == 0 then mm = 1 end
 	return min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
 end
 
 function ACE.Points.RackCostFromRate(rate, bestScore)
-	local pricedRate = max(tonumber(rate) or 0, 1.0 / RACK_WINDOW)
+	local pricedRate = max(SafeNonNegative(rate), 1.0 / RACK_WINDOW)
 	return max(Model.kGun * pricedRate
-		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+		* SafeNonNegative(bestScore), RACK_FLAT) * Model.Scale
 end
 
 -- Public so readouts can tell a player when the priced-rate floor changed their bill, instead
 -- of leaving the window a silently duplicated magic number.
 function ACE.Points.RateFloor()
 	return 1.0 / RACK_WINDOW
+end
+
+-- A configured ammo crate bills as ONE engagement-window delivery of its configured round.
+-- Round COUNT stays unbilled: hauling more of the same configuration adds nothing.
+function ACE.Points.CrateCost(roundScore)
+	return Model.kGun * (1.0 / RACK_WINDOW) * SafeNonNegative(roundScore) * Model.Scale
+end
+
+-- Definition-derived rate of fire: the gun's own reload law with no wire limiter and no
+-- crate rate modifier. Mirrors GetGunReloadTime/ACE.GetGunConfiguredRps for a neutral crate.
+function ACE.Points.DefinitionRps(roundVolume, minVolume, fireRateModifier, maxRof)
+	local vol = max(SafeNonNegative(roundVolume), SafeNonNegative(minVolume))
+	if vol <= 0 then return 0 end
+
+	local rateModifier = SafeNumber(fireRateModifier, 1)
+	if rateModifier <= 0 then rateModifier = 1 end
+	local reload = ((vol / 500) ^ 0.60) * rateModifier
+	maxRof = SafeNonNegative(maxRof)
+	if maxRof > 0 then reload = max(reload, 60 / maxRof) end
+	if reload <= 0 then return 0 end
+
+	return 1 / reload
 end
 
 -- Tube count caps sustained rack rate over the engagement window.
@@ -264,6 +306,37 @@ function ACE.Points.ChargeCost(fillerKg)
 	if fillerKg <= 0 then return 0 end
 	local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = fillerKg, guidance = "Dumb" }
 	return Model.kGun * (1.0 / RACK_WINDOW) * ACE.Points.RoundScore(round) * Model.Scale
+end
+
+-- A linked seat that has since become illegal cannot continue to grant a reload/gunner
+-- discount. Nil is treated as not-yet-validated for construction compatibility; explicit
+-- false is the authoritative invalid state.
+function ACE.Points.LegalLoaderCount(gun)
+	if not istable(gun) then return 0 end
+
+	local links = gun.CrewLink
+	if not istable(links) then return SafeNonNegative(gun.LoaderCount) end
+
+	local count = 0
+	for _, crew in pairs(links) do
+		if crew and crew.GetClass and crew:GetClass() == "ace_crewseat_loader" and crew.Legal ~= false then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
+function ACE.Points.HasLegalGunner(gun)
+	if not istable(gun) then return false end
+
+	for _, crew in pairs(gun.CrewLink or {}) do
+		if crew and crew.GetClass and crew:GetClass() == "ace_crewseat_gunner" then
+			return crew.Legal ~= false
+		end
+	end
+
+	return gun.HasGunner == true
 end
 
 function ACE.Points.EffectiveMm(armourMm, ke, chem)
@@ -384,11 +457,12 @@ function ACE.Points.RoundFromBullet(bdata)
 
 	local round = {
 		Type        = ACE.ResolveAmmoType(nil, bdata),   -- bdata branch: bdata.Type or bdata.RoundType
-		maxPen      = ACE.GetAmmoMaxPen(bdata),
-		FrArea      = tonumber(bdata.FrArea) or 0,
-		SlugCaliber = tonumber(bdata.SlugCaliber),       -- HEAT family only; nil otherwise
-		blastMass   = ACE.GetAmmoBlastMass(bdata),
+		maxPen      = SafeNonNegative(ACE.GetAmmoMaxPen(bdata)),
+		FrArea      = SafeNonNegative(bdata.FrArea),
+		SlugCaliber = SafeNonNegative(bdata.SlugCaliber), -- HEAT family only; nil otherwise
+		blastMass   = SafeNonNegative(ACE.GetAmmoBlastMass(bdata)),
 	}
+	if not round.Type or (round.maxPen <= 0 and round.blastMass <= 0) then return nil end
 
 	-- Guidance folds the old per-missile pricing premium into baseRoundCost. Candidates:
 	-- BulletData.guidance/Guidance, else Data7 (the runtime-configured guidance object the
@@ -402,12 +476,167 @@ function ACE.Points.RoundFromBullet(bdata)
 	return round
 end
 
+-- ================================================================
+--  Best practical configuration (capability pricing)
+-- ================================================================
+-- A gun always bids at least the best round it could PRACTICALLY be configured to fire:
+-- every ammo type its class accepts, swept across the projectile/propellant/filler/
+-- sub-caliber space its own definition allows, at its definition rate of fire (no wire
+-- limiter, no crate rate modifier). Configuring weaker ammunition therefore no longer
+-- discounts the weapon itself; the configured rounds bill separately on their crates.
+-- The probe grids are structural resolution, not tuning knobs: convert() clamps every
+-- probe to the definition's real physical limits.
+
+local PROJ_FRACTIONS   = { 0.3, 0.45, 0.6, 0.75, 0.9, 1.0 }   -- of the definition max length
+local FILLER_FRACTIONS = { 0, 0.25, 0.5, 1.0 }                -- of projectile volume
+local FILLER_MAX_PROBE = 1e9                                  -- clamped to real shell capacity
+local SUBCAL_MULTS     = { 0.2, 0.35, 0.5, 0.65, 0.8, 1.0 }   -- clamped to class MinCalMult
+local CONE_ANGLES      = { 20, 35, 50, 65, 80 }               -- clamped to the geometry max
+
+local SUBCAL_TYPES = { APDS = true, APFSDS = true, HVAP = true }
+
+local BestPracticalCache = {}
+
+function ACE.Points.ClearBestPracticalCache()
+	BestPracticalCache = {}
+end
+
+local function classInList(list, gunClass)
+	if not istable(list) then return false end
+	for i = 1, #list do
+		if list[i] == gunClass then return true end
+	end
+	return false
+end
+
+local function appendFillerProbes(probes, projVolume, coneAngle)
+	for i = 1, #FILLER_FRACTIONS do
+		probes[#probes + 1] = { Data5 = FILLER_FRACTIONS[i] * projVolume, Data6 = coneAngle }
+	end
+	probes[#probes + 1] = { Data5 = FILLER_MAX_PROBE, Data6 = coneAngle }
+end
+
+local function candidateProbes(typeName, fam, projVolume)
+	local probes = {}
+	if SUBCAL_TYPES[typeName] then
+		for i = 1, #SUBCAL_MULTS do probes[#probes + 1] = { Data5 = SUBCAL_MULTS[i] } end
+	elseif HEAT_FAMILY[typeName] then
+		for i = 1, #CONE_ANGLES do appendFillerProbes(probes, projVolume, CONE_ANGLES[i]) end
+	elseif fam == "HE" or fam == "APHE" or fam == "HESH" then
+		appendFillerProbes(probes, projVolume, nil)
+	else
+		probes[1] = { Data5 = 0 }
+	end
+	return probes
+end
+
+-- Pricing round from a SERVER-branch convert() result. Mirrors RoundFromBullet's pen
+-- resolution (display data, then the blast-penetration fallback) so a synthesized round and
+-- the same round configured on a crate price identically.
+local function pricingRoundFromData(typeName, data, roundDef)
+	local maxPen = max(tonumber(data.MaxPen) or 0, tonumber(data.MaxPen2) or 0)
+	if maxPen <= 0 and roundDef.getDisplayData then
+		local ok, disp = pcall(roundDef.getDisplayData, data)
+		if ok and istable(disp) then
+			maxPen = max(tonumber(disp.MaxPen) or 0, tonumber(disp.MaxPen2) or 0)
+		end
+	end
+
+	local blast = tonumber(data.BoomFillerMass) or tonumber(data.FillerMass) or 0
+	if maxPen <= 0 and blast > 0 then
+		maxPen = blast * HE_BLAST_PEN_PER_KG
+	end
+
+	return {
+		Type = typeName,
+		maxPen = maxPen,
+		FrArea = tonumber(data.FrArea) or 0,
+		SlugCaliber = tonumber(data.SlugCaliber),
+		blastMass = blast,
+	}
+end
+
+-- Best practical round for one gun definition id: the (type, geometry) probe with the highest
+-- definition-rate x round-score product. Cached per id; definitions are static after load.
+-- Returns nil when the id or the definition tables are unavailable.
+function ACE.Points.BestPracticalRound(gunId)
+	if not gunId or gunId == "" then return nil end
+
+	local cached = BestPracticalCache[gunId]
+	if cached ~= nil then return cached or nil end
+
+	local guns = ACE.Weapons and ACE.Weapons.Guns
+	local gun = guns and guns[gunId]
+	local roundSpec = istable(gun) and gun.round or nil
+	local roundTypes = ACE.RoundTypes
+	local caliber = istable(gun) and tonumber(gun.caliber) or 0
+	local maxLength = istable(roundSpec) and tonumber(roundSpec.maxlength) or 0
+	if not istable(roundTypes) or caliber <= 0 or maxLength <= 0 then
+		BestPracticalCache[gunId] = false
+		return nil
+	end
+
+	local gunClass = gun.gunclass
+	local classData = ACE.Classes and ACE.Classes.GunClass and ACE.Classes.GunClass[gunClass] or nil
+	local fireRateModifier = (tonumber(classData and classData.rofmod) or 1)
+		* max(tonumber(gun.rofmod) or 1, 0.01)
+	local maxRof = tonumber(gun.maxrof) or 0
+	local frArea = pi * (caliber / 2) ^ 2
+	local minVolume = 0.5 * frArea * maxLength   -- the entity's MinLengthBonus reload floor
+
+	local best
+	local blacklists = ACE.AmmoBlacklist or {}
+	for typeName, roundDef in pairs(roundTypes) do
+		local fam = TYPE_MAP[typeName]
+		if fam and not UTILITY[fam] and istable(roundDef) and roundDef.convert
+			and not classInList(blacklists[typeName], gunClass) then
+			for i = 1, #PROJ_FRACTIONS do
+				local projLength = PROJ_FRACTIONS[i] * maxLength
+				local probes = candidateProbes(typeName, fam, frArea * projLength)
+				for p = 1, #probes do
+					local probe = probes[p]
+					local ok, data = pcall(roundDef.convert, nil, {
+						Id = gunId,
+						Type = typeName,
+						ProjLength = projLength,
+						PropLength = maxLength - projLength,
+						Data5 = probe.Data5,
+						Data6 = probe.Data6,
+						Tracer = 0,
+						TwoPiece = 0,
+					})
+					if ok and istable(data) then
+						local round = pricingRoundFromData(typeName, data, roundDef)
+						local score = ACE.Points.RoundScore(round)
+						local rps = ACE.Points.DefinitionRps(data.RoundVolume, minVolume,
+							fireRateModifier, maxRof)
+						local final = rps * score
+						if final > 0 and (not best or final > best.FinalScore
+							or (final == best.FinalScore and score > best.RoundScore)) then
+							best = {
+								Round = round,
+								Rps = rps,
+								RoundScore = score,
+								FinalScore = final,
+								RoundVolume = tonumber(data.RoundVolume) or 0,
+							}
+						end
+					end
+				end
+			end
+		end
+	end
+
+	BestPracticalCache[gunId] = best or false
+	return best
+end
+
 -- ROFLimit is a pricing input and its trigger path must dirty points. LoaderCount is local to
 -- the gun, including loaders linked across contraption fragments.
 function ACE.Points.GunSustainedRps(gun, bdata, crate)
 	if not ACE.IsEnt(gun) then return 0 end
 	local base = ACE.GetGunConfiguredRps(gun, tonumber(gun.ROFLimit) or 0, bdata, crate)
-	return ACE.Points.SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, gun.LoaderCount)
+	return ACE.Points.SustainedRps(base, gun.MagSize, gun.MagReload, gun.Class, ACE.Points.LegalLoaderCount(gun))
 end
 
 -- Mounted charge (scalable explosives / bombs family) -> scaled points. Prices the charge's
@@ -453,7 +682,10 @@ end
 -- Legacy aliases retained for external ACE callers during the namespace migration.
 ACE_Points_ArmorProp = ACE.Points.ArmorProp
 ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost
+ACE_Points_BestPracticalRound = ACE.Points.BestPracticalRound
 ACE_Points_ChargeCost = ACE.Points.ChargeCost
+ACE_Points_CrateCost = ACE.Points.CrateCost
+ACE_Points_DefinitionRps = ACE.Points.DefinitionRps
 ACE_Points_ChargeEntCost = ACE.Points.ChargeEntCost
 ACE_Points_CrewCost = ACE.Points.CrewCost
 ACE_Points_EffectiveMm = ACE.Points.EffectiveMm

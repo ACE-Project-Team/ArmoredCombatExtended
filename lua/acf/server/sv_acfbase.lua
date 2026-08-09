@@ -138,7 +138,7 @@ function ACE_Check( Entity )
 	return Entity.ACF.Type
 end
 
-function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
+function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type, HitPos )
 
 	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
@@ -151,11 +151,11 @@ function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	if Entity.SpecialDamage then
 
-		hitRes = Entity:ACF_OnDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Type )
+		hitRes = Entity:ACF_OnDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Type, HitPos )
 
 	elseif Activated == "Prop" then
 
-		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
+		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type, HitPos)
 
 	elseif Activated == "Vehicle" then
 
@@ -184,9 +184,58 @@ local function canDamagePlayer(Target, Attacker)
 	return canTakeDamage ~= false
 end
 
+local ArmorCellSize = 32
+local ArmorCellLimit = 32
+
+local function GetArmorImpactCell(Entity, HitPos)
+	if not HitPos or not Entity or not Entity.WorldToLocal then return "global" end
+
+	local LocalPos = Entity:WorldToLocal(HitPos)
+	if not LocalPos then return "global" end
+
+	return math.floor(LocalPos.x / ArmorCellSize) .. ":"
+		.. math.floor(LocalPos.y / ArmorCellSize) .. ":"
+		.. math.floor(LocalPos.z / ArmorCellSize)
+end
+
+local function GetArmorImpactState(Entity)
+	local State = Entity.ACEArmorImpactState
+	if State then return State end
+
+	State = { Cells = {}, Count = 0 }
+	Entity.ACEArmorImpactState = State
+	return State
+end
+
+local function GetArmorImpactCondition(Entity, HitPos)
+	if not Entity or not Entity.ACF or Entity.ACF.MaxArmour == nil then return 1 end
+
+	local State = Entity.ACEArmorImpactState
+	local Cell = State and State.Cells[GetArmorImpactCell(Entity, HitPos)]
+	return math.Clamp(1 - (Cell and Cell.Condition or 0), 0, 1)
+end
+
+local function ApplyArmorImpactCondition(Entity, HitRes, HitPos)
+	if not Entity or not Entity.ACF or Entity.ACF.MaxArmour == nil then return 0 end
+	if not ACE.ArmorImpactPolicy then return 0 end
+
+	local Loss = ACE.ArmorImpactPolicy.ConditionLoss(
+		HitRes,
+		HitRes.IncomingPenetration,
+		HitRes.LosArmor,
+		Entity.ACF.MaxHealth
+	)
+	if Loss <= 0 then return 0 end
+
+	local State = GetArmorImpactState(Entity)
+	local Key = GetArmorImpactCell(Entity, HitPos)
+	ACE.ArmorImpactPolicy.ApplyCellLoss(State, Key, Loss, CurTime(), ArmorCellLimit)
+	return Loss
+end
 
 
-function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
+
+function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type, HitPos) --y=-5/16x + b
 
 	local HitRes			= {}
 	local armorData		= Entity and Entity.ACF
@@ -262,18 +311,22 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	if not armorResolution then
 		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
 	end
-	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
+	local impactCondition = GetArmorImpactCondition(Entity, HitPos)
+	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type, impactCondition)
 	if type(HitRes) ~= "table" then
 		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
 	end
 
+	HitRes.IncomingPenetration = maxPenetration
+	HitRes.LosArmor = losArmor
+	HitRes.ImpactCondition = impactCondition
 	return HitRes
 end
 
 -- replaced with _ due to lack of use: Inflictor, Bone
-function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
+function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type, HitPos)
 
-	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type, HitPos)
 
 	HitRes.Kill = false
 
@@ -283,20 +336,25 @@ function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
 	local BaseDamage = caliber * (4 + 0.1 * caliber)
 
-	Entity:TakeDamage(BaseDamage * 15) --Felt about right. Allows destroying physically destructible props.
-	if HitRes.Damage >= Entity.ACF.Health then
+	local IsArmorProp = Entity.ACF and Entity.ACF.MaxArmour ~= nil
+	local conditionLoss = ApplyArmorImpactCondition(Entity, HitRes, HitPos)
+	HitRes.ArmorConditionLoss = conditionLoss
+
+	-- A stopped small-caliber impact must not use generic Source prop damage to erase the
+	-- physical armor entity. Armor condition is handled by the localized impact state above.
+	if not IsArmorProp or conditionLoss > 0 then
+		Entity:TakeDamage(BaseDamage * 15) -- Allows destroying physically destructible props.
+	end
+
+	local structuralDamage = IsArmorProp and (conditionLoss * (Entity.ACF.MaxHealth or 0)) or HitRes.Damage
+	structuralDamage = math.max(tonumber(structuralDamage) or 0, 0)
+	HitRes.StructuralDamage = structuralDamage
+	local currentHealth = tonumber(Entity.ACF.Health) or 0
+	if currentHealth > 0 and structuralDamage >= currentHealth then
 		HitRes.Kill = true
-	else
-
-		--In case of HitRes becomes NAN. That means theres no damage, so leave it as 0
-		if HitRes.Damage ~= HitRes.Damage then HitRes.Damage = 0 end
-
-		Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) --Simulating the plate weakening after a hit
-
-		if Entity.ACF.PrHealth then
-			ACE.UpdateVisualHealth(Entity)
-		end
+	elseif currentHealth > 0 then
+		Entity.ACF.Health = currentHealth - structuralDamage
+		if Entity.ACF.PrHealth then ACE.UpdateVisualHealth(Entity) end
 		Entity.ACF.PrHealth = Entity.ACF.Health
 	end
 

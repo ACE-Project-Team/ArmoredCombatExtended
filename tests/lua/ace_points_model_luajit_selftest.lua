@@ -4,6 +4,10 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 ACE = {}
 function istable(value) return type(value) == "table" end
 function ACE.IsEnt(value) return value ~= nil end
+function ACE.ResolveAmmoType(_, data) return data.Type or data.RoundType end
+function ACE.GetAmmoMaxPen(data) return data.MaxPen or data.MaxPen2 or 0 end
+function ACE.GetAmmoBlastMass(data) return data.BoomFillerMass or data.FillerMass or 0 end
+function ACE.IsGLATGMAmmoType() return false end
 
 dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
 
@@ -66,5 +70,63 @@ local minimumWithGunner = ACE.Points.GunCost(0, 0, 0, 1)
 local minimumWithoutGunner = ACE.Points.GunCost(0, 0, 0, 2)
 assert(math.abs(minimumWithoutGunner / minimumWithGunner - 2) < 1e-12,
 	"the ungunned multiplier must apply to the flat firepower minimum")
+
+local illegalLoader = { Legal = false, GetClass = function() return "ace_crewseat_loader" end }
+local legalLoader = { Legal = true, GetClass = function() return "ace_crewseat_loader" end }
+local illegalGunner = { Legal = false, GetClass = function() return "ace_crewseat_gunner" end }
+local crewedGun = {
+	LoaderCount = 2,
+	HasGunner = true,
+	CrewLink = { illegalLoader, legalLoader, illegalGunner },
+}
+assert(ACE.Points.LegalLoaderCount(crewedGun) == 1,
+	"illegal linked loaders must not grant firepower reload credit")
+assert(not ACE.Points.HasLegalGunner(crewedGun),
+	"an illegal linked gunner must not remove the ungunned multiplier")
+
+-- Crate configuration charge: linear in round score, one delivery per engagement window,
+-- and zero for an unscored (utility) configuration.
+local model = ACE.PointsModel
+local windowRate = ACE.Points.RateFloor()
+assert(math.abs(ACE.Points.CrateCost(300) - model.kGun * windowRate * 300 * model.Scale) < 1e-9,
+	"crate config cost must be one window-delivery of the round score")
+assert(math.abs(ACE.Points.CrateCost(600) / ACE.Points.CrateCost(300) - 2) < 1e-12,
+	"crate config cost must be linear in round score")
+assert(ACE.Points.CrateCost(0) == 0 and ACE.Points.CrateCost(-5) == 0,
+	"unscored configurations must bill zero crate points")
+
+-- Definition rate of fire: reload law parity with the configured-rps path, plus the maxrof cap.
+local vol = 800
+local expectedReload = ((vol / 500) ^ 0.60) * 1.4
+assert(math.abs(ACE.Points.DefinitionRps(vol, 100, 1.4, 0) - 1 / expectedReload) < 1e-12,
+	"definition rps must follow the gun reload law")
+assert(math.abs(ACE.Points.DefinitionRps(vol, 100, nil, 0) - ACE.Points.DefinitionRps(vol, 100, 1, 0)) < 1e-12,
+	"missing definition rate modifiers must retain the neutral legacy cadence")
+assert(math.abs(ACE.Points.DefinitionRps(1, 1, 0.01, 600) - 10) < 1e-12,
+	"definition rps must cap at the definition maxrof")
+assert(ACE.Points.DefinitionRps(400, 800, 1, 0) < ACE.Points.DefinitionRps(800, 800, 1, 0) + 1e-12
+	and math.abs(ACE.Points.DefinitionRps(400, 800, 1, 0) - ACE.Points.DefinitionRps(800, 800, 1, 0)) < 1e-12,
+	"the definition minimum round volume must floor the reload time")
+assert(ACE.Points.DefinitionRps(0, 0, 1, 600) == 0,
+	"a definition with no round volume must not produce a rate")
+
+local nan = 0 / 0
+assert(ACE.Points.SafeNumber(nan, 7) == 7 and ACE.Points.SafeNonNegative(-5) == 0,
+	"non-finite and negative pricing inputs must fail closed")
+ACE.PointsOperationalVersion = 10
+assert(ACE.Points.BumpOperationalVersion() == 11 and ACE.PointsOperationalVersion == 11,
+	"operational point version bumps must be executable and monotonic")
+assert(ACE.Points.Gate(nan) == 0 and ACE.Points.BaseRoundCost({ maxPen = nan, FrArea = nan }) == 1,
+	"invalid round data must not propagate NaN into points")
+assert(ACE.Points.RoundFromBullet({ Type = "AP", FrArea = 0 / 0, MaxPen = 0 }) == nil,
+	"non-damaging or corrupt rounds must not become cheap priced candidates")
+
+-- Best practical synthesis resolves nothing without definition tables and caches the miss.
+assert(ACE.Points.BestPracticalRound(nil) == nil, "nil gun ids must not synthesize")
+assert(ACE.Points.BestPracticalRound("missing-gun") == nil,
+	"unknown gun ids must not synthesize")
+assert(ACE.Points.BestPracticalRound("missing-gun") == nil,
+	"cached definition misses must stay nil")
+ACE.Points.ClearBestPracticalCache()
 
 print("ACE points model LuaJIT self-test: PASS")

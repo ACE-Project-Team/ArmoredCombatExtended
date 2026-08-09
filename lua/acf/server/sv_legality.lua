@@ -14,6 +14,14 @@ ACE.Legal.Ignore = {}
 ACE.Legal.MutationDepth = ACE.Legal.MutationDepth or setmetatable({}, { __mode = "k" })
 ACE.Legal.Contracts = ACE.Legal.Contracts or {}
 
+local function BumpOperationalVersion()
+	if ACE.Points and ACE.Points.BumpOperationalVersion then
+		return ACE.Points.BumpOperationalVersion()
+	end
+	ACE.PointsOperationalVersion = (ACE.PointsOperationalVersion or 0) + 1
+	return ACE.PointsOperationalVersion
+end
+
 ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
 ACE.Legal.Ignore.Solid	= math.max(GetConVar("ace_legal_ignore_solid"):GetInt(), 0)
@@ -26,6 +34,7 @@ ACE.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt
 ACE.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
 
 function ACE_LegalityCallBack()
+	BumpOperationalVersion()
 
 	ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
@@ -230,6 +239,7 @@ function ACE.InvalidateLegal(ent, reason)
 	ent.Legal = false
 	ent.LegalIssues = reason or "Legality invalidated"
 	ent.NextLegalCheck = ACE.CurTime
+	BumpOperationalVersion()
 end
 
 function ACE.WithMutationScope(ent, reason, callback)
@@ -334,6 +344,9 @@ function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVi
 
 	legal = legal == true
 	if IsValid(ent) then
+		if ent.Legal ~= legal then
+			BumpOperationalVersion()
+		end
 		ent.Legal = legal
 		ent.LegalIssues = issues or ""
 		ent.NextLegalCheck = ACE.Legal.NextCheck(legal)
@@ -360,6 +373,77 @@ end
 -- The fallback covers entities that are active before their first periodic Think.
 function ACE.RequireEntityLegal(ent)
 	if not IsValid(ent) then return false, "Invalid Ent" end
+
+	-- Points limits are operational restrictions, not advisory chat output. Resolve the current
+	-- contraption total at the same boundary that gates firing/activation so a stale periodic
+	-- legality scan cannot be used to operate an over-limit entity.
+	local pointVersion = ACE.PointsOperationalVersion or 0
+	local pointCache = ent.ACEPointsOperationalCache
+	local pointIssue
+	if pointCache and pointCache.Version == pointVersion and pointCache.Limit == ACE.PointsLimit then
+		pointIssue = pointCache.Issue
+	else
+		local pointCons = {}
+		local pointQueue = {}
+		local pointSeen = {}
+		local pointMemberQueue = {}
+		local pointMemberSeen = {}
+		local function addPointCon(con)
+			if not con or pointSeen[con] then return end
+			pointSeen[con] = true
+			pointQueue[#pointQueue + 1] = con
+		end
+		local function addPointEntity(entity)
+			if not IsValid(entity) then return end
+			if not pointMemberSeen[entity] then
+				pointMemberSeen[entity] = true
+				pointMemberQueue[#pointMemberQueue + 1] = entity
+			end
+			addPointCon(ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(entity))
+			addPointCon(ACE.GetWeaponAnchorContraption and ACE.GetWeaponAnchorContraption(entity))
+		end
+
+		addPointEntity(ent)
+		local conIndex = 1
+		local memberIndex = 1
+		while conIndex <= #pointQueue do
+			local con = pointQueue[conIndex]
+			conIndex = conIndex + 1
+			pointCons[#pointCons + 1] = con
+			if ACE.EnsureContraptionPoints then ACE.EnsureContraptionPoints(con, nil, false) end
+
+			for key, value in pairs(con.ents or {}) do
+				local member = value == true and key or value
+				if IsValid(member) then
+					addPointEntity(member)
+				end
+			end
+
+			while memberIndex <= #pointMemberQueue do
+				local member = pointMemberQueue[memberIndex]
+				memberIndex = memberIndex + 1
+				local class = member:GetClass()
+				if class == "acf_gun" or class == "acf_rack" then
+					for _, crate in pairs(member.AmmoLink or {}) do addPointEntity(crate) end
+					for _, crew in pairs(member.CrewLink or {}) do addPointEntity(crew) end
+				elseif class == "acf_ammo" or class == "ace_crewseat_gunner" or class == "ace_crewseat_loader" then
+					for _, linked in pairs(member.Master or {}) do addPointEntity(linked) end
+				end
+			end
+		end
+
+		if #pointCons > 0 then
+			local limit = tonumber(ACE.PointsLimit) or math.huge
+			local points = 0
+			for _, con in ipairs(pointCons) do points = points + (tonumber(con.ACEPoints) or 0) end
+			if points > limit then
+				pointIssue = string.format("Linked contraption group over points limit (%d / %d)", math.ceil(points), math.ceil(limit))
+			end
+		end
+		ent.ACEPointsOperationalCache = { Version = pointVersion, Limit = ACE.PointsLimit, Issue = pointIssue }
+	end
+
+	if pointIssue then return false, pointIssue end
 
 	local args = ent.ACE_LegalArgs
 	if args then

@@ -296,8 +296,67 @@ do
 		for _, con in ipairs(explicitContraptions or {}) do
 			ACE_AddAffectedContraption(affected, seen, con)
 		end
+		for _, source in ipairs(sourceList) do
+			if IsEnt(source) then source.ACEPointsOperationalCache = nil end
+		end
+
+		-- A weapon's operational points group can span physical contraptions through
+		-- AmmoLink/Master and CrewLink. Expand both contraptions and endpoint entities
+		-- before evicting legality caches so orphan weapons are traversed too.
+		local affectedEntities = {}
+		local affectedEntitySeen = {}
+		local function queueAffectedEntity(entity)
+			if not IsEnt(entity) or affectedEntitySeen[entity] then return end
+			affectedEntitySeen[entity] = true
+			affectedEntities[#affectedEntities + 1] = entity
+			entity.ACEPointsOperationalCache = nil
+		end
+		for _, source in ipairs(sourceList) do queueAffectedEntity(source) end
+
+		local conIndex = 1
+		local entityIndex = 1
+		while conIndex <= #affected or entityIndex <= #affectedEntities do
+			while conIndex <= #affected do
+				local con = affected[conIndex]
+				conIndex = conIndex + 1
+				for key, value in pairs(con.ents or {}) do
+					queueAffectedEntity(value == true and key or value)
+				end
+			end
+
+			local member = affectedEntities[entityIndex]
+			entityIndex = entityIndex + 1
+			if member and member.GetClass then
+				local class = member:GetClass()
+				if class == "acf_gun" or class == "acf_rack" then
+					for _, linked in pairs(member.AmmoLink or {}) do
+						queueAffectedEntity(linked)
+						ACE_AddAffectedContraption(affected, seen, ACE_GetPointContraption(linked))
+					end
+					for _, linked in pairs(member.CrewLink or {}) do
+						queueAffectedEntity(linked)
+						ACE_AddAffectedContraption(affected, seen, ACE_GetPointContraption(linked))
+					end
+				end
+				-- Master is the reverse side of both ammo and crew links.
+				for _, linked in pairs(member.Master or {}) do
+					queueAffectedEntity(linked)
+					ACE_AddAffectedContraption(affected, seen, ACE_GetPointContraption(linked))
+				end
+			end
+		end
 
 		if #affected == 0 then return end
+
+		-- Operational legality caches are entity-local. Clear only the entities in the
+		-- affected contraptions so a ROFLimit/link mutation cannot force unrelated
+		-- contraptions through the full linked-group scan.
+		for _, con in ipairs(affected) do
+			for key, value in pairs(con.ents or {}) do
+				local entity = value == true and key or value
+				if IsValid(entity) then entity.ACEPointsOperationalCache = nil end
+			end
+		end
 
 		ACE.PointsEventId = ACE.PointsEventId + 1
 		local event = {

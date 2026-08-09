@@ -306,8 +306,31 @@ do
 	InstallMutationDetour("SetNotSolid", "Solidity changed")
 	InstallMutationDetour("SetSolid", "Solidity changed")
 	InstallMutationDetour("SetNoDraw", "Visibility changed")
-	InstallMutationDetour("SetParent", "Physical parent changed")
+InstallMutationDetour("SetParent", "Physical parent changed")
 end
+
+-- AdvDupe2 applies saved parents directly during its paste queue. Fully-enforced legality
+-- correctly rejects that external-looking mutation, but the result is a partially parented
+-- dupe: ACE/ACF children can be left at their paste position in the sky. Repair every saved
+-- parent link after the queue completes through the same narrowly-scoped ACE mutation gate.
+hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
+	local dupe = istable(data) and (data[1] or data) or nil
+	if not istable(dupe) or not istable(dupe.EntityList) or not istable(dupe.CreatedEntities) then return end
+
+	local player = dupe.Player
+	if IsValid(player) and player.GetInfo and not tobool(player:GetInfo("advdupe2_paste_parents")) then return end
+
+	for sourceId, source in pairs(dupe.EntityList) do
+		local parentId = istable(source) and source.BuildDupeInfo and source.BuildDupeInfo.DupeParentID
+		local child = dupe.CreatedEntities[sourceId]
+		local parent = parentId and dupe.CreatedEntities[parentId]
+		if parentId and IsValid(child) and IsValid(parent) and child:GetParent() ~= parent then
+			ACE.WithMutationScope(child, "advdupe-parent-restore", function()
+				child:SetParent(parent)
+			end)
+		end
+	end
+end)
 
 do
 	local ENTITY = FindMetaTable("Entity")

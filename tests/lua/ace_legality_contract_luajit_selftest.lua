@@ -50,6 +50,10 @@ assert(read("/lua/entities/ace_scalability/init.lua"):find("scalable-dupe-parent
 	"scalable dupe parenting must use the legality mutation scope")
 assert(rack:find("rack-missile-parent", 1, true) and rack:find("rack-missile-detach", 1, true),
 	"rack missile parent/detach mutations must use the legality mutation scope")
+assert(legality:find("ACE Restore Enforced Parents", 1, true),
+	"AdvDupe2 parent restoration must repair rejected legality mutations")
+assert(legality:find("advdupe-parent-restore", 1, true),
+	"AdvDupe2 parent restoration must use the legality mutation scope")
 assert(not gun:find("self.legal", 1, true), "gun legality scheduling must use the live Legal field")
 assert(not rack:find("self.legal", 1, true), "rack legality scheduling must use the live Legal field")
 assert(pointEvents:find("ACE_IsFiniteNumber", 1, true),

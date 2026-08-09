@@ -370,11 +370,6 @@ function ENT:UpdateOverlayText()
 		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
 			text = text .. "\nPoints: " .. string.Comma(math.Round(readout.Points))
-
-			local capability = ACE_GetCapabilityPricingLine and ACE_GetCapabilityPricingLine(readout, true)
-			if capability then
-				text = text .. "\n" .. capability
-			end
 		end
 	end
 

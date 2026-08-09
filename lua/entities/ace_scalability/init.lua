@@ -198,7 +198,9 @@ do -- AdvDupe2 duped parented ammo workaround
 			if not Entity.IsScalable then continue end
 			if not Entity.ParentEnt then continue end
 
-			Entity:SetParent(Entity.ParentEnt)
+			ACE.WithMutationScope(Entity, "scalable-dupe-parent", function()
+				Entity:SetParent(Entity.ParentEnt)
+			end)
 
 			Entity.ParentEnt = nil
 		end

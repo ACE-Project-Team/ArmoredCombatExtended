@@ -511,12 +511,6 @@ function ENT:UpdateOverlayText()
 			text = text .. "\n" .. RoundData.cratetxt( self.BulletData, self )
 		end
 
-		if ACE.GetAmmoCrateConfigCost then
-			-- The crate's actual bill: one engagement-window delivery of the configured round.
-			-- Round count is not billed, so this does not change as ammo is consumed.
-			text = text .. "\nPoints: " .. string.Comma(math.Round(ACE.GetAmmoCrateConfigCost(self)))
-		end
-
 		if self.IsScalable then
 			local x = math.Round(self.Dimensions.x, 1) / 10
 			local y = math.Round(self.Dimensions.y, 1) / 10

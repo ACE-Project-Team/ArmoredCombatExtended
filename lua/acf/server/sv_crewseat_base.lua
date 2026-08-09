@@ -26,7 +26,9 @@ function ACE_CrewseatResolveModelType(ent, info)
 
 	local model = ACE.CrewseatModels[modelType]
 	if model and ent.Model ~= model then
-		ent:SetModel(model)
+		ACE.WithMutationScope(ent, "crewseat-model-sync", function()
+			ent:SetModel(model)
+		end)
 		ent.Model = model
 	end
 
@@ -93,7 +95,9 @@ function ACE_CrewseatApplyDupeModel(ent, info, defaultModelType, legacyForceSitt
 
 	local model = ACE.CrewseatModels[modelType]
 	if model then
-		ent:SetModel(model)
+		ACE.WithMutationScope(ent, "crewseat-deferred-model-sync", function()
+			ent:SetModel(model)
+		end)
 		ent.Model = model
 	end
 
@@ -302,11 +306,13 @@ function ACE_InitializeCrewseat(ent, modelType)
 
 	local model = ACE.CrewseatModels[modelType]
 
-	ent:SetModel(model)
-	ent:SetMoveType(MOVETYPE_VPHYSICS)
-	ent:PhysicsInit(SOLID_VPHYSICS)
-	ent:SetUseType(SIMPLE_USE)
-	ent:SetSolid(SOLID_VPHYSICS)
+	ACE.WithMutationScope(ent, "crewseat-construction", function()
+		ent:SetModel(model)
+		ent:SetMoveType(MOVETYPE_VPHYSICS)
+		ent:PhysicsInit(SOLID_VPHYSICS)
+		ent:SetUseType(SIMPLE_USE)
+		ent:SetSolid(SOLID_VPHYSICS)
+	end)
 
 	local phys = ent:GetPhysicsObject()
 	local crewData = ent.CrewseatData

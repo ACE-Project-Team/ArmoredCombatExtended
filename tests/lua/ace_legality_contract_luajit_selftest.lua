@@ -42,6 +42,14 @@ assert(parent:find("Depth < 64", 1, true), "physical-parent traversal must be bo
 assert(gun:find("ACE.RequireLegal(self", 1, true), "guns need a synchronous pre-fire gate")
 assert(rack:find("ACE.RequireLegal(self", 1, true), "racks need a synchronous pre-fire gate")
 assert(crew:find("BumpOperationalVersion", 1, true), "crew legality transitions must invalidate operational points")
+assert(crew:find("crewseat-construction", 1, true),
+	"crewseat construction mutations must use the legality mutation scope")
+assert(crew:find("crewseat-deferred-model-sync", 1, true),
+	"deferred crewseat model mutations must use the legality mutation scope")
+assert(read("/lua/entities/ace_scalability/init.lua"):find("scalable-dupe-parent", 1, true),
+	"scalable dupe parenting must use the legality mutation scope")
+assert(rack:find("rack-missile-parent", 1, true) and rack:find("rack-missile-detach", 1, true),
+	"rack missile parent/detach mutations must use the legality mutation scope")
 assert(not gun:find("self.legal", 1, true), "gun legality scheduling must use the live Legal field")
 assert(not rack:find("self.legal", 1, true), "rack legality scheduling must use the live Legal field")
 assert(pointEvents:find("ACE_IsFiniteNumber", 1, true),

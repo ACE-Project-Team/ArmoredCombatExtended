@@ -1,7 +1,6 @@
--- Best-practical (capability) firepower pricing: a gun bills at least the best round it
--- could practically fire, so weak linked ammo, missing links, and tiny wire ROF limits can
--- no longer discount the weapon; configured crates bill their own configuration charge.
--- Runs the REAL gun/round definitions and the real pricing resolver under LuaJIT stubs.
+-- Configured firepower pricing compatibility: a gun bills the linked round it is actually
+-- configured to fire, while ammo crates remain free in the points ledger. Runs the REAL
+-- gun/round definitions and the real pricing resolver under LuaJIT stubs.
 
 local root = assert(arg[1], "usage: ace_points_capability_luajit_selftest.lua <ACE repo>")
 root = root:gsub("\\\\", "/"):gsub("/$", "")
@@ -220,11 +219,11 @@ assert(bestRAC.Rps > 10, "a rotary autocannon's practical rate must stay high")
 assert(bestSB.Rps <= (ACE.Weapons.Guns["120mmSBC"].maxrof / 60) + 1e-9,
 	"capability rate must respect the definition maxrof cap")
 
--- ---------------------------------------------------------------- exploit closure
+-- ---------------------------------------------------------------- configured pricing contract
 local gun = makeGun("120mmC")
 local unlinked = assert(ACE.GetGunFirepowerReadout(gun))
-assert(unlinked.Capability, "an unlinked gun must bill its best practical configuration")
-assert(unlinked.Points > 20, "capability pricing must exceed the flat weapon minimum")
+assert(not unlinked.Capability, "unlinked guns must not synthesize a priced capability")
+assert(unlinked.Points > 0, "an unlinked gun must retain the flat weapon minimum")
 
 gun.RoFmod, gun.PGRoFmod = nil, nil
 local missingModifiers = assert(ACE.GetGunFirepowerReadout(gun))
@@ -233,65 +232,46 @@ local neutralModifiers = assert(ACE.GetGunFirepowerReadout(gun))
 assert(math.abs(missingModifiers.Points - neutralModifiers.Points) < 1e-9,
 	"missing ROF modifiers must retain the neutral legacy cadence")
 
--- Linking a deliberately weak round must not discount the gun below capability.
+-- Linking a deliberately weak round must use that configured round rather than an
+-- unconfigured best-practical fallback.
 local weakData = convertRound("120mmC", "AP", { ProjLength = 20, PropLength = 2 })
 gun.AmmoLink = { makeCrate(weakData) }
 local weakLinked = assert(ACE.GetGunFirepowerReadout(gun))
-assert(weakLinked.Capability, "weak linked ammo must lose to the capability bid")
-assert(math.abs(weakLinked.Points - unlinked.Points) < 1e-6,
-	"weak linked ammo must not change the capability price")
+assert(not weakLinked.Capability, "configured pricing must not report capability fallback")
+assert(weakLinked.Round and weakLinked.Round.Type == "AP",
+	"the gun readout must retain the actually configured round")
 
--- A tiny wired ROF limit must not price the gun below capability either.
+-- A tiny wired ROF limit is still bounded by the legacy delivery-rate floor.
 gun.ROFLimit = 0.1
 local throttled = assert(ACE.GetGunFirepowerReadout(gun))
-assert(math.abs(throttled.Points - unlinked.Points) < 1e-6,
-	"a tiny ROF limit must not discount the gun below capability")
+assert(throttled.Points >= weakLinked.Points,
+	"the legacy rate floor must prevent a tiny ROF limit from underpricing the gun")
 gun.ROFLimit = 0
 
--- A configured round that genuinely outscores the practical best wins and clears the flag.
+-- A configured round with higher lethality must raise the configured gun price.
 local monsterData = convertRound("120mmC", "AP", { ProjLength = 20, PropLength = 2 })
 monsterData.MaxPen = 5000
 gun.AmmoLink = { makeCrate(monsterData) }
 local monster = assert(ACE.GetGunFirepowerReadout(gun))
-assert(not monster.Capability,
-	"a configured round that outscores the practical best must price the gun")
-assert(monster.Points > unlinked.Points,
-	"an over-practical configuration must raise the price, never lower it")
+assert(not monster.Capability, "configured pricing must not report capability fallback")
+assert(monster.Points > weakLinked.Points,
+	"a stronger configured round must raise the price")
 
--- The no-gunner contract is preserved under capability pricing.
-gun.AmmoLink = {}
+-- The no-gunner multiplier applies to the configured gun price.
+gun.AmmoLink = { makeCrate(weakData) }
 gun.HasGunner = false
 local ungunned = assert(ACE.GetGunFirepowerReadout(gun))
-assert(math.abs(ungunned.Points / unlinked.Points - 2) < 1e-9,
-	"the ungunned 2x multiplier must apply to capability pricing")
+assert(math.abs(ungunned.Points / weakLinked.Points - 2) < 1e-9,
+	"the ungunned 2x multiplier must apply to configured pricing")
 gun.HasGunner = true
 
--- Capability notice renders only when the capability bid priced the weapon.
-assert(ACE.GetCapabilityPricingLine(unlinked, true), "capability pricing must announce itself")
-assert(ACE.GetCapabilityPricingLine(monster, true) == nil,
-	"configured pricing must not show the capability notice")
-
--- ---------------------------------------------------------------- crate configuration charge
+-- ---------------------------------------------------------------- free ammo ledger
 local strongData = convertRound("120mmSBC", "APFSDS", { ProjLength = 60, PropLength = 40, Data5 = 0.5 })
 local strongCrate = makeCrate(strongData)
-local strongCost = ACE.GetAmmoCrateConfigCost(strongCrate)
-local strongRound = ACE.Points.RoundFromBullet(strongData)
-assert(math.abs(strongCost - ACE.Points.CrateCost(ACE.Points.RoundScore(strongRound))) < 1e-9,
-	"a crate must bill one window-delivery of its configured round score")
-assert(strongCost > 0, "a lethal configuration must carry a crate charge")
-
-local weakCost = ACE.GetAmmoCrateConfigCost(makeCrate(weakData))
-assert(weakCost < strongCost, "weaker configurations must bill smaller crate charges")
-
 local smokeData = convertRound("120mmC", "SM", { ProjLength = 30, PropLength = 10, Data5 = 100 })
-assert(ACE.GetAmmoCrateConfigCost(makeCrate(smokeData)) == 0,
-	"utility configurations must bill zero crate points")
+assert(ACE.GetPtsType("acf_ammo") == "Ignore", "ammo crates must remain free")
+assert(ACE.GetEntPoints(strongCrate) == 0, "the points ledger must not bill ammo crates")
+assert(ACE.GetEntPoints(makeCrate(smokeData)) == 0, "utility ammo crates must remain free")
+assert(ACE.GetEntPoints(makeCrate(nil)) == 0, "crates without bullet data must remain free")
 
-assert(ACE.GetAmmoCrateConfigCost(makeCrate(nil)) == 0,
-	"crates without bullet data must bill zero")
-assert(ACE.GetPtsType("acf_ammo") == "Firepower",
-	"configured crates must bill under the Firepower category")
-assert(ACE.GetEntPoints(makeCrate(strongData)) == strongCost,
-	"the points ledger must bill crates their configuration charge")
-
-print("ACE points capability LuaJIT self-test: PASS")
+print("ACE points configured-pricing LuaJIT self-test: PASS")

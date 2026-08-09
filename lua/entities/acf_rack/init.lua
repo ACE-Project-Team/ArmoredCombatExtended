@@ -514,7 +514,9 @@ function ENT:ShootMissile()
 	self.Missiles[MissileToShoot][1]:SetAngles(ShootVec:Angle())
 
 	--Detach it from the rack
-	self.Missiles[MissileToShoot][1]:SetParent(NULL)
+	ACE.WithMutationScope(self.Missiles[MissileToShoot][1], "rack-missile-detach", function()
+		self.Missiles[MissileToShoot][1]:SetParent(NULL)
+	end)
 	--Then clear the stored missile array.
 	self.Missiles[MissileToShoot][1] = NULL
 	self.Missiles[MissileToShoot][2] = false
@@ -638,8 +640,10 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile:SetPos(pos)
 	missile:SetAngles(self:GetAngles())
 
-	missile:SetParent(self)
-	missile:SetParentPhysNum(0)
+	ACE.WithMutationScope(missile, "rack-missile-parent", function()
+		missile:SetParent(self)
+		missile:SetParentPhysNum(0)
+	end)
 
 	local prop = missile.BulletData.FrArea * (missile.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	local ThrustRatio = 1 + (prop-( ACE_GetRackValue(BulletData, "propweight") or ACE_GetGunValue(BulletData.Id, "propweight") or 1 ))	--Multiplies burntime by the amount of proppelant compared to max.
@@ -1370,7 +1374,9 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This f
 				MissileTest.MissileActive = true
 				MissileTest.ActivationTime = 0
 				MissileTest.Lifetime = 0 --Instantly scuttle as soon as can execute.
-				MissileTest:SetParent(NULL)
+				ACE.WithMutationScope(MissileTest, "rack-test-missile-detach", function()
+					MissileTest:SetParent(NULL)
+				end)
 			end
 
 		end

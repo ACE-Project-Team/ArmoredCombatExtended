@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import time
 
 
 REPO = Path(__file__).resolve().parents[1]
+DEFAULT_SRCDS = Path(r"C:\Users\dabes\gmodds\server\srcds.exe")
 
 
 def git_output(*args: str) -> str:
@@ -55,13 +57,30 @@ def write_resolved_manifest(run_dir: Path, scenarios: list[dict]) -> None:
     (run_dir / "manifest_resolved.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def run_server(command: list[str], run_dir: Path, timeout: int) -> int:
+def discover_srcds(explicit: str | None = None) -> Path | None:
+    candidates = []
+    if explicit:
+        candidates.append(Path(explicit))
+    for variable in ("SRCDS_PATH", "GMODDS_SRCDS"):
+        value = os.environ.get(variable)
+        if value:
+            candidates.append(Path(value))
+    candidates.append(DEFAULT_SRCDS)
+
+    for candidate in candidates:
+        if candidate.is_file() and candidate.name.lower().startswith("srcds"):
+            return candidate.resolve()
+    return None
+
+
+def run_server(command: list[str], run_dir: Path, timeout: int, cwd: Path) -> int:
     boot = run_dir / "boot.txt"
     done = run_dir / "done.txt"
     log = run_dir / "console.log"
 
     with log.open("w", encoding="utf-8", errors="replace") as handle:
-        process = subprocess.Popen(command, stdout=handle, stderr=subprocess.STDOUT, cwd=REPO)
+        process = subprocess.Popen(command, stdout=handle, stderr=subprocess.STDOUT, cwd=cwd,
+                                   creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
         try:
             deadline = time.time() + timeout
             while time.time() < deadline:
@@ -88,6 +107,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", default="tests/fixtures/general_use_manifest.json")
     parser.add_argument("--ci", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--srcds-path", help="Path to srcds.exe; defaults to SRCDS_PATH/GMODDS_SRCDS or the local DS install")
+    parser.add_argument("--server-root", type=Path, help="Working directory for srcds; defaults to srcds.exe's parent")
     parser.add_argument("--srcds-command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
 
@@ -98,12 +119,23 @@ def main(argv: list[str] | None = None) -> int:
         run_dir = Path(tmp)
         write_resolved_manifest(run_dir, scenarios)
 
-        if args.dry_run or not args.srcds_command:
-            print(f"Selected {len(scenarios)} headless scenario(s); dry-run only")
+        srcds = discover_srcds(args.srcds_path)
+        command = args.srcds_command
+        cwd = args.server_root
+        if command and cwd is None:
+            executable = Path(command[0])
+            cwd = executable.resolve().parent if executable.is_absolute() else REPO
+
+        if args.dry_run or not command:
+            discovered = str(srcds) if srcds else "not found"
+            print(f"Selected {len(scenarios)} headless scenario(s); srcds={discovered}; dry-run only")
             return 0
 
+        if cwd is None:
+            cwd = srcds.parent if srcds else REPO
+
         timeout = max(scenario["timeout_seconds"] for scenario in scenarios) + 30
-        return run_server(args.srcds_command, run_dir, timeout)
+        return run_server(command, run_dir, timeout, cwd)
 
 
 if __name__ == "__main__":

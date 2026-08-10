@@ -1240,8 +1240,15 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc) --Variab
 	acfmenupanel["CData"][Name].OnValueChanged = function( _, val )
 
 	--Programmatic SetMin/SetMax/SetValue (below) fire DNumSlider:ValueChanged, which calls
-	--this handler; skip re-entry during those so UpdateAttribs can't recurse into a stack overflow.
-	if acfmenupanel["CData"][Name].ACEProgrammatic then return end
+	--this handler. Record the value so AmmoData tracks what the slider shows, but don't call
+	--UpdateAttribs from here or it recurses into a client stack overflow.
+	--Coupled sliders (propellant/projectile clamped against MaxTotalLength) rely on this write:
+	--without it guiupdate re-reads a stale AmmoData next drag and the clamp never commits.
+	if acfmenupanel["CData"][Name].ACEProgrammatic then
+		acfmenupanel.AmmoData[Name] = val
+
+		return
+	end
 
 	if acfmenupanel.AmmoData[Name] ~= val then
 

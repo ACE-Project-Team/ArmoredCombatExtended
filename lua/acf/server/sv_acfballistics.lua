@@ -235,6 +235,7 @@ local DebugTime = 1
 	creates a new bullet being fired
 ]]--------------------------------------------------------------------------------------------------
 function ACE_CreateBullet( BulletData )
+
 	-- Increment the index
 	ACE.CurBulletIndex = ACE.CurBulletIndex + 1
 

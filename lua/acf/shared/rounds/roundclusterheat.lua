@@ -493,5 +493,5 @@ function Round.guiupdate( Panel )
 end
 
 list.Set("SPECSRoundTypes", Round.Type, Round ) --Set the round on chemical folder
-	ACE.RoundTypes[Round.Type] = Round     --Set the round properties
-	ACE.IdRounds[Round.netid] = Round.Type --Index must equal the ID entry in the table above, Data must equal the index of the table above
+ACE.RoundTypes[Round.Type] = Round     --Set the round properties
+ACE.IdRounds[Round.netid] = Round.Type --Index must equal the ID entry in the table above, Data must equal the index of the table above

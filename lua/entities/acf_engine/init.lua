@@ -1146,19 +1146,24 @@ do
 			duplicator.StoreEntityModifier( self, "FuelLink", fuel_info )
 		end
 
-		--driver seat link saving
-		for _, Value in pairs(self.CrewLink) do				--First clean the table of any invalid entities
-			if not Value:IsValid() then
-				table.remove(self.CrewLink, Value)
+		-- Driver seat links must have their own ID list.  Reusing the gearbox list
+		-- here caused CrewLink to contain every gearbox as well as the driver, and
+		-- made paste-time driver restoration depend on iteration order.
+		local crew_info = {}
+		local crew_entids = {}
+		for Key = #self.CrewLink, 1, -1 do
+			local Value = self.CrewLink[Key]
+			if not IsValid(Value) then
+				table.remove(self.CrewLink, Key)
 			end
 		end
-		for _, Value in pairs(self.CrewLink) do				--Then save it
-			table.insert(entids, Value:EntIndex())
+		for _, Value in pairs(self.CrewLink) do
+			table.insert(crew_entids, Value:EntIndex())
 		end
 
-		info.entities = entids
-		if info.entities then
-			duplicator.StoreEntityModifier( self, "CrewLink", info )
+		crew_info.entities = crew_entids
+		if #crew_entids > 0 then
+			duplicator.StoreEntityModifier( self, "CrewLink", crew_info )
 		end
 
 		--Wire dupe info
@@ -1213,16 +1218,27 @@ do
 			timer.Simple(0.5, RestoreFuelLinks)
 			timer.Simple(1, RestoreFuelLinks)
 		end
-		--ace_crewseat_gunner
+		-- Driver links can be attempted before the seat's first legal pass.  Keep
+		-- retrying through the paste settling window so a transient legality state
+		-- cannot leave a permanently driverless engine.
 		if Ent.EntityMods and Ent.EntityMods.CrewLink and Ent.EntityMods.CrewLink.entities then
 			local CrewLink = Ent.EntityMods.CrewLink
-			if CrewLink.entities and next(CrewLink.entities) then
-				for _,ID in pairs(CrewLink.entities) do
-					local Linked = CreatedEntities[ ID ]
-					if IsValid( Linked ) then
-						self:Link( Linked )
+			local deferredCrewLinks = CrewLink.entities and table.Copy(CrewLink.entities)
+			local function RestoreCrewLinks()
+				if not IsValid(self) then return end
+				for _, ID in pairs(deferredCrewLinks or {}) do
+					local Linked = CreatedEntities[ID] or CreatedEntities[tostring(ID)]
+					if IsValid(Linked) and not table.HasValue(self.CrewLink, Linked)
+						and Linked:GetClass() == "ace_crewseat_driver" then
+						self:Link(Linked)
 					end
 				end
+			end
+			if deferredCrewLinks and next(deferredCrewLinks) then
+				timer.Simple(0, RestoreCrewLinks)
+				timer.Simple(0.1, RestoreCrewLinks)
+				timer.Simple(0.5, RestoreCrewLinks)
+				timer.Simple(1, RestoreCrewLinks)
 			end
 			Ent.EntityMods.CrewLink = nil
 		end

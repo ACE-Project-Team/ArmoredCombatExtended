@@ -483,10 +483,13 @@ function ENT:Update( ArgsTable )
 end
 
 function ENT:UpdateOverlayText()
+	-- Entity Think/overlay callbacks can run between Spawn and CreateAmmo during
+	-- factory construction or dupe restoration.  Keep the callback harmless until
+	-- the round definition exists instead of indexing a nil BulletData table.
+	local bulletData = self.BulletData or {}
+	if table.IsEmpty(bulletData) then return end
 
-	local roundType = self.BulletData.Type
-
-	if table.IsEmpty( self.BulletData or {} ) then  return end
+	local roundType = bulletData.Type
 
 	local text = ""
 

@@ -271,8 +271,9 @@ do
 	local OldSetModel = ACE._OldEntitySetModel
 	function ENTITY:SetModel(model)
 		if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) and self.Model and model ~= self.Model then
-			ACE.InvalidateLegal(self, "External model change rejected")
-			return false
+			local result = OldSetModel(self, model)
+			ACE.InvalidateLegal(self, "Model changed")
+			return result
 		end
 		local previousModel = self:GetModel()
 		local result = OldSetModel(self, model)
@@ -305,9 +306,14 @@ do
 			if IsManagedLegalEntity(self) and name == "SetParent" and self:GetParent() == value then
 				return true
 			end
+			-- AdvDupe, ACF entity factories, and normal tool/property paths legitimately
+			-- finish physical state after ACE registration. Apply the write, invalidate
+			-- immediately, and force the next legality boundary to validate the result.
+			-- Activation remains fail-closed while that validation is pending.
 			if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) then
-				ACE.InvalidateLegal(self, reason .. " rejected")
-				return false
+				local result = old(self, ...)
+				ACE.InvalidateLegal(self, reason .. " changed")
+				return result
 			end
 			local result = old(self, ...)
 			return result
@@ -342,14 +348,17 @@ function ACE_ReconcileParentContraption(child, oldParent, newParent)
 	end
 end
 
-local function RestoreAdvDupeParents(dupe)
+local function RestoreAdvDupeParents(dupe, restoreAllParents)
 	if not istable(dupe) or not istable(dupe.EntityList) or not istable(dupe.CreatedEntities) then return end
 
 	for sourceId, source in pairs(dupe.EntityList) do
 		local parentId = istable(source) and source.BuildDupeInfo and source.BuildDupeInfo.DupeParentID
 		local child = dupe.CreatedEntities[sourceId] or dupe.CreatedEntities[tostring(sourceId)]
 		local parent = parentId and (dupe.CreatedEntities[parentId] or dupe.CreatedEntities[tostring(parentId)])
-		if parentId and IsValid(child) and IsValid(parent) and child:GetParent() ~= parent then
+		local class = IsValid(child) and child:GetClass() or ""
+		local isACEEntity = class:sub(1, 4) == "acf_" or class:sub(1, 4) == "ace_"
+		if parentId and (restoreAllParents or isACEEntity) and IsValid(child) and IsValid(parent)
+			and child:GetParent() ~= parent then
 			ACE.WithMutationScope(child, "advdupe-parent-restore", function()
 				child:SetParent(parent)
 			end)
@@ -390,12 +399,16 @@ hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
 
 	-- AdvDupe can finish entity callbacks after this hook. Retry once on the next
 	-- tick so gun/rack children are present before the enforced SetParent call.
-	if restoreParents then RestoreAdvDupeParents(dupe) end
+	RestoreAdvDupeParents(dupe, restoreParents)
 	RestoreAmmoPastePhysics(dupe)
 	timer.Simple(0, function()
-		if restoreParents then RestoreAdvDupeParents(dupe) end
+		RestoreAdvDupeParents(dupe, restoreParents)
 		RestoreAmmoPastePhysics(dupe)
 		hook.Run("ACE_AdvDupeParentsRestored", dupe)
+	end)
+	timer.Simple(0.1, function()
+		RestoreAdvDupeParents(dupe, restoreParents)
+		RestoreAmmoPastePhysics(dupe)
 	end)
 end)
 

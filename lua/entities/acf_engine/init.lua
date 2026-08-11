@@ -1210,6 +1210,8 @@ do
 			-- Retry after ACE's enforced parent restoration so distance checks use final positions.
 			timer.Simple(0, RestoreFuelLinks)
 			timer.Simple(0.1, RestoreFuelLinks)
+			timer.Simple(0.5, RestoreFuelLinks)
+			timer.Simple(1, RestoreFuelLinks)
 		end
 		--ace_crewseat_gunner
 		if Ent.EntityMods and Ent.EntityMods.CrewLink and Ent.EntityMods.CrewLink.entities then

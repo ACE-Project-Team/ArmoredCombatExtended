@@ -879,8 +879,11 @@ do
 			ACE_EnsureCFWMassState(ent, currentMass)
 		end
 
-		if IsEnt(ent) and ent.ACE_LegalArgs and not ACE.IsMutationScoped(ent) and math.abs(mass - currentMass) >= 0.01 then
-			return false
+		if IsEnt(ent) and ent.ACE_LegalArgs and not ACE.IsMutationScoped(ent)
+			and math.abs(mass - currentMass) >= 0.01 then
+			local result = OldSetMass(self, mass)
+			ACE.InvalidateLegal(ent, "Mass changed")
+			return result
 		end
 
 		local result = OldSetMass(self, mass)

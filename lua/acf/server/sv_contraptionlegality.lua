@@ -129,7 +129,7 @@ function ACE.CheckLegalCont(con)
 		return
 	end
 
-	if points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
+	if ACE.PointsLimitEnforced ~= false and points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
 		-- CFW can expose an intermediate membership snapshot while a physgun
 		-- operation is settling. Re-read on the next tick before announcing it.
 		if not con.ACEPointWarningStable then

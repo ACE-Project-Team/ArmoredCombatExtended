@@ -204,7 +204,7 @@ ACE.LargeGunsRequireGunners = 1 --Should engines over a certain hp need a driver
 ACE.LargeGunsThreshold = 40 --Cannon size in mm required to need a driver
 
 ACE.PointsLimit = 10000 -- The maximum legal point value.
-ACE.PointsLimitEnforced = true -- Whether the points limit blocks operational use.
+ACE.PointsLimitEnforced = false -- Whether the points limit blocks operational use.
 ACE.MaxWeight   = 200000 -- The max weight in kg.
 
 ---------------------------------- Misc & other ----------------------------------
@@ -307,7 +307,7 @@ if SERVER then
 
     CreateConVar( "ace_legality_largegunsneedgunner", 1 , FCVAR_ARCHIVE)
     CreateConVar( "ace_legality_largegunthreshold", 40 , FCVAR_ARCHIVE)
-    CreateConVar( "ace_legality_pointslimit_enforced", 1, FCVAR_ARCHIVE,
+    CreateConVar( "ace_legality_pointslimit_enforced", 0, FCVAR_ARCHIVE,
         "Enforce the ACE points limit at operational legality gates." )
 
     -- Cvars for legality checking

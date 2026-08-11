@@ -125,7 +125,7 @@ end
 
 do
 
-	local function GenerateCluster(bdata)
+	local function GenerateCluster(bdata, LaunchFilter)
 
 		--local RoundType = bdata.Type
 
@@ -135,6 +135,7 @@ do
 		local Bomblets  = math.Round(math.Clamp(math.Round(bdata.ProjMass * 0.3),10,240) * (bdata.ClusterMult or 100) / 100)	--30 bomblets original
 
 		local GEnt = bdata.Gun
+		local Filter = istable(bdata.Filter) and table.Copy(bdata.Filter) or { GEnt }
 
 		GEnt.BulletDataC = {}
 
@@ -151,7 +152,9 @@ do
 		--print(Bomblets)
 		--print(missile.BulletDataC["FillerMass"])
 
-		GEnt.BulletDataC["Filter"]		= GEnt
+		GEnt.BulletDataC["Filter"]		= Filter
+		GEnt.BulletDataC["LaunchFilter"]	= LaunchFilter
+		GEnt.BulletDataC["LiveFilter"]	= bdata.Filter
 		GEnt.BulletDataC["Flight"]		= bdata.Flight
 		GEnt.BulletDataC["FlightTime"]	= 0
 		GEnt.BulletDataC["FrArea"]		= bdata.FrArea
@@ -170,8 +173,6 @@ do
 		GEnt.BulletDataC["PropLength"]	= bdata.PropLength
 		GEnt.BulletDataC["PropMass"]		= bdata.PropMass
 		GEnt.BulletDataC["Ricochet"]		= 90--bdata.Ricochet
-
-		GEnt.BulletDataC["Filter"] = {}
 
 		GEnt.BulletDataC.FuseLength = 1 --Cluster munitions shouldn't travel that far
 		--print(bdata.Ricochet)
@@ -227,9 +228,9 @@ do
 
 	function Round.create( _, BulletData )
 
-		ACE.CreateBullet( BulletData )
+		local LaunchFilter = ACE.CreateBullet( BulletData )
 
-		GenerateCluster(BulletData)
+		GenerateCluster(BulletData, LaunchFilter)
 
 	end
 

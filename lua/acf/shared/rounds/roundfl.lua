@@ -23,6 +23,8 @@ function Round.create( Gun, BulletData )
 	FlechetteData["Owner"]		= BulletData["Owner"]
 	FlechetteData["Crate"]		= BulletData["Crate"]
 	FlechetteData["Gun"]			= BulletData["Gun"]
+	FlechetteData["Filter"]		= table.Copy(BulletData["Filter"] or { Gun })
+	FlechetteData.LiveFilter		= BulletData.LiveFilter or BulletData.Filter
 	FlechetteData["Pos"]			= BulletData["Pos"]
 	FlechetteData["FrArea"]		= BulletData["FlechetteArea"]
 	FlechetteData["ProjMass"]	= BulletData["FlechetteMass"]

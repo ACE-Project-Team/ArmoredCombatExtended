@@ -53,8 +53,132 @@ local function BallisticsDebug()
 	return DebugConVar:GetBool()
 end
 
+local FilterGraceTicks = 1
+
+local function BuildLaunchFilter(Filter, Existing)
+	if istable(Existing) and not table.IsEmpty(Existing) then return Existing end
+	if not istable(Filter) then return {} end
+
+	local LaunchFilter = {}
+	for Index = 1, #Filter do
+		if Filter[Index] then LaunchFilter[Filter[Index]] = true end
+	end
+
+	for Ent, Included in pairs(Filter) do
+		if Included and not isnumber(Ent) then
+			LaunchFilter[Ent] = true
+		end
+	end
+
+	return LaunchFilter
+end
+
+local function BulletFilterEntity(Bullet, Ent)
+	local Filter = Bullet.Filter
+	if not istable(Filter) then return true end
+
+	if Bullet.FilterExpired then
+		if Filter[Ent] then return false end
+		for Index = 1, #Filter do
+			if Filter[Index] == Ent then return false end
+		end
+		return true
+	end
+
+	local IsLaunchEntity = Bullet.LaunchFilter[Ent]
+	if IsLaunchEntity then
+		Bullet.FilterLastUsedFrame = CurrentBallisticsFrame
+		return false
+	end
+
+	if Bullet.LiveFilter and Bullet.LiveFilter[Ent] then return false end
+
+	if #Filter ~= Bullet.FilterInitialLength then
+		for Index = 1, #Filter do
+			if Filter[Index] == Ent then return false end
+		end
+	end
+
+	return true
+end
+
+local function DeactivateBulletFilter(Bullet)
+	local Filter = Bullet.Filter
+	local LaunchFilter = Bullet.LaunchFilter
+	local DynamicFilter = {}
+	local LaunchCounts = {}
+
+	if istable(Filter) then
+		for Index = 1, #Filter do
+			local Ent = Filter[Index]
+			if LaunchFilter[Ent] then
+				LaunchCounts[Ent] = (LaunchCounts[Ent] or 0) + 1
+			else
+				DynamicFilter[#DynamicFilter + 1] = Ent
+			end
+		end
+	end
+
+	for Ent, Count in pairs(LaunchCounts) do
+		if Count > 1 then DynamicFilter[#DynamicFilter + 1] = Ent end
+	end
+
+	Bullet.Filter = DynamicFilter
+	Bullet.FilterActive = false
+	Bullet.FilterExpired = true
+	Bullet.LaunchFilter = nil
+end
+
+local function InitializeBulletFilter(Bullet)
+	local Filter = Bullet.Filter
+	Bullet.TraceFilter = function(Ent)
+		return BulletFilterEntity(Bullet, Ent)
+	end
+
+	if Bullet.FilterExpired then
+		Bullet.FilterActive = false
+		return
+	end
+
+	Bullet.FilterActive = istable(Filter) and #Filter > 0
+	-- The first trace happens during creation; give one subsequent managed tick
+	-- without filter use before deactivating the launch filter.
+	Bullet.FilterUnusedTicks = -1
+	Bullet.LaunchFilter = BuildLaunchFilter(Filter, Bullet.LaunchFilter)
+	Bullet.LiveFilter = Bullet.LiveFilter or Filter
+	Bullet.FilterInitialLength = istable(Filter) and #Filter or 0
+
+end
+
+local function UpdateBulletFilter(Bullet)
+	if not Bullet.FilterActive then return end
+	if Bullet.FilterLastUpdateFrame == CurrentBallisticsFrame then return end
+	Bullet.FilterLastUpdateFrame = CurrentBallisticsFrame
+
+	if Bullet.FilterLastUsedFrame == CurrentBallisticsFrame - 1 then
+		Bullet.FilterUnusedTicks = 0
+	else
+		Bullet.FilterUnusedTicks = (Bullet.FilterUnusedTicks or 0) + 1
+		if Bullet.FilterUnusedTicks >= FilterGraceTicks then
+			DeactivateBulletFilter(Bullet)
+		end
+	end
+end
+
 function ACE_AcquireBullet(BulletData)
-	return table.Copy(BulletData)
+	local Filter = BulletData.Filter
+	local LaunchFilter = BulletData.LaunchFilter
+	local Acquired = {}
+	for Key, Value in pairs(BulletData) do
+		if Key ~= "Filter" and Key ~= "LaunchFilter" and Key ~= "LiveFilter" then
+			Acquired[Key] = istable(Value) and table.Copy(Value) or Value
+		end
+	end
+
+	Acquired.Filter = istable(Filter) and table.Copy(Filter) or Filter
+	Acquired.LaunchFilter = LaunchFilter
+	Acquired.LiveFilter = BulletData.LiveFilter or Filter
+	return Acquired
 end
 
 function ACE_RegisterBullet(Index, Bullet)
@@ -65,6 +189,7 @@ function ACE_RegisterBullet(Index, Bullet)
 	ActiveCount = ActiveCount + 1
 	ActiveBullets[ActiveCount] = Index
 	Bullet.ActiveSlot = ActiveCount
+	InitializeBulletFilter(Bullet)
 	ACE.Bullet[Index] = Bullet
 end
 
@@ -76,6 +201,7 @@ local function RebuildActiveBulletRegistry()
 
 	for Index, Bullet in pairs(ACE.Bullet) do
 		if Bullet then
+			InitializeBulletFilter(Bullet)
 			ActiveCount = ActiveCount + 1
 			ActiveBullets[ActiveCount] = Index
 			Bullet.ActiveSlot = ActiveCount
@@ -139,7 +265,21 @@ function ACE_CreateBullet( BulletData )
 	end
 
 	BulletData.Filter = BulletData.Filter or {}
-	table.insert(BulletData.Filter, BulletData.Gun)
+
+	local Gun = BulletData.Gun
+	local HasGun = false
+	for Index = 1, #BulletData.Filter do
+		if BulletData.Filter[Index] == Gun then
+			HasGun = true
+			break
+		end
+	end
+
+	if Gun and not HasGun then
+		BulletData.Filter[#BulletData.Filter + 1] = Gun
+	end
+
+	BulletData.LaunchFilter = BuildLaunchFilter(BulletData.Filter, BulletData.LaunchFilter)
 
 	BulletData.Index		= ACE.CurBulletIndex
 	BulletData.ActiveFrame = CurrentBallisticsFrame
@@ -151,6 +291,7 @@ function ACE_CreateBullet( BulletData )
 	hook.Run("ACEOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 	ACE.RunLegacyHook("ACFOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 
+	return BulletData.LaunchFilter
 end
 
 --[[------------------------------------------------------------------------------------------------
@@ -172,10 +313,13 @@ function ACE_ManageBullets()
 		CurrentActiveSlot = Slot
 		local Index = ActiveBullets[Slot]
 		local Bullet = ACE.Bullet[Index]
-		if Bullet and Bullet.ActiveFrame ~= Frame then
-			Bullet.ActiveFrame = Frame
-			if not Bullet.HandlesOwnIteration then
-				ACE.CalcBulletFlight(Index, Bullet)
+		if Bullet then
+			UpdateBulletFilter(Bullet)
+			if Bullet.ActiveFrame ~= Frame then
+				Bullet.ActiveFrame = Frame
+				if not Bullet.HandlesOwnIteration then
+					ACE.CalcBulletFlight(Index, Bullet)
+				end
 			end
 		end
 		if CurrentActiveSlot < Slot then
@@ -347,12 +491,17 @@ do
 
 		-- Table to hold temporary filter keys that should be removed after the below while loop is completed
 		if not Bullet.FilterKeysToRemove then Bullet.FilterKeysToRemove = {} end
-		for k, v in ipairs(Bullet.FilterKeysToRemove) do
-			table.remove(Bullet.Filter, v)
+		for k, Ent in ipairs(Bullet.FilterKeysToRemove) do
+			for Index = #Bullet.Filter, 1, -1 do
+				if Bullet.Filter[Index] == Ent then
+					table.remove(Bullet.Filter, Index)
+					break
+				end
+			end
 			Bullet.FilterKeysToRemove[k] = nil
 		end
 
-		FlightTr.filter	= Bullet.Filter -- any changes to bullet filter will be reflected in the trace
+		FlightTr.filter = Bullet.TraceFilter
 
 		local visCount = 0
 
@@ -408,7 +557,7 @@ do
 
 				if HitEnt ~= PlayerHitCheck.Entity then
 					table.insert(Bullet.Filter, HitEnt)
-					table.insert(Bullet.FilterKeysToRemove, #Bullet.Filter)
+					table.insert(Bullet.FilterKeysToRemove, HitEnt)
 
 					RetryTrace = true
 

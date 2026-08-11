@@ -53,7 +53,7 @@ local function BallisticsDebug()
 	return DebugConVar:GetBool()
 end
 
-local FilterGraceTicks = 3
+local FilterGraceTicks = 1
 
 local function BuildLaunchFilter(Filter, Existing)
 	if istable(Existing) and not table.IsEmpty(Existing) then return Existing end
@@ -141,7 +141,7 @@ local function InitializeBulletFilter(Bullet)
 	end
 
 	Bullet.FilterActive = istable(Filter) and #Filter > 0
-	-- The first trace happens during creation; give three subsequent managed ticks
+	-- The first trace happens during creation; give one subsequent managed tick
 	-- without filter use before deactivating the launch filter.
 	Bullet.FilterUnusedTicks = -1
 	Bullet.LaunchFilter = BuildLaunchFilter(Filter, Bullet.LaunchFilter)

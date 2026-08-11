@@ -24,10 +24,10 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("con.BulletFilter[ent] = true", cfw)
         self.assertIn("filter[ent] = nil", cfw)
 
-    def test_bullet_filter_expires_after_three_unused_ticks(self):
+    def test_bullet_filter_expires_after_one_unused_tick(self):
         ballistics = source("lua/acf/server/sv_acfballistics.lua")
 
-        self.assertIn("local FilterGraceTicks = 3", ballistics)
+        self.assertIn("local FilterGraceTicks = 1", ballistics)
         self.assertIn("local IsLaunchEntity = Bullet.LaunchFilter[Ent]", ballistics)
         self.assertIn("if Bullet.LiveFilter and Bullet.LiveFilter[Ent] then return false end", ballistics)
         self.assertIn("if #Filter ~= Bullet.FilterInitialLength then", ballistics)

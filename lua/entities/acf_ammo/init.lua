@@ -799,9 +799,7 @@ function ENT:Think()
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.Legal)
 		self:UpdateOverlayText()
 
-		if not self.Legal then
-			self.Load = false
-		else
+		if self.Legal then
 			--if legal, go back to the action
 			if self.Active then self.Load = true end
 		end

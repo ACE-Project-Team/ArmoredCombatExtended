@@ -1,95 +1,93 @@
-
---[[
-	set up to provide a random, fairly low cost legality check that discourages trying to game legality checking
-	with a hard to predict check time and punishing lockout time
-	usage:
-	Ent.Legal, Ent.LegalIssues = ACE_CheckLegal(Ent, Model, MinMass, MinInertia, NeedsGateParent, CanVisclip )
-	Ent.NextLegalCheck = ACE.LegalSettings:NextCheck(Ent.Legal)
-]]
+-- ACE entity legality.
+--
+-- This follows ACF's validation contract: legality is a pure check of the
+-- entity's current state, failed checks disable the entity for a real timeout,
+-- and a later timer re-checks it.  Point limits and point-cache state are not
+-- part of entity legality; they are contraption accounting and warnings.
 
 ACE = ACE or {}
-
-ACE.Legal = {}
-ACE.Legal.Ignore = {}
-ACE.Legal.MutationDepth = ACE.Legal.MutationDepth or setmetatable({}, { __mode = "k" })
+ACE.Legal = ACE.Legal or {}
+ACE.Legal.Ignore = ACE.Legal.Ignore or {}
 ACE.Legal.Contracts = ACE.Legal.Contracts or {}
+ACE.Legal.MutationDepth = ACE.Legal.MutationDepth or setmetatable({}, { __mode = "k" })
 
 local function BumpOperationalVersion()
 	if ACE.Points and ACE.Points.BumpOperationalVersion then
 		return ACE.Points.BumpOperationalVersion()
 	end
+
 	ACE.PointsOperationalVersion = (ACE.PointsOperationalVersion or 0) + 1
 	return ACE.PointsOperationalVersion
 end
 
-ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
-
-ACE.Legal.Ignore.Solid	= math.max(GetConVar("ace_legal_ignore_solid"):GetInt(), 0)
-ACE.Legal.Ignore.Model	= math.max(GetConVar("ace_legal_ignore_model"):GetInt(), 0)
-ACE.Legal.Ignore.Mass		= math.max(GetConVar("ace_legal_ignore_mass"):GetInt(), 0)
-ACE.Legal.Ignore.Material	= math.max(GetConVar("ace_legal_ignore_material"):GetInt(), 0)
-ACE.Legal.Ignore.Inertia	= math.max(GetConVar("ace_legal_ignore_inertia"):GetInt(), 0)
-ACE.Legal.Ignore.makesphere  = math.max(GetConVar("ace_legal_ignore_makesphere"):GetInt(), 0)
-ACE.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt(), 0)
-ACE.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
-
-function ACE_LegalityCallBack()
-	BumpOperationalVersion()
-
-	ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
-
-	ACE.Legal.Ignore.Solid	= math.max(GetConVar("ace_legal_ignore_solid"):GetInt(), 0)
-	ACE.Legal.Ignore.Model	= math.max(GetConVar("ace_legal_ignore_model"):GetInt(), 0)
-	ACE.Legal.Ignore.Mass		= math.max(GetConVar("ace_legal_ignore_mass"):GetInt(), 0)
-	ACE.Legal.Ignore.Material	= math.max(GetConVar("ace_legal_ignore_material"):GetInt(), 0)
-	ACE.Legal.Ignore.Inertia	= math.max(GetConVar("ace_legal_ignore_inertia"):GetInt(), 0)
-	ACE.Legal.Ignore.makesphere  = math.max(GetConVar("ace_legal_ignore_makesphere"):GetInt(), 0)
-	ACE.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt(), 0)
-	ACE.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
-
-	for _, ent in ipairs(ents.GetAll()) do
-		if IsValid(ent) and ent.ACE_LegalArgs then
-			ent.Legal = false
-			ent.LegalIssues = "Legality policy changed"
-			ent.NextLegalCheck = ACE.CurTime
-		end
+local function ReadLegalCvars()
+	local function Read(name)
+		local cvar = GetConVar(name)
+		return cvar and math.max(cvar:GetInt(), 0) or 0
 	end
 
+	ACE.Legal.IsActivated = Read("ace_legalcheck")
+	ACE.Legal.Ignore.Solid = Read("ace_legal_ignore_solid")
+	ACE.Legal.Ignore.Model = Read("ace_legal_ignore_model")
+	ACE.Legal.Ignore.Mass = Read("ace_legal_ignore_mass")
+	ACE.Legal.Ignore.Material = Read("ace_legal_ignore_material")
+	ACE.Legal.Ignore.Inertia = Read("ace_legal_ignore_inertia")
+	ACE.Legal.Ignore.makesphere = Read("ace_legal_ignore_makesphere")
+	ACE.Legal.Ignore.visclip = Read("ace_legal_ignore_visclip")
+	ACE.Legal.Ignore.Parent = Read("ace_legal_ignore_parent")
 end
 
-cvars.AddChangeCallback("ace_legalcheck",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_solid",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_model",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_mass",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_material",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_inertia",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_makesphere",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_visclip",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_parent",ACE_LegalityCallBack)
+ReadLegalCvars()
 
+-- These names are kept for the existing entity Think loops.  The second
+-- parameter is optional because older ACE callers use both dot and colon
+-- forms; accepting both prevents the old "disabled for 0s" failure.
+ACE.Legal.Min = 5
+ACE.Legal.Max = 25
+ACE.Legal.Lockout = 35
+function ACE.Legal.NextCheck(first, second)
+	local legal = second
+	if legal == nil then legal = first end
 
+	local delay = legal and math.random(ACE.Legal.Min, ACE.Legal.Max) or ACE.Legal.Lockout
+	return CurTime() + delay
+end
 
+function ACE_LegalityCallBack()
+	ReadLegalCvars()
+	BumpOperationalVersion()
 
-ACE.Legal.Min		= 5	-- min seconds between checks --5
-ACE.Legal.Max		= 25	-- max seconds between checks --25
-ACE.Legal.Lockout	= 35	-- lockout time on not legal  --35
-ACE.Legal.NextCheck  = function(_, Legal) return ACE.CurTime + (Legal and math.random(ACE.Legal.Min, ACE.Legal.Max) or ACE.Legal.Lockout) end
+	-- A policy change must be checked against the live state, but does not
+	-- directly mutate physics or point totals while entities are spawning.
+	for _, ent in ipairs(ents.GetAll()) do
+		if IsValid(ent) and ent.ACE_LegalArgs then
+			ent.NextLegalCheck = CurTime()
+		end
+	end
+end
 
-local function Contract(model, mass, inertia, parent)
+for _, name in ipairs({
+	"ace_legalcheck", "ace_legal_ignore_solid", "ace_legal_ignore_model",
+	"ace_legal_ignore_mass", "ace_legal_ignore_material", "ace_legal_ignore_inertia",
+	"ace_legal_ignore_makesphere", "ace_legal_ignore_visclip", "ace_legal_ignore_parent"
+}) do
+	cvars.AddChangeCallback(name, ACE_LegalityCallBack, "ACE_RefreshLegality")
+end
+
+local function Contract(model, mass, inertia, requiresParent)
 	return function(ent)
 		local modelValue = model and ent[model] or nil
 		local massValue = mass and ent[mass] or nil
-		return modelValue, massValue and math.Round(massValue, 2), inertia and ent[inertia] or nil, parent, true
+		return modelValue, massValue and math.Round(massValue, 2) or nil,
+			inertia and ent[inertia] or nil, requiresParent, true
 	end
 end
 
 ACE.Legal.Contracts["acf_gun"] = Contract("Model", "Mass", "ModelInertia", false)
 ACE.Legal.Contracts["acf_rack"] = Contract(nil, "Mass", "ModelInertia", false)
 ACE.Legal.Contracts["acf_ammo"] = function(ent)
-		-- EmptyMass is the real empty-crate requirement. Do not clamp it to the old
-		-- 50,000 kg warning ceiling: that value is a limit, not an entity mass.
-		return ent.Model, math.Round(ent.EmptyMass or 0, 2), nil, true, true
-	end
+	return ent.Model, math.Round(ent.EmptyMass or 0, 2), nil, true, true
+end
 ACE.Legal.Contracts["acf_engine"] = Contract("Model", "Weight", "ModelInertia", true)
 ACE.Legal.Contracts["acf_fueltank"] = Contract("Model", "EmptyMass", nil, true)
 ACE.Legal.Contracts["acf_gearbox"] = Contract("Model", "Mass", "ModelInertia", true)
@@ -105,146 +103,106 @@ ACE.Legal.Contracts["ace_crewseat_driver"] = Contract("Model", "Weight", nil, tr
 ACE.Legal.Contracts["ace_crewseat_gunner"] = Contract("Model", "Weight", nil, true)
 ACE.Legal.Contracts["ace_crewseat_loader"] = Contract("Model", "Weight", nil, true)
 
--- Every ACE/ACF entity has a declared fallback contract. Specialized entities above
--- override this with their exact configured mass/inertia/parent requirements.
-local GenericContract = function(entity)
-	local mass = entity.Mass or entity.Weight or entity.EmptyMass
-	return entity:GetModel(), mass and math.Round(mass, 2) or nil, nil, true, false
+local function GenericContract(ent)
+	local mass = ent.Mass or ent.Weight or ent.EmptyMass
+	return ent:GetModel(), mass and math.Round(mass, 2) or nil, nil, true, false
 end
+
 for _, class in ipairs({
-	"ace_bomb_aerial", "ace_bomb_barrel", "ace_bomb_satchel", "ace_explosive", "ace_explosive_prebuilt",
-	"ace_flare", "ace_gforce_meter", "ace_grenade", "ace_mine", "ace_missile", "ace_scalability",
-	"ace_slammine", "ace_smokegrenade", "ace_vheat_source", "ace_wind_sensor", "acf_explosive",
-	"acf_fakecrate2", "acf_missile_to_rack", "acf_opticalcomputer"
+	"ace_bomb_aerial", "ace_bomb_barrel", "ace_bomb_satchel", "ace_explosive",
+	"ace_explosive_prebuilt", "ace_flare", "ace_gforce_meter", "ace_grenade",
+	"ace_mine", "ace_missile", "ace_scalability", "ace_slammine", "ace_smokegrenade",
+	"ace_vheat_source", "ace_wind_sensor", "acf_explosive", "acf_fakecrate2",
+	"acf_missile_to_rack", "acf_opticalcomputer"
 }) do
 	ACE.Legal.Contracts[class] = ACE.Legal.Contracts[class] or GenericContract
 end
 
-
---[[
-	checks if an ent meets the given requirements for legality
-	MinInertia needs to be mass normalized (normalized=inertia/mass)
-	ballistics doesn't check visclips on anything except prop_physics, so no need to check on acf ents
-]]--
-
-do
-
-	local AllowedMaterials = {
-	RHA = true,
-	CHA = true,
-	Alum = true
-	}
-
-	local ValidCollisionGroups = {
+local ValidCollisionGroups = {
 	[COLLISION_GROUP_NONE] = true,
 	[COLLISION_GROUP_WORLD] = true,
-	[COLLISION_GROUP_VEHICLE] = true
-	}
+	[COLLISION_GROUP_VEHICLE] = true,
+}
 
-	--TODO: remove unused functions
-function ACE_CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
+local function IsFinite(value)
+	return isnumber(value) and value == value and value ~= math.huge and value ~= -math.huge
+end
 
-	local problems = {} --problems table definition
-	if ACE.Legal.IsActivated == 0 then return #problems == 0, table.concat(problems, ", ") end
+local function IsManaged(ent)
+	if not IsValid(ent) or not ent.GetClass or not ent.ACE_LegalArgs then return false end
+	local class = ent:GetClass()
+	return class:sub(1, 4) == "acf_" or class:sub(1, 4) == "ace_"
+end
 
-	-- check it exists
-	if not ACE.Check( Ent ) then return false, "Invalid Ent" end
+-- Pure current-state legality check.  This intentionally does not inspect
+-- points, CFW membership, parent identity, or an old fingerprint.  Those are
+-- transient gameplay/accounting state and ACF does not use them to validate an
+-- entity's physics contract.
+function ACE.IsLegal(ent, model, minMass, minInertia, _, canVisclip)
+	if ACE.Legal.IsActivated == 0 then return true end
+	if not IsValid(ent) then return false, "Invalid Ent" end
+	if ent.ACE_IsNotLegalityChecked then return true end
 
-	local physobj = Ent:GetPhysicsObject()
+	local phys = ent:GetPhysicsObject()
+	if not IsValid(phys) then return false, "Invalid Physics" end
 
-	-- check if physics is valid
-	if not IsValid(physobj) then return false, "Invalid Physics" end
-
-
-	-- make sure traces can hit it (fade door, propnotsolid)
-	if ACE.Legal.Ignore.Solid <= 0  and not Ent:IsSolid() then
-		table.insert(problems,"Not solid")
+	local problems = {}
+	if ACE.Legal.Ignore.Solid <= 0 and not ent:IsSolid() then
+		problems[#problems + 1] = "Not solid"
 	end
 
-	-- check if the model matches
-	if Model ~= nil and ACE.Legal.Ignore.Model <= 0 and Ent:GetModel() ~= Model then
-		table.insert(problems,"Wrong model")
+	if model ~= nil and ACE.Legal.Ignore.Model <= 0 and ent:GetModel() ~= model then
+		problems[#problems + 1] = "Wrong model"
 	end
 
-	-- check mass
 	if ACE.Legal.Ignore.Mass <= 0 then
-
-		--Lets assume that input minmass is also rounded like here.
-		local rawMass = tonumber(physobj:GetMass()) or 0
-		if rawMass <= 0 or rawMass ~= rawMass or rawMass == math.huge or rawMass == -math.huge then
-			table.insert(problems, "Invalid mass")
-			rawMass = 1
-		end
-		local CMass = math.Round(rawMass, 2)
-
-		if MinMass ~= nil and CMass < MinMass then
-			table.insert(problems,"Under min mass")
-		end
-
-	end
-
-	-- check material
-	-- Allowed materials: rha, cast and aluminum
-	if ACE.Legal.Ignore.Material <= 0 then
-
-		local material = Ent.ACF.Material or "RHA"
-
-		if not AllowedMaterials[material] then
-			table.insert(problems,"Material not legal")
+		local mass = phys:GetMass()
+		if not IsFinite(mass) or mass <= 0 then
+			problems[#problems + 1] = "Invalid mass"
+		elseif minMass ~= nil and math.Round(mass, 2) < minMass then
+			problems[#problems + 1] = "Under min mass"
 		end
 	end
 
-	-- check inertia components
-	if ACE.Legal.Ignore.Inertia <= 0 and MinInertia ~= nil then
-		local mass = tonumber(physobj:GetMass()) or 0
-		local rawInertia = physobj:GetInertia()
-		local inertia = mass > 0 and rawInertia / mass or Vector(math.huge, math.huge, math.huge)
-		if inertia.x ~= inertia.x or inertia.y ~= inertia.y or inertia.z ~= inertia.z
-			or (inertia.x < MinInertia.x) or (inertia.y < MinInertia.y) or (inertia.z < MinInertia.z) then
-			table.insert(problems,"Under min inertia")
+	if ACE.Legal.Ignore.Inertia <= 0 and minInertia ~= nil then
+		local mass = phys:GetMass()
+		local raw = phys:GetInertia()
+		local inertia = mass > 0 and raw / mass or Vector(math.huge, math.huge, math.huge)
+		if not IsFinite(inertia.x) or not IsFinite(inertia.y) or not IsFinite(inertia.z)
+			or inertia.x < minInertia.x or inertia.y < minInertia.y or inertia.z < minInertia.z then
+			problems[#problems + 1] = "Under min inertia"
 		end
 	end
 
-	-- check makesphere
-	if ACE.Legal.Ignore.makesphere <= 0 and physobj:GetVolume() == nil then
-		table.insert(problems,"Has makesphere")
+	if ACE.Legal.Ignore.makesphere <= 0 and phys:GetVolume() == nil then
+		problems[#problems + 1] = "Has makesphere"
 	end
 
-	-- check for clips
-	if ACE.Legal.Ignore.visclip <= 0 and not CanVisclip and (Ent.ClipData ~= nil) and (#Ent.ClipData > 0) then
-		table.insert(problems,"Has visclip")
+	if ACE.Legal.Ignore.visclip <= 0 and not canVisclip and ent.ClipData and #ent.ClipData > 0 then
+		problems[#problems + 1] = "Has visclip"
 	end
 
-	-- check for bad collision groups
-	if ACE.Legal.Ignore.Solid <= 0 and not ValidCollisionGroups[Ent:GetCollisionGroup()] then
-		table.insert(problems, "Bad collision group")
+	if ACE.Legal.Ignore.Solid <= 0 and not ValidCollisionGroups[ent:GetCollisionGroup()] then
+		problems[#problems + 1] = "Bad collision group"
 	end
 
-	-- A parent is optional for a root build, but a present physical parent must be legal.
-	if ACE.Legal.Ignore.Parent <= 0 and _ then
-		local parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(Ent, true)
-		if Ent.ACEPhysicalParentIssue then
-			table.insert(problems, Ent.ACEPhysicalParentIssue)
-		elseif IsValid(parent) and parent ~= Ent and parent.Legal == false then
-			table.insert(problems, "Illegal physical parent")
-		end
+	local class = ent:GetClass()
+	if class == "acf_gun" and not ACE.GunfireEnabled then
+		problems[#problems + 1] = "Cannot fire"
+	elseif class == "acf_rack" and ACE.RacksCanFire == false then
+		problems[#problems + 1] = "Cannot fire"
 	end
 
-	-- legal if number of problems is 0
-	return #problems == 0, table.concat(problems, ", ")
-
-	end
+	if #problems > 0 then return false, table.concat(problems, ", ") end
+	return true, ""
 end
 
-function ACE.InvalidateLegal(ent, reason)
-	if not IsValid(ent) then return end
-	ent.Legal = false
-	ent.LegalIssues = reason or "Legality invalidated"
-	ent.NextLegalCheck = ACE.CurTime
-	BumpOperationalVersion()
+-- Keep the historical global entry point used throughout ACE.
+function ACE_CheckLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
+	return ACE.IsLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
 end
 
-function ACE.WithMutationScope(ent, reason, callback)
+function ACE.WithMutationScope(ent, _, callback)
 	if not IsValid(ent) then return false, "Invalid Ent" end
 	local depths = ACE.Legal.MutationDepth
 	depths[ent] = (depths[ent] or 0) + 1
@@ -259,95 +217,157 @@ function ACE.IsMutationScoped(ent)
 	return IsValid(ent) and (ACE.Legal.MutationDepth[ent] or 0) > 0
 end
 
-local function IsManagedLegalEntity(ent)
-	if not IsValid(ent) or not ent.ACE_LegalArgs then return false end
-	local class = ent:GetClass() or ""
-	return class:sub(1, 4) == "acf_" or class:sub(1, 4) == "ace_"
-end
+local function DisableEntity(ent, reason, message, timeout)
+	if not IsValid(ent) then return end
 
-do
-	local ENTITY = FindMetaTable("Entity")
-	ACE._OldEntitySetModel = ACE._OldEntitySetModel or ENTITY.SetModel
-	local OldSetModel = ACE._OldEntitySetModel
-	function ENTITY:SetModel(model)
-		if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) and self.Model and model ~= self.Model then
-			local result = OldSetModel(self, model)
-			ACE.InvalidateLegal(self, "Model changed")
-			return result
-		end
-		local previousModel = self:GetModel()
-		local result = OldSetModel(self, model)
-		if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) and previousModel ~= model then
-			ACE.InvalidateLegal(self, "Model changed")
-		end
-		return result
+	local delay = math.max(tonumber(timeout) or ACE.Legal.Lockout, 1)
+	local untilTime = CurTime() + delay
+	local disabled = ent.Disabled
+	if not disabled or disabled.Reason ~= reason then
+		ent.Disabled = { Reason = reason, Message = message or reason, Until = untilTime }
+	else
+		-- Preserve the original disable timestamp while the same failure persists.
+		untilTime = math.max(disabled.Until or 0, untilTime)
+		disabled.Until = untilTime
 	end
+
+	ent.Legal = false
+	ent.LegalIssues = message or reason or "Not legal"
+	ent.NextLegalCheck = untilTime
+	if ent.Active and ent.SetActive then ent:SetActive(false) end
+	if ent.UpdateOverlayText then ent:UpdateOverlayText() end
+
+	local timerName = "ACE_LegalRecheck_" .. ent:EntIndex()
+	timer.Create(timerName, math.max(untilTime - CurTime(), 1), 1, function()
+		if not IsValid(ent) then return end
+		local legal = ACE.CheckLegal(ent)
+		if not legal then return end
+		ent.Disabled = nil
+		if ent.UpdateOverlayText then ent:UpdateOverlayText(true) end
+	end)
 end
 
+ACE.DisableEntity = DisableEntity
+
+function ACE.InvalidateLegal(ent, reason)
+	if not IsValid(ent) then return end
+	BumpOperationalVersion()
+	DisableEntity(ent, reason or "Legality invalidated", reason, ACE.Legal.Lockout)
+end
+
+function ACE.CheckLegal(ent)
+	if not IsValid(ent) then return false, "Invalid Ent" end
+
+	local args = ent.ACE_LegalArgs
+	local legal, issues = ACE.IsLegal(ent, args and unpack(args) or nil)
+	if not legal then
+		DisableEntity(ent, issues, issues)
+		return false, issues
+	end
+
+	local wasIllegal = ent.Legal == false
+	ent.Legal = true
+	ent.LegalIssues = ""
+	ent.Disabled = nil
+	if wasIllegal or not ent.NextLegalCheck or ent.NextLegalCheck <= CurTime() then
+		ent.NextLegalCheck = ACE.Legal.NextCheck(true)
+	end
+
+	return true, ""
+end
+
+function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
+	if not IsValid(ent) then return false, "Invalid Ent" end
+
+	ent.ACE_LegalArgs = { model, minMass, minInertia, requiresParent, canVisclip }
+	local legal, issues = ACE.IsLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
+	if not legal then
+		DisableEntity(ent, issues, issues)
+		return false, issues
+	end
+
+	local changed = ent.Legal ~= true
+	ent.Legal = true
+	ent.LegalIssues = ""
+	ent.Disabled = nil
+	if changed or not ent.NextLegalCheck or ent.NextLegalCheck <= CurTime() then
+		ent.NextLegalCheck = ACE.Legal.NextCheck(true)
+	end
+
+	return true, ""
+end
+
+-- Operational callers always get a current-state check.  A failed ACF-style
+-- disable remains inert until its real retry time; it never participates in
+-- point accounting and never mutates linked ammo/fuel state.
+function ACE.RequireEntityLegal(ent)
+	if not IsValid(ent) then return false, "Invalid Ent" end
+
+	local disabled = ent.Disabled
+	if disabled and CurTime() < (disabled.Until or ent.NextLegalCheck or 0) then
+		return false, ent.LegalIssues or disabled.Message or "Not legal"
+	end
+
+	local args = ent.ACE_LegalArgs
+	if not args then
+		local contract = ACE.Legal.Contracts[ent:GetClass()] or GenericContract
+		args = { contract(ent) }
+	end
+
+	local legal, issues = ACE.IsLegal(ent, unpack(args))
+	if not legal then
+		DisableEntity(ent, issues, issues)
+		return false, issues
+	end
+
+	if ent.Legal ~= true then
+		ent.Legal = true
+		ent.LegalIssues = ""
+		ent.Disabled = nil
+		ent.NextLegalCheck = ACE.Legal.NextCheck(true)
+	end
+
+	return true, ""
+end
+
+-- ACF-style guardrails: block only the operations that create an invalid
+-- physics state.  Normal initialization, parenting, and lifecycle writes are
+-- allowed to complete; the following legality check observes their final state.
 do
 	local ENTITY = FindMetaTable("Entity")
-	local function InstallMutationDetour(name, reason)
-		local oldName = "_OldEntity" .. name
+	local function Install(name, check, allow)
+		local oldName = "_ACE_LegalOld_" .. name
 		ACE[oldName] = ACE[oldName] or ENTITY[name]
 		local old = ACE[oldName]
 		if not old then return end
 
 		ENTITY[name] = function(self, ...)
-			local value = ...
-			-- Repeating an already-applied state during entity initialization or paste
-			-- is not an external legality mutation.
-			if IsManagedLegalEntity(self) and name == "SetSolid" and self.GetSolid
-				and self:GetSolid() == value then
-				return true
+			if IsManaged(self) and ACE.Legal.IsActivated > 0 and not ACE.IsMutationScoped(self)
+				and not allow(self, ...) then
+				ACE.CheckLegal(self)
+				return false
 			end
-			if IsManagedLegalEntity(self) and name == "SetNotSolid" and value == true and not self:IsSolid() then
-				return true
-			end
-			if IsManagedLegalEntity(self) and name == "SetParent" and self:GetParent() == value then
-				return true
-			end
-			-- AdvDupe, ACF entity factories, and normal tool/property paths legitimately
-			-- finish physical state after ACE registration. Apply the write, invalidate
-			-- immediately, and force the next legality boundary to validate the result.
-			-- Activation remains fail-closed while that validation is pending.
-			if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) then
-				local result = old(self, ...)
-				ACE.InvalidateLegal(self, reason .. " changed")
-				return result
-			end
-			local result = old(self, ...)
-			return result
+			if check then check(self, ...) end
+			return old(self, ...)
 		end
 	end
 
-	InstallMutationDetour("PhysicsInit", "Physics rebuilt")
-	InstallMutationDetour("PhysicsInitSphere", "Spherical physics changed")
-	InstallMutationDetour("PhysicsInitMultiConvex", "Convex physics changed")
-	InstallMutationDetour("SetCollisionBounds", "Collision bounds changed")
-	InstallMutationDetour("SetNotSolid", "Solidity changed")
-	InstallMutationDetour("SetSolid", "Solidity changed")
-	InstallMutationDetour("SetNoDraw", "Visibility changed")
-InstallMutationDetour("SetParent", "Physical parent changed")
+	Install("PhysicsInitSphere", nil, function() return false end)
+	Install("SetCollisionBounds", nil, function() return false end)
+	Install("SetNoDraw", nil, function(self, value) return not tobool(value) end)
+	Install("SetCollisionGroup", nil, function(self, group)
+		return ValidCollisionGroups[group] or group == COLLISION_GROUP_IN_VEHICLE
+	end)
+	Install("SetNotSolid", function(self)
+		if timer then timer.Simple(0, function()
+			if IsValid(self) then ACE.CheckLegal(self) end
+		end) end
+	end, function() return true end)
 end
 
--- AdvDupe2 applies saved parents directly during its paste queue. Fully-enforced legality
--- correctly rejects that external-looking mutation, but the result is a partially parented
--- dupe: ACE/ACF children can be left at their paste position in the sky. Repair every saved
--- parent link after the queue completes through the same narrowly-scoped ACE mutation gate.
-function ACE_ReconcileParentContraption(child, oldParent, newParent)
-	if not IsValid(child) or not CFW then return end
-	if IsValid(newParent) and CFW.connect and child.GetCFWLink
-		and not child:GetCFWLink(newParent) then
-		CFW.connect(child, newParent)
-	end
-	local childCon = child.CFW_GetContraption and child:CFW_GetContraption()
-	local parentCon = IsValid(newParent) and newParent.CFW_GetContraption
-		and newParent:CFW_GetContraption()
-	if childCon and parentCon and childCon ~= parentCon and parentCon.Merge then
-		parentCon:Merge(childCon)
-	end
-end
-
+-- AdvDupe parent restoration is intentionally a repair hook, not a legality
+-- detour.  SetParent must be allowed through the paste queue so guns, engines,
+-- crews, and ammo remain attached while CFW settles its contraption.
 local function RestoreAdvDupeParents(dupe, restoreAllParents)
 	if not istable(dupe) or not istable(dupe.EntityList) or not istable(dupe.CreatedEntities) then return end
 
@@ -356,32 +376,13 @@ local function RestoreAdvDupeParents(dupe, restoreAllParents)
 		local child = dupe.CreatedEntities[sourceId] or dupe.CreatedEntities[tostring(sourceId)]
 		local parent = parentId and (dupe.CreatedEntities[parentId] or dupe.CreatedEntities[tostring(parentId)])
 		local class = IsValid(child) and child:GetClass() or ""
-		local isACEEntity = class:sub(1, 4) == "acf_" or class:sub(1, 4) == "ace_"
-		if parentId and (restoreAllParents or isACEEntity) and IsValid(child) and IsValid(parent)
+		local isACE = class:sub(1, 4) == "acf_" or class:sub(1, 4) == "ace_"
+		if parentId and (restoreAllParents or isACE) and IsValid(child) and IsValid(parent)
 			and child:GetParent() ~= parent then
-			ACE.WithMutationScope(child, "advdupe-parent-restore", function()
-				child:SetParent(parent)
-			end)
-			ACE_ReconcileParentContraption(child, nil, parent)
-		end
-	end
-end
-
--- AdvDupe can restore a saved non-solid state after an ACF ammo crate has initialized.
--- Ammo is a physical, legality-gated link target; leave its serialized mass/content intact,
--- but restore the entity solidity contract before the first operational link retry.
-local function RestoreAmmoPastePhysics(dupe)
-	if not istable(dupe) or not istable(dupe.CreatedEntities) then return end
-
-	for _, ent in pairs(dupe.CreatedEntities) do
-		if IsValid(ent) and ent:GetClass() == "acf_ammo" and not ent:IsSolid() then
-			ACE.WithMutationScope(ent, "ammo-paste-physics", function()
-				ent:SetSolid(SOLID_VPHYSICS)
-				ent:SetNotSolid(false)
-			end)
-			ent.Legal = false
-			ent.LegalIssues = "Awaiting legality validation"
-			ent.NextLegalCheck = ACE.CurTime
+			child:SetParent(parent)
+			if CFW and CFW.connect and child.GetCFWLink and not child:GetCFWLink(parent) then
+				CFW.connect(child, parent)
+			end
 		end
 	end
 end
@@ -397,196 +398,39 @@ hook.Add("AdvDupe_FinishPasting", "ACE Restore Enforced Parents", function(data)
 		if setting ~= nil and setting ~= "" and not tobool(setting) then restoreParents = false end
 	end
 
-	-- AdvDupe can finish entity callbacks after this hook. Retry once on the next
-	-- tick so gun/rack children are present before the enforced SetParent call.
 	RestoreAdvDupeParents(dupe, restoreParents)
-	RestoreAmmoPastePhysics(dupe)
 	timer.Simple(0, function()
 		RestoreAdvDupeParents(dupe, restoreParents)
-		RestoreAmmoPastePhysics(dupe)
 		hook.Run("ACE_AdvDupeParentsRestored", dupe)
 	end)
-	timer.Simple(0.1, function()
-		RestoreAdvDupeParents(dupe, restoreParents)
-		RestoreAmmoPastePhysics(dupe)
-	end)
+	timer.Simple(0.1, function() RestoreAdvDupeParents(dupe, restoreParents) end)
 end)
 
-do
-	local ENTITY = FindMetaTable("Entity")
-	ACE._OldEntitySetCollisionGroup = ACE._OldEntitySetCollisionGroup or ENTITY.SetCollisionGroup
-	local OldSetCollisionGroup = ACE._OldEntitySetCollisionGroup
-	local AllowedGroups = {
-		[COLLISION_GROUP_NONE] = true,
-		[COLLISION_GROUP_WORLD] = true,
-		[COLLISION_GROUP_VEHICLE] = true,
-	}
-	function ENTITY:SetCollisionGroup(group)
-		if IsManagedLegalEntity(self) and not ACE.IsMutationScoped(self) and not AllowedGroups[group] then
-			ACE.InvalidateLegal(self, "External collision group change rejected")
-			return false
+-- AdvDupe2 can replay a saved non-solid state after an ammo crate has run its
+-- constructor.  Restore the crate's physical contract without touching its
+-- round count or Load flag; the normal current-state check then decides when
+-- it may be used.
+local function RestoreAmmoPastePhysics(dupe)
+	if not istable(dupe) or not istable(dupe.CreatedEntities) then return end
+
+	for _, ent in pairs(dupe.CreatedEntities) do
+		if IsValid(ent) and ent:GetClass() == "acf_ammo" and not ent:IsSolid() then
+			ACE.WithMutationScope(ent, "ammo-paste-physics", function()
+				ent:SetSolid(SOLID_VPHYSICS)
+				ent:SetNotSolid(false)
+			end)
+			ent.Legal = false
+			ent.LegalIssues = "Awaiting legality validation"
+			ent.NextLegalCheck = CurTime()
 		end
-		local result = OldSetCollisionGroup(self, group)
-		return result
 	end
 end
 
--- Authoritative use-site gate. Periodic checks keep overlays current, but weapon activation
--- must re-check the live entity so a mutation cannot fire during the scan interval.
-function ACE.RequireLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
-	if IsValid(ent) then
-		ent.ACE_LegalArgs = { model, minMass, minInertia, requiresParent, canVisclip }
-	end
+hook.Add("AdvDupe_FinishPasting", "ACE Restore Ammo Paste Physics", function(data)
+	local dupe = istable(data) and (data[1] or data) or nil
+	if not istable(dupe) then return end
 
-	local legal, issues = ACE_CheckLegal(ent, model, minMass, minInertia, requiresParent, canVisclip)
-	if istable(legal) then
-		local result = legal
-		legal = false
-		issues = table.concat(result.Problems or { "Invalid legality result" }, ", ")
-	end
-
-	legal = legal == true
-	if IsValid(ent) then
-		if ent.Legal ~= legal then
-			BumpOperationalVersion()
-		end
-		ent.Legal = legal
-		ent.LegalIssues = issues or ""
-		ent.NextLegalCheck = ACE.Legal.NextCheck(legal)
-		if legal then
-			local phys = ent:GetPhysicsObject()
-			ent.ACE_LegalFingerprint = {
-				model = ent:GetModel(), material = ent.ACF and ent.ACF.Material,
-				mass = IsValid(phys) and phys:GetMass() or nil, solid = ent:IsSolid(),
-				collision = ent:GetCollisionGroup(), clips = ent.ClipData and #ent.ClipData or 0,
-				parent = ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil,
-				parentLegal = ent.acfphysparent and ent.acfphysparent.Legal,
-				parentIssue = ent.ACEPhysicalParentIssue
-			}
-		else
-			ent.ACE_LegalFingerprint = nil
-		end
-		if not legal and ent.Active and ent.SetActive then ent:SetActive(false) end
-	end
-
-	return legal, issues or ""
-end
-
--- Revalidate an entity at an operational boundary using the same contract as its last check.
--- The fallback covers entities that are active before their first periodic Think.
-function ACE.RequireEntityLegal(ent)
-	if not IsValid(ent) then return false, "Invalid Ent" end
-
-	-- Points limits are operational restrictions, not advisory chat output. Resolve the current
-	-- contraption total at the same boundary that gates firing/activation so a stale periodic
-	-- legality scan cannot be used to operate an over-limit entity.
-	local pointVersion = ACE.PointsOperationalVersion or 0
-	local pointsLimitEnforced = ACE.PointsLimitEnforced ~= false
-	local pointCache = ent.ACEPointsOperationalCache
-	local pointIssue
-	if pointCache and pointCache.Version == pointVersion and pointCache.Limit == ACE.PointsLimit
-		and pointCache.Enforced == pointsLimitEnforced then
-		pointIssue = pointCache.Issue
-	elseif not pointsLimitEnforced then
-		-- Keep the point model and advisory warnings active, but allow servers to
-		-- opt out of making the points limit an operational gate.
-		ent.ACEPointsOperationalCache = {
-			Version = pointVersion, Limit = ACE.PointsLimit,
-			Enforced = false, Issue = nil
-		}
-	else
-		local pointCons = {}
-		local pointQueue = {}
-		local pointSeen = {}
-		local pointMemberQueue = {}
-		local pointMemberSeen = {}
-		local function addPointCon(con)
-			if not con or pointSeen[con] then return end
-			pointSeen[con] = true
-			pointQueue[#pointQueue + 1] = con
-		end
-		local function addPointEntity(entity)
-			if not IsValid(entity) then return end
-			if not pointMemberSeen[entity] then
-				pointMemberSeen[entity] = true
-				pointMemberQueue[#pointMemberQueue + 1] = entity
-			end
-			addPointCon(ACE.GetContraptionFromEntity and ACE.GetContraptionFromEntity(entity))
-			addPointCon(ACE.GetWeaponAnchorContraption and ACE.GetWeaponAnchorContraption(entity))
-		end
-
-		addPointEntity(ent)
-		local conIndex = 1
-		local memberIndex = 1
-		while conIndex <= #pointQueue do
-			local con = pointQueue[conIndex]
-			conIndex = conIndex + 1
-			pointCons[#pointCons + 1] = con
-			if ACE.EnsureContraptionPoints then ACE.EnsureContraptionPoints(con, nil, false) end
-
-			for key, value in pairs(con.ents or {}) do
-				local member = value == true and key or value
-				if IsValid(member) then
-					addPointEntity(member)
-				end
-			end
-
-			while memberIndex <= #pointMemberQueue do
-				local member = pointMemberQueue[memberIndex]
-				memberIndex = memberIndex + 1
-				local class = member:GetClass()
-				if class == "acf_gun" or class == "acf_rack" then
-					for _, crate in pairs(member.AmmoLink or {}) do addPointEntity(crate) end
-					for _, crew in pairs(member.CrewLink or {}) do addPointEntity(crew) end
-				elseif class == "acf_ammo" or class == "ace_crewseat_gunner" or class == "ace_crewseat_loader" then
-					for _, linked in pairs(member.Master or {}) do addPointEntity(linked) end
-				end
-			end
-		end
-
-		if #pointCons > 0 then
-			local limit = tonumber(ACE.PointsLimit) or math.huge
-			local points = 0
-			for _, con in ipairs(pointCons) do points = points + (tonumber(con.ACEPoints) or 0) end
-			if points > limit then
-				pointIssue = string.format("Linked contraption group over points limit (%d / %d)", math.ceil(points), math.ceil(limit))
-			end
-		end
-		ent.ACEPointsOperationalCache = {
-			Version = pointVersion, Limit = ACE.PointsLimit,
-			Enforced = true, Issue = pointIssue
-		}
-	end
-
-	if pointIssue then return false, pointIssue end
-
-	local args = ent.ACE_LegalArgs
-	if args then
-		if ent.Legal == true and ACE.CurTime < (ent.NextLegalCheck or 0) then
-			local fingerprint = ent.ACE_LegalFingerprint
-			local phys = ent:GetPhysicsObject()
-			local unchanged = fingerprint and fingerprint.model == ent:GetModel()
-				and fingerprint.material == (ent.ACF and ent.ACF.Material)
-				and fingerprint.mass == (IsValid(phys) and phys:GetMass() or nil)
-				and fingerprint.solid == ent:IsSolid()
-				and fingerprint.collision == ent:GetCollisionGroup()
-				and fingerprint.clips == (ent.ClipData and #ent.ClipData or 0)
-				and fingerprint.parent == (ACE_GetPhysicalParent and ACE_GetPhysicalParent(ent, true) or nil)
-				and fingerprint.parentLegal == (ent.acfphysparent and ent.acfphysparent.Legal)
-				and fingerprint.parentIssue == ent.ACEPhysicalParentIssue
-			if unchanged then return true, ent.LegalIssues or "" end
-			ACE.InvalidateLegal(ent, "Legality state changed")
-		end
-		if ent.Legal == false and ACE.CurTime < (ent.NextLegalCheck or 0) then return false, ent.LegalIssues or "Legality lockout" end
-		return ACE.RequireLegal(ent, unpack(args))
-	end
-
-	local class = ent:GetClass()
-	local contract = ACE.Legal.Contracts[class]
-	if not contract then
-		contract = GenericContract
-	end
-	local legal, issues = ACE.RequireLegal(ent, contract(ent))
-	if not legal and ent.SetActive and ent.Active then ent:SetActive(false) end
-	return legal, issues
-end
+	RestoreAmmoPastePhysics(dupe)
+	timer.Simple(0, function() RestoreAmmoPastePhysics(dupe) end)
+	timer.Simple(0.1, function() RestoreAmmoPastePhysics(dupe) end)
+end)

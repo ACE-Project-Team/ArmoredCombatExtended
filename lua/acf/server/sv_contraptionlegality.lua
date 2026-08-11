@@ -123,6 +123,16 @@ function ACE.CheckLegalCont(con)
 		return
 	end
 
+	-- Point totals are assembled from CFW callbacks and entity activation.  Do
+	-- not turn a half-built membership snapshot into a player-facing warning.
+	-- EnsureContraptionPoints normally clears these flags; this guard covers a
+	-- callback that arrives while the rebuild is still settling.
+	if not con.ACEArmorCalculated or con.ACEPointsDirty or con.ACEArmorDirty or con.ACENonArmorDirty then
+		con.ACEWarningsDirty = true
+		ACE_DeferPointWarningCheck(con)
+		return
+	end
+
 	if not con.OTWarnings.WarnedOverPoints and con.ACEPointWarningCheckPending then
 		-- A scheduled recheck is the stabilization barrier. Do not emit from
 		-- another same-tick invalidation before that callback runs.
@@ -131,9 +141,12 @@ function ACE.CheckLegalCont(con)
 
 	if ACE.PointsLimitEnforced ~= false and points > pointsLimit and not con.OTWarnings.WarnedOverPoints then
 		-- CFW can expose an intermediate membership snapshot while a physgun
-		-- operation is settling. Re-read on the next tick before announcing it.
+		-- operation is settling. Require the exact same total to survive a short
+		-- settling window before announcing it. This prevents the initial MT-7
+		-- scan from printing a transient, much larger armor total.
 		if not con.ACEPointWarningStable then
 			con.ACEPointWarningStable = points
+			con.ACEPointWarningStableAt = CurTime()
 			con.ACEWarningsDirty = true
 			ACE_DeferPointWarningCheck(con)
 			return
@@ -141,6 +154,13 @@ function ACE.CheckLegalCont(con)
 
 		if con.ACEPointWarningStable ~= points then
 			con.ACEPointWarningStable = points
+			con.ACEPointWarningStableAt = CurTime()
+			con.ACEWarningsDirty = true
+			ACE_DeferPointWarningCheck(con)
+			return
+		end
+
+		if CurTime() - (con.ACEPointWarningStableAt or 0) < 0.25 then
 			con.ACEWarningsDirty = true
 			ACE_DeferPointWarningCheck(con)
 			return
@@ -156,6 +176,7 @@ function ACE.CheckLegalCont(con)
 		con.OTWarnings.WarnedOverPoints = true
 	end
 	con.ACEPointWarningStable = points
+	con.ACEPointWarningStableAt = CurTime()
 
 	local maxWeight = ACE.MaxWeight or math.huge
 	if (con.totalMass or 0) > maxWeight and not con.OTWarnings.WarnedOverWeight then

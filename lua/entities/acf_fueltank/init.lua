@@ -442,8 +442,9 @@ function ENT:Think()
 		self:UpdateOverlayText()
 	end
 
-	--make sure it's not made spherical
-	if self.EntityMods and self.EntityMods.MakeSphericalCollisions then self.Fuel = 0 end
+	-- A spherical-physics dupe is illegal, but its stored fuel remains intact so
+	-- the entity can recover after the paste repair/legality retry.  Do not turn
+	-- a physics validation failure into destructive fuel loss.
 
 	if self.Leaking > 0 then
 		self:NextThink( CurTime() + 0.25 )

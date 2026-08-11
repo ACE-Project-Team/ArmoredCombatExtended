@@ -684,6 +684,14 @@ if ACECompatibilityView then
     ACF_GetHitAngle = ACF_GetHitAngle or ACE_GetHitAngle
     ACF_GetLinkedWheels = ACF_GetLinkedWheels or ACE_GetLinkedWheels
     ACF_SendNotify = ACF_SendNotify or ACE_SendNotify
+
+    -- ACE Weapons+ still consumes the old ACF calculation entry points. Keep
+    -- these aliases on the compatibility view only; an independently loaded
+    -- ACF installation retains ownership of its own globals.
+    ACF_GetPhysicalParent = ACF_GetPhysicalParent or ACE_GetPhysicalParent
+    ACF_Kinetic = ACF_Kinetic or ACE_Kinetic
+    ACF_MuzzleVelocity = ACF_MuzzleVelocity or ACE_MuzzleVelocity
+    ACF_HE = ACF_HE or ACE_HE
 end
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")

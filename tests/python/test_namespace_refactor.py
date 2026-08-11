@@ -519,7 +519,8 @@ class NamespaceRefactorTests(unittest.TestCase):
                 source = source.replace("ACF_E2_LinkTables", "")
                 for compatibility_name in (
                     "ACF_CalcArmor", "ACF_Check", "ACF_CheckClips",
-                    "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify"
+                    "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify",
+                    "ACF_GetPhysicalParent", "ACF_Kinetic", "ACF_MuzzleVelocity", "ACF_HE",
                 ):
                     source = source.replace(compatibility_name, "")
                 self.assertNotRegex(source, r"(?<![.:])\bACF_[A-Za-z_][A-Za-z0-9_]*")
@@ -532,7 +533,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             ).replace("ACF_E2_LinkTables", "")
             for compatibility_name in (
                 "ACF_CalcArmor", "ACF_Check", "ACF_CheckClips",
-                "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify"
+                "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify",
+                "ACF_GetPhysicalParent", "ACF_Kinetic", "ACF_MuzzleVelocity", "ACF_HE",
             ):
                 source = source.replace(compatibility_name, "")
             with self.subTest(source=path.relative_to(REPO)):
@@ -686,9 +688,11 @@ class NamespaceRefactorTests(unittest.TestCase):
         for old_name in {
             "acf_ap_impact", "acf_ap_penetration", "acf_ap_ricochet", "acf_bulleteffect",
             "acf_heat_explosion", "acf_missilelaunch", "acf_muzzleflash", "acf_racklaunch",
-            "acf_radar_noise", "acf_scaled_explosion", "acf_smoke",
+            "acf_radar_noise", "acf_smoke",
         }:
             self.assertNotIn(old_name, effect_names)
+
+        self.assertIn("acf_scaled_explosion", effect_names)
 
     def test_deferred_adapters_keep_legacy_compatibility_boundaries(self):
         for relative in (

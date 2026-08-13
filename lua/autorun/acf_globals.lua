@@ -485,6 +485,7 @@ if SERVER then
     include("acf/server/sv_legality.lua")
     include("acf/server/sv_acfpermission.lua")
     include("acf/server/sv_contraptionlegality.lua")
+    include("acf/server/sv_adminsettings.lua")
 
     AddCSLuaFile("acf/client/cl_acfballistics.lua")
     AddCSLuaFile("acf/client/cl_acemenu_gui.lua")

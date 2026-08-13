@@ -730,15 +730,75 @@ function ACE_CLGUICreate()
 
 end
 
-local function MenuNotifyError()
+-- i'm not touching the rest of the menu code, it's going to be redone eventually anyways
+-- throwing some helpers here for now
+local function updateSetting(setting, value)
+	net.Start("ACE_SettingsSync")
+	net.WriteString(setting)
+	net.WriteFloat(value)
+	net.SendToServer()
+end
 
-	local Note = vgui.Create( "DLabel" )
-	Note:SetPos( 0, 0 )
-	Note:SetColor( Color(10,10,10) )
-	Note:SetText("Not available in this moment")
-	Note:SizeToContents()
-	acemenupanel.CustomDisplay:AddItem( Note )
+local function addHelpText(text, parent)
+	local label = vgui.Create("DLabel", parent)
+	label:SetText(text)
+	label:SetFont("DermaDefault")
+	label:SetWrap(true)
+	label:SetAutoStretchVertical(true)
+	label:DockMargin(30, 0, 30, 0)
+	label:SetColor(Color(47, 149, 241))
+	label:Dock(TOP)
 
+	return label
+end
+
+local function addCheckbox(text, setting, parent)
+	local checkbox = vgui.Create("DCheckBoxLabel", parent)
+	checkbox:SetText(text)
+	checkbox:DockMargin(10, 10, 10, 0)
+	checkbox:Dock(TOP)
+	checkbox:SetDark(true)
+
+	function checkbox:OnChange(value)
+		if self.suppressOnChange then return end
+
+		updateSetting(setting, value and 1 or 0)
+	end
+
+	function checkbox:SetValueSilent(value)
+		self.suppressOnChange = true
+		self:SetChecked(value > 0)
+		self.suppressOnChange = false
+	end
+
+	return checkbox
+end
+
+local function addSlider(text, min, max, decimals, setting, parent)
+	local slider = vgui.Create("DNumSlider", parent)
+	slider:SetText(text)
+	slider:SetDark(true)
+	slider:SetMin(min)
+	slider:SetMax(max)
+	slider:SetDecimals(decimals)
+	slider:DockMargin(10, 5, 10, -5)
+	slider:Dock(TOP)
+
+	function slider:OnValueChanged(value)
+		if self.suppressOnChange then return end
+
+		timer.Create("ACE_DebounceSettingUpdate_" .. setting, 0.25, 1, function()
+			updateSetting(setting, math.Round(value, decimals))
+		end)
+	end
+
+	function slider:SetValueSilent(value)
+		self.suppressOnChange = true
+		self:SetValue(value)
+		self.suppressOnChange = false
+	end
+
+	return slider
 end
 
 
@@ -746,18 +806,25 @@ end
 	Serverside folder content
 ]]--=========================
 function ACE_SVGUICreate()	--Serverside folder content
-
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
-	if not ply:IsSuperAdmin() then return end
-	if game.IsDedicated() then MenuNotifyError() return end
+	if not ply:IsSuperAdmin() then
+		local Note = vgui.Create( "DLabel" )
+		Note:SetPos( 0, 0 )
+		Note:SetColor( Color(10,10,10) )
+		Note:SetText("Only superadmins can view and access this menu")
+		Note:SizeToContents()
+		acemenupanel.CustomDisplay:AddItem( Note )
+
+		return
+	end
 
 	local Server = acemenupanel["CData"]["Options"]
 
 	Server = vgui.Create( "DLabel" )
 	Server:SetPos( 0, 0 )
 	Server:SetColor( Color(10,10,10) )
-	Server:SetText("ACE - Server Side Control Panel")
+	Server:SetText("ACE - Serverside Control Panel")
 	Server:SetFont("DermaDefaultBold")
 	Server:SizeToContents()
 	acemenupanel.CustomDisplay:AddItem( Server )
@@ -765,81 +832,153 @@ function ACE_SVGUICreate()	--Serverside folder content
 	local Sub = vgui.Create( "DLabel" )
 	Sub:SetPos( 0, 0 )
 	Sub:SetColor( Color(10,10,10) )
-	Sub:SetText("Server Side parameters can be adjusted here")
+	Sub:SetText("Serverside parameters can be adjusted here")
 	Sub:SizeToContents()
 	acemenupanel.CustomDisplay:AddItem( Sub )
 
-	local General = vgui.Create( "DForm" )
-	General:SetName("General")
+	local settings = {}
 
-	General:CheckBox("Enable HE push", "ace_hepush")
-	General:ControlHelp( "Allow HE to push contraptions away" )
+	-- General settings
+	local general = vgui.Create("DCollapsibleCategory")
+	general:SetLabel("General")
+	general:SetExpanded(false)
 
-	General:CheckBox("Enable Recoil force", "ace_recoilpush")
-	General:ControlHelp( "Gun's recoil will push the contraption back when firing" )
+	settings.ace_gunfire = addCheckbox("Enable gunfire", "ace_gunfire", general)
+	addHelpText("Master switch to enable or disable the firing of ACE weaponry.", general)
 
-	General:NumSlider( "Debris Life Time", "ace_debris_lifetime", 0, 60, 2 )
-	General:ControlHelp( "How many seconds debris will stand on the map before being deleted (0 means never)." )
+	settings.ace_hepush = addCheckbox("Enable HE push", "ace_hepush", general)
+	addHelpText("Large explosions will push contraptions.", general)
 
-	General:NumSlider( "Child debris chance", "ace_debris_children", 0, 1, 2 )
-	General:ControlHelp( "Adjusts the chance of create debris when a contraption's gate have been destroyed" )
+	settings.ace_kepush = addCheckbox("Enable KE push", "ace_kepush", general)
+	addHelpText("Kinetic impacts will push contraptions.", general)
 
-	--General:NumSlider( "Year", "ACE_year", 1900, 2021, 0 )
-	--General:ControlHelp( "Changes the year. This will affect the available weaponry (requires restart)." )
+	settings.ace_recoilpush = addCheckbox("Enable recoil force", "ace_recoilpush", general)
+	addHelpText("Gun recoil will push contraptions.", general)
 
-	acemenupanel.CustomDisplay:AddItem( General )
+	settings.ace_legacyrecoil = addCheckbox("Enable legacy recoil", "ace_legacyrecoil", general)
+	addHelpText("Applies recoil as a straight force at the baseplate's center of mass, with no torque/tipping effect (legacy behavior).", general)
 
-	local Spall = vgui.Create( "DForm" )
-	Spall:SetName("Spalling")
+	settings.ace_wind = addSlider("Wind strength", 0, 2000, 0, "ace_wind", general)
+	addHelpText("Global wind speed in u/s. 0 to disable.", general)
 
-	Spall:CheckBox("Enable Spalling", "ace_spalling")
-	Spall:ControlHelp( "Enable additional spalling to be created during penetrations. Disable this to have better performance." )
+	acemenupanel.CustomDisplay:AddItem(general)
 
-	Spall:NumSlider( "Spalling Multipler", "ace_spalling_multipler", 1, 5, 0 )
-	Spall:ControlHelp( "How much Spalling will be created during impacts? Applies for spalling created by impacts" )
+	local damageScaling = vgui.Create("DCollapsibleCategory")
+	damageScaling:SetLabel("Damage Scaling")
+	damageScaling:SetExpanded(false)
 
-	acemenupanel.CustomDisplay:AddItem( Spall )
+	settings.ace_healthmod = addSlider("Health multiplier", 0.1, 10, 2, "ace_healthmod", damageScaling)
+	addHelpText("Global health multiplier.", damageScaling)
 
-	local Scaled = vgui.Create( "DForm" )
-	Scaled:SetName("Cooking off")
+	settings.ace_armormod = addSlider("Armor multiplier", 0.1, 10, 2, "ace_armormod", damageScaling)
+	addHelpText("Global armor multiplier.", damageScaling)
 
-	Scaled:NumSlider( "Max HE per explosion", "ace_explosions_scaled_he_max", 50, 1000, 0 )
-	Scaled:ControlHelp( "The maximum amount of HE weight to detonate at once." )
+	acemenupanel.CustomDisplay:AddItem(damageScaling)
 
-	Scaled:NumSlider( "Max entities per explosion", "ace_explosions_scaled_ents_max", 1, 20, 0 )
-	Scaled:ControlHelp( "The maximum amount of entities to detonate at once." )
+	local debrisSpalling = vgui.Create("DCollapsibleCategory")
+	debrisSpalling:SetLabel("Debris & Spalling")
+	debrisSpalling:SetExpanded(false)
 
-	acemenupanel.CustomDisplay:AddItem( Scaled )
+	settings.ace_debris_lifetime = addSlider("Debris lifetime", 0, 60, 0, "ace_debris_lifetime", debrisSpalling)
+	addHelpText("How many seconds debris will remain on the map before being deleted (0 means never).", debrisSpalling)
 
-	local Legal = vgui.Create( "DForm" )
-	Legal:SetName("Legality")
+	settings.ace_debris_children = addSlider("Child debris chance", 0, 1, 2, "ace_debris_children", debrisSpalling)
+	addHelpText("Adjusts the chance of creating debris when a contraption's base has been destroyed.", debrisSpalling)
 
-	Legal:CheckBox("Enable Legality checks", "ace_legalcheck")
-	Legal:ControlHelp( "Enable the legality checks, which will punish with a lock time any stuff considered illegal." )
+	settings.ace_spalling = addCheckbox("Enable spalling", "ace_spalling", debrisSpalling)
+	addHelpText("Enables the creation of spall fragments from armor penetrations. Moderately performance intensive.", debrisSpalling)
 
-	Legal:CheckBox( "Allow not solid", "ace_legal_ignore_solid" )
-	Legal:ControlHelp( "allow to use not solid" )
+	settings.ace_spalling_multiplier = addSlider("Spalling multiplier", 0.1, 1, 2, "ace_spalling_multipler", debrisSpalling)
+	addHelpText("Multiplier for how much spalling is generated during impacts.", debrisSpalling)
 
-	Legal:CheckBox( "Allow any model", "ace_legal_ignore_model" )
-	Legal:ControlHelp( "Allow ace ents to use any model" )
+	acemenupanel.CustomDisplay:AddItem(debrisSpalling)
 
-	Legal:CheckBox( "Allow any mass", "ace_legal_ignore_mass" )
-	Legal:ControlHelp( "Allow ace ents to use any weight" )
+	local cookingOff = vgui.Create("DCollapsibleCategory")
+	cookingOff:SetLabel("Cooking Off / Scaled Explosions")
+	cookingOff:SetExpanded(false)
 
-	Legal:CheckBox( "Allow any material", "ace_legal_ignore_material" )
-	Legal:ControlHelp( "Allow ace ents to use any material type" )
+	settings.ace_explosions_scaled_he_max = addSlider("Max HE per explosion", 50, 1000, 0, "ace_explosions_scaled_he_max", cookingOff)
+	addHelpText("The maximum amount of HE weight (kg) to detonate at once.", cookingOff)
 
-	Legal:CheckBox( "Allow any inertia", "ace_legal_ignore_inertia" )
-	Legal:ControlHelp( "Allow ace ents to have any inertia in it" )
+	settings.ace_explosions_scaled_ents_max = addSlider("Max ents per explosion", 1, 20, 0, "ace_explosions_scaled_ents_max", cookingOff)
+	addHelpText("The maximum amount of entities to detonate in one scaled explosion.", cookingOff)
 
-	Legal:CheckBox("Allow makesphere", "ace_legal_ignore_makesphere")
-	Legal:ControlHelp( "Allow ace ents to have makesphere" )
+	acemenupanel.CustomDisplay:AddItem(cookingOff)
 
-	Legal:CheckBox( "Allow visclip", "ace_legal_ignore_visclip" )
-	Legal:ControlHelp( "ace ents can have visclip at any case" )
+	local legality = vgui.Create("DCollapsibleCategory")
+	legality:SetLabel("Vehicle Legality")
+	legality:SetExpanded(false)
 
-	acemenupanel.CustomDisplay:AddItem( Legal )
+	settings.ace_legalcheck = addCheckbox("Enable legality checks", "ace_legalcheck", legality)
+	addHelpText("Master switch for enabling legality checks in ACE.", legality)
 
+	settings.ace_legality_enginesrequirefuel = addCheckbox("Engines require fuel", "ace_legality_enginesrequirefuel", legality)
+	addHelpText("Engines require fuel to run.", legality)
+
+	settings.ace_legality_largeenginesneeddriver = addCheckbox("Large engines need driver", "ace_legality_largeenginesneeddriver", legality)
+	addHelpText("Large engines require a linked driver crew entity to operate.", legality)
+
+	settings.ace_legality_largeenginethreshold = addSlider("Threshold", 100, 1000, 0, "ace_legality_largeenginethreshold", legality)
+	settings.ace_legality_largeenginethreshold:DockMargin(30, 0, 30, -5)
+	addHelpText("HP threshold defining a 'large' engine.", legality)
+
+	settings.ace_legality_largegunsneedgunner = addCheckbox("Large guns need gunner", "ace_legality_largegunsneedgunner", legality)
+	addHelpText("Large guns require a linked gunner crew entity to operate.", legality)
+
+	settings.ace_legality_largegunthreshold = addSlider("Threshold", 50, 200, 0, "ace_legality_largegunthreshold", legality)
+	settings.ace_legality_largegunthreshold:DockMargin(30, 0, 30, -5)
+	addHelpText("Caliber (mm) threshold defining a 'large' gun.", legality)
+
+	settings.ace_legal_ignore_model = addCheckbox("Allow any model", "ace_legal_ignore_model", legality)
+	addHelpText("Allow ACE entities to use any model.", legality)
+
+	settings.ace_legal_ignore_solid = addCheckbox("Allow not solid", "ace_legal_ignore_solid", legality)
+	addHelpText("Allow ACE entities to be non-solid.", legality)
+
+	settings.ace_legal_ignore_mass = addCheckbox("Allow any mass", "ace_legal_ignore_mass", legality)
+	addHelpText("Allow ACE entities to have any mass.", legality)
+
+	settings.ace_legal_ignore_material = addCheckbox("Allow any material", "ace_legal_ignore_material", legality)
+	addHelpText("Allow ACE entities to use any armor material.", legality)
+
+	settings.ace_legal_ignore_inertia = addCheckbox("Allow any inertia", "ace_legal_ignore_inertia", legality)
+	addHelpText("Allow ACE entities to have any inertia.", legality)
+
+	settings.ace_legal_ignore_makesphere = addCheckbox("Allow makesphere", "ace_legal_ignore_makesphere", legality)
+	addHelpText("Allow ACE entities to be made spherical.", legality)
+
+	settings.ace_legal_ignore_visclip = addCheckbox("Allow visclip", "ace_legal_ignore_visclip", legality)
+	addHelpText("Allow ACE entities to be visclipped.", legality)
+
+	acemenupanel.CustomDisplay:AddItem(legality)
+
+	local propProtection = vgui.Create("DCollapsibleCategory")
+	propProtection:SetLabel("Prop Protection")
+	propProtection:SetExpanded(false)
+
+	settings.ace_enable_dp = addCheckbox("Enable Damage Protection", "ace_enable_dp", propProtection)
+	addHelpText("Enable ACE's built-in damage protection.", propProtection)
+
+	settings.ace_restrictinfo = addCheckbox("Restrict ACE info", "ace_restrictinfo", propProtection)
+	addHelpText("Restricts information gathering of ACE entities via E2/Starfall.", propProtection)
+	addHelpText("Enabling this will only allow you to gather information on ACE entities owned by you.", propProtection)
+
+	acemenupanel.CustomDisplay:AddItem(propProtection)
+
+	net.Start("ACE_SettingsSync")
+	net.WriteString("_request")
+	net.SendToServer()
+
+	net.Receive("ACE_SettingsSync", function()
+		local size = net.ReadUInt(16)
+		local receivedSettings = util.JSONToTable(util.Decompress(net.ReadData(size)))
+
+		for convar, value in pairs(receivedSettings) do
+			if settings[convar] then
+				settings[convar]:SetValueSilent(value)
+			end
+		end
+	end)
 end
 
 --[[=========================

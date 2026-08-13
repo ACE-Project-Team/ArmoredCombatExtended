@@ -374,7 +374,6 @@ do
 
 					local ModelData = ACE.ModelData[Shape] or ACE.ModelData["Box"]
 
-					local BoxVolume   = Scale.x * Scale.y * Scale.z
 					local ShapeVolume = ModelData.volumefunction(Scale.x, Scale.y, Scale.z)
 
 					Ammo.CrateShape  = Shape
@@ -663,7 +662,6 @@ do
 	end
 
 	local Floor = math.floor
-	local MaxValue = math.max
 	local toInch = 2.54		--Number used for cm -> inche conversion
 
 	function ENT:BuildAmmoCapacity()

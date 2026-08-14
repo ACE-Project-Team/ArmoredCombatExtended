@@ -803,10 +803,12 @@ if CLIENT then
 		local nonArmorCost	= self.Weapon:GetNWFloat( "PointCostNonArmor", 0 )
 		local pointBreakdown = self.Weapon:GetNWString( "PointCostBreakdown", "" )
 
+		local legacyMode = "acf" .. "armorprop"
+		local modePrefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
 		local area		= GetConVar( "acearmorprop_area" ):GetFloat()
-		local ductility	= GetConVar( "acearmorprop_ductility" ):GetFloat()
-		local thickness	= GetConVar( "acearmorprop_thickness" ):GetFloat()
-		local mat		= GetConVar( "acearmorprop_material" ):GetString() or "RHA"
+		local ductility	= GetConVar( modePrefix .. "_ductility" ):GetFloat()
+		local thickness	= GetConVar( modePrefix .. "_thickness" ):GetFloat()
+		local mat		= GetConVar( modePrefix .. "_material" ):GetString() or "RHA"
 
 		local MatData	= ACE_GetMaterialData( mat )
 

@@ -41,16 +41,61 @@ end
 hook.Add("PreRegisterTOOL", "ACE_LegacyToolAliases", AddLegacyToolAlias)
 
 if CLIENT then
-	local LegacyNames = {
-		acfarmorprop = "ACE Armor Properties",
-		acfchaircam = "ACE Third Person View Fixer",
-		acfcopy = "ACE Copy Tool",
-		acfmenu = "ACE Menu",
-		acfsound = "ACE Sound Replacer"
+	-- Master clients can receive canonical tool files from a newer server
+	-- without receiving that server checkout's localization resource.
+	local CompatibilityPhrases = {
+		acemenu = {
+			name = "ACE Menu", desc = "Spawn the Armored Combat Extended weapons and ammo",
+			left = "Create/Update entity", right = "Link/Unlink entities"
+		},
+		acearmorprop = {
+			name = "ACE Armor Properties", desc = "Sets the ACE armour of an entity",
+			left = "Apply armour settings", right = "Copy armour settings",
+			reload = "Get information about contraption"
+		},
+		acechaircam = {
+			name = "ACE Third Person View Fixer",
+			desc = "Allows third person view to pass through all type of entities while seated, useful when cam controllers are not used",
+			left = "Apply the fix to a seat", reload = "Remove the fix from a seat"
+		},
+		acecopy = {
+			name = "ACE Copy Tool", desc = "Copy ammo or gearbox data from one object to another",
+			[0] = "Left click to paste data, Right click to copy data"
+		},
+		acesound = {
+			name = "ACE Sound Replacer", desc = "Change the sound of guns and engines",
+			left = "Apply the new sound", right = "Copy the sound",
+			reload = "Reset to default sound"
+		},
+		acfarmorprop = {
+			name = "ACE Armor Properties", desc = "Sets the ACE armour of an entity",
+			left = "Apply armour settings", right = "Copy armour settings",
+			reload = "Get information about contraption"
+		},
+		acfchaircam = {
+			name = "ACE Third Person View Fixer",
+			desc = "Allows third person view to pass through all type of entities while seated, useful when cam controllers are not used",
+			left = "Apply the fix to a seat", reload = "Remove the fix from a seat"
+		},
+		acfcopy = {
+			name = "ACE Copy Tool", desc = "Copy ammo or gearbox data from one object to another",
+			[0] = "Left click to paste data, Right click to copy data"
+		},
+		acfmenu = {
+			name = "ACE Menu", desc = "Spawn the Armored Combat Extended weapons and ammo",
+			left = "Create/Update entity", right = "Link/Unlink entities"
+		},
+		acfsound = {
+			name = "ACE Sound Replacer", desc = "Change the sound of guns and engines",
+			left = "Apply the new sound", right = "Copy the sound",
+			reload = "Reset to default sound"
+		}
 	}
 
-	for mode in pairs(LegacyTools) do
-		language.Add("tool." .. mode .. ".name", LegacyNames[mode])
+	for mode, phrases in pairs(CompatibilityPhrases) do
+		for phrase, value in pairs(phrases) do
+			language.Add("tool." .. mode .. "." .. phrase, value)
+		end
 	end
 
 end

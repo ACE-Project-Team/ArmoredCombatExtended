@@ -133,13 +133,13 @@ function this:GetWhitelistedEntsInCone(missile)
 		-- skip any invalid entity
 		if not scanEnt:IsValid() then continue end
 
-		--Skips any non-emitting radars.
-		if not scanEnt.Active then continue end
-
 		local entpos = scanEnt:GetPos()
 		local difpos = entpos - missilePos
 		local dist = difpos:Length()
-		
+
+		--Skips any non-emitting radars.
+		if not scanEnt.Active then continue end
+
 		-- skip any ent outside of minimun distance
 		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 

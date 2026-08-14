@@ -220,7 +220,7 @@ function ENT:UpdateOverlayText()
 
 	txt = txt .. "\n\n360 Sweep Time: " .. math.Round(360 / cone, 2) .. " sec"
 
-	if(self.MaxRange < 1000) then
+	if self.MaxRange < 1000 then
 		txt = txt .. "\n\nMax Range: " .. math.Round(self.MaxRange, 0) .. "m"
 	end
 
@@ -444,7 +444,7 @@ function ENT:Think()
 					local absang	= Angle(math.abs(math.NormalizeAngle(ang.p)), math.abs(math.NormalizeAngle(ang.y)), 0)  --Since I like ABS so much
 
 					--Entity is within radar cone, has a valid owner, and is not terrain obscured
-					if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) then continue end
+					if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) or not BurnThrough then continue end
 
 					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
 

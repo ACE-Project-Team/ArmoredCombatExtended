@@ -63,7 +63,7 @@ if CLIENT then
 			thickness = "Thickness",
 			thicknessdesc = "Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.",
 			ductility = "Ductility",
-			ductilitydesc = "Set the desired armor ductility (thickness-vs-health bias).",
+			ductilitydesc = "Set the desired armor ductility (thickness-vs-health bias).\n\nA ductile prop can survive more damage but is penetrated more easily (slider > 0).\n\nA non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).",
 			current = "Current", after = "After", mass = "Mass", mass_scale = "Mass Scale",
 			armor = "Armour", health = "Health", material = "Material", acepoints = "Point Cost",
 			armorinfo = "Armour Info", curve = "Curve", keprot = "Kinetic Protection",
@@ -82,7 +82,7 @@ if CLIENT then
 			info = "Replaces default sounds of certain ACE entities with this tool. You can replace the sounds of cannons, racks, engines and Anti-Missile Radar.",
 			openbrowser = "Open Sound Browser", play = "Play", stop = "Stop", copy = "Copy to Clipboard",
 			clear = "Clear Sound", pitch = "Pitch",
-			pitchdesc = "Adjust the pitch of the sound. Currently supports engines, guns, racks and missile radars."
+			pitchdesc = "Adjust the pitch of the sound. Currently supports engines, guns, racks and missile radars. \n\nNote: This will not work with dynamic sounds atm."
 		},
 		chaircam = {
 			name = "ACE Third Person View Fixer",

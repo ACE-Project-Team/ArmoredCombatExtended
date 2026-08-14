@@ -114,9 +114,11 @@ function TOOL:RightClick( trace )
 
 	local ply = self:GetOwner()
 
-	ply:ConCommand( "acearmorprop_ductility " .. (ent.ACF.Ductility or 0) * 100 )
-	ply:ConCommand( "acearmorprop_thickness " .. ent.ACF.MaxArmour )
-	ply:ConCommand( "acearmorprop_material " .. (ent.ACF.Material or "RHA") )
+	local legacyMode = "acf" .. "armorprop"
+	local prefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
+	ply:ConCommand( prefix .. "_ductility " .. (ent.ACF.Ductility or 0) * 100 )
+	ply:ConCommand( prefix .. "_thickness " .. ent.ACF.MaxArmour )
+	ply:ConCommand( prefix .. "_material " .. (ent.ACF.Material or "RHA") )
 
 	-- Clear cached target to force a fresh network update of armor values.
 	self.AimEntity = nil

@@ -288,8 +288,8 @@ return {
 				expect(touching).to.aboutEqual(expectedEnergy(0))
 				expect(halfReference).to.aboutEqual(expectedEnergy(0.05 * 39.37))
 				expect(fullReference).to.aboutEqual(expectedEnergy(0.1 * 39.37))
-				expect(touching).to.be.GreaterThan(halfReference)
-				expect(halfReference).to.be.GreaterThan(fullReference)
+				expect(touching).to.beGreaterThan(halfReference)
+				expect(halfReference).to.beGreaterThan(fullReference)
 			end,
 		},
 		{

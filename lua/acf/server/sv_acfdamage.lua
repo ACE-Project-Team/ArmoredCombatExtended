@@ -920,9 +920,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 		do
 
-			local phys = SpallRes.Entity:GetPhysicsObject()
-
-			if IsValid(phys) and ACE.CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
+			if ACE.CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
 
 				local TraceData = ACE.SpallTraces[Index]
 				TraceData.filter = TraceData.filter or {}
@@ -980,8 +978,6 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		if ACE.CritEnts[ SpallRes.Entity:GetClass() ] then
 			SpallEnergy.Penetration = (SpallEnergy.Penetration / Entity_Crit_Hit_Factor)
 		end
-
-		SpallEnergy.Penetration = math.floor(SpallEnergy.Penetration)
 
 		-- print(SpallEnergy.Penetration)
 

@@ -18,7 +18,7 @@ ACE.ApplyArmorBehaviorModules(materials)
 local expected = {
 	RHA = { "homogeneous_metal", "spall_response" },
 	CHA = { "homogeneous_metal", "spall_response" },
-	Cer = { "brittle_strike_face", "composite_backing", "spall_response", "failure_state" },
+	Cer = { "brittle_strike_face", "spall_response", "failure_state" },
 	DU = { "dense_metal", "homogeneous_metal", "spall_response" },
 	Ti = { "lightweight_metal", "homogeneous_metal", "spall_response" },
 	Alum = { "lightweight_metal", "homogeneous_metal", "spall_response" },

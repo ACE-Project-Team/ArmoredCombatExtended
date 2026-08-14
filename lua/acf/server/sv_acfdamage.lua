@@ -208,7 +208,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 				--print(ent:GetClass())
 				--print("LosArmor: " .. LosArmor)
 				--ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
-				BlastRes = ACE.Damage ( ent  , Blast , 1 , 0 , Inflictor ,0 , Gun, "Frag" ) --Swapped from "HE" to "Frag" to prevent instantly cooking off fuel.
+				BlastRes = ACE.Damage ( ent  , Blast , 1 , 0 , Inflictor ,0 , Gun, "Frag", ent:NearestPoint(Hitpos) ) --Swapped from "HE" to "Frag" to prevent instantly cooking off fuel.
 
 				if BlastRes and BlastRes.Kill then
 
@@ -310,6 +310,7 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 					Table.Dist		= Hitpos:Distance(TargetPos)
 					Table.Vec		= (TargetPos - Hitpos):GetNormalized()
+					Table.HitPos	= TraceRes.HitPos or Tar:NearestPoint(Hitpos)
 
 					local Sphere		= math.max(4 * PI * (Table.Dist * 2.54 ) ^ 2,1) --Surface Area of the sphere at the range of that prop
 					local AreaAdjusted  = Tar.ACF.Area
@@ -390,8 +391,8 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 					if not (Occ.Hit and Occ.Entity:EntIndex() ~= Tar:EntIndex()) and not (not Occ.Hit and NewHitpos ~= NewHitat) then
 
-						BlastRes = ACE.Damage ( Tar	, Blast  , AreaAdjusted , 0	, Inflictor , 0	, Gun , "HE" )
-						FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
+						BlastRes = ACE.Damage ( Tar	, Blast  , AreaAdjusted , 0	, Inflictor , 0	, Gun , "HE", NewHitat )
+						FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag", NewHitat )
 
 						if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
 							ACE.HEKill( Tar, (TargetPos - NewHitpos):GetNormalized(), PowerFraction , Hitpos)
@@ -406,8 +407,8 @@ function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 
 			else
 
-				BlastRes = ACE.Damage ( Tar  , Blast , AreaAdjusted , 0 , Inflictor ,0 , Gun, "HE" )
-				FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag" )
+				BlastRes = ACE.Damage ( Tar  , Blast , AreaAdjusted , 0 , Inflictor ,0 , Gun, "HE", Table.HitPos )
+				FragRes = ACE.Damage ( Tar , FragKE , FragArea * FragHit , 0 , Inflictor , 0, Gun, "Frag", Table.HitPos )
 
 				if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
 

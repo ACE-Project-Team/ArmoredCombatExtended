@@ -85,6 +85,21 @@ local ceramicAP = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 2
 local ceramicFrag = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "Frag")
 assertFinite("Ceramic AP damage", ceramicAP.Damage)
 assertFinite("Ceramic fragment damage", ceramicFrag.Damage)
+local ceramicLegacyPenetration = math.min(100, 15 ^ 0.99 * 2.05)
+local ceramicLegacy = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 100, 2.5, 5, 1.3, "AP")
+assert(ceramicLegacy.Outcome == "penetrated", "ceramic retained an unintended breach outcome")
+assert(math.abs(ceramicLegacy.Overkill - (100 - ceramicLegacyPenetration)) < 0.0000001, "ceramic changed its legacy penetration capacity")
+local ceramicDuctility = 4 / (4 + 0.25 * 1.25 * 1.5)
+local ceramicDamageFactor = (15 ^ 0.99 / 10 ^ 0.99) * 4
+local ceramicLegacyDamage = (ceramicLegacyPenetration / 10 / 2.05) ^ 2 * 2.5 * 15 * 1.3 * ceramicDamageFactor * ceramicDuctility
+assert(math.abs(ceramicLegacy.Damage - ceramicLegacyDamage) < 0.0000001, "ceramic changed its legacy damage equation")
+math.random = function() return 1 end
+local ceramicStopped = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 1, 2.5, 5, 1.3, "AP")
+local ceramicStoppedDamage = (1 / 10 / 2.05) * 2.5 * 15 * (15 ^ 0.99 / 10 ^ 0.99) * ceramicDuctility * 1.3
+assert(ceramicStopped.Outcome == "stopped" and ceramicStopped.Overkill == 0 and ceramicStopped.Loss == 1,
+	"ceramic stopped impact changed its legacy outcome contract")
+assert(math.abs(ceramicStopped.Damage - ceramicStoppedDamage) < 0.0000001, "ceramic changed its legacy stopped damage equation")
+math.random = function() return 0 end
 impactEntity.ACF.Health = 20
 local ceramicDamaged = ACE.ArmorTypes.Cer.ArmorResolution(impactEntity, 10, 15, 10, 20, 2.5, 5, 1.3, "AP")
 assert(ceramicDamaged.Overkill > ceramicAP.Overkill, "damaged ceramic retained intact strike-face resistance")

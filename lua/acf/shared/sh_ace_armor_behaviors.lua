@@ -214,6 +214,7 @@ local function ValidateResolverConfig(config)
 		breachDuctility = true,
 		breachUsesEffectiveness = true,
 		stoppedResilience = true,
+		legacyResolver = true,
 		impactHook = true,
 		triggerOnPenetration = true,
 		threats = true,
@@ -226,6 +227,7 @@ local function ValidateResolverConfig(config)
 		if config[key] ~= nil then assert(IsFiniteNumber(config[key]) and config[key] > 0, key .. " must be a positive number") end
 	end
 	if config.impactHook ~= nil then assert(hooks[config.impactHook], "unknown armor impact hook: " .. tostring(config.impactHook)) end
+	if config.legacyResolver ~= nil then assert(config.legacyResolver == "ceramic", "unknown legacy armor resolver: " .. tostring(config.legacyResolver)) end
 	if config.triggerOnPenetration ~= nil then assert(type(config.triggerOnPenetration) == "boolean", "triggerOnPenetration must be boolean") end
 	if config.breachDuctility ~= nil then assert(type(config.breachDuctility) == "boolean", "breachDuctility must be boolean") end
 	if config.breachUsesEffectiveness ~= nil then assert(type(config.breachUsesEffectiveness) == "boolean", "breachUsesEffectiveness must be boolean") end
@@ -278,7 +280,7 @@ end
 ACE.ArmorBehaviorSets = {
 	RHA = { "homogeneous_metal", "spall_response" },
 	CHA = { "homogeneous_metal", "spall_response" },
-	Cer = { "brittle_strike_face", "composite_backing", "spall_response", "failure_state" },
+	Cer = { "brittle_strike_face", "spall_response", "failure_state" },
 	DU = { "dense_metal", "homogeneous_metal", "spall_response" },
 	Ti = { "lightweight_metal", "homogeneous_metal", "spall_response" },
 	Alum = { "lightweight_metal", "homogeneous_metal", "spall_response" },
@@ -650,6 +652,42 @@ if SERVER then
 		-- A failed single-use tile is effectively gone, but keep a tiny positive
 		-- denominator so the normalized impact result remains finite.
 		effectiveness = math.max(effectiveness * conditionFactor, 0.000001)
+
+		-- Ceramic deliberately keeps its historical no-breach probability model and
+		-- damage multipliers. Local condition still reduces remaining effectiveness.
+		if resolverConfig.legacyResolver == "ceramic" then
+			local ceramicArmor = armor ^ curve
+			local ceramicLosArmor = losArmor ^ curve
+			local ceramicDuctility = (tonumber(Entity and Entity.ACF and Entity.ACF.Ductility) or 0) * (resolverConfig.ductilityFactor or 1)
+			local ceramicDuctilityMultiplier = 4 / (4 + ceramicDuctility * 1.5)
+			local ceramicDamageFactor = ceramicLosArmor / ceramicArmor
+			if Type == "HE" or Type == "HESH" then ceramicDamageFactor = ceramicDamageFactor * 15 end
+
+			local penetrationProbability = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / ceramicLosArmor / effectiveness - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
+			local penetration = math.min(maxPenetration, ceramicLosArmor * effectiveness)
+			if penetrationProbability > ImpactRandom() then
+				if maxPenetration > ceramicLosArmor * effectiveness then
+					ceramicDamageFactor = ceramicDamageFactor * 4
+					TriggerModularImpactHook(profile, material.id, Type, Entity, ceramicLosArmor, ceramicLosArmor, maxPenetration)
+				end
+
+				return ImpactResult(
+					(penetration / losArmorHealth / effectiveness) ^ 2 * resilience * FrArea * damageMult * ceramicDamageFactor * ceramicDuctilityMultiplier,
+					maxPenetration - penetration,
+					penetration / maxPenetration,
+					"penetrated",
+					maxPenetration
+				)
+			end
+
+			return ImpactResult(
+				(penetration / losArmorHealth / effectiveness) * resilience * FrArea * damageMult * ceramicDamageFactor * ceramicDuctilityMultiplier,
+				0,
+				1,
+				"stopped",
+				maxPenetration
+			)
+		end
 
 		local ductility = tonumber(spec.ductility)
 		if ductility == nil then

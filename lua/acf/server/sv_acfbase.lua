@@ -90,10 +90,11 @@ function ACE_Activate( Entity , Recalc )
 	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
+	local ArmorPercent = Entity.ACEArmorImpactState and 1 or Percent
 
 	Entity.ACF.Health	= Health * Percent
 	Entity.ACF.MaxHealth	= Health
-	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
+	Entity.ACF.Armour = Armour * (0.5 + ArmorPercent / 2)
 	Entity.ACF.MaxArmour	= Armour * ACE.ArmorMod
 	Entity.ACF.Type		= nil
 	Entity.ACF.Mass		= PhysObj:GetMass()
@@ -188,6 +189,9 @@ end
 
 local ArmorCellSize = 32
 local ArmorCellLimit = 32
+local function IsFiniteNumber(Value)
+	return Value == Value and Value ~= math.huge and Value ~= -math.huge
+end
 
 local function GetArmorImpactCell(Entity, HitPos)
 	if not HitPos or not Entity or not Entity.WorldToLocal then return "global" end
@@ -202,18 +206,23 @@ end
 
 local function GetArmorImpactState(Entity)
 	local armorData = Entity and Entity.ACF or {}
-	local armor = armorData.Armour
-	local signature = table.concat({
-		tostring(armorData.Material),
-		tostring(armorData.Area),
-		tostring(armorData.Mass),
-		tostring(armorData.MaxArmour),
-		tostring(armor),
-	}, "|")
 	local State = Entity.ACEArmorImpactState
-	if State and State.Signature == signature then return State end
+	if State
+		and State.Material == armorData.Material
+		and State.Area == armorData.Area
+		and State.Mass == armorData.Mass
+		and State.MaxArmour == armorData.MaxArmour then
+		return State
+	end
 
-	State = { Armor = armor, Signature = signature, Cells = {}, Count = 0 }
+	State = {
+		Material = armorData.Material,
+		Area = armorData.Area,
+		Mass = armorData.Mass,
+		MaxArmour = armorData.MaxArmour,
+		Cells = {},
+		Count = 0
+	}
 	Entity.ACEArmorImpactState = State
 	return State
 end
@@ -252,14 +261,10 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type, HitPos) --y=-5
 	local incomingArea	= tonumber(FrArea) or 0
 	local incomingAngle	= tonumber(Angle) or 0
 	local rawArmor		= armorData and tonumber(armorData.Armour) or 0
-	local isFinite		= function(Value)
-		return Value == Value and Value ~= math.huge and Value ~= -math.huge
-	end
-
 	-- Custom damage entities can reach this path with incomplete state. Fail
 	-- closed with a normalized impact instead of emitting NaN/Inf downstream.
-	if not armorData or not isFinite(incomingArea) or incomingArea <= 0
-		or not isFinite(incomingAngle) or not isFinite(rawArmor) then
+	if not armorData or not IsFiniteNumber(incomingArea) or incomingArea <= 0
+		or not IsFiniteNumber(incomingAngle) or not IsFiniteNumber(rawArmor) or rawArmor <= 0 then
 		return { Damage = 0, Overkill = 0, Loss = 1, Outcome = "invalid", ContinueEligible = false, PenetrationSpent = 0, PenetrationRemaining = 0 }
 	end
 	Angle = incomingAngle

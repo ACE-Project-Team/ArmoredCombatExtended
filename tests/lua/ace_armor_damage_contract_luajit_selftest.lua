@@ -13,6 +13,7 @@ local resolver = read("lua/acf/shared/sh_ace_armor_behaviors.lua")
 
 assert(base:find("function ACE_Damage%(.-HitPos%)"), "damage entry point must carry the real hit position")
 assert(base:find("function ACE_CalcDamage%(.-HitPos%)"), "armor resolver must receive the real hit position")
+assert(base:find("rawArmor <= 0", 1, true), "non-positive armor must fail closed before resolver math")
 assert(base:find("GetArmorImpactCell"), "armor damage must use localized impact state")
 assert(base:find("ArmorCellLimit = 32", 1, true), "localized armor state must have a bounded cell cache")
 assert(resolver:find("state.Count >= limit", 1, true), "localized armor state must evict instead of growing without bound")
@@ -24,6 +25,9 @@ assert(base:find("Entity.ACEImpactHitPos", 1, true), "special damage must preser
 assert(base:find("ArmorConditionLoss"), "damage results must expose applied armor condition damage")
 assert(not base:find("Entity%.ACF%.Armour = Entity%.ACF%.MaxArmour %* %(0%.5 %+ Entity%.ACF%.Health"),
 	"global health-to-armor erosion must not return")
+assert(not base:find("State%.Armour == armor", 1, true), "health-only reactivation must not discard localized cell state")
+assert(base:find("local ArmorPercent = Entity.ACEArmorImpactState and 1 or Percent", 1, true),
+	"health-only reactivation must not turn localized armor damage into global armor erosion")
 assert(damage:find("Bullet") and damage:find("Type") and damage:find("HitPos"), "kinetic impacts must pass hit position into damage")
 assert(damage:find("Spall") and damage:find("SpallRes%.HitPos"), "spall impacts must pass their hit position into damage")
 assert(resolver:find("impactCondition"), "modular resolver must consume localized condition")

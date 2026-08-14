@@ -125,20 +125,6 @@ function TOOL:RightClick( trace )
 
 end
 
-do
-	-- Allow read-only armor inspection even when CanTool would block edits.
-	ACE.OldHookCall = ACE.OldHookCall or hook.Call
-
-	-- Armor tool hook override for safe reloads.
-	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
-		if Name == "CanTool" and Tool == "acearmorprop" and Player:KeyPressed(IN_RELOAD) then
-			return true
-		end
-
-		return ACE.OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
-	end
-end
-
 -- Reload aggregates mass across constrained entities.
 function TOOL:Reload( trace )
 

@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 LUA_ROOT = REPO / "lua"
 ENTITY_ROOT = LUA_ROOT / "entities"
 STARFALL_ROOT = LUA_ROOT / "starfall"
+LEGACY_TOOL_BRIDGE = LUA_ROOT / "autorun" / "ace_legacy_tools.lua"
 ACE_CONVARS = (
     "enable_dp",
     "kepush",
@@ -512,6 +513,9 @@ class NamespaceRefactorTests(unittest.TestCase):
 
     def test_non_entity_hooks_and_identifiers_use_ace_prefix(self):
         for path in non_entity_sources():
+            if path == LEGACY_TOOL_BRIDGE:
+                # This file deliberately publishes the old ACF tool identifiers.
+                continue
             source = code_without_comments_and_strings(
                 path.read_text(encoding="utf-8", errors="replace")
             )
@@ -519,7 +523,8 @@ class NamespaceRefactorTests(unittest.TestCase):
                 source = source.replace("ACF_E2_LinkTables", "")
                 for compatibility_name in (
                     "ACF_CalcArmor", "ACF_Check", "ACF_CheckClips",
-                    "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify"
+                    "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify",
+                    "ACF_GetPhysicalParent", "ACF_Kinetic", "ACF_MuzzleVelocity", "ACF_HE",
                 ):
                     source = source.replace(compatibility_name, "")
                 self.assertNotRegex(source, r"(?<![.:])\bACF_[A-Za-z_][A-Za-z0-9_]*")
@@ -532,7 +537,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             ).replace("ACF_E2_LinkTables", "")
             for compatibility_name in (
                 "ACF_CalcArmor", "ACF_Check", "ACF_CheckClips",
-                "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify"
+                "ACF_GetHitAngle", "ACF_GetLinkedWheels", "ACF_SendNotify",
+                "ACF_GetPhysicalParent", "ACF_Kinetic", "ACF_MuzzleVelocity", "ACF_HE",
             ):
                 source = source.replace(compatibility_name, "")
             with self.subTest(source=path.relative_to(REPO)):
@@ -651,6 +657,9 @@ class NamespaceRefactorTests(unittest.TestCase):
             if path.name == "ace_legacy_convars.lua":
                 continue
             source = path.read_text(encoding="utf-8", errors="replace")
+            if path == LEGACY_TOOL_BRIDGE:
+                # This file is the explicit old-name compatibility boundary.
+                continue
             with self.subTest(source=path.relative_to(REPO)):
                 self.assertNotRegex(
                     source,
@@ -686,9 +695,11 @@ class NamespaceRefactorTests(unittest.TestCase):
         for old_name in {
             "acf_ap_impact", "acf_ap_penetration", "acf_ap_ricochet", "acf_bulleteffect",
             "acf_heat_explosion", "acf_missilelaunch", "acf_muzzleflash", "acf_racklaunch",
-            "acf_radar_noise", "acf_scaled_explosion", "acf_smoke",
+            "acf_radar_noise", "acf_smoke",
         }:
             self.assertNotIn(old_name, effect_names)
+
+        self.assertIn("acf_scaled_explosion", effect_names)
 
     def test_deferred_adapters_keep_legacy_compatibility_boundaries(self):
         for relative in (

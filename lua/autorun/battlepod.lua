@@ -40,12 +40,3 @@ local V = {
 list.Set( "Vehicles", "ACE_pilotseat", V )
 
 -- Keep old dupes using the former ACF vehicle key without adding a duplicate spawn-menu entry.
-local Vehicles = list.GetForEdit( "Vehicles" )
-local VehiclesMeta = getmetatable( Vehicles ) or {}
-local VehiclesIndex = VehiclesMeta.__index
-VehiclesMeta.__index = function( self, key )
-	if key == "acf_pilotseat" then return rawget( self, "ACE_pilotseat" ) end
-	if isfunction( VehiclesIndex ) then return VehiclesIndex( self, key ) end
-	if istable( VehiclesIndex ) then return VehiclesIndex[ key ] end
-end
-setmetatable( Vehicles, VehiclesMeta )

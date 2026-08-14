@@ -3,6 +3,58 @@ ACE.SpallTraces	= ACE.SpallTraces or {}
 ACE.CurSpallIndex = 0
 ACE.SpallMax	= 250
 ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax
+ACE.SpallFragmentMax = ACE.SpallFragmentMax or ACE.SpallMax
+ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth
+local InitialSpallTraceMaxDepth = ACE.SpallTraceMaxDepth
+local InitialSpallLayerMax = ACE.SpallLayerMax
+local SpallDebug = GetConVar("ace_spall_debug") or CreateConVar(
+	"ace_spall_debug", "0", FCVAR_ARCHIVE,
+	"Draw ACE spall continuation traces (debug only)."
+)
+
+local function GetSpallDepthBudget()
+	local traceMax = ACE.SpallTraceMaxDepth
+	local layerMax = ACE.SpallLayerMax
+
+	-- SpallTraceMaxDepth is the established external control. If only that alias
+	-- changes at runtime, honor it; otherwise the newer layer-specific control wins.
+	if traceMax ~= InitialSpallTraceMaxDepth and layerMax == InitialSpallLayerMax then
+		return traceMax
+	end
+
+	return layerMax or traceMax or ACE.SpallMax or 250
+end
+
+local DeterministicImpacts = GetConVar("ace_deterministic_impacts") or CreateConVar(
+	"ace_deterministic_impacts", "0", FCVAR_ARCHIVE,
+	"Use reproducible per-bullet armor and ricochet rolls for replay/debugging."
+)
+
+local function CreateImpactRandom(Seed)
+	local State = math.abs(math.floor(tonumber(Seed) or 1)) % 2147483647
+	if State == 0 then State = 1 end
+
+	return function()
+		State = (State * 48271) % 2147483647
+		return State / 2147483647
+	end
+end
+
+local function BeginImpactRandom( Bullet, Target )
+	if not DeterministicImpacts:GetBool() then return end
+
+	Bullet.ACEImpactCount = (Bullet.ACEImpactCount or 0) + 1
+	local entitySeed = IsValid(Target) and Target:EntIndex() or 0
+	local seed = (Bullet.ACEImpactSeed or 1) * 104729 + Bullet.ACEImpactCount * 1009 + entitySeed * 9176
+	local Previous = ACE.ImpactRandom
+	ACE.ImpactRandom = CreateImpactRandom(seed)
+
+	return Previous
+end
+
+local function EndImpactRandom( Previous )
+	ACE.ImpactRandom = Previous
+end
 
 -- optimization; reuse tables for ballistics traces
 local TraceRes  = {}
@@ -408,20 +460,46 @@ end
 -- how much of the incoming energy was spent; callers must not reinterpret Overkill or
 -- Loss independently. Killed entities may continue when residual energy remains.
 function ACE_GetPostPenetration( HitRes, Energy )
+	HitRes = HitRes or {}
+	Energy = Energy or {}
 	local Loss = math.Clamp( HitRes.Loss or 1, 0, 1 )
 	local Remaining = 1 - Loss
-	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ((HitRes.Overkill or 0) > 0 or HitRes.Kill)
+	local HasNormalizedOutcome = HitRes.ContinueEligible ~= nil
+	local ContinueEligible = HasNormalizedOutcome and HitRes.ContinueEligible
+	if not HasNormalizedOutcome then
+		ContinueEligible = (HitRes.Overkill or 0) > 0 or HitRes.Kill
+	end
+	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ContinueEligible
+	if HitRes.PostPenetration then return HitRes.PostPenetration end
+	local IncomingKinetic = tonumber(Energy.Kinetic) or 0
+	local IncomingPenetration = tonumber(Energy.Penetration) or 0
 
-	return {
+	local Result = {
 		Continue = Continue,
 		Loss = Loss,
 		Remaining = Remaining,
-		IncomingKinetic = Energy.Kinetic,
-		IncomingPenetration = Energy.Penetration,
-		SpentKinetic = Energy.Kinetic * Loss,
-		RemainingKinetic = Energy.Kinetic * Remaining,
-		RemainingPenetration = Energy.Penetration * Remaining
+		IncomingKinetic = IncomingKinetic,
+		IncomingPenetration = IncomingPenetration,
+		SpentKinetic = IncomingKinetic * Loss,
+		RemainingKinetic = IncomingKinetic * Remaining,
+		RemainingPenetration = IncomingPenetration * Remaining
 	}
+	HitRes.PostPenetration = Result
+	return Result
+end
+
+-- Named spall-energy policies keep round-specific legacy coefficients visible
+-- without duplicating their meaning across every round handler.
+function ACE_GetSpallEnergy( HitRes, Policy )
+	local Post = HitRes and (HitRes.PostPenetration or ACE.GetPostPenetration(HitRes, {}) ) or {}
+
+	if Policy == "heat_shaped_charge" then
+		return (Post.IncomingKinetic or 0) * 0.75
+	elseif Policy == "residual_plus_fudge" then
+		return (Post.SpentKinetic or 0) + 0.2
+	end
+
+	return Post.SpentKinetic or 0
 end
 
 --Handles normal spalling
@@ -479,7 +557,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 		-- print("VEL: " .. SpallVel)
 
 
-		for i = 1,Spall do
+		for i = 1, math.min(Spall, ACE.SpallFragmentMax or ACE.SpallMax) do
 
 			ACE.CurSpallIndex = ACE.CurSpallIndex + 1
 			if ACE.CurSpallIndex > ACE.SpallMax then
@@ -736,7 +814,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 	State = State or { Depth = 0, Visited = {} }
 	State.Depth = State.Depth + 1
 
-	if State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250) then
+	if State.Depth > GetSpallDepthBudget() then
 		SetSpallTermination(Index, "depth_budget")
 		return false, State
 	end
@@ -754,10 +832,67 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 end
 
 --Spall trace core. For HESH and normal spalling
+local function CopySpallEnergy( Energy )
+	return {
+		Kinetic = tonumber(Energy and Energy.Kinetic) or 0,
+		Momentum = tonumber(Energy and Energy.Momentum) or 0,
+		Penetration = tonumber(Energy and Energy.Penetration) or 0
+	}
+end
+
+local SPALL_UNITS_PER_M = 39.37
+
+local function ApplySpallCapture( Energy, MatData, Entity, SpallVelocity, Spacing )
+	local spec = MatData and MatData.ArmorSpec
+	local baseCapture = math.Clamp(tonumber(spec and spec.spallCapture) or 0, 0, 1)
+	if baseCapture <= 0 then return 0 end
+
+	local armor = math.max(tonumber(Entity and Entity.ACF and Entity.ACF.Armour) or 0, 0)
+	local density = math.max(tonumber(spec and spec.densityKgM3) or 7850, 1)
+	local arealReference = math.max(tonumber(spec and spec.spallCaptureArealDensity) or 1, 1)
+	local velocityReference = math.max(tonumber(spec and spec.spallCaptureVelocity) or 1, 1)
+	local spacingReference = math.max(tonumber(spec and spec.spallCaptureSpacing) or 1, 0.001)
+	local arealDensity = armor * density / 1000
+	local thicknessFactor = 1 - math.exp(-arealDensity / arealReference)
+	local velocityMeters = math.max(tonumber(SpallVelocity) or 0, 0) / SPALL_UNITS_PER_M
+	local velocityRatio = velocityMeters / velocityReference
+	local velocityFactor = 1 / (1 + velocityRatio * velocityRatio * 0.5)
+	local spacingFactor = 0.65 + 0.35 * math.Clamp((tonumber(Spacing) or 0) / spacingReference, 0, 1)
+	local capture = math.Clamp(baseCapture * thicknessFactor * velocityFactor * spacingFactor, 0, 1)
+	if capture <= 0 then return end
+
+	local retained = 1 - capture
+	Energy.Kinetic = Energy.Kinetic * retained
+	Energy.Penetration = Energy.Penetration * retained
+	return capture
+end
+
+local function GetBoxExitDistance(Position, Direction, Minimum, Maximum)
+	if Direction > 0.0001 then return math.max((Maximum - Position) / Direction, 0) end
+	if Direction < -0.0001 then return math.max((Minimum - Position) / Direction, 0) end
+	return math.huge
+end
+
+local function GetSpallPlatePath( Entity, HitPos, Direction )
+	if not Entity or not Entity.OBBMins or not Entity.OBBMaxs or not Entity.WorldToLocal then return 0 end
+
+	local LocalHit = Entity:WorldToLocal(HitPos)
+	local LocalEnd = Entity:WorldToLocal(HitPos + Direction)
+	local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
+	if not LocalHit or not LocalEnd or not Mins or not Maxs then return 0 end
+	local LocalDirection = LocalEnd - LocalHit
+
+	return math.min(
+		GetBoxExitDistance(LocalHit.x, LocalDirection.x, Mins.x, Maxs.x),
+		GetBoxExitDistance(LocalHit.y, LocalDirection.y, Mins.y, Maxs.y),
+		GetBoxExitDistance(LocalHit.z, LocalDirection.z, Mins.z, Maxs.z)
+	)
+end
+
 function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
 	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
 	-- while later fragments must start from the original energy.
-	SpallEnergy = table.Copy(SpallEnergy)
+	SpallEnergy = CopySpallEnergy(SpallEnergy)
 
 	local Entity_Crit_Hit_Factor = 1.01
 
@@ -789,15 +924,13 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 			if IsValid(phys) and ACE.CheckClips( SpallRes.Entity, SpallRes.HitPos ) then
 
-				local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
-				table.insert( Temp_Filter , SpallRes.Entity )
-
-				ACE.SpallTraces[Index] = {}
-				ACE.SpallTraces[Index].start  = SpallRes.HitPos
-				ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-				ACE.SpallTraces[Index].filter = Temp_Filter
-				ACE.SpallTraces[Index].mins	= Vector(0,0,0)
-				ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
+				local TraceData = ACE.SpallTraces[Index]
+				TraceData.filter = TraceData.filter or {}
+				TraceData.filter[#TraceData.filter + 1] = SpallRes.Entity
+				TraceData.start  = SpallRes.HitPos
+				TraceData.endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+				TraceData.mins	= vector_origin
+				TraceData.maxs	= vector_origin
 
 				ACE.SpallTrace( SpallDirection , Index , SpallEnergy , SpallArea , Inflictor, SpallVelocity, State )
 				return
@@ -805,12 +938,29 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 
 		end
 
+		local Mat = SpallRes.Entity.ACF.Material or "RHA"
+		local MatData = ACE.GetMaterialData(Mat)
+		-- Traces start at the previous plate's front face. Remove that plate's path length
+		-- before converting the remaining front-face distance from Source units to metres;
+		-- touching plates therefore have zero physical spacing instead of receiving full
+		-- stand-off credit.
+		local spacing = 0
+		if State.LastSolidEntity and State.LastSolidHitPos then
+			local rawSpacing = SpallRes.HitPos:Distance(State.LastSolidHitPos)
+			local previousPath = GetSpallPlatePath(State.LastSolidEntity, State.LastSolidHitPos, SpallDirection)
+			spacing = math.max(rawSpacing - previousPath, 0) / SPALL_UNITS_PER_M
+		end
+		State.LastSolidEntity = SpallRes.Entity
+		State.LastSolidHitPos = SpallRes.HitPos
+		ApplySpallCapture(SpallEnergy, MatData, SpallRes.Entity, SpallVelocity, spacing)
+		if SpallEnergy.Penetration <= 0 or SpallEnergy.Kinetic <= 0 then
+			SetSpallTermination(Index, "captured")
+			return
+		end
+
 		-- Get the spalling hitAngle
 		local Angle		= ACE.GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
-
-		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
-		local MatData	= ACE.GetMaterialData( Mat )
 
 		local spall_resistance = MatData.spallresist
 
@@ -836,7 +986,7 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		-- print(SpallEnergy.Penetration)
 
 		-- Applies the damage to the impacted entity
-		local HitRes = ACE.Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall") --Angle replaced with 0 for inconsistent spall
+		local HitRes = ACE.Damage( SpallRes.Entity , SpallEnergy , SpallArea , Angle , Inflictor, 0, nil, "Spall", SpallRes.HitPos) --Angle replaced with 0 for inconsistent spall
 
 		-- If it's able to destroy it, kill it. Any debris is added to the single
 		-- continuation filter below so this impact cannot spawn a second retry.
@@ -855,20 +1005,21 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			SpallEnergy.Penetration = PostPenetration.RemainingPenetration
 			SpallEnergy.Kinetic = PostPenetration.RemainingKinetic
 
-			local Temp_Filter = table.Copy(ACE.SpallTraces[Index].filter)
-			table.insert( Temp_Filter , SpallRes.Entity )
+			local TraceData = ACE.SpallTraces[Index]
+			TraceData.filter = TraceData.filter or {}
+			TraceData.filter[#TraceData.filter + 1] = SpallRes.Entity
 			if IsValid(Debris) then
-				table.insert( Temp_Filter , Debris )
+				TraceData.filter[#TraceData.filter + 1] = Debris
 			end
 
-			ACE.SpallTraces[Index] = {}
-			ACE.SpallTraces[Index].start  = SpallRes.HitPos
-			ACE.SpallTraces[Index].endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
-			ACE.SpallTraces[Index].filter = Temp_Filter
-			ACE.SpallTraces[Index].mins	= Vector(0,0,0)
-			ACE.SpallTraces[Index].maxs	= Vector(0,0,0)
+			TraceData.start  = SpallRes.HitPos
+			TraceData.endpos = SpallRes.HitPos + ( SpallDirection + VectorRand() * ACE.SpallingDistribution ):GetNormalized() * math.max( SpallVelocity / 8, 600)
+			TraceData.mins	= vector_origin
+			TraceData.maxs	= vector_origin
 
-			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
+			if SpallDebug:GetBool() then
+				debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,0,255), true )
+			end
 			-- Blue trace means spall penetrated and will continue.
 
 			-- Retry
@@ -876,13 +1027,17 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 			return
 		else
 			SetSpallTermination(Index, "no_penetration")
-			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
+			if SpallDebug:GetBool() then
+				debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(255,0,0), true )
+			end
 			-- Red trace means spall trace that did hit something.
 		end
 
 	else
 		SetSpallTermination(Index, SpallRes.Hit and "invalid_entity" or "exhausted_valid_layers")
-		debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,255,0), true )
+		if SpallDebug:GetBool() then
+			debugoverlay.Line( SpallRes.StartPos, SpallRes.HitPos, 30 , Color(0,255,0), true )
+		end
 		-- Green trace means spall trace that doesn't hit something.
 	end
 end
@@ -909,7 +1064,11 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	Bullet.Ricochets = Bullet.Ricochets or 0
 
 	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
-	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
+	local PreviousImpactRandom = BeginImpactRandom(Bullet, Target)
+	local ok, HitRes = pcall(ACE.Damage, Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"], HitPos)
+	local impactRoll = ACE.ImpactRandom and ACE.ImpactRandom() or math.Rand(0, 1)
+	EndImpactRandom(PreviousImpactRandom)
+	if not ok then error(HitRes, 0) end
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false
@@ -936,7 +1095,7 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	end
 
 	-- Checking for ricochet. The angle value is clamped but can cause game crashes if this overflow check doesnt exist. Why?
-	if ricoProb < math.Rand(0,1) and Angle < 90 then
+	if ricoProb < impactRoll and Angle < 90 then
 		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
 		HitRes.Loss	= 1 - Ricochet
 		-- Keep Energy as the incoming impact budget. The shared post-penetration

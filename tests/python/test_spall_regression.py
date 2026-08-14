@@ -21,7 +21,9 @@ SOURCE = (
     / "server"
     / "sv_acfdamage.lua"
 )
-RUBBER_SOURCE = SOURCE.parents[1] / "shared" / "armor" / "rubber.lua"
+ARMOR_PROFILES = SOURCE.parents[1] / "shared" / "armor" / "modular_legacy_profiles.lua"
+ARMOR_BEHAVIORS = SOURCE.parents[1] / "shared" / "sh_ace_armor_behaviors.lua"
+ARMOR_TOOL = SOURCE.parents[2] / "weapons" / "gmod_tool" / "stools" / "acearmorprop.lua"
 
 
 @dataclass(frozen=True)
@@ -240,10 +242,12 @@ class SpallSourceContractTests(unittest.TestCase):
         if not match:
             raise AssertionError("ACE.SpallTrace body could not be located")
         cls.body = match.group("body")
-        cls.rubber_source = RUBBER_SOURCE.read_text(encoding="utf-8")
+        cls.rubber_source = ARMOR_PROFILES.read_text(encoding="utf-8")
+        cls.behavior_source = ARMOR_BEHAVIORS.read_text(encoding="utf-8")
+        cls.armor_tool_source = ARMOR_TOOL.read_text(encoding="utf-8")
 
     def test_trace_owns_a_copy_before_mutating_penetration(self):
-        copy_pos = self.body.index("SpallEnergy = table.Copy(SpallEnergy)")
+        copy_pos = self.body.index("SpallEnergy = CopySpallEnergy(SpallEnergy)")
         mutation_pos = self.body.index("SpallEnergy.Penetration =")
 
         self.assertLess(copy_pos, mutation_pos)
@@ -254,7 +258,15 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_spall_trace_depth_budget_is_tied_to_existing_spall_cap(self):
         self.assertIn("ACE.SpallTraceMaxDepth = ACE.SpallTraceMaxDepth or ACE.SpallMax", self.source)
-        self.assertIn("State.Depth > (ACE.SpallTraceMaxDepth or ACE.SpallMax or 250)", self.source)
+        self.assertIn("ACE.SpallLayerMax = ACE.SpallLayerMax or ACE.SpallTraceMaxDepth", self.source)
+        self.assertIn("GetSpallDepthBudget()", self.source)
+        self.assertIn("if traceMax ~= InitialSpallTraceMaxDepth and layerMax == InitialSpallLayerMax", self.source)
+
+    def test_spall_context_uses_source_unit_conversions_and_geometry(self):
+        self.assertIn("local SPALL_UNITS_PER_M = 39.37", self.source)
+        self.assertIn("local velocityMeters = math.max(tonumber(SpallVelocity) or 0, 0) / SPALL_UNITS_PER_M", self.source)
+        self.assertIn("OBBMins", self.source)
+        self.assertIn("WorldToLocal", self.source)
 
     def test_spall_trace_records_explicit_termination_reasons(self):
         for reason in (
@@ -265,9 +277,27 @@ class SpallSourceContractTests(unittest.TestCase):
             '"no_penetration"',
             '"invalid_entity"',
             '"exhausted_valid_layers"',
+            '"captured"',
         ):
             with self.subTest(reason=reason):
                 self.assertIn(reason, self.source)
+
+    def test_capture_skips_visual_clips_and_scales_by_layer_context(self):
+        clip = self.body.index("ACE.CheckClips")
+        capture = self.body.index("ApplySpallCapture(SpallEnergy")
+        self.assertLess(clip, capture)
+        self.assertIn("spallCaptureArealDensity", self.behavior_source)
+        self.assertIn("spallCaptureVelocity", self.behavior_source)
+        self.assertIn("spallCaptureSpacing", self.behavior_source)
+        self.assertIn("State.LastSolidHitPos", self.body)
+        self.assertIn("thicknessFactor", self.source)
+        self.assertIn("velocityFactor", self.source)
+        self.assertIn("spacingFactor", self.source)
+
+    def test_liner_capture_profiles_have_context_references(self):
+        for field in ("spallCaptureArealDensity", "spallCaptureVelocity", "spallCaptureSpacing"):
+            self.assertIn(field, self.rubber_source)
+            self.assertIn(field, self.behavior_source)
 
     def test_spall_trace_repeated_visit_guard_runs_before_damage(self):
         guard = self.body.index("CanContinue, State = CanContinueSpallTrace")
@@ -276,10 +306,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertLess(guard, damage)
 
     def test_both_continuation_paths_use_incoming_direction(self):
-        end_positions = re.findall(
-            r"ACE\.SpallTraces\[Index\]\.endpos\s*=\s*(.+)",
-            self.body,
-        )
+        end_positions = re.findall(r"TraceData\.endpos\s*=\s*(.+)", self.body)
 
         self.assertEqual(len(end_positions), 2)
         self.assertTrue(all("SpallDirection" in expression for expression in end_positions))
@@ -297,7 +324,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIn("SpallDirection = (SpallTrace.endpos - SpallTrace.start):GetNormalized()", self.body)
 
     def test_trace_has_no_shared_penetration_assignment_before_copy(self):
-        self.assertEqual(self.body.count("SpallEnergy = table.Copy(SpallEnergy)"), 1)
+        self.assertEqual(self.body.count("SpallEnergy = CopySpallEnergy(SpallEnergy)"), 1)
         self.assertGreaterEqual(self.body.count("SpallEnergy.Penetration ="), 2)
 
     def test_resolver_loss_is_applied_once_before_the_single_retry(self):
@@ -322,16 +349,15 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertIsNotNone(continuation)
 
     def test_rubber_uses_default_spall_resolution_with_material_effectiveness(self):
-        self.assertIn("Material.spallresist = 0.15", self.rubber_source)
-        self.assertIn('if Type == "Spall" then\n\t\t\teffectiveness = Material.spallresist', self.rubber_source)
-        valid_types = re.search(r"local validTypes = \{(?P<body>.*?)\n\t\t\}", self.rubber_source, re.DOTALL)
-
-        self.assertIsNotNone(valid_types)
-        self.assertNotIn('["Spall"]', valid_types.group("body"))
-        self.assertNotIn("specialresiliance = Material.spallresist", self.rubber_source)
+        self.assertIn("spallresist = 0.15", self.rubber_source)
+        self.assertIn('resolver = "modular"', self.rubber_source)
+        self.assertNotIn('legacyMode = "rubber"', self.rubber_source)
+        self.assertIn('ThreatTypes[Type] or "kinetic"', self.behavior_source)
+        self.assertIn('Frag = "fragment"', self.behavior_source)
+        self.assertNotIn("specialresiliance = Material.spallresist", self.behavior_source)
 
     def test_rubber_preserves_non_spall_overmatch_behavior(self):
-        self.assertIn("local breachCaliber = Type == \"Spall\" and caliber or caliber * 10", self.rubber_source)
+        self.assertIn('spallResistance = legacy.spallresist', self.rubber_source)
 
     def test_original_fragment_callers_remain_compatible(self):
         callers = re.findall(r"ACE.SpallTrace\(HitVec, Index", self.source)
@@ -349,7 +375,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_ricochet_keeps_incoming_energy_for_the_shared_contract(self):
         ricochet = re.search(
-            r"if ricoProb < math\.Rand\(0,1\).*?\n\tend\n\n\t-- Record the selected outcome",
+            r"if ricoProb < impactRoll.*?\n\tend\n\n\t-- Record the selected outcome",
             self.source,
             re.DOTALL,
         )
@@ -376,7 +402,7 @@ class SpallSourceContractTests(unittest.TestCase):
 
     def test_heat_spall_uses_shared_spent_energy_with_its_existing_multiplier(self):
         heat = (SOURCE.parents[1] / "shared" / "rounds" / "roundheat.lua").read_text(encoding="utf-8")
-        self.assertIn("HitRes.PostPenetration.IncomingKinetic * 0.75", heat)
+        self.assertIn('ACE.GetSpallEnergy(HitRes, "heat_shaped_charge")', heat)
 
     def test_round_handlers_use_the_shared_post_penetration_decision(self):
         rounds = list((SOURCE.parents[1] / "shared" / "rounds").glob("round*.lua"))

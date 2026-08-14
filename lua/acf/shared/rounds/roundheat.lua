@@ -246,7 +246,7 @@ function Round.propimpact( Index, Bullet, Target, HitNormal, HitPos, Bone )
 				table.insert( Bullet.Filter , Target )
 
 
-				ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.IncomingKinetic * 0.75 , Bullet.CannonCaliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
+				ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , ACE.GetSpallEnergy(HitRes, "heat_shaped_charge") , Bullet.CannonCaliber , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
 
 				Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(HitRes.PostPenetration.RemainingKinetic * ((Bullet.NotFirstPen and ACE.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
 

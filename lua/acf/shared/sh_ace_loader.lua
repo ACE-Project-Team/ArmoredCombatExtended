@@ -1,6 +1,7 @@
 
 -- Loads all files from shared folder
 AddCSLuaFile()
+include("acf/shared/sh_ace_armor_behaviors.lua")
 
 ACE = ACE or {}
 
@@ -418,11 +419,20 @@ do
 
 		local folderData = file.Find( Gpath .. folder .. "/*.lua", "LUA" )
 		for _, v in pairs( folderData ) do
+			-- The declarative legacy armor profiles intentionally replace the old armor
+			-- registrations, so load them only after every legacy material is available.
+			if folder == "armor" and v == "modular_legacy_profiles.lua" then continue end
 			AddCSLuaFile( "acf/shared/" .. folder .. "/" .. v )
 			include( "acf/shared/" .. folder .. "/" .. v )
 		end
 
 	end
+
+	AddCSLuaFile("acf/shared/armor/modular_legacy_profiles.lua")
+	include("acf/shared/armor/modular_legacy_profiles.lua")
+
+	-- Finalize the declarative material profiles after every legacy registration has loaded.
+	if ACE.ApplyArmorBehaviorModules then ACE.ApplyArmorBehaviorModules(ACE.ArmorTypes) end
 
 end
 

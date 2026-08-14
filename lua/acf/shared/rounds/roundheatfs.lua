@@ -223,7 +223,7 @@ function Round.propimpact( Index, Bullet, Target, HitNormal, HitPos, Bone )
 
 			if HitRes.PostPenetration.Continue then
 				table.insert( Bullet.Filter , Target )					--"Penetrate" (Ingoring the prop for the retry trace)
-				ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic + 0.2 , Bullet.CannonCaliber * 2 , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
+				ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , ACE.GetSpallEnergy(HitRes, "residual_plus_fudge") , Bullet.CannonCaliber * 2 , Target.ACF.Armour , Bullet.Owner , Target.ACF.Material) --Do some spalling
 				Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(HitRes.PostPenetration.RemainingKinetic * ((Bullet.NotFirstPen and ACE.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
 
 				return "Penetrated"

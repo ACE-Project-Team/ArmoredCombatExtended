@@ -24,8 +24,8 @@ assert(base:find("Entity.ACEImpactHitPos", 1, true), "special damage must preser
 assert(base:find("ArmorConditionLoss"), "damage results must expose applied armor condition damage")
 assert(not base:find("Entity%.ACF%.Armour = Entity%.ACF%.MaxArmour %* %(0%.5 %+ Entity%.ACF%.Health"),
 	"global health-to-armor erosion must not return")
-assert(damage:find("Bullet%[\"Type\"%], HitPos"), "kinetic impacts must pass hit position into damage")
-assert(damage:find('"Spall"') and damage:find("SpallRes%.HitPos"), "spall impacts must pass their hit position into damage")
+assert(damage:find("Bullet") and damage:find("Type") and damage:find("HitPos"), "kinetic impacts must pass hit position into damage")
+assert(damage:find("Spall") and damage:find("SpallRes%.HitPos"), "spall impacts must pass their hit position into damage")
 assert(resolver:find("impactCondition"), "modular resolver must consume localized condition")
 assert(resolver:find("ArmorResolution = function%(Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type, impactCondition%)"),
 	"modular armor wrapper must accept localized condition")

@@ -18,6 +18,8 @@ local RadarWireDescs = {
 	["Entities"]  = "Returns all the detected missiles into an array.",
 	["Position"]  = "Returns the current position of all the flying missiles of this radar",
 	["Velocity"]  = "Returns the velocity of all the active missiles into an array.",
+	["ID"]  = "Returns the unique ID of any tracked missile.",
+	["Owner"]  = "Returns the name of the owner of the missile.",
 
 }
 
@@ -32,6 +34,8 @@ function ENT:Initialize()
 		"Entities (" .. RadarWireDescs["Entities"] .. ") [ARRAY]",
 		"Position (" .. RadarWireDescs["Position"] .. ") [ARRAY]",
 		"Velocity (" .. RadarWireDescs["Velocity"] .. ") [ARRAY]",
+		"ID (" .. RadarWireDescs["ID"] .. ") [ARRAY]",
+		"Owner (" .. RadarWireDescs["Owner"] .. ") [ARRAY]",
 		"Heat"
 	} )
 
@@ -41,6 +45,8 @@ function ENT:Initialize()
 		Entities = {},
 		Position = {},
 		Velocity = {},
+		ID = {},
+		Owner = {},
 	}
 
 	self.ThinkDelay			= 0
@@ -59,7 +65,7 @@ function ENT:Initialize()
 	self.NextJamCheck		= 0
 	self.ResetJamDelay		= 0.2 --Periodically resets jamming strength to zero for the jammer to apply the highest noise available. This means the jamming won't always remain at full strength without a lot of networking.
 
-	self.PowerID = 10
+	self.PowerID = 8
 
 	self.Active				= false
 
@@ -151,6 +157,7 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 	Radar.Range        = radar.range
 	Radar.Id           = Id
 	Radar.Class        = radar.class
+	--print(Radar.Class)
 
 	Radar.Sound        = ACE.Missile.DefaultRadarSound
 	Radar.DefaultSound = Radar.Sound
@@ -282,6 +289,8 @@ function ENT:ScanForMissiles()
 	local entArray = {}
 	local posArray = {}
 	local velArray = {}
+	local IDArray = {}
+	local OwnerArray = {}
 
 	local count = 0
 
@@ -306,12 +315,17 @@ function ENT:ScanForMissiles()
 
 		count = count + 1
 
+
+		local Owner = missile:CPPIGetOwner()
+
 		-- Sort the missiles by distance from the radar
 		local insertionIndex = ACE_GetBinaryInsertIndex(distArray, distanceSqr)
 		tableInsert(distArray, insertionIndex, distanceSqr)
 		tableInsert(entArray, insertionIndex, missile)
 		tableInsert(posArray, insertionIndex, missile.CurPos) --Replaced with non-cached value as to not lag behind.
 		tableInsert(velArray, insertionIndex, missile.Flight * 39.37)
+		tableInsert(IDArray, insertionIndex, missile.MissileID) --Replaced with non-cached value as to not lag behind.
+		tableInsert(OwnerArray, insertionIndex, Owner:Nick())
 
 		if distanceSqr < closestSqr then
 			closest = missile.CurPos
@@ -328,12 +342,17 @@ function ENT:ScanForMissiles()
 	WireLib.TriggerOutput( self, "Entities", entArray )
 	WireLib.TriggerOutput( self, "Position", posArray )
 	WireLib.TriggerOutput( self, "Velocity", velArray )
+	WireLib.TriggerOutput( self, "ID", IDArray )
+	WireLib.TriggerOutput( self, "Owner", OwnerArray )
 
 	self.OutputData.Detected = count
 	self.OutputData.ClosestDistance = closestOutput
 	self.OutputData.Entities = entArray
 	self.OutputData.Position = posArray
 	self.OutputData.Velocity = velArray
+	self.OutputData.ID = IDArray
+	self.OutputData.Owner = OwnerArray
+
 
 	if count > (self.LastMissileCount or 0) then
 		self:EmitRadarSound()
@@ -366,6 +385,16 @@ function ENT:ClearOutputs()
 	if #self.Outputs.Velocity.Value > 0 then
 		WireLib.TriggerOutput( self, "Velocity", {} )
 		self.OutputData.Velocity = {}
+	end
+
+	if #self.Outputs.ID.Value > 0 then
+		WireLib.TriggerOutput( self, "ID", {} )
+		self.OutputData.ID = {}
+	end
+
+	if #self.Outputs.Owner.Value > 0 then
+		WireLib.TriggerOutput( self, "Owner", {} )
+		self.OutputData.Owner = {}
 	end
 
 end

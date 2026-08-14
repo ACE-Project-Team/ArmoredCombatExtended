@@ -101,7 +101,16 @@ function ENT:Think()
 
 	if self.Active and self.Legal then
 
-		local ScanArray = ACE.radarEntities
+		local ScanArray = table.Copy(ACE.radarEntities)
+
+		for ECMEnt, _ in pairs(ACE.ECMPods) do
+			table.insert( ScanArray, ECMEnt )
+		end
+
+		for MissileEnt, _ in pairs(ACE.ActiveMissiles) do
+			table.insert( ScanArray, MissileEnt )
+		end
+
 		local thisPos = self:GetPos()
 		local detected = 0
 		local radIDs = {}
@@ -114,31 +123,41 @@ function ENT:Think()
 
 				local entpos = scanEnt:GetPos()
 				local difpos = (thisPos - entpos)
-				local radActive = scanEnt.Active
+				local Eclass = scanEnt:GetClass()
 
-				if radActive then
+				local Bypass = false
+				if Eclass == "ace_missile" then --It's a missile. Bit of a patchwork fix for missiles.
+					if scanEnt.Guidance.Name ~= "Radar" then continue end --Not a radar missile
+					Bypass = true
+					scanEnt.ConeDegs = scanEnt.Guidance.ViewCone
+				end
+
+				if scanEnt.Active or Bypass then
 					local ang = angle_zero
 					local absang = angle_zero
 
-					local Eclass = scanEnt:GetClass()
-
-					if Eclass == "acf_missileradar" then continue end
+					if Eclass == "acf_missileradar" then continue end --Exists only on spherical RWR which is intended to be easier RWR to use. Helps to keep related only to AA radars
 
 					local ScanCone1 = 5
 					local ScanCone2 = 5
 
-					if scanEnt:GetClass() ~= "ace_searchradar" then
+					if Eclass == "ace_trackingradar" or scanEnt.Class == "DIR-AM" or Eclass == "ace_missile" then --Directional Radar
 						ang = scanEnt:WorldToLocalAngles(difpos:Angle())	--Used for testing if inrange
-						absang = Angle(math.abs(ang.p), math.abs(ang.y), 0) --Since I like ABS so much
+						absang = Angle(math.abs(ang.p),math.abs(ang.y),0) --Since I like ABS so much
 
 						ScanCone1 = (scanEnt.Cone or scanEnt.ConeDegs or 0 ) + 8
 						ScanCone2 = (scanEnt.Cone or scanEnt.ConeDegs  or 0 ) + 8
-					else --Search radar
-						ang	=  scanEnt:WorldToLocalAngles(difpos:Angle())  - Angle(0, scanEnt.CurrentScanAngle, 0)	--Used for testing if inrange
-						--absang	= Angle(math.abs(math.NormalizeAngle(ang.p)),math.abs(math.NormalizeAngle(ang.y)), 0)  --Since I like ABS so much
-						absang	= Angle(0,math.abs(math.NormalizeAngle(ang.y)), 0)  --Because elevation limits are disabled on search radars
+					elseif Eclass == "ace_searchradar" then --Search Radar
+						ang	=  scanEnt:WorldToLocalAngles(difpos:Angle())  - Angle(0,scanEnt.CurrentScanAngle,0)	--Used for testing if inrange
+						--absang	= Angle(math.abs(math.NormalizeAngle(ang.p)),math.abs(math.NormalizeAngle(ang.y)),0)  --Since I like ABS so much
+						absang	= Angle(0,math.abs(math.NormalizeAngle(ang.y)),0)  --Because elevation limits are disabled on search radars
 						ScanCone1 = 99999
-						ScanCone2 = scanEnt.Cone / 4
+						ScanCone2 = scanEnt.Cone / 4 + 8
+					else --Omnidirectional emitter
+						ang	=  angle_zero
+						absang	= angle_zero
+						ScanCone1 = 99999
+						ScanCone2 = 99999
 					end
 
 					--if (absang.p < ScanCone and absang.y < ScanCone) then --Entity is within radar cone

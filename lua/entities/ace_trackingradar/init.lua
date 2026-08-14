@@ -27,6 +27,8 @@ function ENT:Initialize()
 	self.IsJammed			= 0
 	self.JamStrength		= 0
 	self.JamDir				= vector_origin
+	self.FilterMissiles = false
+
 
 	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
@@ -34,7 +36,7 @@ function ENT:Initialize()
 
 	self.AcquiredTargets	= {}
 
-	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone"})
+	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone", "FilterMissiles"})
 	self.Outputs = WireLib.CreateOutputs(self, {
 		"Detected",
 		"Owner [ARRAY]",
@@ -160,6 +162,12 @@ function ENT:TriggerInput( inp, value )
 		end
 
 		self:UpdateOverlayText()
+	elseif inp == "FilterMissiles" then
+		if value > 0 then
+			self.FilterMissiles = true
+		else
+			self.FilterMissiles = false
+		end
 	end
 end
 
@@ -278,7 +286,16 @@ function ENT:ScanForContraptions()
 	GCTraceData.mins = Vector(-ConeClutterSize, -ConeClutterSize, -ConeClutterSize)
 	GCTraceData.maxs = Vector(ConeClutterSize, ConeClutterSize, ConeClutterSize)
 
-	local BTFactor = 1 / (1 + ((self.Cone - 1) / (self.ICone - 1)) * 2)
+	--0-1x multiplier. Scales down burnthrough range based on fraction of radar cone used. 
+	--1x at 5 degrees.
+	--0.33x at max radar cone.
+	--Intermittent values fall somewhere between the two.
+	local BTFactor = 1 / (1 + (math.max(self.Cone - 5,0) / math.max(self.ICone - 5,1)) * 2)
+
+
+	--Inaccuracy of radar per meter of range.
+	local BaseRadInaccuracy = 0.01 * 39.37 --0.01 meters per every meter. 4 meters @ 400m. 8 meters @ 100m.
+
 
 	local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 	local CMCount = table.Count(CounterMeasures)
@@ -297,7 +314,10 @@ function ENT:ScanForContraptions()
 			LOSTraceData.start = SelfPos
 			LOSTraceData.endpos = BasePos
 
-			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * 100 * BTFactor) / self.JamStrength >= BaseDistance
+			--If not jammed 
+			--OR
+			--Burnthrough distance is greater than the current distrance to the target(In meters)
+			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= BaseDistance
 
 			if AngleFromTarget < SearchCone and IsValid(Owner) and not TraceHull(LOSTraceData).Hit and BurnThrough then
 				--debugoverlay.Line(SelfPos, BasePos, 0.15, Color(0, 255, 0))
@@ -345,13 +365,13 @@ function ENT:ScanForContraptions()
 				end
 
 				if ValidTarget then
-					local BaseInaccuracy = VectorRand() * (BaseDistance / 10) * (1 + self.JamStrength / 2)
+					local BaseInaccuracy = VectorRand() * BaseDistance * BaseRadInaccuracy * (1 + self.JamStrength / 2)
 					local OffboreInaccuracy = 1 + (AngleFromTarget / self.ICone) * self.OffBoreInaccFactor
 
 
 					if CMCount > 0 then
 						BaseInaccuracy = BaseInaccuracy * 1.25
-						OffboreInaccuracy = OffboreInaccuracy * 3
+						OffboreInaccuracy = OffboreInaccuracy * 3 --Added to help countermeasures break locks. Radar that isn't aiming directly at the target will suffer accuracy penalties and have a harder time re-acquiring.
 						local ratio = math.Rand(0,1)
 						if ratio > 0.6 then
 							local CM = CounterMeasures[math.random(1,CMCount)]
@@ -376,6 +396,43 @@ function ENT:ScanForContraptions()
 					tableInsert(self.AcquiredTargets, Base)
 
 					debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
+				end
+			end
+		end
+	end
+
+	--It's ugly I know. But it's simplified and doesn't copy the CFW table.
+	if not self.FilterMissiles then
+		for Missile in pairs(ACE.ActiveMissiles) do
+			if IsValid(Missile) then
+				local MissilePos = Missile:GetPos()
+				local PosDiff = MissilePos - SelfPos
+				local MissileDistance = PosDiff:Length()
+				local DirectionToTarget = PosDiff / MissileDistance
+				local AngleFromTarget = GetAngleBetweenVectors(DirectionToTarget, SelfForward)
+				local Owner = Missile:CPPIGetOwner()
+				MissileDistance = MissileDistance / 39.3701 --Used to normalize vector. Convert to meters for other calcs
+
+				LOSTraceData.start = SelfPos
+				LOSTraceData.endpos = MissilePos
+
+				--If not jammed 
+				--OR
+				--Burnthrough distance is greater than the current distrance to the target(In meters)
+				local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= MissileDistance
+
+				if AngleFromTarget < SearchCone and IsValid(Owner) and not TraceHull(LOSTraceData).Hit and BurnThrough then
+
+					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
+
+					tableInsert(Owners, InsertionIndex, Owner:Nick())
+					tableInsert(Distances, InsertionIndex, MissileDistance)
+					tableInsert(Positions, InsertionIndex, MissilePos)
+					tableInsert(Velocities, InsertionIndex, Missile.Flight * 39.37)
+					tableInsert(IDs, InsertionIndex, -Missile.MissileID)
+					tableInsert(self.AcquiredTargets, Missile)
+
+					debugoverlay.Line(SelfPos, MissilePos, 0.15, Color(255, 0, 140))
 				end
 			end
 		end

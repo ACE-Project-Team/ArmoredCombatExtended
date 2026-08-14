@@ -13,7 +13,7 @@ local RadarTable = ACE.Weapons.Radars
 function ENT:Initialize()
 
 	self.ThinkDelay			= 0.1
-	self.StatusUpdateDelay	= 0.5
+	self.StatusUpdateDelay	= 0.6
 	self.LastStatusUpdate	= CurTime()
 	self.Active				= false
 
@@ -40,7 +40,6 @@ function ENT:Initialize()
 	self.HeatAboveAmbient   = 10 -- Targets below this temperature above ambient will be ignored
 
 	self.MinViewCone        = 2
-	self.MaxViewCone        = 60
 
 	self.NextLegalCheck     = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
@@ -48,23 +47,22 @@ function ENT:Initialize()
 
 	self.TargetDetected		= false
 
-	self.MaxInaccuracy = 40 --The minimum detection accuracy of targets
-	self.MaxAccuracyOutsideSweetspot = 10
+	self.MaxInaccuracy = 60 --The starting and max detection inaccuracy of targets
+	self.MaxAccuracyOutsideSweetspot = 15
 	self.MinInaccuracy = 2
 
 	--Deg/s of inaccuracy reduced per second as the IRST dials in.
-	self.ResolveSpeedBase = 2
+	self.ResolveSpeedBase = 0.04
 	--Targets near the center are resolved fastest and at the highest resolution
 	self.SweetspotResolveSpeedMul = 2
 	--Hotter targets resolve faster. Every 100C, multiple by this value.
-	self.HeatResolveMul = 3
-	self.HeatRegionMul = 1 --Every 100C adds another multiple of the regionsize
+	self.HeatResolveMul = 1
+	self.HeatRegionMul = 8 --Every 100C adds another multiple of the regionsize
 
-	--The outer detection area of the IRST
-	self.RoughDetectionArea = 10
+	self.BaseOuterDetectionCone = 3 --Base max conesize of IRST. Heat will increase the region this can see.
 
 	--The Inner and more accurate detection area of the IRST
-	self.BaseSweetSpotSize = 4
+	self.BaseSweetSpotSize = 7
 
 	self.IRResolution = {}
 	self:SetActive(ACE_GetDefaultActiveInputState(self))
@@ -93,6 +91,7 @@ function ACE_MakeIRST(Owner, Pos, Angle, Id)
 		IRST.ACFName			= radar.name
 		IRST.ICone				= radar.viewcone	--Note: intentional. --Recorded initial cone
 		IRST.Cone				= IRST.ICone
+		IRST.MaxViewCone        = Cone
 		IRST.ACEPoints			= radar.acepoints or 0.9
 
 		IRST.Id					= Id
@@ -199,7 +198,7 @@ function ENT:CleanupIRTracks()
 
 	-- Collect IDs that need removal
 	for ID, Resolution in pairs(self.IRResolution) do
-		Resolution = Resolution + self.ResolveSpeedBase * self.ThinkDelay * 4
+		Resolution = Resolution + 10
 		if Resolution > RemovalThreshold then
 			table.insert(IDsToRemove, ID)
 		else
@@ -273,11 +272,11 @@ function ENT:ScanForContraptions()
 		-- instead of tracing every contraption on the server each think.
 		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not TraceHull(LOSTraceData).Hit then
 
-			local RegionMul = Heat / 100 * self.HeatRegionMul
-			local ResolveMul = Heat / 100 * self.HeatResolveMul
+			local RegionMul = 1 + (Heat / 100) * self.HeatRegionMul
+			local ResolveMul = 1 + 1 + (Heat / 100) * self.HeatResolveMul
 
-			local OuterDetectRegion = self.RoughDetectionArea * RegionMul
-			local InnerDetectRegion = self.BaseSweetSpotSize * RegionMul
+			local OuterDetectRegion = self.BaseOuterDetectionCone * RegionMul
+			local InnerDetectRegion = self.BaseSweetSpotSize-- * RegionMul
 
 			local ClampMin = self.MaxAccuracyOutsideSweetspot
 
@@ -295,7 +294,7 @@ function ENT:ScanForContraptions()
 
 			local Index = ACE_GetContraptionIndex(Contraption)
 
-			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 2.5,ClampMin,self.MaxInaccuracy)
+			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase / self.ThinkDelay * ResolveMul - 10, ClampMin, self.MaxInaccuracy) --10 is to prevent decay from occuring if actively tracking the target
 
 			--print(self.IRResolution[Index])
 
@@ -317,7 +316,10 @@ function ENT:ScanForContraptions()
 		end
 	end
 
-	for _, Ply in ipairs(player.GetAll()) do
+	local Creatures = player.GetAll()
+	table.Merge(Creatures,ents.FindByClass( "npc_*" ))
+
+	for _, Ply in ipairs(Creatures) do
 
 		if not IsValid(Ply) then continue end
 
@@ -337,11 +339,11 @@ function ENT:ScanForContraptions()
 		-- short-circuits, so only players within the view cone get a TraceHull.
 		if AngleFromTarget < self.Cone and not TraceHull(LOSTraceData).Hit then
 
-			local RegionMul = Heat / 100 * self.HeatRegionMul
-			local ResolveMul = Heat / 100 * self.HeatResolveMul
+			local RegionMul = 1 + (Heat / 100) * self.HeatRegionMul
+			local ResolveMul = 1 + (Heat / 100) * self.HeatResolveMul
 
-			local OuterDetectRegion = self.RoughDetectionArea * RegionMul
-			local InnerDetectRegion = self.BaseSweetSpotSize * RegionMul
+			local OuterDetectRegion = self.BaseOuterDetectionCone * RegionMul
+			local InnerDetectRegion = self.BaseSweetSpotSize-- * RegionMul
 
 			local ClampMin = self.MaxAccuracyOutsideSweetspot
 
@@ -356,8 +358,8 @@ function ENT:ScanForContraptions()
 			end
 
 			self.TargetDetected = true
-			local Index = Ply:Nick()
-			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 5,ClampMin,self.MaxInaccuracy)
+			local Index = "Nil"--Ply:Nick()
+			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase / self.ThinkDelay * ResolveMul - 10, ClampMin, self.MaxInaccuracy) --10 is to prevent decay from occuring if actively tracking the target
 
 			--print(self.IRResolution[Index])
 
@@ -453,6 +455,20 @@ function ENT:UpdateOverlayText()
 	local txt = "Status: " .. status
 
 	txt = txt .. "\n\nView Cone: " .. math.Round(cone * 2, 2) .. " deg"
+
+	txt = txt .. "\nDetection Cone for each temperature: "
+	txt = txt .. "\nHuman - " .. math.Round(self.BaseOuterDetectionCone * 1 + (38 / 100) * self.HeatRegionMul, 1) .. " deg"
+	txt = txt .. "\n50C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (50 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n100C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (100 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n150C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (150 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n200C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (200 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n250C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (250 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n300C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (300 / 100) * self.HeatRegionMul, 1) .. " deg"
 
 	if detected then
 		txt = txt .. "\n\nTarget Detected!"

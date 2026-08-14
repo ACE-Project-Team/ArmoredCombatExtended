@@ -102,9 +102,19 @@ function this:GetGuidance(missile)
 			self.TTime = (self.Dist / missile.Speed / 39.37)
 		end
 
-		local TarVel = (self.TPos - Lastpos) / engine.TickInterval()
-		missile.TargetVelocity = TarVel --Used for Inertial Guidance
-		self.TargetPos = self.TPos + TarVel * self.TTime  * ((missile.MissileActive and (missile.IsJammed == 0)) and 1 or 0) --Don't lead the target on the rail
+		if not missile.MissileActive and not missile.IsJammed then --Missile guides on target. WITH velocity information.
+
+			local TarVel = (self.TPos - Lastpos) / engine.TickInterval()
+			missile.TargetVelocity = TarVel --Used for Inertial Guidance
+			self.TargetPos = self.TPos + TarVel * self.TTime
+
+		else --Missile still on rails or is being jammed. No velocity information.
+
+			missile.TargetVelocity = vector_origin --Used for Inertial Guidance
+			self.TargetPos = self.TPos
+
+		end
+
 		return {TargetPos = self.TargetPos, ViewCone = self.ViewCone}
 	end
 
@@ -128,7 +138,7 @@ end
 
 function this:CheckTarget(missile)
 
-	--if not (self.Target or self.Override) then
+	--if not (self.Target or self.Override) then --Allowed to reseek for a new target
 		local target = self:AcquireLock(missile)
 
 		if IsValid(target) then
@@ -142,38 +152,96 @@ end
 function this:GetWhitelistedEntsInCone(missile)
 
 	local missilePos = missile:GetPos()
-	local DPLRFAC = 65 - (self.SeekCone / 2)
 	local foundAnim = {}
 
-	--local ScanArray = ACE.contraptionEnts
-
-	local ConeInducedGCTRSize = self.SeekCone * 120 --2 meter wide tracehull for every 100m distance
-	local GCTraceData = {
-		mask = bit.bor(MASK_WATER, MASK_SOLID_BRUSHONLY),
-		mins = Vector( -ConeInducedGCTRSize, -ConeInducedGCTRSize, -ConeInducedGCTRSize ),
-		maxs = Vector( ConeInducedGCTRSize, ConeInducedGCTRSize, ConeInducedGCTRSize )
-	}
-
-	local scanEnt = nil
-	for Contraption in pairs(CFW.Contraptions) do
-		scanEnt = Contraption:GetACEBaseplate() or nil
-
-		-- skip any invalid entity
-		if not IsValid(scanEnt) then continue end
 
 
-		--No sir I will not ignore the flares. They "might" contain chaff
 
-		--		-- skip any flare from vision.
-		--		if scanEnt:GetClass() == "ace_flare" then continue end
 
-		local entpos = scanEnt:GetPos()
-		local difpos = entpos - missilePos
-		local dist = difpos:Length()
+	if not missile.IsJammed then --Guidance operating normally. Missile is not jammed.
 
-		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+		local DPLRFAC = 65 - (self.SeekCone / 2)
 
+		local ConeInducedGCTRSize = self.SeekCone * 120 --2 meter wide tracehull for every 100m distance
+		local GCTraceData = {
+			mask = bit.bor(MASK_WATER, MASK_SOLID_BRUSHONLY),
+			mins = Vector( -ConeInducedGCTRSize, -ConeInducedGCTRSize, -ConeInducedGCTRSize ),
+			maxs = Vector( ConeInducedGCTRSize, ConeInducedGCTRSize, ConeInducedGCTRSize )
+		}
+
+		local scanEnt = nil
+		for Contraption in pairs(CFW.Contraptions) do
+			scanEnt = Contraption:GetACEBaseplate() or nil
+
+			-- skip any invalid entity
+			if not IsValid(scanEnt) then continue end
+
+
+			--No sir I will not ignore the flares. They "might" contain chaff
+
+			--		-- skip any flare from vision.
+			--		if scanEnt:GetClass() == "ace_flare" then continue end
+
+			local entpos = scanEnt:GetPos()
+			local difpos = entpos - missilePos
+			local dist = difpos:Length()
+
+			-- skip any ent outside of minimun distance
+			if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+
+
+				local LOSdata = {}
+				LOSdata.start			= missilePos
+				LOSdata.endpos			= entpos
+				LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
+				LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
+				LOSdata.mins			= Vector(0,0,0)
+				LOSdata.maxs			= Vector(0,0,0)
+				local LOStr = util.TraceHull( LOSdata )
+
+				--Trace did not hit world
+				if not LOStr.Hit then
+
+					local GCtr = util.TraceHull( GCTraceData ) --Hits anything in the world.
+					GCTraceData.start = entpos
+					GCTraceData.endpos = entpos + difpos:GetNormalized() * 8000 * self.GCMultiplier
+
+					--Doppler testing fun
+					local entvel = scanEnt:GetVelocity()
+
+					local DPLR = missile:WorldToLocal(missilePos + entvel * 2)
+					local Dopplertest = math.min(math.abs(entvel:Length() / math.max(math.abs(DPLR.Y), 0.01)) * 100, 10000)
+					local Dopplertest2 = math.min(math.abs(entvel:Length() / math.max(math.abs(DPLR.Z), 0.01)) * 100, 10000)
+
+					--Qualifies as radar target, if a target is moving towards the radar at 30 mph the radar will also classify the target.
+					if (Dopplertest < DPLRFAC or Dopplertest2 < DPLRFAC or (math.abs(DPLR.X) > 880)) and ((math.abs(DPLR.X / entvel:Length()) > 0.3) or (not (GCtr.Hit and not GCtr.HitSky))) then
+						--print("PassesDoppler")
+						--Valid target
+						--print(scanEnt)
+						table.insert(foundAnim, scanEnt)
+					end
+
+				end
+
+
+		end
+
+	else --Missile is being jammed. Utilize Home-On-Jam fallback and target emitting jammers.
+
+		for _, scanEnt in pairs(ACE.ECMPods) do
+
+			-- skip any invalid entity
+			if not scanEnt:IsValid() then continue end
+
+			--Skips any non-emitting jammers.
+			if not scanEnt.Active then continue end
+
+			local entpos = scanEnt:GetPos()
+			local difpos = entpos - missilePos
+			local dist = difpos:Length()
+			
+			-- skip any ent outside of minimun distance
+			if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 			local LOSdata = {}
 			LOSdata.start			= missilePos
@@ -186,30 +254,15 @@ function this:GetWhitelistedEntsInCone(missile)
 
 			--Trace did not hit world
 			if not LOStr.Hit then
-
-				local GCtr = util.TraceHull( GCTraceData ) --Hits anything in the world.
-				GCTraceData.start = entpos
-				GCTraceData.endpos = entpos + difpos:GetNormalized() * 8000 * self.GCMultiplier
-
-				--Doppler testing fun
-				local entvel = scanEnt:GetVelocity()
-
-				local DPLR = missile:WorldToLocal(missilePos + entvel * 2)
-				local Dopplertest = math.min(math.abs(entvel:Length() / math.max(math.abs(DPLR.Y), 0.01)) * 100, 10000)
-				local Dopplertest2 = math.min(math.abs(entvel:Length() / math.max(math.abs(DPLR.Z), 0.01)) * 100, 10000)
-
-				--Qualifies as radar target, if a target is moving towards the radar at 30 mph the radar will also classify the target.
-				if (Dopplertest < DPLRFAC or Dopplertest2 < DPLRFAC or (math.abs(DPLR.X) > 880)) and ((math.abs(DPLR.X / entvel:Length()) > 0.3) or (not (GCtr.Hit and not GCtr.HitSky))) then
-					--print("PassesDoppler")
-					--Valid target
-					--print(scanEnt)
 					table.insert(foundAnim, scanEnt)
-				end
-
 			end
 
+		end
 
 	end
+
+
+
 
 	return foundAnim
 

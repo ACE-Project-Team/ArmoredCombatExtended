@@ -816,6 +816,18 @@ if SERVER then
 			return Start + 1
 		end
 	end
+
+	local ACE_mID_Index = 0
+
+	function ACE_AssignMissileUniqueID(Missile) --Assigns a unique ID to a missile
+		Missile.MissileID = ACE_mID_Index
+
+		ACE_mID_Index = ACE_mID_Index + 1
+
+		if ACE_mID_Index > 1000 then
+			ACE_mID_Index = 0
+		end
+	end
 end
 
 -- ============================================================

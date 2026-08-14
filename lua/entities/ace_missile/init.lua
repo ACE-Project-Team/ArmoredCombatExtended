@@ -97,6 +97,7 @@ function ENT:Initialize()
 
 	self:SetNW2Bool("MissileActive", false)
 
+	ACE_AssignMissileUniqueID(self)
 
 	--[[
 	self.LOSTraceData = {

@@ -134,52 +134,87 @@ function this:GetWhitelistedEntsInCone(missile)
 	local missilePos = missile:GetPos()
 	local foundAnim = {}
 
+	if not missile.IsJammed then --Guidance operating normally. Missile is not jammed.
+		local ScanArray = {}
 
-	local ScanArray = {}
+		--table.Merge(
 
-	--table.Merge(
-
-	for _, scanRadar in pairs(self.Radars) do
-		for _, RadarTargets in pairs(scanRadar.AcquiredTargets or {}) do
-
-
-		-- skip any invalid entity
-			if not RadarTargets:IsValid() then continue end
-			table.insert(ScanArray , RadarTargets)
-		end
-	end
-
-	for  _, scanEnt in pairs(ScanArray) do
+		for _, scanRadar in pairs(self.Radars) do
+			for _, RadarTargets in pairs(scanRadar.AcquiredTargets or {}) do
 
 
-		local entpos = scanEnt:GetPos()
-		local difpos = entpos - missilePos
-		local dist = difpos:Length()
-
-		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
-
-		local LOSdata = {}
-		LOSdata.start			= missilePos
-		LOSdata.endpos			= entpos
-		LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
-		LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
-		LOSdata.mins			= Vector(0,0,0)
-		LOSdata.maxs			= Vector(0,0,0)
-		local LOStr = util.TraceHull( LOSdata )
-
-		--Trace did not hit world
-		if not LOStr.Hit then
-
-
-			table.insert(foundAnim, scanEnt)
-
-
+			-- skip any invalid entity
+				if not RadarTargets:IsValid() then continue end
+				table.insert(ScanArray , RadarTargets)
+			end
 		end
 
+		for  _, scanEnt in pairs(ScanArray) do
+
+
+			local entpos = scanEnt:GetPos()
+			local difpos = entpos - missilePos
+			local dist = difpos:Length()
+
+			-- skip any ent outside of minimun distance
+			if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+
+			local LOSdata = {}
+			LOSdata.start			= missilePos
+			LOSdata.endpos			= entpos
+			LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
+			LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
+			LOSdata.mins			= Vector(0,0,0)
+			LOSdata.maxs			= Vector(0,0,0)
+			local LOStr = util.TraceHull( LOSdata )
+
+			--Trace did not hit world
+			if not LOStr.Hit then
+
+
+				table.insert(foundAnim, scanEnt)
+
+
+			end
+
+
+		end
+
+	else --Missile is being jammed. Utilize Home-On-Jam fallback and target emitting jammers.
+
+		for _, scanEnt in pairs(ACE.ECMPods) do
+
+			-- skip any invalid entity
+			if not scanEnt:IsValid() then continue end
+
+			--Skips any non-emitting jammers.
+			if not scanEnt.Active then continue end
+
+			local entpos = scanEnt:GetPos()
+			local difpos = entpos - missilePos
+			local dist = difpos:Length()
+			
+			-- skip any ent outside of minimun distance
+			if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+
+			local LOSdata = {}
+			LOSdata.start			= missilePos
+			LOSdata.endpos			= entpos
+			LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
+			LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
+			LOSdata.mins			= Vector(0,0,0)
+			LOSdata.maxs			= Vector(0,0,0)
+			local LOStr = util.TraceHull( LOSdata )
+
+			--Trace did not hit world
+			if not LOStr.Hit then
+					table.insert(foundAnim, scanEnt)
+			end
+
+		end
 
 	end
-
+	
 	return foundAnim
 
 end

@@ -6,8 +6,6 @@ net.Receive("ACE_SettingsSync", function(_, ply)
     -- Sync all settings to a client requesting them
     -- This is kinda hardcoded, maybe at some point there can be a list of settings to sync?
     if setting == "_request" then
-        print("[ACE] " .. ply:Nick() .. " requested ACE settings sync")
-
         local settings = util.TableToJSON({
             -- General
             ace_hepush = GetConVar("ace_hepush"):GetFloat(),

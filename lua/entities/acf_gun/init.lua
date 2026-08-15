@@ -45,7 +45,12 @@ local function GetGunReloadTime(Gun, BulletData, RoFMul)
 
 	if CanUseLoader then
 		local CrewReload = Loader.Stamina / 100
-		return math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, DefaultReloadTime), Loader
+		-- Crew stamina scales the reload down toward the fire-rate floor, but that floor is a hard
+		-- minimum: a ROFLimit (or undersized ammo) slower than the shell's physical reload leaves
+		-- LowestReloadTime > DefaultReloadTime, so the upper bound is raised to LowestReloadTime to
+		-- keep the clamp band from inverting -- otherwise the loader would fire past the set cap.
+		local SlowestReloadTime = math.max(LowestReloadTime, DefaultReloadTime)
+		return math.Clamp(LowestReloadTime / CrewReload, LowestReloadTime, SlowestReloadTime), Loader
 	end
 
 	return math.max(DefaultReloadTime, LowestReloadTime)

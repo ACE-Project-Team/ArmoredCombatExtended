@@ -7,7 +7,7 @@ include("acf/shared/sh_ace_points_model.lua")
 AddCSLuaFile("acf/shared/sh_ace_manufacturing.lua")
 include("acf/shared/sh_ace_manufacturing.lua")
 
-local floor, Clamp = math.floor, math.Clamp
+local floor, Clamp, min = math.floor, math.Clamp, math.min
 
 -- returns last parent in chain, which has physics
 function ACE_GetPhysicalParent( obj )
@@ -1512,4 +1512,14 @@ function ACE_GetEntPoints(ent)
 
 	local scale = (ACE.PointsModel and ACE.PointsModel.Scale) or 1
 	return (tonumber(ent.ACEPoints) or 0) * scale
+end
+
+if CLIENT then
+	function ACE.ScreenShake(pos, amplitude, frequency, duration, radius, airshake)
+		amplitude = min(amplitude, 200)
+		frequency = Clamp(frequency, 5, 40)
+		duration = min(duration, 5)
+
+		util.ScreenShake(pos, amplitude, frequency, duration, radius, airshake)
+	end
 end

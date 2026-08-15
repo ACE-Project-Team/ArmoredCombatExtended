@@ -157,7 +157,6 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 	Radar.Range        = radar.range
 	Radar.Id           = Id
 	Radar.Class        = radar.class
-	--print(Radar.Class)
 
 	Radar.Sound        = ACE.Missile.DefaultRadarSound
 	Radar.DefaultSound = Radar.Sound

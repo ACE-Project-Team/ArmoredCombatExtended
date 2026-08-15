@@ -411,7 +411,7 @@ function ENT:Think()
 
 
 				tableInsert(Owners, InsertionIndex, Owner:Nick())
-				tableInsert(Distances, InsertionIndex, BaseDistance)
+				tableInsert(Distances, InsertionIndex, BaseDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
 				tableInsert(Positions, InsertionIndex, OutputPosition)
 				tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
 				tableInsert(IDs, InsertionIndex, ContraptionIndex)
@@ -449,7 +449,7 @@ function ENT:Think()
 					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
 
 					tableInsert(Owners, InsertionIndex, Owner:Nick())
-					tableInsert(Distances, InsertionIndex, MissileDistance)
+					tableInsert(Distances, InsertionIndex, MissileDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
 					tableInsert(Positions, InsertionIndex, MissilePos)
 					tableInsert(Velocities, InsertionIndex, Missile.Flight * 39.37)
 					tableInsert(IDs, InsertionIndex, -Missile.MissileID)

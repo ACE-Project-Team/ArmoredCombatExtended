@@ -262,7 +262,7 @@ function TOOL:LeftClick( trace )
 	if not IsReallyValid( trace, self:GetOwner() ) then return false end
 
 	local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
-	local pitch = self:GetOwner():GetInfo("acesound_pitch")
+	local pitch = self:GetClientInfo("pitch")
 	ReplaceSound( self:GetOwner(), trace.Entity, {sound, pitch, true} )
 	return true
 end
@@ -280,7 +280,7 @@ function TOOL:RightClick( trace )
 	self:GetOwner():ConCommand("wire_soundemitter_sound " .. soundData.Sound);
 
 	if soundData.Pitch then
-		self:GetOwner():ConCommand("acesound_pitch " .. soundData.Pitch);
+		self:GetOwner():ConCommand(self:GetMode() .. "_pitch " .. soundData.Pitch);
 	end
 
 	return true

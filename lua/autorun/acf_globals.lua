@@ -5,6 +5,7 @@ local ACECompatibilityView = not ACFAddonInstalled and (ACF == nil or rawget(ACF
 ACF = ACF or {}
 
 ACE               = ACE or {}
+local InstalledLegacyGlobals = {}
 
 -- Resolve the remaining legacy function symbols through ACE. without copying
 -- them into new globals. This keeps existing extensions working while callers
@@ -56,6 +57,10 @@ local function RemoveCompatibilityView()
     ACE.LegacyCompatibility = false
     rawset(ACF, "__ACECompatibilityView", nil)
     setmetatable(ACF, nil)
+
+    for name, value in pairs(InstalledLegacyGlobals) do
+        if rawget(_G, name) == value then rawset(_G, name, nil) end
+    end
 end
 
 hook.Add("ACE_OnLoadAddon", "ACE_RemoveCompatibilityView", RemoveCompatibilityView)
@@ -678,12 +683,25 @@ ACE.MarkArmorDirty = ACE_MarkArmorDirty
 -- The unchanged adapters still call these legacy global entry points. Preserve
 -- an independently loaded ACF implementation, otherwise route them to ACE.
 if ACECompatibilityView then
-    ACF_CalcArmor = ACF_CalcArmor or ACE_CalcArmor
-    ACF_Check = ACF_Check or ACE_Check
-    ACF_CheckClips = ACF_CheckClips or ACE_CheckClips
-    ACF_GetHitAngle = ACF_GetHitAngle or ACE_GetHitAngle
-    ACF_GetLinkedWheels = ACF_GetLinkedWheels or ACE_GetLinkedWheels
-    ACF_SendNotify = ACF_SendNotify or ACE_SendNotify
+    local LegacyGlobals = {
+        ACF_CalcArmor = ACE_CalcArmor,
+        ACF_Check = ACE_Check,
+        ACF_CheckClips = ACE_CheckClips,
+        ACF_GetHitAngle = ACE_GetHitAngle,
+        ACF_GetLinkedWheels = ACE_GetLinkedWheels,
+        ACF_SendNotify = ACE_SendNotify,
+        ACF_GetPhysicalParent = ACE_GetPhysicalParent,
+        ACF_Kinetic = ACE_Kinetic,
+        ACF_MuzzleVelocity = ACE_MuzzleVelocity,
+        ACF_HE = ACE_HE
+    }
+
+    for name, implementation in pairs(LegacyGlobals) do
+        if rawget(_G, name) == nil and implementation ~= nil then
+            rawset(_G, name, implementation)
+            InstalledLegacyGlobals[name] = implementation
+        end
+    end
 end
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")

@@ -114,29 +114,17 @@ function TOOL:RightClick( trace )
 
 	local ply = self:GetOwner()
 
-	ply:ConCommand( "acearmorprop_ductility " .. (ent.ACF.Ductility or 0) * 100 )
-	ply:ConCommand( "acearmorprop_thickness " .. ent.ACF.MaxArmour )
-	ply:ConCommand( "acearmorprop_material " .. (ent.ACF.Material or "RHA") )
+	local legacyMode = "acf" .. "armorprop"
+	local prefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
+	ply:ConCommand( prefix .. "_ductility " .. (ent.ACF.Ductility or 0) * 100 )
+	ply:ConCommand( prefix .. "_thickness " .. ent.ACF.MaxArmour )
+	ply:ConCommand( prefix .. "_material " .. (ent.ACF.Material or "RHA") )
 
 	-- Clear cached target to force a fresh network update of armor values.
 	self.AimEntity = nil
 
 	return true
 
-end
-
-do
-	-- Allow read-only armor inspection even when CanTool would block edits.
-	ACE.OldHookCall = ACE.OldHookCall or hook.Call
-
-	-- Armor tool hook override for safe reloads.
-	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
-		if Name == "CanTool" and Tool == "acearmorprop" and Player:KeyPressed(IN_RELOAD) then
-			return true
-		end
-
-		return ACE.OldHookCall(Name, Gamemode, Player, Entity, Tool, ...)
-	end
 end
 
 -- Reload aggregates mass across constrained entities.
@@ -815,10 +803,12 @@ if CLIENT then
 		local nonArmorCost	= self.Weapon:GetNWFloat( "PointCostNonArmor", 0 )
 		local pointBreakdown = self.Weapon:GetNWString( "PointCostBreakdown", "" )
 
+		local legacyMode = "acf" .. "armorprop"
+		local modePrefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
 		local area		= GetConVar( "acearmorprop_area" ):GetFloat()
-		local ductility	= GetConVar( "acearmorprop_ductility" ):GetFloat()
-		local thickness	= GetConVar( "acearmorprop_thickness" ):GetFloat()
-		local mat		= GetConVar( "acearmorprop_material" ):GetString() or "RHA"
+		local ductility	= GetConVar( modePrefix .. "_ductility" ):GetFloat()
+		local thickness	= GetConVar( modePrefix .. "_thickness" ):GetFloat()
+		local mat		= GetConVar( modePrefix .. "_material" ):GetString() or "RHA"
 
 		local MatData	= ACE_GetMaterialData( mat )
 

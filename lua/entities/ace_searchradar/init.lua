@@ -28,18 +28,19 @@ function ENT:Initialize()
 	self.IsJammed			= 0
 	self.JamStrength		= 0
 	self.JamDir				= vector_origin
+	self.FilterMissiles = false
+
 
 	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
 	self.LegalIssues			= ""
-
 	--self.MaxElev		= 80
 	--self.MinElev		= -20
 
 	self.CurrentScanAngle = 0
 	--self.RadarPitchRange		= (self.MaxElev - self.MinElev) / 2
 
-	self.Inputs = WireLib.CreateInputs( self, { "Active", "Cone" } )
+	self.Inputs = WireLib.CreateInputs( self, { "Active", "FilterMissiles"} )
 	self.Outputs = WireLib.CreateOutputs( self, {"LocalSweepAngle","Detected", "Owner [ARRAY]", "Position [ARRAY]", "Velocity [ARRAY]", "ID [ARRAY]", "IsJammed", "JamDirection [VECTOR]"} )
 	self.OutputData = {
 		LocalSweepAngle = 0,
@@ -52,6 +53,7 @@ function ENT:Initialize()
 	}
 	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
+	--print(self.Class)
 end
 
 local function SetConeParameters( Radar )
@@ -81,6 +83,7 @@ function ACE_MakeSearchRadar(Owner, Pos, Angle, Id)
 	Radar.ACFName  = radar.name
 	Radar.ICone    = radar.viewcone	--Note: intentional. --Recorded initial cone
 	Radar.Cone     = Radar.ICone
+	Radar.MaxRange = radar.maxrange or math.huge	--Defines max search range of radar. Here as needed.
 	Radar.PowerID     = radar.powerid
 	Radar.AnimationRate     = radar.animspeed
 	Radar.ACEPoints		= radar.acepoints or 0.9
@@ -142,20 +145,12 @@ function ENT:TriggerInput( inp, value )
 			self.LastThink = ACE.CurTime
 			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
 		end
-	elseif inp == "Cone" then
+	elseif inp == "FilterMissiles" then
 		if value > 0 then
-
-			self.Cone = math.Clamp(value / 2, 1 ,self.ICone )
-
-			SetConeParameters( self )
-
-			local curTime = CurTime()
-			self:NextThink(curTime + 3) --Switching beam width will take time. This is to balance jamming.
+			self.FilterMissiles = true
 		else
-			self.Cone = self.ICone
+			self.FilterMissiles = false
 		end
-
-		self:UpdateOverlayText()
 	end
 end
 
@@ -213,35 +208,39 @@ end
 
 function ENT:UpdateOverlayText()
 
-local cone	= self.Cone
-local status	= self.Status or "Off"
-local detected  = status ~= "Off" and self.OutputData.Detected ~= 0 or false
-local Jammed	= self.IsJammed
+	local cone	= self.Cone
+	local status	= self.Status or "Off"
+	local detected  = status ~= "Off" and self.OutputData.Detected ~= 0 or false
+	local Jammed	= self.IsJammed
 
-local txt = "Status: " .. status
+	local txt = "Status: " .. status
 
-txt = txt .. "\n\nRotation Rate: " .. math.Round(cone, 2) .. " deg/s"
---txt = txt .. "\nElevation: +" .. math.Round(self.MaxElev, 2) .. " / " .. math.Round(self.MinElev, 2) .. " degrees"
+	txt = txt .. "\n\nRotation Rate: " .. math.Round(cone, 2) .. " deg/s"
+	--txt = txt .. "\nElevation: +" .. math.Round(self.MaxElev, 2) .. " / " .. math.Round(self.MinElev, 2) .. " degrees"
 
-txt = txt .. "\n\n360 Sweep Time: " .. math.Round(360 / cone, 2) .. " sec"
+	txt = txt .. "\n\n360 Sweep Time: " .. math.Round(360 / cone, 2) .. " sec"
 
---txt = txt .. "\nMax Range: " .. (isnumber(range) and math.Round(range / 39.37 , 2) .. " m" or "Unlimited" )
+	if self.MaxRange < 1000 then
+		txt = txt .. "\n\nMax Range: " .. math.Round(self.MaxRange, 0) .. "m"
+	end
 
-if Jammed > 0 then
-	txt = txt .. "\n\n! ! ! Warning: Jammed ! ! !"
-end
-if detected then
-	txt = txt .. "\n\nTarget Detected!"
-end
+	--txt = txt .. "\nMax Range: " .. (isnumber(range) and math.Round(range / 39.37 , 2) .. " m" or "Unlimited" )
 
-if not self.Legal then
-txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
-end
+	if Jammed > 0 then
+		txt = txt .. "\n\n! ! ! Warning: Jammed ! ! !"
+	end
+	if detected then
+		txt = txt .. "\n\nTarget Detected!"
+	end
+
+	if not self.Legal then
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
 
 
-txt = txt .. "\nTemp: " .. math.Round(self.Heat) .. "C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "F"
+	txt = txt .. "\nTemp: " .. math.Round(self.Heat) .. "C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "F"
 
-self:SetOverlayText(txt)
+	self:SetOverlayText(txt)
 
 end
 
@@ -311,9 +310,12 @@ function ENT:Think()
 		GCTraceData.mins = Vector(-ConeClutterSize, -ConeClutterSize, -ConeClutterSize)
 		GCTraceData.maxs = Vector(ConeClutterSize, ConeClutterSize, ConeClutterSize)
 
+		--Inaccuracy of radar per meter of range.
+		local BaseRadInaccuracy = 0.02 * 39.37 --0.02 meters per every meter. 8 meters @ 400m. 16 meters @ 100m.
+
 		local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 		local CMCount = table.Count(CounterMeasures)
-
+		
 		for Contraption in pairs(CFW.Contraptions) do
 			local Base = Contraption:GetACEBaseplate()
 			if Contraption == SelfContraption or not IsValid(Base) then continue end
@@ -325,6 +327,9 @@ function ENT:Think()
 			local Owner = Base:CPPIGetOwner()
 			BaseDistance = BaseDistance / 39.3701 --Used to normalize vector. Convert to meters for other calcs
 
+			if BaseDistance > self.MaxRange then continue end --Exceeded max range of radar
+
+
 			LOSTraceData.start = SelfPos
 			LOSTraceData.endpos = BasePos
 
@@ -334,7 +339,11 @@ function ENT:Think()
 			--Entity is within radar cone, has a valid owner, and is not terrain obscured
 			if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) then continue end
 
-			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * 3937) / self.JamStrength >= BaseDistance  --39.37 * 1000 from burnthrough factor to convert to meters.
+			--If not jammed 
+			--OR
+			--Burnthrough distance is greater than the current distrance to the target(In meters)
+			local BurnThrough = self.IsJammed == 0 or self.Burnthrough / self.JamStrength >= BaseDistance
+
 			if not BurnThrough then continue end
 
 			GCTraceData.start = BasePos
@@ -380,7 +389,7 @@ function ENT:Think()
 
 			if ValidTarget then
 
-				local BaseInaccuracy = VectorRand() * (BaseDistance / 10) * (1 + self.JamStrength / 2)
+				local BaseInaccuracy = VectorRand() * BaseDistance * BaseRadInaccuracy * (1 + self.JamStrength / 2)
 
 				if CMCount > 0 then
 					BaseInaccuracy = BaseInaccuracy * 2
@@ -402,12 +411,52 @@ function ENT:Think()
 
 
 				tableInsert(Owners, InsertionIndex, Owner:Nick())
-				tableInsert(Distances, InsertionIndex, BaseDistance)
+				tableInsert(Distances, InsertionIndex, BaseDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
 				tableInsert(Positions, InsertionIndex, OutputPosition)
 				tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
 				tableInsert(IDs, InsertionIndex, ContraptionIndex)
 
 				debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
+			end
+		end
+
+		--It's ugly I know. But it's simplified and doesn't copy the CFW table.
+		if not self.FilterMissiles then
+			for Missile in pairs(ACE.ActiveMissiles) do
+				if IsValid(Missile) then
+					local MissilePos = Missile:GetPos()
+					local PosDiff = MissilePos - SelfPos
+					local MissileDistance = PosDiff:Length()
+					local Owner = Missile:CPPIGetOwner()
+					MissileDistance = MissileDistance / 39.3701 --Used to normalize vector. Convert to meters for other calcs
+
+					if MissileDistance > self.MaxRange then continue end --Exceeded max range of radar
+
+					LOSTraceData.start = SelfPos
+					LOSTraceData.endpos = MissilePos
+
+					--If not jammed 
+					--OR
+					--Burnthrough distance is greater than the current distrance to the target(In meters)
+					local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= MissileDistance
+
+					local ang	=  self:WorldToLocalAngles(PosDiff:Angle())  - Angle(0, -self.CurrentScanAngle, 0)	--Used for testing if inrange
+					local absang	= Angle(math.abs(math.NormalizeAngle(ang.p)), math.abs(math.NormalizeAngle(ang.y)), 0)  --Since I like ABS so much
+
+					--Entity is within radar cone, has a valid owner, and is not terrain obscured
+					if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) or not BurnThrough then continue end
+
+					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
+
+					tableInsert(Owners, InsertionIndex, Owner:Nick())
+					tableInsert(Distances, InsertionIndex, MissileDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
+					tableInsert(Positions, InsertionIndex, MissilePos)
+					tableInsert(Velocities, InsertionIndex, Missile.Flight * 39.37)
+					tableInsert(IDs, InsertionIndex, -Missile.MissileID)
+
+					debugoverlay.Line(SelfPos, MissilePos, 0.15, Color(255, 0, 140))
+
+				end
 			end
 		end
 

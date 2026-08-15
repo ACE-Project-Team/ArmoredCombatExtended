@@ -27,6 +27,8 @@ function ENT:Initialize()
 	self.IsJammed			= 0
 	self.JamStrength		= 0
 	self.JamDir				= vector_origin
+	self.FilterMissiles = false
+
 
 	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
@@ -34,7 +36,7 @@ function ENT:Initialize()
 
 	self.AcquiredTargets	= {}
 
-	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone"})
+	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone", "FilterMissiles"})
 	self.Outputs = WireLib.CreateOutputs(self, {
 		"Detected",
 		"Owner [ARRAY]",
@@ -160,6 +162,12 @@ function ENT:TriggerInput( inp, value )
 		end
 
 		self:UpdateOverlayText()
+	elseif inp == "FilterMissiles" then
+		if value > 0 then
+			self.FilterMissiles = true
+		else
+			self.FilterMissiles = false
+		end
 	end
 end
 
@@ -278,7 +286,16 @@ function ENT:ScanForContraptions()
 	GCTraceData.mins = Vector(-ConeClutterSize, -ConeClutterSize, -ConeClutterSize)
 	GCTraceData.maxs = Vector(ConeClutterSize, ConeClutterSize, ConeClutterSize)
 
-	local BTFactor = 1 / (1 + ((self.Cone - 1) / (self.ICone - 1)) * 2)
+	--0-1x multiplier. Scales down burnthrough range based on fraction of radar cone used. 
+	--1x at 5 degrees.
+	--0.33x at max radar cone.
+	--Intermittent values fall somewhere between the two.
+	local BTFactor = 1 / (1 + (math.max(self.Cone - 5,0) / math.max(self.ICone - 5,1)) * 2)
+
+
+	--Inaccuracy of radar per meter of range.
+	local BaseRadInaccuracy = 0.01 * 39.37 --0.01 meters per every meter. 4 meters @ 400m. 8 meters @ 100m.
+
 
 	local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 	local CMCount = table.Count(CounterMeasures)
@@ -297,86 +314,125 @@ function ENT:ScanForContraptions()
 			LOSTraceData.start = SelfPos
 			LOSTraceData.endpos = BasePos
 
-			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * 100 * BTFactor) / self.JamStrength >= BaseDistance
+			--If not jammed 
+			--OR
+			--Burnthrough distance is greater than the current distrance to the target(In meters)
+			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= BaseDistance
 
-			if AngleFromTarget < SearchCone and IsValid(Owner) and not TraceHull(LOSTraceData).Hit and BurnThrough then
-				--debugoverlay.Line(SelfPos, BasePos, 0.15, Color(0, 255, 0))
+			if AngleFromTarget > SearchCone or not IsValid(Owner) or TraceHull(LOSTraceData).Hit or not BurnThrough then continue end
 
-				GCTraceData.start = BasePos
-				GCTraceData.endpos = BasePos + DirectionToTarget * 50000
+			--debugoverlay.Line(SelfPos, BasePos, 0.15, Color(0, 255, 0))
 
-				local GCTrace = TraceHull(GCTraceData)
-				local GCTraceHitPos = GCTrace.HitPos
+			GCTraceData.start = BasePos
+			GCTraceData.endpos = BasePos + DirectionToTarget * 50000
+
+			local GCTrace = TraceHull(GCTraceData)
+			local GCTraceHitPos = GCTrace.HitPos
 
 
-				local ClutterDistance
-				if not GCTrace.HitSky then
-					-- If the trace is starting in a solid, the ground is right behind/below the target
-					ClutterDistance = GCTrace.StartSolid and 0 or (GCTraceHitPos:Distance(BasePos) / 39.3701)
+			local ClutterDistance
+			if not GCTrace.HitSky then
+				-- If the trace is starting in a solid, the ground is right behind/below the target
+				ClutterDistance = GCTrace.StartSolid and 0 or (GCTraceHitPos:Distance(BasePos) / 39.3701)
 
-					if (Contraption.totalMass or 0) > 20000 then --The contraption weighs more than 20 tons. About the weight of most planes. It is clearly a large target.
-						WaterTraceData.start = BasePos + vector_up * 5000
-						WaterTraceData.endpos = BasePos - vector_up * 5000
-						local WaterTrace = TraceHull(WaterTraceData)
-						if WaterTrace.Hit and abs(BasePos.z-WaterTrace.HitPos.z) < 250 then --Target is on the water. Assuming the target is large enough, makes radar returns easier to find.
-							ClutterDistance = mathHuge
-						end
+				if (Contraption.totalMass or 0) > 20000 then --The contraption weighs more than 20 tons. About the weight of most planes. It is clearly a large target.
+					WaterTraceData.start = BasePos + vector_up * 5000
+					WaterTraceData.endpos = BasePos - vector_up * 5000
+					local WaterTrace = TraceHull(WaterTraceData)
+					if WaterTrace.Hit and abs(BasePos.z-WaterTrace.HitPos.z) < 250 then --Target is on the water. Assuming the target is large enough, makes radar returns easier to find.
+						ClutterDistance = mathHuge
 					end
-				else
-					ClutterDistance = mathHuge
 				end
+			else
+				ClutterDistance = mathHuge
+			end
 
-				local BaseVelocityVector = Base:GetVelocity() / 39.3701
+			local BaseVelocityVector = Base:GetVelocity() / 39.3701
 
-				local OutputPosition, ValidTarget
+			local OutputPosition, ValidTarget
 
-				if ClutterDistance < PDClutterSwitchDistance then -- PD mode
-					debugoverlay.Line(BasePos, GCTraceHitPos, 0.15, Color(255, 0, 0))
-					debugoverlay.Box(GCTraceHitPos, GCTraceData.mins, GCTraceData.maxs, 0.15, Color(255, 0, 0, 0))
-					debugoverlay.Text(GCTraceHitPos, "Ground Clutter", 0.15)
+			if ClutterDistance < PDClutterSwitchDistance then -- PD mode
+				debugoverlay.Line(BasePos, GCTraceHitPos, 0.15, Color(255, 0, 0))
+				debugoverlay.Box(GCTraceHitPos, GCTraceData.mins, GCTraceData.maxs, 0.15, Color(255, 0, 0, 0))
+				debugoverlay.Text(GCTraceHitPos, "Ground Clutter", 0.15)
 
-					local RadialVelocity = BaseVelocityVector:Dot(DirectionToTarget)
+				local RadialVelocity = BaseVelocityVector:Dot(DirectionToTarget)
 
-					if abs(RadialVelocity) > PDMinVelocity then
-						ValidTarget = true
-					end
-				else
+				if abs(RadialVelocity) > PDMinVelocity then
 					ValidTarget = true
 				end
+			else
+				ValidTarget = true
+			end
 
-				if ValidTarget then
-					local BaseInaccuracy = VectorRand() * (BaseDistance / 10) * (1 + self.JamStrength / 2)
-					local OffboreInaccuracy = 1 + (AngleFromTarget / self.ICone) * self.OffBoreInaccFactor
+			if ValidTarget then
+				local BaseInaccuracy = VectorRand() * BaseDistance * BaseRadInaccuracy * (1 + self.JamStrength / 2)
+				local OffboreInaccuracy = 1 + (AngleFromTarget / self.ICone) * self.OffBoreInaccFactor
 
 
-					if CMCount > 0 then
-						BaseInaccuracy = BaseInaccuracy * 1.25
-						OffboreInaccuracy = OffboreInaccuracy * 3
-						local ratio = math.Rand(0,1)
-						if ratio > 0.6 then
-							local CM = CounterMeasures[math.random(1,CMCount)]
-							local SigStrength = CM.RadarSig
-							if SigStrength > 0.2 then
-								BasePos = CM:GetPos()
-								BaseInaccuracy = BaseInaccuracy * 2.25
-							end
+				if CMCount > 0 then
+					BaseInaccuracy = BaseInaccuracy * 1.25
+					OffboreInaccuracy = OffboreInaccuracy * 3 --Added to help countermeasures break locks. Radar that isn't aiming directly at the target will suffer accuracy penalties and have a harder time re-acquiring.
+					local ratio = math.Rand(0,1)
+					if ratio > 0.6 then
+						local CM = CounterMeasures[math.random(1,CMCount)]
+						local SigStrength = CM.RadarSig
+						if SigStrength > 0.2 then
+							BasePos = CM:GetPos()
+							BaseInaccuracy = BaseInaccuracy * 2.25
 						end
 					end
-
-					OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
-
-					local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
-					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
-
-					tableInsert(Owners, InsertionIndex, Owner:Nick())
-					tableInsert(Distances, InsertionIndex, BaseDistance)
-					tableInsert(Positions, InsertionIndex, OutputPosition)
-					tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
-					tableInsert(IDs, InsertionIndex, ContraptionIndex)
-					tableInsert(self.AcquiredTargets, Base)
-
-					debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
 				end
+
+				OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
+
+				local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
+				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+
+				tableInsert(Owners, InsertionIndex, Owner:Nick())
+				tableInsert(Distances, InsertionIndex, BaseDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
+				tableInsert(Positions, InsertionIndex, OutputPosition)
+				tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
+				tableInsert(IDs, InsertionIndex, ContraptionIndex)
+				tableInsert(self.AcquiredTargets, Base)
+
+				debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
+			end
+		end
+	end
+
+	--It's ugly I know. But it's simplified and doesn't copy the CFW table.
+	if not self.FilterMissiles then
+		for Missile in pairs(ACE.ActiveMissiles) do
+			if IsValid(Missile) then
+				local MissilePos = Missile:GetPos()
+				local PosDiff = MissilePos - SelfPos
+				local MissileDistance = PosDiff:Length()
+				local DirectionToTarget = PosDiff / MissileDistance
+				local AngleFromTarget = GetAngleBetweenVectors(DirectionToTarget, SelfForward)
+				local Owner = Missile:CPPIGetOwner()
+				MissileDistance = MissileDistance / 39.3701 --Used to normalize vector. Convert to meters for other calcs
+
+				LOSTraceData.start = SelfPos
+				LOSTraceData.endpos = MissilePos
+
+				--If not jammed 
+				--OR
+				--Burnthrough distance is greater than the current distrance to the target(In meters)
+				local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= MissileDistance
+
+				if AngleFromTarget > SearchCone or not IsValid(Owner) or TraceHull(LOSTraceData).Hit or not BurnThrough then continue end
+
+				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
+
+				tableInsert(Owners, InsertionIndex, Owner:Nick())
+				tableInsert(Distances, InsertionIndex, MissileDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
+				tableInsert(Positions, InsertionIndex, MissilePos)
+				tableInsert(Velocities, InsertionIndex, Missile.Flight * 39.37)
+				tableInsert(IDs, InsertionIndex, -Missile.MissileID)
+				tableInsert(self.AcquiredTargets, Missile)
+
+				debugoverlay.Line(SelfPos, MissilePos, 0.15, Color(255, 0, 140))
 			end
 		end
 	end

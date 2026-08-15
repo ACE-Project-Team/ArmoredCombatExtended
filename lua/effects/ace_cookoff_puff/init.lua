@@ -22,7 +22,7 @@ function EFFECT:Init( data )
 		if PlayerDist < self.Radius * 10 and not LocalPlayer():HasGodMode() then
 		--if PlayerDist < self.Radius * 10 then
 		local Amp          = math.min(self.Radius * 0.5 / math.max(PlayerDist,1),40)
-		util.ScreenShake( self.Origin, 50 * Amp, 1.5 / Amp, self.Radius / 7.5, 0 , true)
+		ACE.ScreenShake( self.Origin, 50 * Amp, 1.5 / Amp, self.Radius / 7.5, 0 , true)
 	end
 
 	self.Emitter:Finish()

@@ -85,7 +85,7 @@ function EFFECT:Init( data )
 			if PlayerDist < self.Radius * 4 and not LocPly:HasGodMode() then
 				local Amp          = math.min(Propellant * 1.5 / math.max(PlayerDist,5),40)
 				--local Amp          = math.min(self.Radius / 1.5 / math.max(PlayerDist,5),40)
-				util.ScreenShake( self.Origin, 50 * Amp, 1.5 / Amp, math.min(Amp  * 2,self.Radius / 20), 0 , true)
+				ACE.ScreenShake( self.Origin, 50 * Amp, 1.5 / Amp, math.min(Amp  * 2,self.Radius / 20), 0 , true)
 			end
 		end
 

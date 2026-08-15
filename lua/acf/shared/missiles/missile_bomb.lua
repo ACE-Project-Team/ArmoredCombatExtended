@@ -48,7 +48,7 @@ ACE.DefineGun("50kgBOMB", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.0015,						-- percent speed loss per second
+		dragcoef			= 0.000015,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.05),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -104,7 +104,7 @@ ACE.DefineGun("100kgBOMB", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.0025,						-- percent speed loss per second
+		dragcoef			= 0.000025,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -159,7 +159,7 @@ ACE.DefineGun("250kgBOMB", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.005,						-- percent speed loss per second
+		dragcoef			= 0.00005,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -214,7 +214,7 @@ ACE.DefineGun("500kgBOMB", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.0075,						-- percent speed loss per second
+		dragcoef			= 0.000075,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -266,7 +266,7 @@ ACE.DefineGun("1000kgBOMB", {					-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.01,						-- percent speed loss per second
+		dragcoef			= 0.0001,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -319,7 +319,7 @@ ACE.DefineGun("Mk82Bomb", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.0000075,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
@@ -382,7 +382,7 @@ ACE.DefineGun("Mk83Bomb", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.0000075,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
@@ -440,7 +440,7 @@ ACE.DefineGun("Mk84Bomb", {						-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.0000075,						-- percent speed loss per second
 		inertialcapable		= true,							-- Whether missile is capable of inertial guidance. Inertially guided missiles will follow their last track after losing the target. And can be fired offbore outside their seeker's viewcone.
 		predictiondelay		= 0.5,							-- Delay before enabling missile steering guidance. Missile will run straight at the aimpoint until this time. Done to cause missile to not self delete because it tries to steer its velocity at launch.
 
@@ -498,7 +498,7 @@ ACE.DefineGun("100kgGBOMB", {					-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.0000075,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)
@@ -555,7 +555,7 @@ ACE.DefineGun("250kgGBOMB", {					-- id
 
 		fusetime			= 20,							--Time in seconds after launch/booster stop before missile scuttles
 
-		dragcoef			= 0.00075,						-- percent speed loss per second
+		dragcoef			= 0.0000075,						-- percent speed loss per second
 
 
 		penmul      = math.sqrt(0.3),			-- HEAT velocity multiplier. Squared relation to penetration (math.sqrt(2) means 2x pen)

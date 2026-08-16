@@ -11,10 +11,10 @@ function ENT:Initialize()
 	local InterpretColor = self:GetColor()
 
 	if InterpretColor.b == 1 then --Flare
-		ParticleEffectAttach("ACE.Missile_Flare",4, self,1) --TODO: Create a way to identify chaff/flare.  And make effects scale with flare filler.
+		ParticleEffectAttach("ACFM_Flare",4, self,1) --TODO: Create a way to identify chaff/flare.  And make effects scale with flare filler.
 		ACE_EmitSound( FlareSound, self, 70, 100, 1 )
 	else
-		ParticleEffectAttach("ACE.Missile_Chaff",4, self,1) --TODO: Create a way to identify chaff/flare.  And make effects scale with flare filler.
+		ParticleEffectAttach("ACFM_Chaff",4, self,1) --TODO: Create a way to identify chaff/flare.  And make effects scale with flare filler.
 		self.StopLight = true
 		self.IsFlare = false
 		self.CutOffTime = CurTime() + 0.75

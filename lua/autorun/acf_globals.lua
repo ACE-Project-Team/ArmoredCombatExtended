@@ -694,7 +694,9 @@ if ACECompatibilityView then
         ACF_Kinetic = ACE_Kinetic,
         ACF_MuzzleVelocity = ACE_MuzzleVelocity,
         ACF_HE = ACE_HE,
-        ACF_DefineEngine = ACE_DefineEngine
+        ACF_DefineEngine = ACE_DefineEngine,
+        ACF_DefineGearbox = ACE_DefineGearbox,
+        ACF_DefineFuelTankSize = ACE_DefineFuelTankSize
     }
 
     for name, implementation in pairs(LegacyGlobals) do

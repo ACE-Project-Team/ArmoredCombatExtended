@@ -106,7 +106,7 @@ function ENT:Think()
 
 		local ScanArray = table.Copy(ACE.radarEntities)
 
-		for ECMEnt, _ in pairs(ACE.ECMPods) do
+		for _, ECMEnt in pairs(ACE.ECMPods) do
 			table.insert( ScanArray, ECMEnt )
 		end
 
@@ -123,7 +123,7 @@ function ENT:Think()
 
 		for _, scanEnt in pairs(ScanArray) do
 
-			if scanEnt:IsValid() then
+			if IsValid(scanEnt) then
 
 				local entpos = scanEnt:GetPos()
 				local difpos = (thisPos - entpos)

@@ -103,7 +103,7 @@ function ENT:Think()
 
 		local ScanArray = table.Copy(ACE.radarEntities)
 
-		for ECMEnt, _ in pairs(ACE.ECMPods) do
+		for _, ECMEnt in pairs(ACE.ECMPods) do
 			table.insert( ScanArray, ECMEnt )
 		end
 

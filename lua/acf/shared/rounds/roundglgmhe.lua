@@ -77,7 +77,7 @@ function Round.create( Gun, BulletData )
 	BData.Crate = BData.FakeCrate:EntIndex()
 	--self:DeleteOnRemove(BData.FakeCrate)
 
-	ACE.GenerateMissile(MDat,BData.FakeCrate,BData)
+	ACE_GenerateMissile(MDat,BData.FakeCrate,BData)
 end
 
 -- Function to convert the player's slider data into the complete round data

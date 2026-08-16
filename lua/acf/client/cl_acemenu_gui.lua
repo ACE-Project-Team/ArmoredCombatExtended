@@ -918,14 +918,14 @@ function ACE_SVGUICreate()	--Serverside folder content
 	settings.ace_legality_largeenginesneeddriver = addCheckbox("Large engines need driver", "ace_legality_largeenginesneeddriver", legality)
 	addHelpText("Large engines require a linked driver crew entity to operate.", legality)
 
-	settings.ace_legality_largeenginethreshold = addSlider("Threshold", 100, 1000, 0, "ace_legality_largeenginethreshold", legality)
+	settings.ace_legality_largeenginethreshold = addSlider("Threshold", 0, 1000, 0, "ace_legality_largeenginethreshold", legality)
 	settings.ace_legality_largeenginethreshold:DockMargin(30, 0, 30, -5)
 	addHelpText("HP threshold defining a 'large' engine.", legality)
 
 	settings.ace_legality_largegunsneedgunner = addCheckbox("Large guns need gunner", "ace_legality_largegunsneedgunner", legality)
 	addHelpText("Large guns require a linked gunner crew entity to operate.", legality)
 
-	settings.ace_legality_largegunthreshold = addSlider("Threshold", 50, 200, 0, "ace_legality_largegunthreshold", legality)
+	settings.ace_legality_largegunthreshold = addSlider("Threshold", 0, 200, 0, "ace_legality_largegunthreshold", legality)
 	settings.ace_legality_largegunthreshold:DockMargin(30, 0, 30, -5)
 	addHelpText("Caliber (mm) threshold defining a 'large' gun.", legality)
 

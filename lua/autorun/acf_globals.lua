@@ -693,7 +693,8 @@ if ACECompatibilityView then
         ACF_GetPhysicalParent = ACE_GetPhysicalParent,
         ACF_Kinetic = ACE_Kinetic,
         ACF_MuzzleVelocity = ACE_MuzzleVelocity,
-        ACF_HE = ACE_HE
+        ACF_HE = ACE_HE,
+        ACF_DefineEngine = ACE_DefineEngine
     }
 
     for name, implementation in pairs(LegacyGlobals) do

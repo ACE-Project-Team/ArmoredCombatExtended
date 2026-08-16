@@ -315,7 +315,7 @@ function ENT:Think()
 
 		local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 		local CMCount = table.Count(CounterMeasures)
-		
+
 		for Contraption in pairs(CFW.Contraptions) do
 			local Base = Contraption:GetACEBaseplate()
 			if Contraption == SelfContraption or not IsValid(Base) then continue end
@@ -339,7 +339,7 @@ function ENT:Think()
 			--Entity is within radar cone, has a valid owner, and is not terrain obscured
 			if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) then continue end
 
-			--If not jammed 
+			--If not jammed
 			--OR
 			--Burnthrough distance is greater than the current distrance to the target(In meters)
 			local BurnThrough = self.IsJammed == 0 or self.Burnthrough / self.JamStrength >= BaseDistance
@@ -435,10 +435,10 @@ function ENT:Think()
 					LOSTraceData.start = SelfPos
 					LOSTraceData.endpos = MissilePos
 
-					--If not jammed 
+					--If not jammed
 					--OR
 					--Burnthrough distance is greater than the current distrance to the target(In meters)
-					local BurnThrough = self.IsJammed == 0 or (self.Burnthrough) / self.JamStrength >= MissileDistance
+					local BurnThrough = self.IsJammed == 0 or (self.Burnthrough / self.JamStrength) >= MissileDistance
 
 					local ang	=  self:WorldToLocalAngles(PosDiff:Angle())  - Angle(0, -self.CurrentScanAngle, 0)	--Used for testing if inrange
 					local absang	= Angle(math.abs(math.NormalizeAngle(ang.p)), math.abs(math.NormalizeAngle(ang.y)), 0)  --Since I like ABS so much

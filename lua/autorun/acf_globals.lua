@@ -43,6 +43,18 @@ end
 
 ACE.LegacyCompatibility = ACECompatibilityView
 
+-- Exposed so files that are include()'d later (e.g. sh_ace_loader.lua) can
+-- install legacy globals themselves, ahead of any content they in turn load.
+-- This must exist before anything that might load third-party content packs
+-- still calling pre-rename ACF_ names directly.
+function ACE_InstallLegacyGlobal(name, implementation)
+    if not ACE.LegacyCompatibility then return end
+    if rawget(_G, name) == nil and implementation ~= nil then
+        rawset(_G, name, implementation)
+        InstalledLegacyGlobals[name] = implementation
+    end
+end
+
 function ACE_RunLegacyHook(Name, ...)
     if ACE.LegacyCompatibility then
         return hook.Run(Name, ...)
@@ -682,6 +694,11 @@ ACE.MarkArmorDirty = ACE_MarkArmorDirty
 
 -- The unchanged adapters still call these legacy global entry points. Preserve
 -- an independently loaded ACF implementation, otherwise route them to ACE.
+--
+-- Note: ACF_DefineEngine/DefineGearbox/DefineFuelTankSize are installed
+-- earlier, from within sh_ace_loader.lua, before its folder-scan loop
+-- include()'s third-party content packs that may call those names directly.
+-- See the ACE_InstallLegacyGlobal calls there.
 if ACECompatibilityView then
     local LegacyGlobals = {
         ACF_CalcArmor = ACE_CalcArmor,
@@ -693,17 +710,11 @@ if ACECompatibilityView then
         ACF_GetPhysicalParent = ACE_GetPhysicalParent,
         ACF_Kinetic = ACE_Kinetic,
         ACF_MuzzleVelocity = ACE_MuzzleVelocity,
-        ACF_HE = ACE_HE,
-        ACF_DefineEngine = ACE_DefineEngine,
-        ACF_DefineGearbox = ACE_DefineGearbox,
-        ACF_DefineFuelTankSize = ACE_DefineFuelTankSize
+        ACF_HE = ACE_HE
     }
 
     for name, implementation in pairs(LegacyGlobals) do
-        if rawget(_G, name) == nil and implementation ~= nil then
-            rawset(_G, name, implementation)
-            InstalledLegacyGlobals[name] = implementation
-        end
+        ACE_InstallLegacyGlobal(name, implementation)
     end
 end
 

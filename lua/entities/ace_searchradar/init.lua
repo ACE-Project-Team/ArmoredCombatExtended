@@ -438,7 +438,7 @@ function ENT:Think()
 					--If not jammed 
 					--OR
 					--Burnthrough distance is greater than the current distrance to the target(In meters)
-					local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= MissileDistance
+					local BurnThrough = self.IsJammed == 0 or (self.Burnthrough) / self.JamStrength >= MissileDistance
 
 					local ang	=  self:WorldToLocalAngles(PosDiff:Angle())  - Angle(0, -self.CurrentScanAngle, 0)	--Used for testing if inrange
 					local absang	= Angle(math.abs(math.NormalizeAngle(ang.p)), math.abs(math.NormalizeAngle(ang.y)), 0)  --Since I like ABS so much

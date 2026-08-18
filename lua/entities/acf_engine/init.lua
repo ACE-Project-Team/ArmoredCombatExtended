@@ -154,13 +154,7 @@ do
 		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
 
-		Engine.MaxDB = 70 + 60 * (EngineHorsepower / 2400) --Base volume of 70DB. Plus 60 * The ratio of the engine hp to 2400.
-
-		if ACF.EnginesRequireFuel > 0 then
-			Engine.RequiresFuel = true
-		end
-
-		if Engine.peakkw > (74.57 / 100 * ACF.LargeEngineThreshold) and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
+		if EngineHorsepower > ACF.LargeEngineThreshold and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
 			Engine.RequiresDriver = true
 			Engine.CanUseSeatDriver = true
 		end
@@ -739,8 +733,6 @@ function ENT:CalcRPM()
 
 		FuelBoost = ACF.TorqueBoost
 
-		ACE_AddThermalEnergy(self, Consumption * self.Efficiency * ACF.FuelPowerDensity[Tank.FuelType]* 0.4 ) --Assume 60% lost to air as exhaust
-
 		self.HasFuel = true
 		Wire_TriggerOutput(self, "Fuel Use", math.Round(60 * Consumption / DeltaTime,3))
 	else
@@ -753,11 +745,11 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
-
-	ACE_AtmosphericHeatDissipation(self, CoolingMult, DeltaTime)
-	local CoolingMult = 1 * 2^(Speed/40) --The cooling of radiators doubles every 40mph of speed
-	local Speed = math.min(ACF_GetPhysicalParent(self):GetVelocity():Length() / 17.6,141) --Speed in MPH. Capped to 141mph or ~12x cooling.
 	--Could stuff this in a spot executed less frequently
+	local Speed = math.min(ACF_GetPhysicalParent(self):GetVelocity():Length() / 17.6,141) --Speed in MPH. Capped to 141mph or ~12x cooling.
+	local CoolingMult = 1 * 2^(Speed/40) --The cooling of radiators doubles every 40mph of speed
+	ACE_AtmosphericHeatDissipation(self, CoolingMult, DeltaTime)
+
 	ACE_DoContraptionLegalCheck(self)
 
 	ACE_AtmosphericHeatDissipation(self, 0, DeltaTime)

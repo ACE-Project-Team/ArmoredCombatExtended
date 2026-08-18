@@ -12,9 +12,8 @@ ACF_DefineEngine( "900cc-R", {
 	weight = 35,
 	torque = 117,
 	flywheelmass = 0.06,
-	idlerpm = 950,
-	limitrpm = 9200,
-	acepoints = 179
+	idlerpm = 1200,
+	limitrpm = 9500
 } )
 
 ACF_DefineEngine( "1.3L-R", {
@@ -28,9 +27,8 @@ ACF_DefineEngine( "1.3L-R", {
 	weight = 43,
 	torque = 186,
 	flywheelmass = 0.06,
-	idlerpm = 950,
-	limitrpm = 9000,
-	acepoints = 280
+	idlerpm = 1200,
+	limitrpm = 9450
 } )
 
 ACF_DefineEngine( "2.0L-R", {
@@ -44,9 +42,8 @@ ACF_DefineEngine( "2.0L-R", {
 	weight = 54,
 	torque = 282,
 	flywheelmass = 0.1,
-	idlerpm = 950,
-	limitrpm = 9500,
-	acepoints = 447
+	idlerpm = 1200,
+	limitrpm = 9430
 } )
 
 ACF_DefineEngine( "2.6L-Wankel", {

@@ -1446,10 +1446,10 @@ do
 	--__e2setcost(1)
 
 	-- Returns 1 if the ACF engine requires fuel to run
-	[nodiscard, deprecated = "All engines require fuel now."]
-	e2function number entity:acfFuelRequired()
-		return 1
-	end
+	--[nodiscard, deprecated = "All engines require fuel now."]
+	--e2function number entity:acfFuelRequired()
+	--	return 1
+	--end
 
 	__e2setcost(2)
 

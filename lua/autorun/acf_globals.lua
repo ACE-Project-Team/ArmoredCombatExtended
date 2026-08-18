@@ -50,7 +50,7 @@ ACF.CuIToLiter          = 0.0163871                -- cubic inches to liters
 
 ACF.DriverTorqueBoost   = 1.25					-- torque multiplier from having a driver
 ACF.FuelRate            = 10						-- multiplier for fuel usage, 1.0 is approx real world
-ACF.ElecRate            = 3						-- multiplier for electrics								--BEFORE to balance: 0.458
+ACF.ElecRate            = 4						-- multiplier for electrics								--BEFORE to balance: 0.458
 ACF.TankVolumeMul       = 1						-- multiplier for fuel tank capacity, 1.0 is approx real world
 ACF.RadiatorHeatCap		= 0.2					--Multiplier for radiator specific heat cap. Makes radiators more or less effective at storing energy
 ACF.RadiatorEff			= 0.125					--Multiplier for radiator cooling effectiveness
@@ -154,7 +154,7 @@ ACE.MatCostTables = {
 	Alum			= 1.06 * (0.8325 / 0.334),	--A 20% increase in cost for 60% reduction in weight.
 	CHA				= 0.7 * (0.98 / 1.25),	--20% more heavy for a 30% reduction in cost.
 	Cer				= 0.95 * (2.05 / 1.2),	--70% more protection per kg for a 10% increase in cost. Takes a ton of damage and evaporates if penetrated.
-	ERA				= 0.7 * (3 / 2.0),
+	ERA				= 0.7 * (2.5 / 2.0),
 	Rub				= 1.05 * (0.05 / 0.2),
 	Texto			= 0.9 * (0.5 / 0.35),
 	RHA 			= 1,

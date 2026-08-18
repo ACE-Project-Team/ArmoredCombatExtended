@@ -13,8 +13,7 @@ ACF_DefineEngine( "2.8-B6", {
 	torque = 204,
 	flywheelmass = 0.08,
 	idlerpm = 750,
-	limitrpm = 7250,
-	acepoints = 247
+	limitrpm = 7250
 } )
 
 ACF_DefineEngine( "5.0-B6", {
@@ -29,8 +28,7 @@ ACF_DefineEngine( "5.0-B6", {
 	torque = 495,
 	flywheelmass = 0.11,
 	idlerpm = 900,
-	limitrpm = 6800,
-	acepoints = 564
+	limitrpm = 6800
 } )
 
 ACF_DefineEngine( "5.4-B6", {
@@ -60,8 +58,7 @@ ACF_DefineEngine( "8.3-B6", {
 	torque = 848,
 	flywheelmass = 0.65,
 	idlerpm = 500,
-	limitrpm = 4200,
-	acepoints = 677
+	limitrpm = 4200
 } )
 
 ACF_DefineEngine( "10.0-B6", {
@@ -76,24 +73,7 @@ ACF_DefineEngine( "10.0-B6", {
 	torque = 1575,
 	flywheelmass = 1,
 	idlerpm = 620,
-	limitrpm = 4500,
-	acepoints = 1429
-} )
-
-ACF_DefineEngine( "5.4-B6", {
-	name = "5.4L Flat 6 Multifuel",
-	desc = "Military-grade multifuel boxer engine.  Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
-	model = "models/engines/b6med.mdl",
-	sound = "acf_engines/v8_diesel.wav",
-	category = "B6",
-	fuel = "Multifuel",
-	enginetype = "GenericDiesel",
-	weight = 380,
-	torque = 825,
-	flywheelmass = 0.65,
-	idlerpm = 500,
-	limitrpm = 3500,
-	acepoints = 531
+	limitrpm = 4500
 } )
 
 ACF_DefineEngine( "15.8-B6", {
@@ -108,24 +88,7 @@ ACF_DefineEngine( "15.8-B6", {
 	torque = 1900,
 	flywheelmass = 1,
 	idlerpm = 620,
-	limitrpm = 4900,
-	acepoints = 1354
-} )
-
-ACF_DefineEngine( "13.6-B6", {
-	name = "13.6L Flat 6 Multifuel",
-	desc = "5TDF. Compact flat tank engine, with great power reserve, but with comparably high consumption. T-64 classic.",
-	model = "models/engines/b6med.mdl",
-	sound = "acf_extra/vehiclefx/engines/gnomefather/t64.wav",
-	category = "B6",
-	fuel = "Multifuel",
-	enginetype = "GenericDiesel",
-	weight = 1040,
-	torque = 3320,
-	flywheelmass = 6,
-	idlerpm = 600,
-	limitrpm = 2800,
-	acepoints = 1734
+	limitrpm = 4900
 } )
 
 ACF_DefineEngine( "20.7-B6", {
@@ -140,8 +103,7 @@ ACF_DefineEngine( "20.7-B6", {
 	torque = 3378,
 	flywheelmass = 6.4,
 	idlerpm = 600,
-	limitrpm = 2800,
-	acepoints = 2041
+	limitrpm = 2800
 } )
 
 ACF_DefineEngine( "22.9-B6", {
@@ -156,8 +118,7 @@ ACF_DefineEngine( "22.9-B6", {
 	torque = 6344,
 	flywheelmass = 6.4,
 	idlerpm = 600,
-	limitrpm = 2600,
-	acepoints = 2684
+	limitrpm = 2600
 } )
 
 ACF_DefineEngine( "25.9-B6", {
@@ -172,6 +133,5 @@ ACF_DefineEngine( "25.9-B6", {
 	torque = 11997,
 	flywheelmass = 6.6,
 	idlerpm = 600,
-	limitrpm = 2800,
-	acepoints = 3132
+	limitrpm = 2800
 } )

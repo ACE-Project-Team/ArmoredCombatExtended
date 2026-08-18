@@ -13,8 +13,7 @@ ACF_DefineEngine( "0.9L-I2", {
 	torque = 174,
 	flywheelmass = 0.085,
 	idlerpm = 750,
-	limitrpm = 6000,
-	acepoints = 219
+	limitrpm = 6000
 } )
 
 ACF_DefineEngine( "1.0L-I4", {
@@ -30,8 +29,7 @@ ACF_DefineEngine( "1.0L-I4", {
 	torque = 102,
 	flywheelmass = 0.031,
 	idlerpm = 1200,
-	limitrpm = 12000,
-	acepoints = 254
+	limitrpm = 12000
 } )
 
 ACF_DefineEngine( "1.8L-V4", {
@@ -46,8 +44,7 @@ ACF_DefineEngine( "1.8L-V4", {
 	torque = 186.8,
 	flywheelmass = 0.04,
 	idlerpm = 900,
-	limitrpm = 7500,
-	acepoints = 294
+	limitrpm = 7500
 } )
 
 ACF_DefineEngine( "1.9L-I4", {
@@ -62,8 +59,7 @@ ACF_DefineEngine( "1.9L-I4", {
 	torque = 264,
 	flywheelmass = 0.06,
 	idlerpm = 950,
-	limitrpm = 9000,
-	acepoints = 496
+	limitrpm = 9000
 } )
 
 ACF_DefineEngine( "2.4L-V6", {
@@ -78,24 +74,7 @@ ACF_DefineEngine( "2.4L-V6", {
 	torque = 258,
 	flywheelmass = 0.075,
 	idlerpm = 950,
-	limitrpm = 8000,
-	acepoints = 431
-} )
-
-ACF_DefineEngine( "2.6L-Wankel", {
-	name = "2.6L Rotary",
-	desc = "4 rotor racing Wankel, high revving and high strung.",
-	model = "models/engines/wankel_4_med.mdl",
-	sound = "acf_engines/wankel_large.wav",
-	category = "Special",
-	fuel = "Petrol",
-	enginetype = "Wankel",
-	weight = 260,
-	torque = 375,
-	flywheelmass = 0.11,
-	idlerpm = 1200,
-	limitrpm = 9500,
-	acepoints = 745
+	limitrpm = 8000
 } )
 
 ACF_DefineEngine( "2.9-V8", {
@@ -110,25 +89,7 @@ ACF_DefineEngine( "2.9-V8", {
 	torque = 300,
 	flywheelmass = 0.075,
 	idlerpm = 1000,
-	limitrpm = 10000,
-	acepoints = 500
-} )
-
-ACF_DefineEngine( "3.0-V12", {
-	name = "3.0L V12 Petrol",
-	desc = "A purpose-built racing v12, not known for longevity.",
-	model = "models/engines/v12s.mdl",
-	sound = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.WAV",
-	pitch = 85,
-	category = "Special",
-	fuel = "Petrol",
-	enginetype = "GenericPetrol",
-	weight = 175,
-	torque = 372,
-	flywheelmass = 0.1,
-	idlerpm = 1200,
-	limitrpm = 12500,
-	acepoints = 969
+	limitrpm = 10000
 } )
 
 ACF_DefineEngine( "3.8-I6", {
@@ -143,8 +104,7 @@ ACF_DefineEngine( "3.8-I6", {
 	torque = 336,
 	flywheelmass = 0.1,
 	idlerpm = 1100,
-	limitrpm = 9000,
-	acepoints = 634
+	limitrpm = 9000
 } )
 
 ACF_DefineEngine( "7.2-V8", {
@@ -174,8 +134,7 @@ ACF_DefineEngine( "5.3-V10", {
 	torque = 480,
 	flywheelmass = 0.2,
 	idlerpm = 1100,
-	limitrpm = 9000,
-	acepoints = 904
+	limitrpm = 12000
 } )
 
 ACF_DefineEngine( "2.4-V10", {
@@ -190,8 +149,7 @@ ACF_DefineEngine( "2.4-V10", {
 	torque = 260,
 	flywheelmass = 0.05,
 	idlerpm = 1000,
-	limitrpm = 8500,
-	acepoints = 906
+	limitrpm = 19100
 } )
 
 ACF_DefineEngine( "3.0-V12", {

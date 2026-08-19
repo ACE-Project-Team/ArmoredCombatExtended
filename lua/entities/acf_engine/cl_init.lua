@@ -83,3 +83,202 @@ function ACE.EngineGUI_Update( Table )
 end
 
 ACE_EngineGUI_Update = ACE.EngineGUI_Update
+
+
+
+
+
+
+do
+	--Maybe add override capability to this later to handle turbines?
+	local TypeList = {}
+	local LookupList = {}
+	
+	TypeList.Inline = {}
+	TypeList.Inline.Text = "Inline"
+	TypeList.Inline.Shorthand = "I"
+	TypeList.Inline.Validtypes = {1,2,3,4,5,6,8,12}
+	LookupList["Inline"] = "Inline"
+
+	TypeList.Boxer = {}
+	TypeList.Boxer.Text = "Boxer"
+	TypeList.Boxer.Shorthand = "B"
+	TypeList.Boxer.Validtypes = {2,4,6,8,10,12}
+	LookupList["Boxer"] = "Boxer"
+
+	TypeList.VBlock = {}
+	TypeList.VBlock.Text = "V-Block"
+	TypeList.VBlock.Shorthand = "V"
+	TypeList.VBlock.Validtypes = {2,4,6,8,10,12}
+	LookupList["V-Block"] = "VBlock"
+
+	TypeList.XBlock = {}
+	TypeList.XBlock.Text = "X-Block"
+	TypeList.XBlock.Shorthand = "X"
+	TypeList.XBlock.Validtypes = {4,8,12,16,20,24}
+	LookupList["X-Block"] = "XBlock"
+
+	TypeList.WBlock = {}
+	TypeList.WBlock.Text = "W-Block"
+	TypeList.WBlock.Shorthand = "W"
+	TypeList.WBlock.Validtypes = {16}
+	LookupList["W-Block"] = "WBlock"
+
+	TypeList.VRBlock = {}
+	TypeList.VRBlock.Text = "VR-Block"
+	TypeList.VRBlock.Shorthand = "VR"
+	TypeList.VRBlock.Validtypes = {4,6,8}
+	LookupList["VR-Block"] = "VRBlock"
+
+	TypeList.VBlockHeavy = {}
+	TypeList.VBlockHeavy.Text = "V-Block Heavy"
+	TypeList.VBlockHeavy.Shorthand = "VH"
+	TypeList.VBlockHeavy.Validtypes = {10}
+	LookupList["V-Block Heavy"] = "VBlockHeavy"
+
+	TypeList.Radial = {}
+	TypeList.Radial.Text = "Radial"
+	TypeList.Radial.Shorthand = "R"
+	TypeList.Radial.Validtypes = {3,5,7,9}
+	LookupList["Radial"] = "Radial"
+
+	TypeList.Rotary = {}
+	TypeList.Rotary.Text = "Rotary"
+	TypeList.Rotary.Shorthand = "RT"
+	TypeList.Rotary.Validtypes = {2,4}
+	LookupList["Rotary"] = "Rotary"
+
+
+
+	local Cylinderlist = {4}
+
+	local function CreateIdForCrate()
+
+		if not acfmenupanel.FuelPanelConfig["LegacyFuels"] then
+
+		   local X = math.Round( acfmenupanel.FuelPanelConfig["Crate_Length"], 1 )
+		   local Y = math.Round( acfmenupanel.FuelPanelConfig["Crate_Width"], 1 )
+		   local Z = math.Round( acfmenupanel.FuelPanelConfig["Crate_Height"], 1)
+
+		   local Id = X .. ":" .. Y .. ":" .. Z
+
+		   ACE.CusEngineGUI_Update( Table )
+		   acfmenupanel.FuelTankData["Id"] = Id
+		   RunConsoleCommand( "acfmenu_data1", Id )
+
+		end
+
+	 end
+
+	function ACE.CusEngineGUI_Create( Table )
+		if not acfmenupanel.CustomDisplay then return end
+
+		local MainPanel = acfmenupanel.CustomDisplay
+
+		if not acfmenupanel.CusEngineData then
+			acfmenupanel.CusEngineData          = {}
+			acfmenupanel.CusEngineData.Type = "Inline"
+			acfmenupanel.CusEngineData.CylinderCount = 4
+			acfmenupanel.CusEngineData.FuelID = "Petrol"
+		end
+
+		if not acfmenupanel.CusEngineConfig then
+			acfmenupanel.CusEngineConfig = {}
+		 end
+
+		acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+		acfmenupanel:CPanelText("Desc", Table.desc)
+
+		do --Engine Type Selection
+			local CylinderCountComboList = nil
+
+			acfmenupanel:CPanelText("Enginetype_desc", "\nChoose an engine type" )
+
+			local EngineTypeComboList = vgui.Create( "DComboBox", MainPanel )
+			EngineTypeComboList:SetSortItems( false )
+			EngineTypeComboList:SetSize(100, 30)
+			for Key, _ in pairs( LookupList ) do --ACE.CustomEngineList
+				EngineTypeComboList:AddChoice( Key )
+			end
+
+			EngineTypeComboList.OnSelect = function( _, _, data )
+				RunConsoleCommand( "acfmenu_data2", data )
+				acfmenupanel.CusEngineData.Type = LookupList[data]
+				ACE.CusEngineGUI_Update( Table )
+
+				--print(acfmenupanel.CusEngineData.Type)
+				Cylinderlist = TypeList[acfmenupanel.CusEngineData.Type].Validtypes or {4}
+				PrintTable(Cylinderlist)
+
+				CylinderCountComboList:clear()
+				for _, Key in pairs( Cylinderlist ) do --ACE.CustomEngineList
+					CylinderCountComboList:AddChoice( Key )
+				end
+
+			end--
+
+			EngineTypeComboList:SetText(acfmenupanel.CusEngineData.Type)
+			RunConsoleCommand( "acfmenu_data2", acfmenupanel.CusEngineData.Type )
+			MainPanel:AddItem( EngineTypeComboList )
+
+
+
+			--Cylinder Count Selection
+
+			acfmenupanel:CPanelText("Cylindercount_desc", "\nHow many cylinders" )
+
+			local CylinderCountComboList = vgui.Create( "DComboBox", MainPanel )
+			CylinderCountComboList:SetSortItems( false )
+			CylinderCountComboList:SetSize(100, 30)
+			for _, Key in pairs( Cylinderlist ) do --ACE.CustomEngineList
+				CylinderCountComboList:AddChoice( Key )
+			end
+
+			CylinderCountComboList.OnSelect = function( _, _, data )
+				RunConsoleCommand( "acfmenu_data2", data )
+				acfmenupanel.CusEngineData.CylinderCount = data
+				ACE.CusEngineGUI_Update( Table )
+				
+			end--
+
+			CylinderCountComboList:SetText(acfmenupanel.CusEngineData.CylinderCount)
+			RunConsoleCommand( "acfmenu_data2", acfmenupanel.CusEngineData.CylinderCount )
+			MainPanel:AddItem( CylinderCountComboList )
+
+		end
+
+		do --Engine Fuel Selection
+
+			acfmenupanel:CPanelText("Fueltype_desc", "\nChoose a fuel type" )
+
+			local FuelTypeComboList = vgui.Create( "DComboBox", MainPanel )
+			FuelTypeComboList:SetSize(100, 30)
+			for Key, _ in pairs( ACF.FuelDensity ) do
+				if Key == "Electric" then continue end --Electric is excluded from custom engines for now.
+				FuelTypeComboList:AddChoice( Key )
+			end
+
+			FuelTypeComboList.OnSelect = function( _, _, data )
+				RunConsoleCommand( "acfmenu_data2", data )
+				acfmenupanel.CusEngineData.FuelID = data
+				ACE.CusEngineGUI_Update( Table )
+			end
+
+			FuelTypeComboList:SetText(acfmenupanel.CusEngineData.FuelID)
+			RunConsoleCommand( "acfmenu_data2", acfmenupanel.CusEngineData.FuelID )
+			MainPanel:AddItem( FuelTypeComboList )
+
+		end
+
+		----------- The rest below -----------
+
+		ACE.CusEngineGUI_Update( Table )
+
+		MainPanel:PerformLayout()
+
+	end
+
+	function ACE.CusEngineGUI_Update( _ )
+
+	end
+end

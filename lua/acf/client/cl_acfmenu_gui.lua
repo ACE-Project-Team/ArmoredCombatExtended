@@ -200,9 +200,9 @@ function PANEL:Init( )
 
 		local Mobility    = HomeNode:AddNode( "Mobility" , "icon16/car.png" )	--Mobility folder
 		local Engines     = Mobility:AddNode( "Engines" , ItemIcon )
-		local Gearboxes   = Mobility:AddNode( "Gearboxes" , "icon16/cog.png"  )
-		local FuelTanks   = Mobility:AddNode( "Fuel Tanks" , "icon16/cog.png"  )
-		local Radiators   = Mobility:AddNode( "Radiators" , "icon16/cog.png"  )
+		local Gearboxes   = Mobility:AddNode( "Gearboxes" , "icon16/link.png"  )
+		local FuelTanks   = Mobility:AddNode( "Fuel Tanks" , "icon16/lightning.png"  )
+		local Radiators   = Mobility:AddNode( "Radiators" , "icon16/asterisk_orange.png"  )
 
 		local EngineCatNodes    = {} --Stores all Engine Cats Nodes (V12, V8, I4, etc)
 		local GearboxCatNodes   = {} --Stores all Gearbox Cats Nodes (CVT, Transfer, etc)
@@ -224,6 +224,17 @@ function PANEL:Init( )
 
 			end
 		end
+
+	-- Custom Engine Tab. One entry ("CustomEngine") that opens the config directly, no extra leaf.
+	for _, EngineData in pairs(FinalContainer["CusEngines"] or {}) do
+		local EngineNode = Engines:AddNode("Custom Engines", "icon16/bricks.png")
+		EngineNode.mytable = Data
+		function EngineNode:DoClick()
+			RunConsoleCommand("acfmenu_type", EngineData.type)
+			acfmenupanel:UpdateDisplay(EngineData)
+		end
+		break
+	end
 
 		--Populates engine categories
 		for _, EngineData in pairs(FinalContainer["Engines"]) do
@@ -410,7 +421,7 @@ function PANEL:Init( )
 	local OptionsNode = TreePanel:AddNode( "Settings" ) --Options folder
 
 	local CLNod	= OptionsNode:AddNode("Client" , "icon16/user.png") --Client folder
-	local SVNod	= OptionsNode:AddNode("Server", "icon16/cog.png")  --Server folder
+	local SVNod	= OptionsNode:AddNode("Server", "icon16/server.png")  --Server folder
 
 	CLNod.mytable  = {}
 	SVNod.mytable  = {}

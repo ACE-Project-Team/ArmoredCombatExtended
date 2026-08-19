@@ -154,6 +154,9 @@ do
 		Engine.ACEPoints		= math.ceil((Lookup.acepoints or FallBackCost or 0.404) * ACE.EnginePointMul)
 		Engine.TorqueScale	= ACF.TorqueScale[Engine.EngineType]
 
+
+		Engine.MaxDB = 70 + 60 * (EngineHorsepower / 2400) --Base volume of 70DB. Plus 60 * The ratio of the engine hp to 2400.
+
 		if EngineHorsepower > ACF.LargeEngineThreshold and ACF.LargeEnginesRequireDrivers ~= 0 then --If the engine has more than 100 hp it requires a driver.
 			Engine.RequiresDriver = true
 			Engine.CanUseSeatDriver = true

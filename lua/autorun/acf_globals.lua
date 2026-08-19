@@ -53,7 +53,8 @@ ACF.FuelRate            = 10						-- multiplier for fuel usage, 1.0 is approx re
 ACF.ElecRate            = 4						-- multiplier for electrics								--BEFORE to balance: 0.458
 ACF.TankVolumeMul       = 1						-- multiplier for fuel tank capacity, 1.0 is approx real world
 ACF.RadiatorHeatCap		= 0.2					--Multiplier for radiator specific heat cap. Makes radiators more or less effective at storing energy
-ACF.RadiatorEff			= 0.125					--Multiplier for radiator cooling effectiveness
+ACF.RadiatorEff			= 0.02					--Multiplier for radiator cooling effectiveness. After disabling airflow reduced from 0.125x
+ACF.RadiatorPowerUsage = 0.25                 --Multiplier for horsepower usage of radiators when utilizing active cooling.
 ACF.ThermalTimeScale 	= 60						--Multiplies the timescale of anything heat related. This way engines don't take dozens of minutes to overheat.
 
 ---------------------------------- Ammo Crate config ----------------------------------

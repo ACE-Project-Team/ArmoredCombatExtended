@@ -2,11 +2,16 @@
 ACF.FuelDensity = { --kg/liter
 	Diesel = 0.832,
 	Petrol = 0.745,
+	NitroMethane = 1.137,
+	Methanol = 0.791,
 	Electric = 1.35 -- li-ion --WAS 3.1
 }
-ACF.FuelPowerDensity = { --KJ/liter
+
+ACF.FuelPowerDensity = { --MJ/liter
 	Diesel = 38.6,
 	Petrol = 33.6,
+	NitroMethane = 26,
+	Methanol = 22,
 	Electric = 1 --TODO: Find conversion units. Fine for now. Electric doesn't generate too much heat to be of concern.
 }
 
@@ -15,6 +20,8 @@ ACF.FuelPowerDensity = { --KJ/liter
 ACF.PerFuelRelativeEfficiency = { --Efficiency multipliers when using various fuels
 	Diesel = 1.375, --42% more fuel efficicient but slightly less(1.02x) kg efficient for a unit of fuel.
 	Petrol = 1,
+	NitroMethane = 1,
+	Methanol = 1,
 	Electric = 1 --TODO: Find conversion units. Fine for now. Electric doesn't generate too much heat to be of concern.
 }
 
@@ -122,8 +129,10 @@ ACF.EngineHPMult = { --health multiplier for engines
 
 
 ACF.PerFuelTorqueCurveMul = { --Efficiency multipliers when using various fuels
-	Diesel = {1,1.64,1.43,1.12,0.9,0.89,0.93},
+	Diesel = {2,1.64,1.43,1.12,0.9,0.8,0.75},
 	Petrol = {1,1,1,1,1,1,1},
+	NitroMethane = {1,1,1,1,1,1,1},
+	Methanol = {1,1,1,1,1,1,1},
 	Electric = {1,1,1,1,1,1,1}
 }
 

@@ -278,7 +278,7 @@ ACE.DefineModelData("Cone",{
 })
 
 --Radiator. DefaultSize has issues with 3d vectors. Using external scaling for now.
-	ACE_DefineModelData("Radiator",{
+	ACE.DefineModelData("Radiator",{
 
 		Shape = "Radiator",
 		Model = "models/radiators/radiator_med.mdl", --Note: The model can be used as ID if needed.

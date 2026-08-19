@@ -17,6 +17,7 @@ local AmmoTable         = {}
 local LegacyAmmoTable   = {}
 
 local EngineTable       = {}
+local CusEngineTable	= {}
 local GearboxTable      = {}
 local FuelTankTable     = {}
 local RadiatorTable		= {}
@@ -46,6 +47,10 @@ local ammo_base = {
 local engine_base = {
 	ent    = "acf_engine",
 	type   = "Engines"
+}
+local cus_engine_base = {
+	ent    = "acf_engine",
+	type   = "CusEngines"
 }
 local gearbox_base = {
 	ent    = "acf_gearbox",
@@ -105,6 +110,9 @@ if CLIENT then
 	gun_base.guiupdate           = function() return end
 
 	engine_base.guicreate        = function( _, tbl ) ACE.EngineGUI_Update( tbl )		end or nil
+
+	cus_engine_base.guicreate        = function( _, tbl ) ACE.CusEngineGUI_Create( tbl )		end or nil
+	cus_engine_base.guiupdate        = function( _, tbl ) ACE.CusEngineGUI_Update( tbl )		end or nil
 
 	gearbox_base.guicreate       = function( _, tbl ) ACFGearboxGUICreate( tbl )		end or nil
 	gearbox_base.guiupdate       = function() return end
@@ -234,6 +242,14 @@ function ACF_DefineEngine( id, data )
 		EngineTable[ id ] = data
 		MobilityTable[ id ] = data
 	end
+end
+
+--Engine definition
+function ACF_DefineCustomEngine( id, data )
+	data.id = id
+	table.Inherit( data, cus_engine_base )
+	CusEngineTable[ id ] = data
+	MobilityTable[ id ] = data
 end
 
 -- Gearbox definition
@@ -445,6 +461,7 @@ ACF.Weapons.LegacyAmmo      = LegacyAmmoTable
 ACF.Weapons.Guns            = GunTable
 ACF.Weapons.Racks           = RackTable
 ACF.Weapons.Engines         = EngineTable
+ACF.Weapons.CusEngines      = CusEngineTable
 ACF.Weapons.Gearboxes       = GearboxTable
 ACF.Weapons.FuelTanks       = FuelTankTable
 ACF.Weapons.Radiators       = RadiatorTable

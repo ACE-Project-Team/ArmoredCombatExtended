@@ -29,7 +29,7 @@ do
 		self.EmptyMass        = 0	--mass of tank only
 
 		self.ThermalSurfaceArea = 1 	--total surface area of the radiator fins
-		self.AirflowRestrictiveness = 1 --Ratio for airflow passing through the radiator.
+		--self.AirflowRestrictiveness = 1 --Ratio for airflow passing through the radiator.
 
 		self.NextMassUpdate   = 0
 		self.NextGUIUpdate    = 0
@@ -282,9 +282,7 @@ function ENT:UpdateRadiator(_, _)
 	local y = math.Round(Width, 1) / 10
 	local z = math.Round(Height, 1) / 10
 
-	self.ActiveTorqueDemand = self.Volume / 61.02 * 60 --Convert to liters. Then multiply by the amount of Joules per second it'll take to actively cool the engine per liter of radiator volume.
-
-	--print("Horsepower required to use active cooling: " .. self.ActiveTorqueDemand / 1.3410220896 / 1000)
+	self.ActiveTorqueDemand = self.Volume / 61.02 * 60 * ACF.RadiatorPowerUsage --Convert to liters. Then multiply by the amount of Joules per second it'll take to actively cool the engine per liter of radiator volume.
 
 
 	local FinsPerInch = 15
@@ -298,24 +296,38 @@ function ENT:UpdateRadiator(_, _)
 
 	self.ThermalSurfaceArea = finSize * FinCount / 1550 --Converts from square inches to square meters
 
-	self.AirflowRestrictiveness = 1-(1-(1/Length))^2 --Airflow ratio of the radiator. Difficulty air flowing through it will have cooling anything.
+	--self.AirflowRestrictiveness = 1-(1-(1/Length))^2 --Airflow ratio of the radiator. Difficulty air flowing through it will have cooling anything.
 
 	--Infotext moved from the overlay update. No need to recalculate this.
+	local text = ""
+	--text = "\nTotal Surface Area: " .. math.Round(self.ThermalSurfaceArea,2) .. "m^2"
 
-	local text = "\nTotal Surface Area: " .. math.Round(self.ThermalSurfaceArea,2) .. "m^2"
-	text = text .. "\nAirflow Restriction: " .. math.Round((1-self.AirflowRestrictiveness)*100,1) .. "%\n"
+	--text = text .. "\nAirflow Restriction: " .. math.Round((1-self.AirflowRestrictiveness)*100,1) .. "%\n"
+
 	local HeatCapacity = self.ACESpecificHeat * self.Mass
-	text = text .. "\nThermal Storage: " .. math.Round(HeatCapacity,1) .. " kJ/Deg C\n"
 
 	local OldHeat = self.Heat
 	--Bit of a hacked together way to measure the thermal dissipation rate at a given temp.
 	self.Heat = 100
-	ACE_AtmosphericHeatDissipation(self, self.AirflowRestrictiveness * ACF.RadiatorEff, 1)
+	ACE_AtmosphericHeatDissipation(self, ACF.RadiatorEff, 1)
 	local Dissipation = (100 - self.Heat) * HeatCapacity  / ACF.ThermalTimeScale --Gets the heat difference in Deg/C and multiplies it by the Heat capacity of the radiator to determine the KJ dissipated
-	text = text .. "\nStationary Cooling:\n" .. math.Round(Dissipation,2) .. " kJ / second @ 100 Deg C.\n"
 
-	text = text .. "\nw/ Active:\n" .. math.Round(Dissipation*3,2) .. " kJ / second @ 100 Deg C."
-	text = text .. "\nusing " .. math.Round(self.ActiveTorqueDemand / 1.3410220896 / 1000,2) .. "hp when needed\n"
+
+	text = text .. "\n\nCooling:"
+
+	text = text .. "\nStationary - " .. math.Round(Dissipation,2) .. " kW @ 100°C\n"
+
+
+	local CoolingMult = 1 * 2^(40/40) --The cooling of radiators doubles every 40mph of speed
+
+	text = text .. "\n40mph - " .. math.Round(Dissipation * CoolingMult,2) .. " kW @ 100°C\n"
+
+	text = text .. "\nActive - " .. math.Round(Dissipation*3,2) .. " kW @ 100°C"
+
+	text = text .. "\nUsing " .. math.Round(self.ActiveTorqueDemand / 1.3410220896 / 1000,2) .. "hp\n"
+
+
+	--text = text .. "\nThermal Storage: " .. math.Round(HeatCapacity,1) .. " kJ/°C"
 
 	self.ActiveTorqueDemand = self.Volume / 61.02 * 30
 
@@ -348,17 +360,19 @@ function ENT:UpdateOverlayText()
 		Stats = "Cooling Passively"
 	end
 
-	local text = "- " .. Stats .. " -\n"
+	local text = "- " .. Stats .. " -"
 
 	--Slot in infotext
 
+	text = text .. "\nTemp: " .. math.Round(self.Heat) .. "°C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "°F\n"
+
 	text = text .. self.RadiatorStats
 
-	text = text .. "\nTemp: " .. math.Round(self.Heat) .. " °C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. " °F\n"
-
-	text = text .. "\nCurrent Coolant Remaining:"
-	text = text .. "\n-  " .. math.Round( self.Coolant, 1 ) .. " / " .. math.Round( self.Capacity, 1 ) .. " liters"
-	text = text .. "\n-  " .. math.Round( self.Coolant * 0.264172, 1 ) .. " / " .. math.Round( self.Capacity * 0.264172, 1 ) .. " gallons"
+	--if self.Coolant < self.Capacity then
+		text = text .. "\n\nCoolant Remaining:"
+		text = text .. "\n-  " .. math.Round( self.Coolant, 1 ) .. " / " .. math.Round( self.Capacity, 1 ) .. " liters"
+		text = text .. "\n-  " .. math.Round( self.Coolant * 0.264172, 1 ) .. " / " .. math.Round( self.Capacity * 0.264172, 1 ) .. " gallons"
+	--end
 
 	if self.Leaking > 0 then
 		text = text .. "\n- Leaking: " .. math.Round(self.Leaking, 1) .. " liters per second"
@@ -537,10 +551,10 @@ function ENT:Think()
 			end
 		
 			local CoolingMult = 1 * 2^(Speed/40) --The cooling of radiators doubles every 40mph of speed
-			ACE_AtmosphericHeatDissipation(self, CoolingMult  * self.AirflowRestrictiveness * ACF.RadiatorEff, DeltaTime2)
+			ACE_AtmosphericHeatDissipation(self, CoolingMult  * ACF.RadiatorEff, DeltaTime2)
 		else
 			local CoolingMult = 0.1 * 2^(Speed/40) --The cooling of radiators doubles every 40mph of speed
-			ACE_AtmosphericHeatDissipation(self, CoolingMult  * self.AirflowRestrictiveness * ACF.RadiatorEff, DeltaTime2)
+			ACE_AtmosphericHeatDissipation(self, CoolingMult  * ACF.RadiatorEff, DeltaTime2)
 		end
 
 		Wire_TriggerOutput( self, "Temperature", self.Heat )

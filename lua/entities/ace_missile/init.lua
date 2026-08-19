@@ -162,7 +162,7 @@ function ENT:Think()
 
 	if self.WaterZHeight == 0 then
 		local WaterTr = { }
-		WaterTr.start = Pos + Vector(0,0, 50000)
+		WaterTr.start = Pos + Vector(0,0, 10000)
 		WaterTr.endpos = Pos
 		WaterTr.mask = MASK_WATER
 		local Water = util.TraceLine( WaterTr )
@@ -172,12 +172,12 @@ function ENT:Think()
 		end
 
 	elseif self.WaterZHeight ~= -1 then
-		--print(Pos.z - self.WaterZHeight)
 		if Pos.z < self.WaterZHeight and Pos.z - self.WaterZHeight > -500 and self.MissileActive and CT > (self.NextWaterSplash or 0) then
+			--print(Pos.z - self.WaterZHeight)
 			self.NextWaterSplash = CT + 0.03
 			self.WaterZHeight = self.WaterZHeight
 			local Sparks = EffectData()
-			Sparks:SetOrigin( Vector(Pos.x, Pos.y, self.WaterZHeight) )
+			Sparks:SetOrigin( Vector(Pos.x, Pos.y, self.WaterZHeight + 50) )
 			Sparks:SetScale( self.RoundWeight / 50 )
 			util.Effect( "waterripple", Sparks )
 		end

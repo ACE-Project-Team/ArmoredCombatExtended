@@ -37,7 +37,7 @@ this.MinimumDistance = 200  -- ~5m
 -- Maximum distance for a target to be considered.
 this.MaximumDistance = 20000
 
-this.desc = "This guidance package detects hot targets infront of itself, and guides the munition towards it."
+this.desc = "Guidance package which relies on the heat of the target to guide itself. Will be unable to lock a target if it is not hot enough. Can be defeated by flares. Fire and forget."
 
 this.TTime = 0
 

@@ -26,7 +26,7 @@ this.HasIRCCM = false
 -- Minimum distance for a target to be considered
 this.MinimumDistance = 393.7	--10m
 
-this.desc = "This guidance package detects a target-position infront of itself, and guides the munition towards it."
+this.desc = "Anti-missile guidance. Will automatically track any missiles it is fired at within the cone. And will coordinate with other missiles to avoid targeting the same missile. Does not track the owner's missiles. Fire and forget."
 
 function this:Init()
 	self.LastSeek = CurTime() - self.SeekDelay - 0.000001

@@ -602,8 +602,8 @@ ACE.DefineGun("Mk54 Torp", {						-- id
 	bodydiameter     = 36, -- If this ordnance has fixed fins. Add this to count the body without finds, to ensure the missile will fit properly on the rack (doesnt affect the ammo dimension)
 
 	round = {
-		rocketmdl			= "models/macc/Torpedo_MK13_Small.mdl",
-		rackmdl				= "models/macc/Torpedo_MK13_Small.mdl",
+		rocketmdl			= "models/macc/Torpedo_MK13.mdl",
+		rackmdl				= "models/macc/Torpedo_MK13.mdl",
 		firedelay			= 0.5,
 		reloadspeed			= 6.0,
 		reloaddelay			= 25.0,

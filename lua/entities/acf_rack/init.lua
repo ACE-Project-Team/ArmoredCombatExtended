@@ -22,11 +22,14 @@ local RackWireDescs = {
 	--Inputs
 	["Reload"]       = "Arms this rack. Its mandatory to set this since racks don't reload automatically.",
 	["TargetPos"]    = "Defines the Target position for the ordnance in this rack. This only works for Wire and laser guidances.",
+	["ActivateGuidance"] = "This input is only used to activate the missile seeker while it is still on the rails.\nUseful to see what your missile is tracking or able to see before firing.\nRegardless of input missiles will activate their guidance when fired.",
 	["Delay"]        = "Sets a specific delay to guidance control over the default one in seconds.",
 	["Detonate"]        = "Remotely detonate any currently outbound missiles.",
 
-	--Outputs
+	--Outputs 
 	["Ready"]        = "Returns if the rack is ready to fire.",
+	["AcquiredTarget"]        = "Whether the missile currently on the rails has found a target.\n Requires ActivateGuidance to be active for the missile to see on the rails.",
+	["TargetDirection"]        = "If the missile on the rails currently has a target, outputs a direction vector towards the target.\n Requires ActivateGuidance to be active for the missile to see on the rails.",
 	["CurMissile"]        = "Outputs the next position of the missile in the rack getting fired.",
 	["PositionFiredMissile"] = "Outputs the position of the missile last fired by this launcher"
 
@@ -79,10 +82,10 @@ function ENT:Initialize()
 
 	self.SelfContraption = nil
 
-	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
+	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")",	"Activate Guidance (" .. RackWireDescs["ActivateGuidance"] .. ")", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
 													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL", "NORMAL" } )
 
-	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget", "TargetDirection", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
+	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget (" .. RackWireDescs["AcquiredTarget"] .. ")", "TargetDirection (" .. RackWireDescs["TargetDirection"] .. ")", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
 														{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "ENTITY", "STRING", "NORMAL", "VECTOR" } )
 
 	Wire_TriggerOutput(self, "Ready", 1)

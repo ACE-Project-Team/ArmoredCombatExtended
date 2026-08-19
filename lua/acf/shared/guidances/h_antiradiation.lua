@@ -31,7 +31,7 @@ this.HasIRCCM = false
 -- Minimum distance for a target to be considered
 this.MinimumDistance = 393.7	--10m
 
-this.desc = "This guidance package detects a target-position infront of itself, and guides the munition towards it."
+this.desc = "Guidance package that will hone-in on any radar emissions. Capable of targeting Search and Track Radars, Missile Radars, or ECM.  Fire and forget. Only targets devices that are actively emitting."
 
 function this:Init()
 	self.LastSeek = CurTime() - self.SeekDelay - 0.000001

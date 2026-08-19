@@ -41,7 +41,7 @@ this.LargestDist = 0
 
 this.TopAttackFactor = 1
 
-this.desc = "This guidance package detects hot targets infront of itself, and guides the munition towards it."
+this.desc = "Similar to Infrared guidance but has a top-attack trajectory. This guidance package which relies on the heat of the target to guide itself. Will be unable to lock a target if it is not hot enough. Can be defeated by flares. Fire and forget."
 
 this.TTime = 0
 

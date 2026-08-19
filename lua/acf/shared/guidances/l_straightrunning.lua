@@ -13,7 +13,7 @@ this.Name = ClassName
 -- An entity with a Position wire-output
 this.InputSource = nil
 
-this.desc = "Gyroscopic torpedo. Guides the torpedo to the depth and direction of the targetpos or the direction fired."
+this.desc = "Standard Gyro Torpedo. It updates once when on rack so make your shot count!"
 
 -- Disables guidance when true
 this.FirstGuidance = true

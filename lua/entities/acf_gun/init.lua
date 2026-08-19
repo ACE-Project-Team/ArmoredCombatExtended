@@ -131,7 +131,7 @@ do
 		Unload      = "Unload (Unloads the current shell from the gun. Leaving the gun empty.)",
 		Reload      = "Reload (Reloads the current weapon, according to the active ammo it has.)",
 		FuseTime    = "Fuse Time (Defines the required time for shell self-detonation in seconds. \nThis only work with SM, HE & HEAT rounds. \nNote that this is not really accurate.)",
-		ROFLimit    = "ROFLimit (Adjusts the Gun's Rate of Fire. \nNote that setting this to 0 WILL disable overriding! \nIf you want lower rof, use values like 0.1.)",
+		ROFLimit    = "ROFLimit (Limits the Gun's rate of fire to the specified value in Rounds Per Minute. \nUsing a number of 0 or less will disable the firerate limit.)",
 	}
 	local Outputs = {
 		Ready           = "Ready (Returns if the gun is ready to fire.)",

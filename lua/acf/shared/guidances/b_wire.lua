@@ -15,7 +15,7 @@ this.WireLength = (500 * 39.37) ^ 2			-- about 500m
 -- Disables guidance when true
 this.WireSnapped = false
 
-this.desc = "This guidance package is controlled by the launcher, which reads a target-position and steers the munition towards it. Has a limited guidance distance."
+this.desc = "Guidance package for reliably guiding a missile. The guidance cable has a limited range of only 500 meters however the guidance works regardless of line of sight and cannot be jammed."
 
 this.GuidanceWire = nil
 

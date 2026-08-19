@@ -33,7 +33,7 @@ this.HasIRCCM = false
 -- Minimum distance for a target to be considered
 this.MinimumDistance = 393.7	--10m
 
-this.desc = "This guidance package detects a target-position infront of itself, and guides the munition towards it."
+this.desc = "Guidance package that uses forward looking radar to track the target. Weakened by ground clutter. Can be defeated by notching or using chaff. Fire and forget."
 
 --Multiplier for the ground clutter effect.
 this.GCMultiplier = 1

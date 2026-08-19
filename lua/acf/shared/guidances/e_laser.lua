@@ -13,7 +13,7 @@ this.Name = ClassName
 -- Cone to retain targets within.
 this.ViewCone = 30
 
-this.desc = "This guidance package reads a target-position from the launcher and guides the munition towards it."
+this.desc = "Robust guidance package which uses a laser to guide a missile towards the target position. In order to guide, the seeker must have a clear view of the target position. Cannot be jammed or flared."
 
 
 

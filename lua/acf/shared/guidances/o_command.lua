@@ -13,7 +13,7 @@ this.Name = ClassName
 -- Cone to retain targets within.
 this.ViewCone = 30
 
-this.desc = "This guidance package reads a target-position from the launcher and guides the munition towards it. The launcher must have LOS to the missile."
+this.desc = "A form of guidance that steers a missile towards the target position of the launcher using radio commands. Requires a line of sight from the launcher to the missile to guide. ECM is capable of disrupting the guidance signal."
 
 
 

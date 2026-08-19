@@ -31,7 +31,7 @@ this.SeekDelay = 2 -- Re-seek drastically reduced cost so we can re-seek. Dynami
 this.MinimumDistance = 393.7	--10m
 this.MaxDistance = 100 * 39.37	--10m
 
-this.desc = "Acoustic torpedo guidance."
+this.desc = "Acoustic torpedo that will track any targets in the water within a cone. This torpedo will swim in a straight line searching for a target. If provided with a target position the torpedo will try to match the depth of the target position and travel along the bearing. Otherwise the torpedo will travel in the direction it was launched maintaining the depth it was launched at."
 --Useful for airdropped torpedoes. Follows a helical pattern until it reaches its target depth. WARNING: Targetposition can only specify the depth to search at. This torpedo will search around the area it was first dropped.
 
 --Sets initial guidance info
@@ -81,7 +81,9 @@ function this:GetGuidance(missile)
 
 		self.TarPos = missilePos + self.TarPos * 500000
 		self.TarPos = Vector(self.TarPos.x,self.TarPos.y,zHeight)
-		self.FirstGuidance = false
+		if missile.MissileActive then
+			self.FirstGuidance = false
+		end
 	end
 
 	local override = self:ApplyOverride(missile)

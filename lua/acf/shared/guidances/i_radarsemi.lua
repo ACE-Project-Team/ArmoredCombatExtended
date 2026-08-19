@@ -29,7 +29,7 @@ this.HasIRCCM = false
 -- Minimum distance for a target to be considered
 this.MinimumDistance = 393.7	--10m
 
-this.desc = "This guidance package will guide the missile towards targets acquired by your radars."
+this.desc = "Semi-active radar guidance. Requires a tracking radar to work. Will guide a missile towards any targets detected by your tracking radar but requires keeping the target constantly painted by radar. Cheap."
 
 this.Radars = {} --Contains all owned radars to grab targets from.
 

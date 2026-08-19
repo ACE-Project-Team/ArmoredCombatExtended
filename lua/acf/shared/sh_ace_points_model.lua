@@ -91,8 +91,16 @@ local AUTO_CLASSES = { AC = true, MG = true, RAC = true, HMG = true, GL = true, 
 local FUEL_FACTOR  = { Petrol = 1.0, Diesel = 1.2, Multifuel = 1.2, Electric = 0.8 }
 -- Guidance names omitted from this table use a 1.0 multiplier.
 local GUIDANCE = {
-	Dumb = 0.5, Straight_Running = 0.6, Radar = 1.4, Semiactive = 1.4,
-	Infrared = 1.5, Top_Attack_IR = 1.8, GPS = 0.8, GPS_TerrainAvoidant = 0.9,
+	Dumb = 0.5,
+	Straight_Running = 0.6,
+	Radar = 1.4,
+	Semiactive = 0.8,
+	Infrared = 1.2,
+	Top_Attack_IR = 1.8,
+	GPS = 0.7,
+	GPS_TerrainAvoidant = 0.8,
+	AntiRadiation = 0.6, --Cost lowered to increase viability of antiradiation missiles as a backup weapon.
+	Beam_Riding = 0.8, --Beamriding is an inferior guidance method due to inability to see in 3d and wasted energy.
 }
 
 -- Lethality once the round is inside armor: base damage plus the hole it tears

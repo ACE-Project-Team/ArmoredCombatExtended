@@ -12,7 +12,7 @@ ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
-this.desc = "This guidance package is empty and provides no control."
+this.desc = "No guidance package. The missile will not make any correctional measures to steer itself or counteract gravity.."
 
 -- an object containing an obj:GetGuidanceOverride(missile, guidance) function
 this.Override = nil

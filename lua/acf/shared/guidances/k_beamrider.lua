@@ -13,7 +13,7 @@ this.Name = ClassName
 -- Cone to retain targets within.
 this.ViewCone = 30
 
-this.desc = "This guidance package directs the missile to keep it in line with the sight as if it were riding a beam. Results in a fast traveltime."
+this.desc = "A guidance package that guides a missile to follow a line. Typically in line with the missile launcher. Though less efficient than other guidance methods it makes up for it in price. Will either follow the facing of the launching missile or any spawned optical computer entity."
 
 this.GuidanceEntity = nil
 

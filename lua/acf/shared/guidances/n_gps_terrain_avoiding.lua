@@ -13,7 +13,7 @@ this.Name = ClassName
 -- An entity with a Position wire-output
 this.InputSource = nil
 
-this.desc = "Terrain following GPS guidance. This guidance package recieves a one-time position and guides to it staying as low as possible."
+this.desc = "A form of guidance that guides directly towards a target point. Programmed at the time of launch and cannot be adjusted after. Will head straight towards the target position regardless of line of sight or seeker cone. Fire and forget.\n This form of GPS Guidance is capable of avoiding terrain. And will try to fly as low as possible towards a target."
 
 -- Disables guidance when true
 this.FirstGuidance = true
@@ -58,7 +58,9 @@ function this:GetGuidance(missile)
 
 		--self.TPos = MPos + self.TPos * 500000
 
-		self.FirstGuidance = false
+		if missile.MissileActive then
+			self.FirstGuidance = false
+		end
 	end
 
 	local LastDist = self.Dist or 0

@@ -31,7 +31,7 @@ this.SeekDelay = 2 -- Re-seek drastically reduced cost so we can re-seek. Dynami
 this.MinimumDistance = 393.7	--10m
 this.MaxDistance = 100 * 39.37	--10m
 
-this.desc = "Acoustic torpedo guidance."
+this.desc = "Acoustic torpedo guidance. The torpedo will act like an IR missile guidance, it will guid itself to an target you just have to fire it in somewhat direction and pray!"
 --Useful for airdropped torpedoes. Follows a helical pattern until it reaches its target depth. WARNING: Targetposition can only specify the depth to search at. This torpedo will search around the area it was first dropped.
 
 --Sets initial guidance info

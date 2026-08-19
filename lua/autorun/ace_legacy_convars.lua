@@ -44,7 +44,7 @@ local serverConVars = {
     { "acf_debris_lifetime", "ace_debris_lifetime", "30" },
     { "acf_debris_children", "ace_debris_children", "1" },
     { "acf_spalling", "ace_spalling", "1" },
-    { "acf_spalling_multipler", "ace_spalling_multipler", "1" },
+    { "acf_spalling_multipler", "ace_spalling_multiplier", "1" },
     { "acf_explosions_scaled_he_max", "ace_explosions_scaled_he_max", "100" },
     { "acf_explosions_scaled_ents_max", "ace_explosions_scaled_ents_max", "5" },
     { "acf_wind", "ace_wind", "600" },

@@ -24,7 +24,7 @@ net.Receive("ACE_SettingsSync", function(_, ply)
             ace_debris_lifetime = GetConVar("ace_debris_lifetime"):GetFloat(),
             ace_debris_children = GetConVar("ace_debris_children"):GetFloat(),
             ace_spalling = GetConVar("ace_spalling"):GetFloat(),
-            ace_spalling_multipler = GetConVar("ace_spalling_multipler"):GetFloat(),
+            ace_spalling_multiplier = GetConVar("ace_spalling_multiplier"):GetFloat(),
 
             -- Cooking Off / Scaled Explosions
             ace_explosions_scaled_he_max = GetConVar("ace_explosions_scaled_he_max"):GetFloat(),

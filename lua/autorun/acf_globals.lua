@@ -355,7 +355,7 @@ if SERVER then
 
     -- Spalling
     CreateConVar("ace_spalling", 1, FCVAR_ARCHIVE)
-    CreateConVar("ace_spalling_multipler", 1, FCVAR_ARCHIVE)
+    CreateConVar("ace_spalling_multiplier", 1, FCVAR_ARCHIVE)
 
     -- Scaled Explosions
     CreateConVar("ace_explosions_scaled_he_max", 100, FCVAR_ARCHIVE)
@@ -377,7 +377,7 @@ if SERVER then
             ACE.AmmoMod = 1 * math.max(New, 0.01)
         elseif CVar == "ace_spalling" then
             ACE.Spalling = math.floor(math.Clamp(New, 0, 1))
-        elseif CVar == "ace_spalling_multipler" then
+        elseif CVar == "ace_spalling_multiplier" then
             ACE.SpallMult = math.Clamp(New, 1, 5)
         elseif CVar == "ace_gunfire" then
             ACE.GunfireEnabled = tobool( New )
@@ -412,7 +412,7 @@ cvars.AddChangeCallback("ace_healthmod", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_armormod", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_ammomod", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_spalling", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_spalling_multipler", ACE_CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling_multiplier", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_gunfire", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_debris_lifetime", ACE_CVarChangeCallback)
 cvars.AddChangeCallback("ace_debris_children", ACE_CVarChangeCallback)
@@ -432,7 +432,7 @@ local startupSync = {
     "ace_armormod",
     "ace_ammomod",
     "ace_spalling",
-    "ace_spalling_multipler",
+    "ace_spalling_multiplier",
     "ace_gunfire",
     "ace_debris_lifetime",
     "ace_debris_children",

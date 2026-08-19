@@ -745,7 +745,7 @@ local function addHelpText(text, parent)
 	label:SetFont("DermaDefault")
 	label:SetWrap(true)
 	label:SetAutoStretchVertical(true)
-	label:DockMargin(30, 0, 30, 0)
+	label:DockMargin(34, 0, 34, 0)
 	label:SetColor(Color(47, 149, 241))
 	label:Dock(TOP)
 
@@ -765,7 +765,7 @@ local function addCheckbox(text, setting, parent)
 		updateSetting(setting, value and 1 or 0)
 	end
 
-	function checkbox:SetValueSilent(value)
+	function checkbox:SetValueNoSync(value)
 		self.suppressOnChange = true
 		self:SetChecked(value > 0)
 		self.suppressOnChange = false
@@ -774,14 +774,14 @@ local function addCheckbox(text, setting, parent)
 	return checkbox
 end
 
-local function addSlider(text, min, max, decimals, setting, parent)
+local function addSlider(text, min, max, decimals, default, setting, parent)
 	local slider = vgui.Create("DNumSlider", parent)
 	slider:SetText(text)
 	slider:SetDark(true)
 	slider:SetMin(min)
 	slider:SetMax(max)
 	slider:SetDecimals(decimals)
-	slider:DockMargin(10, 5, 10, -5)
+	slider:DockMargin(10, 0, 10, -5)
 	slider:Dock(TOP)
 
 	function slider:OnValueChanged(value)
@@ -792,7 +792,9 @@ local function addSlider(text, min, max, decimals, setting, parent)
 		end)
 	end
 
-	function slider:SetValueSilent(value)
+	slider:SetDefaultValue(default)
+
+	function slider:SetValueNoSync(value)
 		self.suppressOnChange = true
 		self:SetValue(value)
 		self.suppressOnChange = false
@@ -858,7 +860,7 @@ function ACE_SVGUICreate()	--Serverside folder content
 	settings.ace_legacyrecoil = addCheckbox("Enable legacy recoil", "ace_legacyrecoil", general)
 	addHelpText("Applies recoil as a straight force at the baseplate's center of mass, with no torque/tipping effect (legacy behavior).", general)
 
-	settings.ace_wind = addSlider("Wind strength", 0, 2000, 0, "ace_wind", general)
+	settings.ace_wind = addSlider("Wind strength", 0, 2000, 0, 600, "ace_wind", general)
 	addHelpText("Global wind speed in u/s. 0 to disable.", general)
 
 	acemenupanel.CustomDisplay:AddItem(general)
@@ -867,10 +869,10 @@ function ACE_SVGUICreate()	--Serverside folder content
 	damageScaling:SetLabel("Damage Scaling")
 	damageScaling:SetExpanded(false)
 
-	settings.ace_healthmod = addSlider("Health multiplier", 0.1, 10, 2, "ace_healthmod", damageScaling)
+	settings.ace_healthmod = addSlider("Health multiplier", 0.1, 10, 2, 1, "ace_healthmod", damageScaling)
 	addHelpText("Global health multiplier.", damageScaling)
 
-	settings.ace_armormod = addSlider("Armor multiplier", 0.1, 10, 2, "ace_armormod", damageScaling)
+	settings.ace_armormod = addSlider("Armor multiplier", 0.1, 10, 2, 1, "ace_armormod", damageScaling)
 	addHelpText("Global armor multiplier.", damageScaling)
 
 	acemenupanel.CustomDisplay:AddItem(damageScaling)
@@ -879,16 +881,16 @@ function ACE_SVGUICreate()	--Serverside folder content
 	debrisSpalling:SetLabel("Debris & Spalling")
 	debrisSpalling:SetExpanded(false)
 
-	settings.ace_debris_lifetime = addSlider("Debris lifetime", 0, 60, 0, "ace_debris_lifetime", debrisSpalling)
+	settings.ace_debris_lifetime = addSlider("Debris lifetime", 0, 60, 0, 30, "ace_debris_lifetime", debrisSpalling)
 	addHelpText("How many seconds debris will remain on the map before being deleted (0 means never).", debrisSpalling)
 
-	settings.ace_debris_children = addSlider("Child debris chance", 0, 1, 2, "ace_debris_children", debrisSpalling)
+	settings.ace_debris_children = addSlider("Child debris chance", 0, 1, 2, 1, "ace_debris_children", debrisSpalling)
 	addHelpText("Adjusts the chance of creating debris when a contraption's base has been destroyed.", debrisSpalling)
 
 	settings.ace_spalling = addCheckbox("Enable spalling", "ace_spalling", debrisSpalling)
 	addHelpText("Enables the creation of spall fragments from armor penetrations. Moderately performance intensive.", debrisSpalling)
 
-	settings.ace_spalling_multiplier = addSlider("Spalling multiplier", 0.1, 1, 2, "ace_spalling_multipler", debrisSpalling)
+	settings.ace_spalling_multiplier = addSlider("Spalling multiplier", 0.1, 1, 2, 1, "ace_spalling_multiplier", debrisSpalling)
 	addHelpText("Multiplier for how much spalling is generated during impacts.", debrisSpalling)
 
 	acemenupanel.CustomDisplay:AddItem(debrisSpalling)
@@ -897,10 +899,10 @@ function ACE_SVGUICreate()	--Serverside folder content
 	cookingOff:SetLabel("Cooking Off / Scaled Explosions")
 	cookingOff:SetExpanded(false)
 
-	settings.ace_explosions_scaled_he_max = addSlider("Max HE per explosion", 50, 1000, 0, "ace_explosions_scaled_he_max", cookingOff)
+	settings.ace_explosions_scaled_he_max = addSlider("Max HE per explosion", 50, 1000, 0, 100, "ace_explosions_scaled_he_max", cookingOff)
 	addHelpText("The maximum amount of HE weight (kg) to detonate at once.", cookingOff)
 
-	settings.ace_explosions_scaled_ents_max = addSlider("Max ents per explosion", 1, 20, 0, "ace_explosions_scaled_ents_max", cookingOff)
+	settings.ace_explosions_scaled_ents_max = addSlider("Max ents per explosion", 1, 20, 0, 5, "ace_explosions_scaled_ents_max", cookingOff)
 	addHelpText("The maximum amount of entities to detonate in one scaled explosion.", cookingOff)
 
 	acemenupanel.CustomDisplay:AddItem(cookingOff)
@@ -918,15 +920,15 @@ function ACE_SVGUICreate()	--Serverside folder content
 	settings.ace_legality_largeenginesneeddriver = addCheckbox("Large engines need driver", "ace_legality_largeenginesneeddriver", legality)
 	addHelpText("Large engines require a linked driver crew entity to operate.", legality)
 
-	settings.ace_legality_largeenginethreshold = addSlider("Threshold", 0, 1000, 0, "ace_legality_largeenginethreshold", legality)
-	settings.ace_legality_largeenginethreshold:DockMargin(30, 0, 30, -5)
+	settings.ace_legality_largeenginethreshold = addSlider("Threshold", 0, 1000, 0, 100, "ace_legality_largeenginethreshold", legality)
+	settings.ace_legality_largeenginethreshold:DockMargin(34, 0, 34, -5)
 	addHelpText("HP threshold defining a 'large' engine.", legality)
 
 	settings.ace_legality_largegunsneedgunner = addCheckbox("Large guns need gunner", "ace_legality_largegunsneedgunner", legality)
 	addHelpText("Large guns require a linked gunner crew entity to operate.", legality)
 
-	settings.ace_legality_largegunthreshold = addSlider("Threshold", 0, 200, 0, "ace_legality_largegunthreshold", legality)
-	settings.ace_legality_largegunthreshold:DockMargin(30, 0, 30, -5)
+	settings.ace_legality_largegunthreshold = addSlider("Threshold", 0, 200, 0, 40, "ace_legality_largegunthreshold", legality)
+	settings.ace_legality_largegunthreshold:DockMargin(34, 0, 34, -5)
 	addHelpText("Caliber (mm) threshold defining a 'large' gun.", legality)
 
 	settings.ace_legal_ignore_model = addCheckbox("Allow any model", "ace_legal_ignore_model", legality)
@@ -975,7 +977,7 @@ function ACE_SVGUICreate()	--Serverside folder content
 
 		for convar, value in pairs(receivedSettings) do
 			if settings[convar] then
-				settings[convar]:SetValueSilent(value)
+				settings[convar]:SetValueNoSync(value)
 			end
 		end
 	end)

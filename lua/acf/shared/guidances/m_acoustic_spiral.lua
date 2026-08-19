@@ -31,7 +31,7 @@ this.SeekDelay = 1.5 -- Re-seek drastically reduced cost so we can re-seek. Dyna
 this.MinimumDistance = 393.7	--10m
 this.MaxDistance = 150 * 39.37	--10m
 
-this.desc = "Acoustic torpedo guidance with a helical search pattern."
+this.desc = "Acoustic spiral search pattern. it searches for the acoustic target in a spiral. WARNING: Target position can only specifiy the depth to search at!"
 --Useful for airdropped torpedoes. Follows a helical pattern until it reaches its target depth. WARNING: Targetposition can only specify the depth to search at. This torpedo will search around the area it was first dropped.
 
 --Sets initial guidance info

@@ -88,7 +88,10 @@ def rewrite_source(source: str, include_acf: bool = False) -> tuple[str, int]:
 
         name = match.group(0)
         previous = source[:match.start()].rstrip()[-1:] or ""
-        if include_acf and name == "ACF" and previous not in ".:":
+        if name.startswith("ACE_") and source[max(0, match.start() - 3):match.start()] == "_G.":
+            output.append("ACE." + name[4:])
+            replacements += 1
+        elif include_acf and name == "ACF" and previous not in ".:":
             output.append("ACE")
             replacements += 1
         elif (

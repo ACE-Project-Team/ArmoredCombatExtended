@@ -1,7 +1,7 @@
 local function makeArmorEntity(class)
 	return {
 		ClassName = class,
-		ACF = { Ductility = 0 },
+		ACE = { Ductility = 0 },
 		GetClass = function(self) return self.ClassName end,
 	}
 end

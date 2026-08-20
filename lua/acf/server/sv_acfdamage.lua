@@ -1304,7 +1304,7 @@ do
 		local gunClass = ACE.GetAmmoGunClass(bullet)
 		if not gunClass then return false end
 
-		local classes = ACF and ACE.Classes and ACE.Classes.GunClass
+		local classes = ACE and ACE.Classes and ACE.Classes.GunClass
 		local classData = classes and classes[gunClass] or nil
 
 		return classData and classData.type == "missile" or false

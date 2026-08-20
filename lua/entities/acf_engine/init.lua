@@ -502,7 +502,7 @@ end
 
 function ENT:Think()
 
-	if ACF.HasDefaultActiveInputState(self) and not ACE.IsDefaultActiveInputWired(self) then
+	if ACE.HasDefaultActiveInputState(self) and not ACE.IsDefaultActiveInputWired(self) then
 		local active = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= active then

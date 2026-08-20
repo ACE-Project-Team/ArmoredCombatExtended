@@ -1501,7 +1501,7 @@ function ACE.CrewMenuGUICreate(Table)
 		acemenupanel.CustomDisplay:EnableVerticalScrollbar(true)
 	end
 
-	local CrewDefs = (ACF and ACE.Weapons and ACE.Weapons.Crewseats) or {}
+	local CrewDefs = (ACE and ACE.Weapons and ACE.Weapons.Crewseats) or {}
 	if table.IsEmpty(CrewDefs) then
 		acemenupanel:CPanelText("CrewMissing", "No crewseat definitions loaded (ACE.Weapons.Crewseats is empty).")
 		acemenupanel.CustomDisplay:PerformLayout()

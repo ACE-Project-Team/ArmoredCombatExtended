@@ -1,6 +1,6 @@
 # ACE Namespace Corrections — Full Conversion Plan
 
-Status: implementation plan only; no ACE runtime changes in this commit.
+Status: implementation in progress; commits are local and intentionally unpushed.
 
 Base: `upstream/dev` at `b9ee24d9814d6db87b75cddd84556eea4172fb67`.
 
@@ -91,6 +91,9 @@ all callers; never let Lua assignment order decide which implementation wins.
 
 ### Phase 0 — inventory and safety harness
 
+Status: complete. Baseline inventory and deterministic test are committed in
+`453760ff` and updated by the public namespace conversion.
+
 Files:
 
 - `tools/namespace_corrections_inventory.py`
@@ -127,6 +130,9 @@ Rollback: revert the single foundation commit if any realm fails to load; do not
 partial fallback. The previous upstream commit remains the known-good reference.
 
 ### Phase 2 — public function conversion
+
+Status: first mechanical public-function wave complete in `d65805d9`; subsystem semantic
+mapping, path migration, and entity-state migration remain active work.
 
 Process the ledger by dependency order:
 
@@ -170,6 +176,9 @@ Never mix a path move, state rename, and balance change. A failed family rolls b
 registration and import commits together.
 
 ### Phase 4 — remove process-wide legacy bridges
+
+Status: complete for the repository-owned bridges in `fff4916b`. Host adapters still require
+the remaining ACE API/state conversion before the full plan is complete.
 
 Delete or rewrite these upstream files as part of the complete ACE conversion:
 

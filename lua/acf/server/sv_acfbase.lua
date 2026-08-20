@@ -276,7 +276,7 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 
 	--We create a dummy table to pass armour values to the calc function
 	local Target = {
-		ACF = {
+		ACE = {
 			Armour = 2 --8
 		}
 	}
@@ -488,7 +488,7 @@ function ACE.SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type
 
 	--We create a dummy table to pass armour values to the calc function
 	local Target = {
-		ACF = {
+		ACE = {
 			Armour = BoneArmor + FleshThickness
 		}
 	}

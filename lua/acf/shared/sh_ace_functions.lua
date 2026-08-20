@@ -1000,7 +1000,7 @@ function ACE.GetAmmoGunClass(bdata)
 	local gunClass = bdata.GunClass
 	if gunClass and gunClass ~= "" then return gunClass end
 
-	local gunData = (bdata.Id and ACF and ACE.Weapons and ACE.Weapons.Guns and ACE.Weapons.Guns[bdata.Id]) or nil
+	local gunData = (bdata.Id and ACE and ACE.Weapons and ACE.Weapons.Guns and ACE.Weapons.Guns[bdata.Id]) or nil
 	return gunData and gunData.gunclass or nil
 end
 
@@ -1091,7 +1091,7 @@ function ACE.IsAmmoMissileType(bdata)
 	local gunClass = ACE.GetAmmoGunClass(bdata)
 	if not gunClass then return false end
 
-	local classes = ACF and ACE.Classes and ACE.Classes.GunClass
+	local classes = ACE and ACE.Classes and ACE.Classes.GunClass
 	local classData = classes and classes[gunClass] or nil
 
 	return classData and classData.type == "missile" or false
@@ -1362,7 +1362,7 @@ function ACE.GetAmmoMaxPen(bdata)
 	if maxPen > 0 then return maxPen end
 
 	local rtype = bdata.Type
-	local round = rtype and ACF and ACE.RoundTypes and ACE.RoundTypes[rtype]
+	local round = rtype and ACE and ACE.RoundTypes and ACE.RoundTypes[rtype]
 	if round and round.getDisplayData then
 		local ok, display = pcall(round.getDisplayData, bdata)
 		if ok and istable(display) then
@@ -1372,8 +1372,8 @@ function ACE.GetAmmoMaxPen(bdata)
 	if maxPen > 0 then return maxPen end
 
 	local filler  = bdata.BoomFillerMass or bdata.FillerMass or 0
-	local hePower = ACF and ACE.HEPower or 0
-	local blastDiv = ACF and ACE.HEBlastPenetration or 0
+	local hePower = ACE and ACE.HEPower or 0
+	local blastDiv = ACE and ACE.HEBlastPenetration or 0
 	if filler <= 0 or hePower <= 0 or blastDiv <= 0 then return 0 end
 
 	return (filler * hePower) / blastDiv

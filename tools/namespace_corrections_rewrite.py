@@ -38,7 +38,7 @@ def skip_long_bracket(source: str, index: int) -> int | None:
     return len(source) if end < 0 else end + len(closing)
 
 
-def rewrite_source(source: str) -> tuple[str, int]:
+def rewrite_source(source: str, include_acf: bool = False) -> tuple[str, int]:
     local_names = set(LOCAL_DECL.findall(source))
     output: list[str] = []
     index = 0
@@ -88,7 +88,18 @@ def rewrite_source(source: str) -> tuple[str, int]:
 
         name = match.group(0)
         previous = source[:match.start()].rstrip()[-1:] or ""
-        if (
+        if include_acf and name == "ACF" and previous not in ".:":
+            output.append("ACE")
+            replacements += 1
+        elif (
+            include_acf
+            and name.startswith("ACF_")
+            and name not in local_names
+            and previous not in ".:"
+        ):
+            output.append("ACE." + name[4:])
+            replacements += 1
+        elif (
             name.startswith("ACE_")
             and name not in local_names
             and previous not in ".:"
@@ -106,13 +117,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--include-acf", action="store_true")
     args = parser.parse_args()
     total = 0
     changed = 0
     for path in sorted((args.repo / "lua").rglob("*.lua")):
         with path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
             source = handle.read()
-        rewritten, count = rewrite_source(source)
+        rewritten, count = rewrite_source(source, include_acf=args.include_acf)
         total += count
         if count and rewritten != source:
             changed += 1

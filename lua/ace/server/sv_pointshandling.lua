@@ -1,7 +1,7 @@
 
 ACE = ACE or {}
 
-include("acf/shared/sh_ace_functions.lua")
+include("ace/shared/sh_ace_functions.lua")
 
 local IsEnt = ACE.IsEnt
 

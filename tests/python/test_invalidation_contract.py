@@ -141,8 +141,8 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertIn("ProperClippingPhysicsReset", primitive)
 
     def test_central_hook_contract_is_present(self):
-        legality = source("lua/acf/server/sv_contraptionlegality.lua")
-        pointshandling = source("lua/acf/server/sv_pointshandling.lua")
+        legality = source("lua/ace/server/sv_contraptionlegality.lua")
+        pointshandling = source("lua/ace/server/sv_pointshandling.lua")
 
         self.assertIn("function ACE_NotifyPointsInvalidated", legality)
 

@@ -17,8 +17,8 @@ this.ModeThinks = {}
 this.NotifySafezones = {}
 
 --TODO: convar this
-local mapSZDir = "acf/safezones/"
-local mapDPMDir = "acf/permissions/"
+local mapSZDir = "ace/safezones/"
+local mapDPMDir = "ace/permissions/"
 file.CreateDir(mapDPMDir)
 
 
@@ -403,9 +403,9 @@ concommand.Add( "ACE_ReloadPermissionModes", function(ply)
 
 	else
 
-		local files = file.Find( "acf/server/permissionmodes/*.lua", "LUA" )
+		local files = file.Find( "ace/server/permissionmodes/*.lua", "LUA" )
 		for _, data in pairs( files ) do
-			include( "acf/server/permissionmodes/" .. data )
+			include( "ace/server/permissionmodes/" .. data )
 		end
 
 
@@ -692,9 +692,9 @@ hook.Add("ACE_ProtectionModeChanged", "ACE_ResendPermissionsOnChanged", this.Res
 
 do
 
-	local files = file.Find( "acf/server/permissionmodes/*.lua", "LUA" )
+	local files = file.Find( "ace/server/permissionmodes/*.lua", "LUA" )
 	for _, data in pairs( files ) do
-		include( "acf/server/permissionmodes/" .. data )
+		include( "ace/server/permissionmodes/" .. data )
 	end
 
 	local mode = table.KeyFromValue(this.Modes, this.DamagePermission)

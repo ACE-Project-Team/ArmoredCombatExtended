@@ -1,11 +1,11 @@
 AddCSLuaFile()
 
 -- Pricing models must load before their shared callers in both realms.
-AddCSLuaFile("acf/shared/sh_ace_points_model.lua")
-include("acf/shared/sh_ace_points_model.lua")
+AddCSLuaFile("ace/shared/sh_ace_points_model.lua")
+include("ace/shared/sh_ace_points_model.lua")
 
-AddCSLuaFile("acf/shared/sh_ace_manufacturing.lua")
-include("acf/shared/sh_ace_manufacturing.lua")
+AddCSLuaFile("ace/shared/sh_ace_manufacturing.lua")
+include("ace/shared/sh_ace_manufacturing.lua")
 
 local floor, Clamp, min = math.floor, math.Clamp, math.min
 
@@ -416,10 +416,10 @@ do
 				return
 			end
 
-			if file.Exists("acf/ace_dupespawn.txt", "DATA") then
+			if file.Exists("ace/ace_dupespawn.txt", "DATA") then
 
 				notification.AddLegacy( "Dupe files were reloaded!", NOTIFY_GENERIC, 7)
-				file.Delete("acf/ace_dupespawn.txt")
+				file.Delete("ace/ace_dupespawn.txt")
 				ACE.Dupes_Refresh()
 			end
 		end )
@@ -436,7 +436,7 @@ do
 				local file_directory
 				local file_exists
 				local cfile_content
-				local dupespawned = file.Exists("acf/ace_dupespawn.txt", "DATA")
+				local dupespawned = file.Exists("ace/ace_dupespawn.txt", "DATA")
 
 				for _, txtfile in ipairs(files) do
 
@@ -471,7 +471,7 @@ do
 				end
 
 				if not dupespawned then
-					file.Write("acf/ace_dupespawn.txt", "This means, dupe loader will not populate the dupes if they were removed.")
+					file.Write("ace/ace_dupespawn.txt", "This means, dupe loader will not populate the dupes if they were removed.")
 				end
 			end
 		end

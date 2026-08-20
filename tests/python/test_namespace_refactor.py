@@ -315,9 +315,9 @@ class NamespaceRefactorTests(unittest.TestCase):
 
     def test_backend_private_helpers_do_not_use_flat_ace_prefix(self):
         for path in (
-            LUA_ROOT / "acf" / "server" / "sv_acfballistics.lua",
-            LUA_ROOT / "acf" / "server" / "sv_acfdamage.lua",
-            LUA_ROOT / "acf" / "server" / "sv_contraptionlegality.lua",
+            LUA_ROOT / "ace" / "server" / "sv_acfballistics.lua",
+            LUA_ROOT / "ace" / "server" / "sv_acfdamage.lua",
+            LUA_ROOT / "ace" / "server" / "sv_contraptionlegality.lua",
         ):
             source = code_without_comments_and_strings(
                 path.read_text(encoding="utf-8", errors="replace")
@@ -464,10 +464,10 @@ class NamespaceRefactorTests(unittest.TestCase):
         self.assertTrue(contains_bracket_field_access('(ACF)["Legal"]', "ACF", "Legal"))
 
     def test_points_and_manufacturing_helpers_use_namespaces(self):
-        points_model = (LUA_ROOT / "acf" / "shared" / "sh_ace_points_model.lua").read_text(
+        points_model = (LUA_ROOT / "ace" / "shared" / "sh_ace_points_model.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        manufacturing = (LUA_ROOT / "acf" / "shared" / "sh_ace_manufacturing.lua").read_text(
+        manufacturing = (LUA_ROOT / "ace" / "shared" / "sh_ace_manufacturing.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         self.assertRegex(points_model, r"function\s+ACE\.Points\.[A-Za-z_][A-Za-z0-9_]*\s*\(")
@@ -485,8 +485,8 @@ class NamespaceRefactorTests(unittest.TestCase):
         self.assertIn('cls:sub(1, 4) == "ace_"', points_model)
 
         consumers = (
-            LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua",
-            LUA_ROOT / "acf" / "client" / "cl_acemenu_gui.lua",
+            LUA_ROOT / "ace" / "shared" / "sh_ace_functions.lua",
+            LUA_ROOT / "ace" / "client" / "cl_acemenu_gui.lua",
             LUA_ROOT / "weapons" / "gmod_tool" / "stools" / "acearmorprop.lua",
         )
         for path in consumers:
@@ -572,7 +572,7 @@ class NamespaceRefactorTests(unittest.TestCase):
                 self.assertNotIn(f"ACE.{name} = ACE_{name}", globals_source)
 
     def test_legacy_mark_armor_dirty_wrapper_survives_compatibility_alias(self):
-        source = (LUA_ROOT / "acf" / "server" / "sv_contraptionlegality.lua").read_text(
+        source = (LUA_ROOT / "ace" / "server" / "sv_contraptionlegality.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         self.assertNotIn("ACE_MarkArmorDirtyImplementation", source)
@@ -582,7 +582,7 @@ class NamespaceRefactorTests(unittest.TestCase):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        functions_source = (LUA_ROOT / "acf" / "shared" / "sh_ace_functions.lua").read_text(
+        functions_source = (LUA_ROOT / "ace" / "shared" / "sh_ace_functions.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         self.assertNotIn("ACE[Method] = Value", globals_source)
@@ -632,8 +632,8 @@ class NamespaceRefactorTests(unittest.TestCase):
 
     def test_non_entity_menu_sound_effect_and_tool_ids_are_ace_prefixed(self):
         expected_paths = (
-            LUA_ROOT / "acf" / "client" / "cl_acemenu_gui.lua",
-            LUA_ROOT / "acf" / "client" / "cl_acemenu_missileui.lua",
+            LUA_ROOT / "ace" / "client" / "cl_acemenu_gui.lua",
+            LUA_ROOT / "ace" / "client" / "cl_acemenu_missileui.lua",
             REPO / "lua" / "weapons" / "gmod_tool" / "stools" / "acemenu.lua",
             REPO / "lua" / "weapons" / "gmod_tool" / "stools" / "acesound.lua",
         )
@@ -650,7 +650,7 @@ class NamespaceRefactorTests(unittest.TestCase):
             with self.subTest(source=path.relative_to(REPO)):
                 self.assertNotRegex(
                     source,
-                    r"(?i)acf/client/cl_acfmenu|\bacfmenu\b|\bacfsound\b|"
+                    r"(?i)ace/client/cl_acfmenu|\bacfmenu\b|\bacfsound\b|"
                     r"\bacfarmorprop\b|\bacfchaircam\b|\bacfcopy\b",
                 )
                 self.assertNotRegex(
@@ -711,7 +711,7 @@ class NamespaceRefactorTests(unittest.TestCase):
                 )
 
     def test_ballistics_callback_assignments_match_dotted_calls(self):
-        source = (LUA_ROOT / "acf" / "server" / "sv_acfballistics.lua").read_text(
+        source = (LUA_ROOT / "ace" / "server" / "sv_acfballistics.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         self.assertNotIn("ACE_BulletEndFlight =", source)
@@ -724,7 +724,7 @@ class NamespaceRefactorTests(unittest.TestCase):
         self.assertIn("ACE.BulletWorldImpact =", source)
 
     def test_client_menu_uses_dotted_pose_helper_guard(self):
-        source = (LUA_ROOT / "acf" / "client" / "cl_acemenu_gui.lua").read_text(
+        source = (LUA_ROOT / "ace" / "client" / "cl_acemenu_gui.lua").read_text(
             encoding="utf-8", errors="replace"
         )
         self.assertIn("if ACE.IsStandingPose and ACE.IsStandingPose(poseName) then", source)

@@ -5,7 +5,7 @@ ACE = {}
 function istable(value) return type(value) == "table" end
 function ACE.IsEnt(value) return value ~= nil end
 
-dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
+dofile(root .. "/lua/ace/shared/sh_ace_points_model.lua")
 
 local empty = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 0 }
 local loaded = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 60 }

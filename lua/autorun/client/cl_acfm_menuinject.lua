@@ -1,6 +1,6 @@
 --TODO: merge this file with cl_acemenu_gui.lua since having 2 files for the same function is irrevelant. Little transition has been made though
 
-include("acf/client/cl_acemenu_missileui.lua")
+include("ace/client/cl_acemenu_missileui.lua")
 
 if not ACE then ACE = {} end
 if not ACE.ChatMessageReceiver then

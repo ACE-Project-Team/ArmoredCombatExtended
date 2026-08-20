@@ -46,7 +46,7 @@ if CLIENT then
 	--------------------------------------]]
 	function TOOL.BuildCPanel( CPanel )
 
-		local pnldef_ACEmenu = vgui.RegisterFile( "acf/client/cl_acemenu_gui.lua" )
+		local pnldef_ACEmenu = vgui.RegisterFile( "ace/client/cl_acemenu_gui.lua" )
 
 		-- create
 		local DPanel = vgui.CreateFromTable( pnldef_ACEmenu )

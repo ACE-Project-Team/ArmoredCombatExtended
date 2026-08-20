@@ -4,7 +4,7 @@
 --  - Resting should read ~1G (gravity).
 --  - No timer.Create() here to avoid duplicate timers during lua refresh.
 
-include("acf/shared/sh_crewseat_base.lua")
+include("ace/shared/sh_crewseat_base.lua")
 
 local crewseatDebug = CreateConVar("ace_debug_crewseat_models", "0", FCVAR_ARCHIVE, "Log crewseat model/type changes during dupe paste")
 

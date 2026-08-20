@@ -2,7 +2,7 @@
 
 
 AddCSLuaFile()
-include("acf/shared/sh_acfm_getters.lua")
+include("ace/shared/sh_acfm_getters.lua")
 
 
 

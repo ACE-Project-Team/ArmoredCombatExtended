@@ -20,7 +20,7 @@ class LegacyExtensionCompatibilityTests(unittest.TestCase):
     def test_canonical_hook_events_are_used(self):
         sources = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in (LUA / "acf").rglob("*.lua")
+            for path in (LUA / "ace").rglob("*.lua")
         )
         self.assertNotIn("RunLegacyHook", sources)
         for event in (

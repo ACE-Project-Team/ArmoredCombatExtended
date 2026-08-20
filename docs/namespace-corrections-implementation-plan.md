@@ -112,7 +112,7 @@ Rollback: delete only the new inventory tool and artifacts; runtime is untouched
 Files:
 
 - `lua/autorun/acf_globals.lua` → final ACE bootstrap location
-- `lua/acf/shared/sh_ace_loader.lua` → `lua/ace/core/sh_loader.lua`
+- `lua/ace/shared/sh_ace_loader.lua` → `lua/ace/core/sh_loader.lua`
 - all direct loader callers found by the ledger
 
 Create the canonical `ACE` table and subsystem tables. Convert declarations and callers
@@ -155,7 +155,7 @@ subsystems remain table-based.
 
 ### Phase 3 — paths, entities, and runtime state
 
-Move canonical implementation paths from `lua/acf/**` to `lua/ace/**` in dependency waves.
+Move canonical implementation paths from `lua/ace/**` to `lua/ace/**` in dependency waves.
 Rename canonical entity directories and registrations from `acf_*` to `ace_*`, then update:
 
 - `scripted_ents.Register` names;

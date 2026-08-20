@@ -1,5 +1,5 @@
 local root = assert(arg[1], "usage: missile_visclip_selftest.lua <ACE repo>")
-local trace_path = root .. "/lua/acf/shared/sh_ace_missiletrace.lua"
+local trace_path = root .. "/lua/ace/shared/sh_ace_missiletrace.lua"
 
 local function run_case(name, results, expected_calls, expected_entity, expected_clip_count)
 	local calls = 0

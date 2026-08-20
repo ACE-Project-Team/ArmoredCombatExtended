@@ -26,7 +26,7 @@ class StaticSafetyContractTests(unittest.TestCase):
     def test_scanner_emits_expected_warning_families_on_synthetic_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
-            lua = repo / "lua" / "acf" / "server"
+            lua = repo / "lua" / "ace" / "server"
             lua.mkdir(parents=True)
             source = lua / "synthetic.lua"
             source.write_text(

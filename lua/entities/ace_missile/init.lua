@@ -2,7 +2,7 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
-local TraceMissileLOS = include("acf/shared/sh_ace_missiletrace.lua")
+local TraceMissileLOS = include("ace/shared/sh_ace_missiletrace.lua")
 
 DEFINE_BASECLASS("acf_explosive")
 

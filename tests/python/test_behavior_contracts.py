@@ -21,7 +21,7 @@ def source(relative):
 
 class EntityPipelineContractTests(unittest.TestCase):
     def test_loader_keeps_all_entity_backend_definition_families(self):
-        loader = source("acf/shared/sh_ace_loader.lua")
+        loader = source("ace/shared/sh_ace_loader.lua")
         for family in (
             "DefineGun",
             "DefineRack",
@@ -39,7 +39,7 @@ class EntityPipelineContractTests(unittest.TestCase):
                 self.assertIn(f"function ACE.{family}", loader)
 
     def test_crewseat_gui_loader_uses_migrated_menu_namespace(self):
-        loader = source("acf/shared/sh_ace_loader.lua")
+        loader = source("ace/shared/sh_ace_loader.lua")
         self.assertIn("ACE.CrewMenuGUICreate", loader)
         self.assertNotIn("ACECrewseatGUICreate", loader)
 
@@ -64,9 +64,9 @@ class EntityPipelineContractTests(unittest.TestCase):
                 )
 
     def test_linking_contract_keeps_wheels_racks_and_ammo_links(self):
-        base = source("acf/server/sv_acfbase.lua")
-        getters = source("acf/shared/sh_acfm_getters.lua")
-        functions = source("acf/shared/sh_ace_functions.lua")
+        base = source("ace/server/sv_acfbase.lua")
+        getters = source("ace/shared/sh_acfm_getters.lua")
+        functions = source("ace/shared/sh_ace_functions.lua")
         for text, patterns in (
             (base, ("function ACE.GetLinkedWheels", "function ACE.CreateLinkRope", "GearLink", "WheelLink")),
             (getters, ("function ACE.RackCanLoadCaliber", "function ACE.CanLinkRack")),
@@ -77,8 +77,8 @@ class EntityPipelineContractTests(unittest.TestCase):
                     self.assertIn(pattern, text)
 
     def test_firing_contract_keeps_input_dispatch_and_bullet_creation(self):
-        base = source("acf/server/sv_acfbase.lua")
-        ballistics = source("acf/server/sv_acfballistics.lua")
+        base = source("ace/server/sv_acfbase.lua")
+        ballistics = source("ace/server/sv_acfballistics.lua")
         weapon_base = (REPO / "lua/weapons/weapon_ace_base/init.lua").read_text(
             encoding="utf-8", errors="replace"
         )
@@ -89,9 +89,9 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertRegex(ballistics, r"RoundTypes\[Bullet\.Type\]")
 
     def test_tracking_contract_keeps_radar_registration_and_tracking_definitions(self):
-        contraption = source("acf/server/sv_contraption.lua")
-        tracking = source("acf/shared/radars/radar_tracking.lua")
-        search = source("acf/shared/radars/radar_search.lua")
+        contraption = source("ace/server/sv_contraption.lua")
+        tracking = source("ace/shared/radars/radar_tracking.lua")
+        search = source("ace/shared/radars/radar_search.lua")
         self.assertIn("ACE.radarEntities", contraption)
         self.assertIn("table.insert(ACE.radarEntities", contraption)
         self.assertIn("table.remove(ACE.radarEntities", contraption)
@@ -100,19 +100,19 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn("ACE.DefineTrackRadar", search)
 
     def test_revving_contract_keeps_engine_torque_and_rpm_inputs(self):
-        engines = list((LUA / "acf/shared/engines").glob("*.lua"))
+        engines = list((LUA / "ace/shared/engines").glob("*.lua"))
         self.assertTrue(engines)
         definitions = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in engines)
         for field in ("torque", "idlerpm", "limitrpm"):
             with self.subTest(field=field):
                 self.assertIn(field, definitions)
-        heat = source("acf/server/sv_heat.lua")
+        heat = source("ace/server/sv_heat.lua")
         self.assertIn("Engine.FlyRPM", heat)
         self.assertIn("function ACE.HeatFromGearbox", heat)
 
     def test_ace_notification_protocol_is_namespaced(self):
         globals_source = source("autorun/acf_globals.lua")
-        networking = source("acf/shared/sv_ace_networking.lua")
+        networking = source("ace/shared/sv_ace_networking.lua")
         self.assertIn('net.Start( "ACE_Notify" )', globals_source)
         self.assertIn('net.Receive( "ACE_Notify"', globals_source)
         self.assertIn('util.AddNetworkString( "ACE_Notify" )', networking)
@@ -121,7 +121,7 @@ class EntityPipelineContractTests(unittest.TestCase):
     def test_backend_hook_identifiers_are_ace_namespaced(self):
         backend = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in (LUA / "acf").rglob("*.lua")
+            for path in (LUA / "ace").rglob("*.lua")
         )
         globals_source = source("autorun/acf_globals.lua")
         combined = backend + "\n" + globals_source
@@ -138,7 +138,7 @@ class EntityPipelineContractTests(unittest.TestCase):
         ):
             with self.subTest(current=current):
                 self.assertIn(current, combined)
-        self.assertIn('"ACE_RestoreSZsCleanup"', source("acf/server/sv_acfpermission.lua"))
+        self.assertIn('"ACE_RestoreSZsCleanup"', source("ace/server/sv_acfpermission.lua"))
         self.assertIn('"ACE_RenderDamageInitialSpawn"', globals_source)
         missiles = source("autorun/server/sv_acf_missiles.lua")
         self.assertIn('"ACE_Missiles_DupeDeny"', missiles)
@@ -149,20 +149,20 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertNotIn("RemoveCompatibilityView", globals_source)
         self.assertNotIn("ACF_OnLoadAddon", globals_source)
 
-        ballistics = source("acf/server/sv_acfballistics.lua")
+        ballistics = source("ace/server/sv_acfballistics.lua")
         for name in (
             "BulletCreation", "BulletRemoved", "BulletPenetrated", "BulletRicochet", "BulletHit",
         ):
             with self.subTest(name=name):
                 self.assertIn(f'hook.Run("ACEOn{name}"', ballistics)
 
-        damage = source("acf/server/sv_acfbase.lua")
+        damage = source("ace/server/sv_acfbase.lua")
         self.assertIn('hook.Run("ACEOnDamage"', damage)
 
     def test_backend_network_channels_are_ace_namespaced(self):
         backend = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in (LUA / "acf").rglob("*.lua")
+            for path in (LUA / "ace").rglob("*.lua")
         )
         client = source("autorun/client/cl_acfm_menuinject.lua")
         combined = backend + "\n" + client
@@ -178,7 +178,7 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn('GetConVar("ace_restrictinfo")', starfall)
         self.assertIn('ACEOnBulletCreation', starfall)
         for legacy_hook in ("ACFOnBulletHit", "ACFOnBulletRicochet", "ACFOnBulletPenetrated"):
-            self.assertNotIn(legacy_hook, source("acf/server/sv_acfballistics.lua"))
+            self.assertNotIn(legacy_hook, source("ace/server/sv_acfballistics.lua"))
         self.assertNotIn('ACE_LegacyRestrictInfo', globals_source)
         self.assertNotIn('ACF_OnLoadAddon', globals_source)
         self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)

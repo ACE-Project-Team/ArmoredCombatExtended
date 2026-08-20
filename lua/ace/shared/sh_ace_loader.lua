@@ -393,7 +393,7 @@ end
 --
 do
 
-	local Gpath = "acf/shared/"
+	local Gpath = "ace/shared/"
 	local folders = {
 		"armor",
 		"guns",
@@ -418,8 +418,8 @@ do
 
 		local folderData = file.Find( Gpath .. folder .. "/*.lua", "LUA" )
 		for _, v in pairs( folderData ) do
-			AddCSLuaFile( "acf/shared/" .. folder .. "/" .. v )
-			include( "acf/shared/" .. folder .. "/" .. v )
+			AddCSLuaFile( "ace/shared/" .. folder .. "/" .. v )
+			include( "ace/shared/" .. folder .. "/" .. v )
 		end
 
 	end

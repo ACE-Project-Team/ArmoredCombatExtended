@@ -97,7 +97,7 @@ class RepositoryStructureTests(unittest.TestCase):
                     )
 
     def test_loader_declared_shared_folders_exist(self):
-        loader = (LUA_ROOT / "acf" / "shared" / "sh_ace_loader.lua").read_text(
+        loader = (LUA_ROOT / "ace" / "shared" / "sh_ace_loader.lua").read_text(
             encoding="utf-8"
         )
         folders = re.findall(r"^\s*\"([a-z]+)\",\s*$", loader, re.MULTILINE)
@@ -105,7 +105,7 @@ class RepositoryStructureTests(unittest.TestCase):
 
         for folder in folders:
             with self.subTest(folder=folder):
-                directory = LUA_ROOT / "acf" / "shared" / folder
+                directory = LUA_ROOT / "ace" / "shared" / folder
                 self.assertTrue(directory.is_dir())
                 self.assertTrue(list(directory.glob("*.lua")))
 

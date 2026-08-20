@@ -15,7 +15,7 @@
 ACE = ACE or {}
 ACE.ActiveMissiles = ACE.ActiveMissiles or {}
 
-include("acf/shared/sh_acfm_getters.lua")
+include("ace/shared/sh_acfm_getters.lua")
 
 --[[
 	Differences with the default bullet function:

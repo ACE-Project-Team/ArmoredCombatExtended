@@ -17,7 +17,7 @@ import unittest
 SOURCE = (
     Path(__file__).resolve().parents[2]
     / "lua"
-    / "acf"
+    / "ace"
     / "server"
     / "sv_acfdamage.lua"
 )
@@ -398,7 +398,7 @@ class TheatDamageContractTests(unittest.TestCase):
     SOURCE = (
         Path(__file__).resolve().parents[2]
         / "lua"
-        / "acf"
+        / "ace"
         / "server"
         / "sv_acfdamage.lua"
     )

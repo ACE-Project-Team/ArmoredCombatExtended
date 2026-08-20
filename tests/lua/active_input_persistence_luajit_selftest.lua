@@ -12,7 +12,7 @@ local function assertEqual(actual, expected, label)
 	assert(actual == expected, ("%s: expected %s, got %s"):format(label, tostring(expected), tostring(actual)))
 end
 
-local shared = read("lua/acf/shared/sh_ace_functions.lua")
+local shared = read("lua/ace/shared/sh_ace_functions.lua")
 shared = shared:gsub("\r\n", "\n")
 local start = assert(shared:find("local function GetDefaultActiveInput(ent,", 1, true))
 local finish = assert(shared:find("\n\n-- Radar/IRST-specific functions", start, true))

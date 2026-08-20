@@ -386,52 +386,52 @@ else
     AddCSLuaFile("autorun/translation/ace_translationpacks.lua")
 end
 
-include("acf/shared/sh_ace_particles.lua")
-include("acf/shared/sh_ace_sound_loader.lua")
+include("ace/shared/sh_ace_particles.lua")
+include("ace/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
-include("acf/shared/sh_ace_functions.lua")
-include("acf/shared/sh_ace_loader.lua")
-AddCSLuaFile("acf/shared/sh_ace_scalable.lua")
-include("acf/shared/sh_ace_scalable.lua")
-include("acf/shared/sh_ace_concommands.lua")
-include("acf/shared/sh_acfm_roundinject.lua")
-include("acf/shared/compatibility/cppiCompatibility.lua")
-include("acf/shared/sh_crewseat_base.lua")
-AddCSLuaFile("acf/shared/sh_crewseat_base.lua")
-AddCSLuaFile("acf/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_ace_functions.lua")
+include("ace/shared/sh_ace_loader.lua")
+AddCSLuaFile("ace/shared/sh_ace_scalable.lua")
+include("ace/shared/sh_ace_scalable.lua")
+include("ace/shared/sh_ace_concommands.lua")
+include("ace/shared/sh_acfm_roundinject.lua")
+include("ace/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_crewseat_base.lua")
+AddCSLuaFile("ace/shared/sh_crewseat_base.lua")
+AddCSLuaFile("ace/shared/compatibility/cppiCompatibility.lua")
 
 if SERVER then
 
-    include("acf/shared/sv_ace_networking.lua")
-    include("acf/server/sv_acfbase.lua")
-    include("acf/server/sv_acfdamage.lua")
-    include("acf/server/sv_acfballistics.lua")
-    include("acf/server/sv_contraption.lua")
-    include("acf/server/sv_heat.lua")
-    include("acf/server/sv_crewseat_base.lua")
-    include("acf/server/sv_legality.lua")
-    include("acf/server/sv_acfpermission.lua")
-    include("acf/server/sv_contraptionlegality.lua")
-    include("acf/server/sv_adminsettings.lua")
-    AddCSLuaFile("acf/client/cl_acfballistics.lua")
-    AddCSLuaFile("acf/client/cl_acemenu_gui.lua")
-    AddCSLuaFile("acf/client/cl_acfrender.lua")
-    AddCSLuaFile("acf/client/cl_soundbase.lua")
+    include("ace/shared/sv_ace_networking.lua")
+    include("ace/server/sv_acfbase.lua")
+    include("ace/server/sv_acfdamage.lua")
+    include("ace/server/sv_acfballistics.lua")
+    include("ace/server/sv_contraption.lua")
+    include("ace/server/sv_heat.lua")
+    include("ace/server/sv_crewseat_base.lua")
+    include("ace/server/sv_legality.lua")
+    include("ace/server/sv_acfpermission.lua")
+    include("ace/server/sv_contraptionlegality.lua")
+    include("ace/server/sv_adminsettings.lua")
+    AddCSLuaFile("ace/client/cl_acfballistics.lua")
+    AddCSLuaFile("ace/client/cl_acemenu_gui.lua")
+    AddCSLuaFile("ace/client/cl_acfrender.lua")
+    AddCSLuaFile("ace/client/cl_soundbase.lua")
 
-    AddCSLuaFile("acf/client/cl_acemenu_missileui.lua")
+    AddCSLuaFile("ace/client/cl_acemenu_missileui.lua")
 
-    AddCSLuaFile("acf/client/cl_acfpermission.lua")
-    AddCSLuaFile("acf/client/gui/cl_acfsetpermission.lua")
+    AddCSLuaFile("ace/client/cl_acfpermission.lua")
+    AddCSLuaFile("ace/client/gui/cl_acfsetpermission.lua")
 
 
 elseif CLIENT then
 
-    include("acf/client/cl_acfballistics.lua")
-    include("acf/client/cl_acfrender.lua")
-    include("acf/client/cl_soundbase.lua")
+    include("ace/client/cl_acfballistics.lua")
+    include("ace/client/cl_acfrender.lua")
+    include("ace/client/cl_soundbase.lua")
 
-    include("acf/client/cl_acfpermission.lua")
-    include("acf/client/gui/cl_acfsetpermission.lua")
+    include("ace/client/cl_acfpermission.lua")
+    include("ace/client/gui/cl_acfsetpermission.lua")
 
     CreateClientConVar("ace_mobility_rope_links", "1", true, true)
 
@@ -442,14 +442,14 @@ end
     RoundType Loader
 ]]----------------------------------------
 
-include("acf/shared/rounds/ace_roundfunctions.lua")
+include("ace/shared/rounds/ace_roundfunctions.lua")
 
-include("acf/shared/rounds/roundap.lua")
-include("acf/shared/rounds/roundhe.lua")
-include("acf/shared/rounds/roundfl.lua")
-include("acf/shared/rounds/roundhp.lua")
-include("acf/shared/rounds/roundsmoke.lua")
-include("acf/shared/rounds/roundrefill.lua")
+include("ace/shared/rounds/roundap.lua")
+include("ace/shared/rounds/roundhe.lua")
+include("ace/shared/rounds/roundfl.lua")
+include("ace/shared/rounds/roundhp.lua")
+include("ace/shared/rounds/roundsmoke.lua")
+include("ace/shared/rounds/roundrefill.lua")
 
 
 --interwar period
@@ -459,28 +459,28 @@ include("acf/shared/rounds/roundrefill.lua")
 --A surprising amount of things were made during WW2
 if ACE.Year > 1939 then
 
-    include("acf/shared/rounds/roundhesh.lua")
-    include("acf/shared/rounds/roundheat.lua")
-    include("acf/shared/rounds/roundaphe.lua")
-    include("acf/shared/rounds/roundhvap.lua")
+    include("ace/shared/rounds/roundhesh.lua")
+    include("ace/shared/rounds/roundheat.lua")
+    include("ace/shared/rounds/roundaphe.lua")
+    include("ace/shared/rounds/roundhvap.lua")
 
 end
 --Cold war
 if ACE.Year > 1960 then
 
-    include("acf/shared/rounds/roundapds.lua")
-    include("acf/shared/rounds/roundapfsds.lua")
-    include("acf/shared/rounds/roundheatfs.lua")
-    include("acf/shared/rounds/roundhefs.lua")
-    include("acf/shared/rounds/roundflare.lua")
-    include("acf/shared/rounds/roundglgm.lua")
+    include("ace/shared/rounds/roundapds.lua")
+    include("ace/shared/rounds/roundapfsds.lua")
+    include("ace/shared/rounds/roundheatfs.lua")
+    include("ace/shared/rounds/roundhefs.lua")
+    include("ace/shared/rounds/roundflare.lua")
+    include("ace/shared/rounds/roundglgm.lua")
 
 end
 --almost finishing cold war
 if ACE.Year > 1989 then
 
-    include("acf/shared/rounds/roundtheat.lua")
-    include("acf/shared/rounds/roundtheatfs.lua")
+    include("ace/shared/rounds/roundtheat.lua")
+    include("ace/shared/rounds/roundtheatfs.lua")
 
 end
 

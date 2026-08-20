@@ -83,9 +83,6 @@ function ACE.DoContraptionLegalCheck(checkEnt)
 	ACE.CheckLegalCont(con)
 end
 
--- Keep entity callbacks from older load orders wired to the namespaced implementation.
-ACE_DoContraptionLegalCheck = ACE.DoContraptionLegalCheck
-
 -- ------------------------------------------------------------
 -- Player warnings (over points, overweight, and dirty armor)
 -- ------------------------------------------------------------
@@ -362,8 +359,6 @@ do
 	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
 		return ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
 	end
-
-	_G.ACE_NotifyPointsInvalidated = ACE.NotifyPointsInvalidated
 
 	-- Initialize per-contraption points state.
 	function ACE.EnsurePointsState(con)

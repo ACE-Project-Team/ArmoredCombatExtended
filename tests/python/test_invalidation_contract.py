@@ -156,7 +156,7 @@ class InvalidationContractTests(unittest.TestCase):
         self.assertIn("ACE.PointsStateVersion = POINTS_STATE_VERSION", legality)
         self.assertIn("ACE.PointContraptions[con] = true", legality)
         self.assertIn("ACE_OnContraptionsPointsInvalidated", legality)
-        self.assertIn("ACE_NotifyContraptionPointsInvalidated", pointshandling)
+        self.assertIn("function ACE.NotifyContraptionPointsInvalidated", pointshandling)
         self.assertIn("ACE_OnContraptionPointsInvalidated", pointshandling)
         self.assertIn("ACE_OnContraptionPointsRecalculated", pointshandling)
 

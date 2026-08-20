@@ -219,16 +219,3 @@ function ACE.Manufacturing.ContraptionCost(conEnts)
 	out.Total = out.Armor + out.Powerpack + out.Armament + out.Ammo + out.Electronics + out.Crew
 	return out
 end
-
-
--- Legacy aliases retained for external ACE callers during the namespace migration.
-ACE_Manu_ArmorCost = ACE.Manufacturing.ArmorCost
-ACE.Manu_ContraptionCost = ACE.Manufacturing.ContraptionCost
-ACE.Manu_CrewCost = ACE.Manufacturing.CrewCost
-ACE.Manu_ElectronicsCost = ACE.Manufacturing.ElectronicsCost
-ACE.Manu_EngineCost = ACE.Manufacturing.EngineCost
-ACE.Manu_EntCost = ACE.Manufacturing.EntCost
-ACE.Manu_GunCost = ACE.Manufacturing.GunCost
-ACE.Manu_RackCost = ACE.Manufacturing.RackCost
-ACE.Manu_RefillCost = ACE.Manufacturing.RefillCost
-ACE.Manu_RoundCost = ACE.Manufacturing.RoundCost

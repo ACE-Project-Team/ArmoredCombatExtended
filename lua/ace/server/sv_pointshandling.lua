@@ -273,9 +273,6 @@ function ACE.NotifyContraptionPointsInvalidated(con, ent, reason, armorDirty, no
 	})
 end
 
--- Keep the historical hook-facing symbol available while consumers migrate to ACE.*.
-ACE_NotifyContraptionPointsInvalidated = ACE.NotifyContraptionPointsInvalidated
-
 local function ACE_CalcSubsystem(ents, subsystem)
 	local total = 0
 
@@ -432,7 +429,5 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 		con._ACEWarningChecking = nil
 	end
 end
-
-_G.ACE_EnsureContraptionPoints = ACE.EnsureContraptionPoints
 
 hook.Add("Think", "ACE_FlushQueuedPointChanges", ACE.FlushQueuedPointChanges)

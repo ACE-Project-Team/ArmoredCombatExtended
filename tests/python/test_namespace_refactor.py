@@ -28,7 +28,7 @@ ACE_CONVARS = (
     "debris_lifetime",
     "debris_children",
     "spalling",
-    "spalling_multipler",
+    "spalling_multiplier",
     "explosions_scaled_he_max",
     "explosions_scaled_ents_max",
     "wind",
@@ -328,12 +328,12 @@ class NamespaceRefactorTests(unittest.TestCase):
                     r"\blocal\s+function\s+ACE_[A-Za-z_][A-Za-z0-9_]*\s*\(",
                 )
 
-    def test_ace_table_has_lazy_legacy_function_fallback(self):
+    def test_ace_table_has_no_legacy_function_fallback(self):
         source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        self.assertIn('return rawget(_G, "ACE_" .. Key)', source)
-        self.assertIn("setmetatable(ACE, Meta)", source)
+        self.assertNotIn('return rawget(_G, "ACE_" .. Key)', source)
+        self.assertNotIn("setmetatable(ACE, Meta)", source)
 
     def test_non_entity_calls_do_not_use_legacy_acf_prefix(self):
         for path in non_entity_sources():
@@ -479,8 +479,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             manufacturing.index("ACE = ACE or {}"),
             manufacturing.index("ACE.Manufacturing = ACE.Manufacturing or {}"),
         )
-        self.assertIn("ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost", points_model)
-        self.assertIn("ACE_Manu_EntCost = ACE.Manufacturing.EntCost", manufacturing)
+        self.assertNotIn("ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost", points_model)
+        self.assertNotIn("ACE_Manu_EntCost = ACE.Manufacturing.EntCost", manufacturing)
         self.assertIn('cls:sub(1, 4) == "acf_"', points_model)
         self.assertIn('cls:sub(1, 4) == "ace_"', points_model)
 
@@ -502,7 +502,7 @@ class NamespaceRefactorTests(unittest.TestCase):
             )
             definitions.update(
                 re.findall(
-                    r"(?m)^\s*function\s+ACE_([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+                    r"(?m)^\s*function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\s*\(",
                     source,
                 )
             )
@@ -557,10 +557,9 @@ class NamespaceRefactorTests(unittest.TestCase):
             r"(?m)^\s*ACF\.[A-Za-z_][A-Za-z0-9_]*\s*=\s*(?!ACF\[)"
         )
         self.assertNotRegex(source, r"ACF\s*\[\s*key\s*\]\s*=\s*ACE\[")
-        self.assertIn("__ACECompatibilityView", raw_source)
-        self.assertRegex(raw_source, r"ACF\s*==\s*nil\s*or\s*rawget\(ACF")
-        self.assertRegex(raw_source, r"if\s+ACECompatibilityView\s+then")
-        self.assertRegex(raw_source, r"__index\s*=\s*function\(_,\s*key\)")
+        self.assertNotIn("__ACECompatibilityView", raw_source)
+        self.assertNotIn("ACECompatibilityView", raw_source)
+        self.assertNotIn("setmetatable(ACF", raw_source)
 
     def test_deferred_adapters_keep_their_dotted_ace_api(self):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
@@ -570,26 +569,14 @@ class NamespaceRefactorTests(unittest.TestCase):
             "GetMaterialData", "CheckRound", "HeatFromGun", "HeatFromEngine", "MarkArmorDirty"
         ):
             with self.subTest(name=name):
-                self.assertIn(f"ACE.{name} = ACE_{name}", globals_source)
+                self.assertNotIn(f"ACE.{name} = ACE_{name}", globals_source)
 
     def test_legacy_mark_armor_dirty_wrapper_survives_compatibility_alias(self):
         source = (LUA_ROOT / "acf" / "server" / "sv_contraptionlegality.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        self.assertIn(
-            "local ACE_MarkArmorDirtyImplementation = ACE.MarkArmorDirty",
-            source,
-        )
-        self.assertRegex(
-            source,
-            r"function ACE_MarkArmorDirty\(con, ent, reason\)\s*"
-            r"return ACE_MarkArmorDirtyImplementation\(con, ent, reason\)",
-        )
-        self.assertNotRegex(
-            source,
-            r"function ACE_MarkArmorDirty\(con, ent, reason\)\s*"
-            r"return ACE\.MarkArmorDirty\(con, ent, reason\)",
-        )
+        self.assertNotIn("ACE_MarkArmorDirtyImplementation", source)
+        self.assertIn("function ACE.MarkArmorDirty(con, ent, reason)", source)
 
     def test_ace_does_not_auto_register_flat_function_exports(self):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(
@@ -599,7 +586,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertNotIn("ACE[Method] = Value", globals_source)
-        self.assertIn("ACE.IsEnt = ACE_IsEnt", functions_source)
+        self.assertNotIn("ACE.IsEnt = ACE_IsEnt", functions_source)
+        self.assertIn("function ACE.IsEnt", functions_source)
 
     def test_missile_radar_registries_are_initialized_before_scans(self):
         cm_source = (
@@ -609,9 +597,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertIn("ACE.CMTable = ACE.CMTable or {}", cm_source)
-        self.assertIn("ACE.ActiveMissiles = ACE.ActiveMissiles or ACE_ActiveMissiles or {}", cm_source)
-        self.assertIn("ACE_ActiveMissiles = ACE_ActiveMissiles or ACE.ActiveMissiles or {}", missile_source)
-        self.assertIn("ACE.ActiveMissiles = ACE_ActiveMissiles", missile_source)
+        self.assertIn("ACE.ActiveMissiles = ACE.ActiveMissiles or {}", cm_source)
+        self.assertIn("ACE.ActiveMissiles = ACE.ActiveMissiles or {}", missile_source)
 
     def test_backend_does_not_initialize_acf_global_table(self):
         for path in ace_owned_sources():
@@ -640,8 +627,8 @@ class NamespaceRefactorTests(unittest.TestCase):
                 LUA_ROOT / "entities" / "acf_explosive" / "init.lua",
             )
         )
-        self.assertEqual(len(re.findall(r"function\s+ACE_MakeExplosive\s*\(", sources)), 1)
-        self.assertEqual(len(re.findall(r"function\s+ACE_MakeLegacyExplosive\s*\(", sources)), 1)
+        self.assertEqual(len(re.findall(r"function\s+ACE\.MakeExplosive\s*\(", sources)), 1)
+        self.assertEqual(len(re.findall(r"function\s+ACE\.MakeLegacyExplosive\s*\(", sources)), 1)
 
     def test_non_entity_menu_sound_effect_and_tool_ids_are_ace_prefixed(self):
         expected_paths = (

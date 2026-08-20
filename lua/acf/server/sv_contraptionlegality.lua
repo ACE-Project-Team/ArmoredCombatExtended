@@ -847,13 +847,6 @@ function ACE.MarkArmorDirty(con, ent, reason)
 	}, { con }, ledgerKnown)
 end
 
--- Keep the legacy wrapper pointed at the implementation even when the
--- compatibility loader aliases it back onto ACE.MarkArmorDirty.
-local ACE_MarkArmorDirtyImplementation = ACE.MarkArmorDirty
-function ACE.MarkArmorDirty(con, ent, reason)
-	return ACE_MarkArmorDirtyImplementation(con, ent, reason)
-end
-
 -- Reprice clipped armor after Proper Clipping replaces its physics object.
 local ACE_ProperClippingPhysicsChanged = function(ent)
 	if not IsEnt(ent) then return end

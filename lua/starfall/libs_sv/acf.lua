@@ -51,8 +51,8 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
-	local health		= ( Area + Area * Ductility ) / ACF.Threshold
+	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
+	local health		= ( Area + Area * Ductility ) / ACE.Threshold
 
 	return mass, armor, health
 
@@ -62,7 +62,7 @@ local function E2SetACEArmor(ent, armor, ductility, material)
 
 	ent.ACF = ent.ACF or {}
 
-	local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
+		local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
 	local thickness = math.Clamp( armor or ent.ACF.Armour or 1, 0.1, 50000 )
 	local mat  = material or ent.ACF.Material or "RHA"
 
@@ -170,7 +170,7 @@ local sanitize = instance.Sanitize
 local getent = instance.Types.Entity.Unwrap or instance.Types.Entity.GetEntity
 
 local function restrictInfo(ent)
-	if GetConVar("acf_restrictinfo"):GetInt() ~= 0 then
+	if GetConVar("ace_restrictinfo"):GetInt() ~= 0 then
 		return ent:CPPIGetOwner() ~= instance.player
 	end
 
@@ -315,7 +315,7 @@ do
 		hitpos = vunwrap(hitpos)
 
 		checkpermission(instance, this, "entities.acf")
-		if ACF_CheckClips(nil, nil, this, hitpos) then
+		if ACE.CheckClips(nil, nil, this, hitpos) then
 			return true
 		else
 			return false
@@ -409,7 +409,7 @@ do
 		end
 
 		if notify then
-			ACF_SendNotify(instance.player, success, msg)
+			ACE.SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -449,7 +449,7 @@ do
 		end
 
 		if notify then
-			ACF_SendNotify(instance.player, success, msg)
+			ACE.SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -521,7 +521,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
 		return round(this.ACF.Health, 3)
 	end
@@ -534,7 +534,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
 		return round(this.ACF.Armour, 3)
 	end
@@ -547,7 +547,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
 		return round(this.ACF.MaxHealth, 3)
 	end
@@ -560,7 +560,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
 		return round(this.ACF.MaxArmour, 3)
 	end
@@ -573,7 +573,7 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
 		return this.ACF.Ductility * 100
 	end
@@ -587,7 +587,7 @@ do
 
 		if not validPhysics(this) then return empty end
 		if restrictInfo(this) then return empty end
-		if not ACF_Check(this) then return empty end
+		if not ACE.Check(this) then return empty end
 
 		local mat = this.ACF.Material
 		if not mat then return empty end
@@ -612,7 +612,7 @@ do
 
 		if not validPhysics(this) then return end
 		if restrictInfo(this) then return end
-		if not ACF_Check(this) then return end
+		if not ACE.Check(this) then return end
 
 		local matData = ACE.ArmorTypes[material]
 		if not matData then return end
@@ -636,7 +636,7 @@ do
 	-- @param table hitRes The hit resolution table
 	-- @param table dmgInfo The damage info table, containing health and armor changes, if available
 	-- @server
-	SF.hookAdd("ACFOnDamage", nil, function(_, entity, energy, surface, angle, inflictor, bone, gun, type, hitRes, oldACFTbl)
+	SF.hookAdd("ACEOnDamage", nil, function(_, entity, energy, surface, angle, inflictor, bone, gun, type, hitRes, oldACFTbl)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		local dmgInfo = {}
@@ -1127,7 +1127,7 @@ do
 	-- @param number bulletIndex The index of the bullet fired
 	-- @param table bulletData The data of the bullet fired
 	-- @server
-	SF.hookAdd("ACFOnBulletCreation", nil, function(_, bulletIndex, bulletData)
+	SF.hookAdd("ACEOnBulletCreation", nil, function(_, bulletIndex, bulletData)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1145,7 +1145,7 @@ do
 	-- @param table bulletData The data of the bullet that hit
 	-- @param table flightRes The flight results of the bullet that hit
 	-- @server
-	SF.hookAdd("ACFOnBulletHit", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletHit", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1164,7 +1164,7 @@ do
 	-- @param table bulletData The data of the bullet that ricocheted
 	-- @param table flightRes The flight results of the bullet that ricocheted
 	-- @server
-	SF.hookAdd("ACFOnBulletRicochet", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletRicochet", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1183,7 +1183,7 @@ do
 	-- @param table bulletData The data of the bullet that penetrated
 	-- @param table flightRes The flight results of the bullet that penetrated
 	-- @server
-	SF.hookAdd("ACFOnBulletPenetrated", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletPenetrated", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1201,7 +1201,7 @@ do
 	-- @param number bulletIndex The index of the bullet that was removed
 	-- @param table bulletData The data of the bullet that was removed
 	-- @server
-	SF.hookAdd("ACFOnBulletRemoved", nil, function(_, bulletIndex, bulletData)
+	SF.hookAdd("ACEOnBulletRemoved", nil, function(_, bulletIndex, bulletData)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1294,7 +1294,7 @@ do
 		end
 
 		local wheels = {}
-		for _, ent in pairs(ACF_GetLinkedWheels(this)) do
+		for _, ent in pairs(ACE.GetLinkedWheels(this)) do
 			wheels[#wheels + 1] = ent
 		end
 

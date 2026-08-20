@@ -36,7 +36,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             "DefineMine",
         ):
             with self.subTest(family=family):
-                self.assertIn(f"function ACE_{family}", loader)
+                self.assertIn(f"function ACE.{family}", loader)
 
     def test_crewseat_gui_loader_uses_migrated_menu_namespace(self):
         loader = source("acf/shared/sh_ace_loader.lua")
@@ -68,8 +68,8 @@ class EntityPipelineContractTests(unittest.TestCase):
         getters = source("acf/shared/sh_acfm_getters.lua")
         functions = source("acf/shared/sh_ace_functions.lua")
         for text, patterns in (
-            (base, ("function ACE_GetLinkedWheels", "function ACE_CreateLinkRope", "GearLink", "WheelLink")),
-            (getters, ("function ACE_RackCanLoadCaliber", "function ACE_CanLinkRack")),
+            (base, ("function ACE.GetLinkedWheels", "function ACE.CreateLinkRope", "GearLink", "WheelLink")),
+            (getters, ("function ACE.RackCanLoadCaliber", "function ACE.CanLinkRack")),
             (functions, ("AmmoLink", "Master")),
         ):
             for pattern in patterns:
@@ -83,9 +83,9 @@ class EntityPipelineContractTests(unittest.TestCase):
             encoding="utf-8", errors="replace"
         )
         self.assertRegex(base, r"Inputs\.Fire")
-        self.assertRegex(ballistics, r"function ACE_CreateBullet")
-        self.assertRegex(weapon_base, r"ACE_CreateBullet")
-        self.assertRegex(ballistics, r"ACE_BulletClient")
+        self.assertRegex(ballistics, r"function ACE.CreateBullet")
+        self.assertRegex(weapon_base, r"ACE\.CreateBullet")
+        self.assertRegex(ballistics, r"ACE\.BulletClient")
         self.assertRegex(ballistics, r"RoundTypes\[Bullet\.Type\]")
 
     def test_tracking_contract_keeps_radar_registration_and_tracking_definitions(self):
@@ -108,7 +108,7 @@ class EntityPipelineContractTests(unittest.TestCase):
                 self.assertIn(field, definitions)
         heat = source("acf/server/sv_heat.lua")
         self.assertIn("Engine.FlyRPM", heat)
-        self.assertIn("function ACE_HeatFromGearbox", heat)
+        self.assertIn("function ACE.HeatFromGearbox", heat)
 
     def test_ace_notification_protocol_is_namespaced(self):
         globals_source = source("autorun/acf_globals.lua")
@@ -129,12 +129,12 @@ class EntityPipelineContractTests(unittest.TestCase):
             with self.subTest(legacy=legacy):
                 self.assertNotIn(legacy, combined)
         self.assertNotIn('hook.Run("ACFOn', backend)
-        self.assertIn('ACE.RunLegacyHook("ACFOnDamage"', backend)
-        self.assertIn('ACE.RunLegacyHook("ACFOnBulletCreation"', backend)
+        self.assertIn('hook.Run("ACEOnDamage"', backend)
+        self.assertIn('hook.Run("ACEOnBulletCreation"', backend)
         for current in (
-            "ACE_OnDamage", "ACE_OnBulletCreation", "ACE_OnBulletRemoved",
-            "ACE_OnBulletPenetrated", "ACE_OnBulletRicochet", "ACE_OnBulletHit",
-            "ACEOnDamage", "ACEOnBulletCreation", "ACEPermissions", "CreateACECategory",
+            "ACEOnDamage", "ACEOnBulletCreation", "ACEOnBulletRemoved",
+            "ACEOnBulletPenetrated", "ACEOnBulletRicochet", "ACEOnBulletHit",
+            "ACEPermissions", "CreateACECategory",
         ):
             with self.subTest(current=current):
                 self.assertIn(current, combined)
@@ -146,20 +146,17 @@ class EntityPipelineContractTests(unittest.TestCase):
 
     def test_legacy_hook_events_forward_to_ace_namespaced_events(self):
         globals_source = source("autorun/acf_globals.lua")
-        self.assertIn('hook.Add("ACE_OnLoadAddon", "ACE_RemoveCompatibilityView"', globals_source)
-        self.assertIn('hook.Add("ACF_OnLoadAddon", "ACE_RemoveCompatibilityView"', globals_source)
-        self.assertIn('hook.Run("ACE_OnLoadAddon", ...)', globals_source)
+        self.assertNotIn("RemoveCompatibilityView", globals_source)
+        self.assertNotIn("ACF_OnLoadAddon", globals_source)
 
         ballistics = source("acf/server/sv_acfballistics.lua")
         for name in (
             "BulletCreation", "BulletRemoved", "BulletPenetrated", "BulletRicochet", "BulletHit",
         ):
             with self.subTest(name=name):
-                self.assertIn(f'hook.Run("ACE_On{name}"', ballistics)
                 self.assertIn(f'hook.Run("ACEOn{name}"', ballistics)
 
         damage = source("acf/server/sv_acfbase.lua")
-        self.assertIn('hook.Run("ACE_OnDamage"', damage)
         self.assertIn('hook.Run("ACEOnDamage"', damage)
 
     def test_backend_network_channels_are_ace_namespaced(self):
@@ -177,19 +174,16 @@ class EntityPipelineContractTests(unittest.TestCase):
         starfall = (LUA / "starfall" / "libs_sv" / "acf.lua").read_text(
             encoding="utf-8", errors="replace"
         )
-        self.assertIn("ACE.LegacyCompatibility = ACECompatibilityView", globals_source)
-        self.assertIn('file.Exists("autorun/acf_loader.lua", "LUA")', globals_source)
-        self.assertIn('CreateConVar("acf_restrictinfo", 1)', globals_source)
-        self.assertIn('if ACECompatibilityView then', globals_source)
-        self.assertIn('GetConVar("acf_restrictinfo")', starfall)
-        self.assertIn('ACFOnBulletCreation', starfall)
+        self.assertIn('CreateConVar("ace_restrictinfo", 1)', globals_source)
+        self.assertIn('GetConVar("ace_restrictinfo")', starfall)
+        self.assertIn('ACEOnBulletCreation', starfall)
         for legacy_hook in ("ACFOnBulletHit", "ACFOnBulletRicochet", "ACFOnBulletPenetrated"):
-            self.assertIn(f'ACE.RunLegacyHook("{legacy_hook}"', source("acf/server/sv_acfballistics.lua"))
-        self.assertIn('ACE_LegacyRestrictInfo', globals_source)
-        self.assertIn('ACF_OnLoadAddon', globals_source)
+            self.assertNotIn(legacy_hook, source("acf/server/sv_acfballistics.lua"))
+        self.assertNotIn('ACE_LegacyRestrictInfo', globals_source)
+        self.assertNotIn('ACF_OnLoadAddon', globals_source)
         self.assertNotIn('cvars.AddChangeCallback("acf_restrictinfo"', globals_source)
         self.assertNotIn('current:SetInt(tobool(new) and 1 or 0)', globals_source)
-        self.assertIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)
+        self.assertNotIn('ACE.GetMaterialData = ACE_GetMaterialData', globals_source)
 
     def test_entity_backend_calls_resolve_to_ace_implementations(self):
         backend_sources = "\n".join(
@@ -209,7 +203,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertRegex(
                     backend_sources,
-                    rf"(?:function\s+ACE_{name}\b|ACE_{name}\s*=)",
+                    rf"(?:function\s+ACE\.{name}\b|ACE\.{name}\s*=)",
                 )
 
     def test_dotted_ace_calls_have_ace_global_exports(self):
@@ -218,7 +212,7 @@ class EntityPipelineContractTests(unittest.TestCase):
             for path in LUA.rglob("*.lua")
         )
         called = set(re.findall(r"\bACE\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", backend_sources))
-        exported = set(re.findall(r"(?:function\s+|\b)ACE_([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
+        exported = set(re.findall(r"(?:function\s+|\b)ACE\.([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
         explicitly_dotted = set(re.findall(r"function\s+ACE\.([A-Za-z_][A-Za-z0-9_]*)\b", backend_sources))
         explicitly_assigned = set(re.findall(r"\bACE\.([A-Za-z_][A-Za-z0-9_]*)\s*=", backend_sources))
         missing = sorted(

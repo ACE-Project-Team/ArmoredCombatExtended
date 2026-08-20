@@ -13,7 +13,7 @@
 
 -- Lookup table of all currently flying missiles.
 ACE = ACE or {}
-ACE.ActiveMissiles = ACE.ActiveMissiles or ACE.ActiveMissiles or {}
+ACE.ActiveMissiles = ACE.ActiveMissiles or {}
 
 include("acf/shared/sh_acfm_getters.lua")
 

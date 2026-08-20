@@ -389,13 +389,6 @@ function ACE.GetAllFuseNamesExcept(list)
 	return GetAllInTableExcept(ACE.Fuse, list)
 end
 
--- Used by ACF Unofficial Extras, these need to exist before any definitions are loaded
-if ACE.InstallLegacyGlobal then
-	ACE.InstallLegacyGlobal( "ACF_DefineEngine", ACE.DefineEngine )
-	ACE.InstallLegacyGlobal( "ACF_DefineGearbox", ACE.DefineGearbox )
-	ACE.InstallLegacyGlobal( "ACF_DefineFuelTankSize", ACE.DefineFuelTankSize )
-end
-
 -- search for and load a bunch of files or whatever
 --
 do

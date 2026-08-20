@@ -1,85 +1,4 @@
--- Keep a legacy view available for the intentionally unchanged E2 and
--- Starfall adapters only when the ACF addon did not create its own table.
-local ACFAddonInstalled = file.Exists("autorun/acf_loader.lua", "LUA")
-local ACECompatibilityView = not ACFAddonInstalled and (ACF == nil or rawget(ACF, "__ACECompatibilityView") == true)
-ACF = ACF or {}
-
 ACE               = ACE or {}
-local InstalledLegacyGlobals = {}
-
--- Resolve the remaining legacy function symbols through ACE. without copying
--- them into new globals. This keeps existing extensions working while callers
--- migrate to the table namespace; functions that have already been moved take
--- precedence over the fallback.
-do
-    local Meta = getmetatable(ACE) or {}
-    local PreviousIndex = Meta.__index
-
-    Meta.__index = function(Table, Key)
-        local Value
-
-        if type(PreviousIndex) == "function" then
-            Value = PreviousIndex(Table, Key)
-        elseif type(PreviousIndex) == "table" then
-            Value = PreviousIndex[Key]
-        end
-
-        if Value ~= nil then return Value end
-
-        return rawget(_G, "ACE_" .. Key)
-    end
-
-    setmetatable(ACE, Meta)
-end
-
-if ACECompatibilityView then
-    rawset(ACF, "__ACECompatibilityView", true)
-    setmetatable(ACF, {
-        __index = function(_, key)
-            return ACE[key]
-        end
-    })
-end
-
-ACE.LegacyCompatibility = ACECompatibilityView
-
--- Exposed so files that are include()'d later (e.g. sh_ace_loader.lua) can
--- install legacy globals themselves, ahead of any content they in turn load.
--- This must exist before anything that might load third-party content packs
--- still calling pre-rename ACF_ names directly.
-function ACE.InstallLegacyGlobal(name, implementation)
-    if not ACE.LegacyCompatibility then return end
-    if rawget(_G, name) == nil and implementation ~= nil then
-        rawset(_G, name, implementation)
-        InstalledLegacyGlobals[name] = implementation
-    end
-end
-
-function ACE.RunLegacyHook(Name, ...)
-    if ACE.LegacyCompatibility then
-        return hook.Run(Name, ...)
-    end
-end
-
--- ACF's loader can run later in the same autorun pass. If it does, remove the
--- temporary ACE compatibility view before ACF starts using its own namespace.
-local function RemoveCompatibilityView()
-    if not ACE.LegacyCompatibility then return end
-
-    ACE.LegacyCompatibility = false
-    rawset(ACF, "__ACECompatibilityView", nil)
-    setmetatable(ACF, nil)
-
-    for name, value in pairs(InstalledLegacyGlobals) do
-        if rawget(_G, name) == value then rawset(_G, name, nil) end
-    end
-end
-
-hook.Add("ACE_OnLoadAddon", "ACE_RemoveCompatibilityView", RemoveCompatibilityView)
-hook.Add("ACF_OnLoadAddon", "ACE_RemoveCompatibilityView", function(...)
-    RemoveCompatibilityView()
-    return hook.Run("ACE_OnLoadAddon", ...)
-end)
 
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
@@ -301,15 +220,6 @@ if SERVER then
     CreateConVar("ace_meshvalue", 1)
 
     CreateConVar("ace_restrictinfo", 1)                -- 0=any, 1=owned
-    -- The unchanged Starfall adapter still reads the legacy name. Create this
-    -- default-only compatibility cvar only when ACF did not provide it.
-    if ACECompatibilityView then
-        CreateConVar("acf_restrictinfo", 1)
-        cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
-            local legacy = GetConVar("acf_restrictinfo")
-            if legacy then legacy:SetInt(new) end
-        end, "ACE_LegacyRestrictInfo")
-    end
     cvars.RemoveChangeCallback("ace_restrictinfo", "ACE_CVarChangeCallback")
     cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
         ACE.RestrictInfo = tobool(new)
@@ -683,32 +593,6 @@ end
 
 
 cleanup.Register( "aceexplosives" )
-
--- The unchanged adapters still call these legacy global entry points. Preserve
--- an independently loaded ACF implementation, otherwise route them to ACE.
---
--- Note: ACF_DefineEngine/DefineGearbox/DefineFuelTankSize are installed
--- earlier, from within sh_ace_loader.lua, before its folder-scan loop
--- include()'s third-party content packs that may call those names directly.
--- See the ACE_InstallLegacyGlobal calls there.
-if ACECompatibilityView then
-    local LegacyGlobals = {
-        ACF_CalcArmor = ACE.CalcArmor,
-        ACF_Check = ACE.Check,
-        ACF_CheckClips = ACE.CheckClips,
-        ACF_GetHitAngle = ACE.GetHitAngle,
-        ACF_GetLinkedWheels = ACE.GetLinkedWheels,
-        ACF_SendNotify = ACE.SendNotify,
-        ACF_GetPhysicalParent = ACE.GetPhysicalParent,
-        ACF_Kinetic = ACE.Kinetic,
-        ACF_MuzzleVelocity = ACE.MuzzleVelocity,
-        ACF_HE = ACE.HE
-    }
-
-    for name, implementation in pairs(LegacyGlobals) do
-        ACE.InstallLegacyGlobal(name, implementation)
-    end
-end
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")

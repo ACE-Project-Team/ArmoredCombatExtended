@@ -1,5 +1,5 @@
 
-function ACE_Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
+function ACE.Missiles_MenuSlider(config, controlGroup, combo, conCmd, min, max)
 
 	local slider = vgui.Create( "DNumSlider" )
 		slider.Label:SetText(config.DisplayName or "")
@@ -29,7 +29,7 @@ end
 
 
 
-function ACE_Missiles_SetCommand(combo, controlGroup, conCmd)
+function ACE.Missiles_SetCommand(combo, controlGroup, conCmd)
 
 	if not controlGroup then
 		local name = combo:GetValue()
@@ -67,7 +67,7 @@ ACE.Missiles_ConfigurationFactory =
 
 
 
-function ACE_Missiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, gundata)
+function ACE.Missiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel, gundata)
 
 	local panel = existingPanel or vgui.Create("DScrollPanel")
 
@@ -102,6 +102,6 @@ function ACE_Missiles_CreateMenuConfiguration(tbl, combo, conCmd, existingPanel,
 end
 
 
-function ACE_Missiles_RemoveMenuConfiguration()
+function ACE.Missiles_RemoveMenuConfiguration()
 	ErrorNoHalt("TODO: ACE_Missiles_RemoveMenuConfiguration")
 end

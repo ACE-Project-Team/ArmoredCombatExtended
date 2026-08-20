@@ -1,6 +1,6 @@
 
 --This is a fully loaded bullet removal
-function ACE_RemoveBulletClient( Bullet, Index )
+function ACE.RemoveBulletClient( Bullet, Index )
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then Bullet.Tracer:Finish() end

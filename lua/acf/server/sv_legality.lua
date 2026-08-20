@@ -23,7 +23,7 @@ ACE.Legal.Ignore.makesphere  = math.max(GetConVar("ace_legal_ignore_makesphere")
 ACE.Legal.Ignore.visclip	= math.max(GetConVar("ace_legal_ignore_visclip"):GetInt(), 0)
 ACE.Legal.Ignore.Parent	= math.max(GetConVar("ace_legal_ignore_parent"):GetInt(), 0)
 
-function ACE_LegalityCallBack()
+function ACE.LegalityCallBack()
 
 	ACE.Legal.IsActivated		= math.max(GetConVar("ace_legalcheck"):GetInt(), 0)
 
@@ -38,15 +38,15 @@ function ACE_LegalityCallBack()
 
 end
 
-cvars.AddChangeCallback("ace_legalcheck",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_solid",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_model",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_mass",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_material",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_inertia",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_makesphere",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_visclip",ACE_LegalityCallBack)
-cvars.AddChangeCallback("ace_legal_ignore_parent",ACE_LegalityCallBack)
+cvars.AddChangeCallback("ace_legalcheck",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_solid",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_model",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_mass",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_material",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_inertia",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_makesphere",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_visclip",ACE.LegalityCallBack)
+cvars.AddChangeCallback("ace_legal_ignore_parent",ACE.LegalityCallBack)
 
 
 
@@ -78,7 +78,7 @@ do
 	}
 
 	--TODO: remove unused functions
-	function ACE_CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
+	function ACE.CheckLegal(Ent, Model, MinMass, MinInertia, _, CanVisclip )
 
 	local problems = {} --problems table definition
 	if ACE.Legal.IsActivated == 0 then return #problems == 0, table.concat(problems, ", ") end

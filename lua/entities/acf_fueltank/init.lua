@@ -48,7 +48,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
-		ACE_GetDefaultActiveInputState(self)
+		ACE.GetDefaultActiveInputState(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -102,7 +102,7 @@ end
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACE.HEATMulFuel) or 1) --Heat penetrators deal bonus damage to fuel
-	local HitRes = ACE_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+	local HitRes = ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS")
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
@@ -117,7 +117,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 			self.Inflictor = Inflictor
 		end
 
-		ACE_ScaledExplosion( self , true )
+		ACE.ScaledExplosion( self , true )
 
 		return HitRes
 	end
@@ -135,7 +135,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 
 		timer.Simple(math.Rand(0.1, 1), function()
 			if IsValid(self) then
-				ACE_ScaledExplosion( self , true )
+				ACE.ScaledExplosion( self , true )
 			end
 		end )
 
@@ -159,7 +159,7 @@ do
 		return ACE.Scalable.ParseScale( ScaleId, { min = ACE.CrateMinimumSize, max = ACE.CrateMaximumSize } )
 	end
 
-	function ACE_MakeFuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+	function ACE.MakeFuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 
 		if IsValid(Owner) and not Owner:CheckLimit("_ace_misc") then return false end
 
@@ -175,7 +175,7 @@ do
 			Tank:Spawn()
 
 			-- If the crate is not valid in the system, but it could be scalable.
-			if not ACE_CheckFuelTank( Data1 ) then
+			if not ACE.CheckFuelTank( Data1 ) then
 
 				-- Reminder: When the legacy fueltanks get deleted. Do the same as ammo crates.
 				local Scale = ConvertStringScale(Data1)
@@ -215,7 +215,7 @@ do
 				end
 			end
 
-			if ACE_CheckFuelTank( Data1 ) then
+			if ACE.CheckFuelTank( Data1 ) then
 
 				local TankData = TankTable[Data1]
 
@@ -251,7 +251,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_fueltank", {"id", "data1", "data2", "data3"} )
-duplicator.RegisterEntityClass("acf_fueltank", ACE_MakeFuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
+duplicator.RegisterEntityClass("acf_fueltank", ACE.MakeFuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
 
 
 local Wall = 0.03937 --wall thickness in inches (1mm)
@@ -414,7 +414,7 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		self.Active = ACE_GetDefaultActiveInputState(self, value)
+		self.Active = ACE.GetDefaultActiveInputState(self, value)
 
 		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
@@ -429,13 +429,13 @@ end
 
 function ENT:Think()
 
-	if not ACE_IsDefaultActiveInputWired(self) then
-		self.Active = ACE_GetDefaultActiveInputState(self)
+	if not ACE.IsDefaultActiveInputWired(self) then
+		self.Active = ACE.GetDefaultActiveInputState(self)
 	end
 
 	if ACE.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 	end

@@ -3,7 +3,7 @@ AddCSLuaFile()
 
 local GunsTable = ACE.Weapons.Guns
 
-function ACE_GetGunValue(bdata, val)
+function ACE.GetGunValue(bdata, val)
 
 	bdata = (type(bdata) == "table" and bdata.Id) or bdata
 
@@ -39,7 +39,7 @@ end
 
 
 
-function ACE_GetRackValue(rdata, val)
+function ACE.GetRackValue(rdata, val)
 
 	rdata = (type(rdata) == "table" and rdata.Id) or rdata
 
@@ -64,7 +64,7 @@ end
 
 
 
-function ACE_RackCanLoadCaliber(rackId, cal)
+function ACE.RackCanLoadCaliber(rackId, cal)
 
 	local rack = ACE.Weapons.Racks[rackId]
 	if not rack then return false, "Rack '" .. tostring(rackId) .. "' does not exist." end
@@ -90,7 +90,7 @@ end
 
 
 
-function ACE_CanLinkRack(rackId, ammoId, bdata, rack)
+function ACE.CanLinkRack(rackId, ammoId, bdata, rack)
 
 	local rack = ACE.Weapons.Racks[rackId]
 	if not rack then return false, "Rack '" .. tostring(rackId) .. "' does not exist." end
@@ -134,7 +134,7 @@ end
 
 
 
-function ACE_GetCompatibleRacks(ammoId)
+function ACE.GetCompatibleRacks(ammoId)
 
 	local ret = {}
 
@@ -151,7 +151,7 @@ end
 
 
 
-function ACE_GetRoundFromCVars()
+function ACE.GetRoundFromCVars()
 
 	local round = {}
 

@@ -2,7 +2,7 @@
 
 ACE = ACE or {}
 ACE.CMTable = ACE.CMTable or {}
-ACE.ActiveMissiles = ACE.ActiveMissiles or ACE_ActiveMissiles or {}
+ACE.ActiveMissiles = ACE.ActiveMissiles or ACE.ActiveMissiles or {}
 ACE.Missile_Flares = {}
 
 ACE.Missile_FlareUID = 0
@@ -10,7 +10,7 @@ ACE.Missile_FlareUID = 0
 
 
 
-function ACE_Missile_RegisterFlare(bdata)
+function ACE.Missile_RegisterFlare(bdata)
 
 	local test = ACE.Missile_Flares[bdata.Index] or {}
 	if table.IsEmpty( test ) then return false end
@@ -34,7 +34,7 @@ end
 
 
 
-function ACE_Missile_UnregisterFlare(bdata)
+function ACE.Missile_UnregisterFlare(bdata)
 
 	local flareObj = bdata.FlareObj
 
@@ -49,7 +49,7 @@ end
 
 
 
-function ACE_Missile_OnFlareSpawn(bdata)
+function ACE.Missile_OnFlareSpawn(bdata)
 
 	local flareObj = bdata.FlareObj
 
@@ -64,7 +64,7 @@ end
 
 
 
-function ACE_Missile_GetFlaresInCone(pos, dir, degs)
+function ACE.Missile_GetFlaresInCone(pos, dir, degs)
 
 	local ret = {}
 
@@ -87,7 +87,7 @@ end
 
 
 
-function ACE_Missile_GetMissilesInCone(radar, dir, degs)
+function ACE.Missile_GetMissilesInCone(radar, dir, degs)
 
 	local ret = {}
 	local pos = radar:LocalToWorld(radar:OBBCenter())
@@ -123,7 +123,7 @@ end
 
 
 
-function ACE_Missile_GetMissilesInSphere(radar, radius)
+function ACE.Missile_GetMissilesInSphere(radar, radius)
 
 	local ret = {}
 	local pos = radar:LocalToWorld(radar:OBBCenter())
@@ -166,7 +166,7 @@ end
 
 -- Tests flare distraction effect upon all undistracted missiles, but does not perform the effect itself.  Returns a list of potentially affected missiles.
 -- argument is the bullet in the acf bullet table which represents the flare - not the cm_flare object!
-function ACE_Missile_GetAllMissilesWhichCanSee(pos)
+function ACE.Missile_GetAllMissilesWhichCanSee(pos)
 
 	local ret = {}
 
@@ -191,7 +191,7 @@ end
 
 
 
-function ACE_Missile_ConeContainsPos(conePos, coneDir, degs, pos)
+function ACE.Missile_ConeContainsPos(conePos, coneDir, degs, pos)
 
 	local minDot = math.cos( math.rad(degs) )
 
@@ -206,7 +206,7 @@ end
 
 
 
-function ACE_Missile_ApplyCountermeasures(missile, guidance)
+function ACE.Missile_ApplyCountermeasures(missile, guidance)
 
 	if guidance.Override then return end
 
@@ -227,7 +227,7 @@ end
 
 
 
-function ACE_Missile_ApplySpawnCountermeasures(missile, guidance)
+function ACE.Missile_ApplySpawnCountermeasures(missile, guidance)
 
 	if guidance.Override then return end
 
@@ -248,7 +248,7 @@ end
 
 
 
-function ACE_Missile_ApplyCountermeasure(missile, guidance, measure)
+function ACE.Missile_ApplyCountermeasure(missile, guidance, measure)
 
 	if not measure.AppliesTo[guidance.Name] then
 		return false

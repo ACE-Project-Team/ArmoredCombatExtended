@@ -1,7 +1,7 @@
 
 ACE.BulletEffect = ACE.BulletEffect or {}
 
-function ACE_ManageBulletEffects()
+function ACE.ManageBulletEffects()
 
 	if next(ACE.BulletEffect) then
 
@@ -11,9 +11,9 @@ function ACE_ManageBulletEffects()
 	end
 end
 hook.Remove( "Think", "ACE_ManageBulletEffects" )
-hook.Add("Think", "ACE_ManageBulletEffects", ACE_ManageBulletEffects)
+hook.Add("Think", "ACE_ManageBulletEffects", ACE.ManageBulletEffects)
 
-function ACE_SimBulletFlight( Bullet, Index )
+function ACE.SimBulletFlight( Bullet, Index )
 
 	if not Bullet or not Index then return end
 

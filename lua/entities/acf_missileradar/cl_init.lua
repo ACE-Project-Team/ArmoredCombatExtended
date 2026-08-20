@@ -26,7 +26,7 @@ function ENT:Draw()
 
 end
 
-function ACE_RadarGUICreate( Table )
+function ACE.RadarGUICreate( Table )
 
 	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 

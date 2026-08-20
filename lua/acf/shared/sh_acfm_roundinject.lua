@@ -14,7 +14,7 @@ end
 
 
 
-function ACE_Missile_ModifyRoundDisplayFuncs()
+function ACE.Missile_ModifyRoundDisplayFuncs()
 
 	local roundTypes = ACE.RoundTypes
 
@@ -88,7 +88,7 @@ end
 
 
 
-function ACE_Missile_ModifyCrateTextFuncs()
+function ACE.Missile_ModifyCrateTextFuncs()
 
 	local roundTypes = ACE.RoundTypes
 
@@ -157,12 +157,12 @@ end
 
 
 
-function ACE_Missile_ModifyRoundBaseGunpowder()
+function ACE.Missile_ModifyRoundBaseGunpowder()
 
-	local oldGunpowder = ACE.Missile_ModifiedRoundBaseGunpowder and oldGunpowder or ACE_RoundBaseGunpowder
+	local oldGunpowder = ACE.Missile_ModifiedRoundBaseGunpowder and oldGunpowder or ACE.RoundBaseGunpowder
 
 
-	ACE_RoundBaseGunpowder = function(PlayerData, Data, ServerData, GUIData)
+	ACE.RoundBaseGunpowder = function(PlayerData, Data, ServerData, GUIData)
 
 		PlayerData, Data, ServerData, GUIData = oldGunpowder(PlayerData, Data, ServerData, GUIData)
 
@@ -179,9 +179,9 @@ end
 
 
 
-timer.Simple(1, ACE_Missile_ModifyRoundBaseGunpowder)
-timer.Simple(1, ACE_Missile_ModifyRoundDisplayFuncs)
-timer.Simple(1, ACE_Missile_ModifyCrateTextFuncs)
+timer.Simple(1, ACE.Missile_ModifyRoundBaseGunpowder)
+timer.Simple(1, ACE.Missile_ModifyRoundDisplayFuncs)
+timer.Simple(1, ACE.Missile_ModifyCrateTextFuncs)
 
 
 

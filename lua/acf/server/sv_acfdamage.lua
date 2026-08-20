@@ -41,7 +41,7 @@ ACE.CritEnts = {
 }
 
 --I don't want HE processing every ent that it has in range
-function ACE_HEFind( Hitpos, Radius )
+function ACE.HEFind( Hitpos, Radius )
 
 	local Table = {}
 	for _, ent in pairs( ents.FindInSphere( Hitpos, Radius ) ) do
@@ -73,7 +73,7 @@ end
 
 local PI = math.pi
 
-function ACE_HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, BlastPenMul )
+function ACE.HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, BlastPenMul )
 
 	DebugExplosion(
 		"HE:Enter",
@@ -407,7 +407,7 @@ end
 -- Describes the only supported post-penetration contract. Armor resolution reports
 -- how much of the incoming energy was spent; callers must not reinterpret Overkill or
 -- Loss independently. Killed entities may continue when residual energy remains.
-function ACE_GetPostPenetration( HitRes, Energy )
+function ACE.GetPostPenetration( HitRes, Energy )
 	local Loss = math.Clamp( HitRes.Loss or 1, 0, 1 )
 	local Remaining = 1 - Loss
 	local Continue = not HitRes.RicochetSelected and Remaining > 0 and ((HitRes.Overkill or 0) > 0 or HitRes.Kill)
@@ -425,7 +425,7 @@ function ACE_GetPostPenetration( HitRes, Energy )
 end
 
 --Handles normal spalling
-function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Material) --_ = Armor
+function ACE.Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Material) --_ = Armor
 
 	--Don't use it if it's not allowed to
 	if not ACE.Spalling then return end
@@ -508,7 +508,7 @@ function ACE_Spall( HitPos , HitVec , Filter , KE , Caliber , _ , Inflictor , Ma
 end
 
 --Dedicated function for HESH spalling
-function ACE_PropShockwave( HitPos, HitVec, Filter, Caliber )
+function ACE.PropShockwave( HitPos, HitVec, Filter, Caliber )
 	--Don't even bother at calculating something that doesn't exist
 	if table.IsEmpty(Filter) then return end
 	--General
@@ -627,7 +627,7 @@ end
 
 
 --Handles HESH spalling
-function ACE_Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
+function ACE.Spall_HESH( HitPos, HitVec, Filter, HEFiller, Caliber, Armour, Inflictor, Material )
 
 	local Temp_Filter = table.Copy( Filter )
 	local _, Armour, PEnts, fNormal = ACE.PropShockwave( HitPos, -HitVec, Filter, Caliber )
@@ -754,7 +754,7 @@ local function CanContinueSpallTrace(Index, SpallRes, State)
 end
 
 --Spall trace core. For HESH and normal spalling
-function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
+function ACE.SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallVelocity, State )
 	-- Each fragment needs its own mutable penetration budget. Recursive retries keep this copy,
 	-- while later fragments must start from the original energy.
 	SpallEnergy = table.Copy(SpallEnergy)
@@ -888,14 +888,14 @@ function ACE_SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 end
 
 --Calculates the vector of the ricochet of a round upon impact at a set angle
-function ACE_RicochetVector(Flight, HitNormal)
+function ACE.RicochetVector(Flight, HitNormal)
 	local Vec = Flight:GetNormalized()
 
 	return Vec - ( 2 * Vec:Dot(HitNormal) ) * HitNormal
 end
 
 -- Handles the impact of a round on a target
-function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
+function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
 
 	--[[
 		print("======DATA=======")
@@ -981,7 +981,7 @@ function ACE_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 end
 
 --Handles Ground penetrations
-function ACE_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
+function ACE.PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 
 	Bullet.GroundRicos = Bullet.GroundRicos or 0
 
@@ -1052,7 +1052,7 @@ local function ApplyForceOffset(Phys, Force, Pos) --For some reason this functio
 end
 
 --Handles ACE forces (HE Push, Recoil, etc)
-function ACE_KEShove(Target, Pos, Vec, KE, Inflictor)
+function ACE.KEShove(Target, Pos, Vec, KE, Inflictor)
 	local CanDo = hook.Run("ACE_KEShove", Target, Pos, Vec, KE, Inflictor)
 	if CanDo == false then return end
 
@@ -1178,7 +1178,7 @@ local function RemoveEntity( Entity )
 end
 
 -- Creates a debris related to explosive destruction.
-function ACE_HEKill( Entity , HitVector , Energy , BlastPos )
+function ACE.HEKill( Entity , HitVector , Energy , BlastPos )
 
 	-- if it hasn't been processed yet, check for children
 	if not Entity.ACF_Killed then KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy ) end
@@ -1235,7 +1235,7 @@ function ACE_HEKill( Entity , HitVector , Energy , BlastPos )
 end
 
 -- Creates a debris related to kinetic destruction.
-function ACE_APKill( Entity , HitVector , Power )
+function ACE.APKill( Entity , HitVector , Power )
 	-- kill the children of this ent, instead of disappearing them from removing parent
 	KillChildProps( Entity, Entity:GetPos(), Power )
 
@@ -1327,7 +1327,7 @@ do
 	end
 
 	--converts what would be multiple simultaneous cache detonations into one large explosion
-	function ACE_ScaledExplosion( ent , remove )
+	function ACE.ScaledExplosion( ent , remove )
 
 		if ent.RoundType and ent.RoundType == "Refill" then return end
 		if ent.BulletData and ent.BulletData.Type == "Refill" then return end
@@ -1691,7 +1691,7 @@ do
 
 end
 
-function ACE_GetHitAngle( HitNormal , HitVector )
+function ACE.GetHitAngle( HitNormal , HitVector )
 	-- Trace retries can occasionally provide a missing or zero normal. Treat that
 	-- as normal incidence instead of producing invalid/infinite effective armor.
 	if not HitNormal or not HitVector or HitNormal:LengthSqr() < 0.0001 or HitVector:LengthSqr() < 0.0001 then
@@ -1705,7 +1705,7 @@ function ACE_GetHitAngle( HitNormal , HitVector )
 
 end
 
-function ACE_CalculateHERadius( HEWeight )
+function ACE.CalculateHERadius( HEWeight )
 	local Radius = HEWeight ^ 0.33 * 8 * 39.37
 	return Radius
 end
@@ -1716,7 +1716,7 @@ end
 --Calculates the effective armor between two points
 --Effangle, Type(1 = KE, 2 = HEAT), Filter
 --Might make for a nice e2 function if people probably wouldn't eat the server with it
-function ACE_LOSMultiTrace(StartVec, EndVec, PenetrationMax)
+function ACE.LOSMultiTrace(StartVec, EndVec, PenetrationMax)
 
 	debugoverlay.Line( StartVec, EndVec, 30 , Color(255,0,0), true )
 

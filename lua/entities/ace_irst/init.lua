@@ -65,12 +65,12 @@ function ENT:Initialize()
 	self.BaseSweetSpotSize = 7
 
 	self.IRResolution = {}
-	self:SetActive(ACE_GetDefaultActiveInputState(self))
+	self:SetActive(ACE.GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
 
-function ACE_MakeIRST(Owner, Pos, Angle, Id)
+function ACE.MakeIRST(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
@@ -114,7 +114,7 @@ function ACE_MakeIRST(Owner, Pos, Angle, Id)
 	return false
 end
 list.Set( "ACFCvars", "ace_irst", {"id"} )
-duplicator.RegisterEntityClass("ace_irst", ACE_MakeIRST, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_irst", ACE.MakeIRST, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )
@@ -138,7 +138,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -240,7 +240,7 @@ function ENT:ScanForContraptions()
 		local BaseTemp = 0
 
 		if IsValid(BasePhys) and BasePhys:IsMoveable() then
-			BaseTemp = ACE_InfraredHeatFromProp(Base, self.HeatAboveAmbient)
+			BaseTemp = ACE.InfraredHeatFromProp(Base, self.HeatAboveAmbient)
 		end
 
 		local Pos
@@ -292,7 +292,7 @@ function ENT:ScanForContraptions()
 
 			self.TargetDetected = true
 
-			local Index = ACE_GetContraptionIndex(Contraption)
+			local Index = ACE.GetContraptionIndex(Contraption)
 
 			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase / self.ThinkDelay * ResolveMul - 10, ClampMin, self.MaxInaccuracy) --10 is to prevent decay from occuring if actively tracking the target
 
@@ -307,7 +307,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -372,7 +372,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -421,10 +421,10 @@ function ENT:Think()
 	-- Legal check system
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

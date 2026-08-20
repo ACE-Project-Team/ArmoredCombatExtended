@@ -25,7 +25,7 @@
 	dist - distance between the missile and the Target
 
 ]]---------------------------------------------------------------------------------------
-function ACE_InfraredHeatFromProp( Target, dist )
+function ACE.InfraredHeatFromProp( Target, dist )
 
 	if not IsValid(Target) then print("[ACE | WARN]- Unable to track Heat. Target Entity not valid!") return 0 end
 	if not dist then print("[ACE | WARN]- Unable to track Heat. dist not valid!") return end
@@ -62,7 +62,7 @@ end
 	DeltaTime - Delta time of this gun
 
 ]]---------------------------------------------------------------------------------------
-function ACE_HeatFromGun( Gun , Heat, DeltaTime )
+function ACE.HeatFromGun( Gun , Heat, DeltaTime )
 
 	local phys = Gun:GetPhysicsObject()
 	local Mass = phys:GetMass()
@@ -97,7 +97,7 @@ end
 	Engine - The Engine Entity
 
 ]]---------------------------------------------------------------------------------------
-function ACE_HeatFromEngine( Engine )
+function ACE.HeatFromEngine( Engine )
 
 	--bullshiet code below, better using tables next time
 
@@ -170,7 +170,7 @@ function ACE_HeatFromEngine( Engine )
 
 end
 
-function ACE_HeatFromRadar(Radar, Delta)
+function ACE.HeatFromRadar(Radar, Delta)
 	local CurHeat = Radar.Heat
 	local AmbientTemp = ACE.AmbientTemp
 
@@ -203,7 +203,7 @@ end
 
 ]]---------------------------------------------------------------------------------------
 --NOTE: disabled until i compile more information about gearbox code. the code works though
-function ACE_HeatFromGearbox( Gearbox , InputRPM )
+function ACE.HeatFromGearbox( Gearbox , InputRPM )
 
 	if not Gearbox:IsValid() then
 		print("Missing Gearbox")

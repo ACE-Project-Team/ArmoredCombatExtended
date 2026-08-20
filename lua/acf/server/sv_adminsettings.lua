@@ -62,7 +62,7 @@ net.Receive("ACE_SettingsSync", function(_, ply)
     else
         local value = math.Round(net.ReadFloat(), 2)
 
-        ACE_ChatMessageGlobal("[ACE] " .. setting .. " changed to " .. value)
+        ACE.ChatMessageGlobal("[ACE] " .. setting .. " changed to " .. value)
         RunConsoleCommand(setting, value)
     end
 end)

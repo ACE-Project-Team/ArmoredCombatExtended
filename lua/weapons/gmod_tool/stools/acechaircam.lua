@@ -38,7 +38,7 @@ do
 			end)
 
 			if SERVER then
-				local Data = { ACE_CamOverride = data.ACE_CamOverride }
+				local Data = { ACE.CamOverride = data.ACE_CamOverride }
 				duplicator.StoreEntityModifier( seat , "ACECamOverride", Data )
 			end
 
@@ -63,7 +63,7 @@ do
 
 			SendBoolToClient( self:GetOwner(), seat, true )
 
-			local data = { ACE_CamOverride = true }
+			local data = { ACE.CamOverride = true }
 			duplicator.StoreEntityModifier( seat , "ACECamOverride", data )
 
 			return true

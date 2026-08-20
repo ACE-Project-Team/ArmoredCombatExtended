@@ -44,8 +44,8 @@ function ENT:Think()
 		end
 
 
-		local Res = ACE_MakeRack(self:CPPIGetOwner(), pos, ang, rackId)
-		if not IsValid(Res) then ACE_SendNotify(self:CPPIGetOwner(), false, "#tool.acemenu.creationfailed") end
+		local Res = ACE.MakeRack(self:CPPIGetOwner(), pos, ang, rackId)
+		if not IsValid(Res) then ACE.SendNotify(self:CPPIGetOwner(), false, "#tool.acemenu.creationfailed") end
 
 	end
 
@@ -63,7 +63,7 @@ end
 
 
 
-function ACE_MakeMissileToRack(owner, pos, ang, id, rackid)
+function ACE.MakeMissileToRack(owner, pos, ang, id, rackid)
 
 	if not owner:CheckLimit("_ace_gun") then return false end
 
@@ -93,4 +93,4 @@ end
 
 
 list.Set( "ACFCvars", "acf_missile_to_rack", {"id", "data9"} )
-duplicator.RegisterEntityClass("acf_missile_to_rack", ACE_MakeMissileToRack, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("acf_missile_to_rack", ACE.MakeMissileToRack, "Pos", "Angle", "Id" )

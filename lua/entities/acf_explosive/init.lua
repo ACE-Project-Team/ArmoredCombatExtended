@@ -24,7 +24,7 @@ end
 local nullhit = {Damage = 0, Overkill = 1, Loss = 0, Kill = false}
 function ENT:ACF_OnDamage( Entity , Energy , FrArea , Angle , Inflictor )
 	self.ACF.Armour = 0.1
-	local HitRes = ACE_PropDamage( Entity , Energy , FrArea , Angle , Inflictor )	--Calling the standard damage prop function
+	local HitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor )	--Calling the standard damage prop function
 	if self.Detonated or self.DisableDamage then return table.Copy(nullhit) end
 
 	local CanDo = hook.Run("ACE_AmmoExplode", self, self.BulletData )
@@ -42,7 +42,7 @@ function ENT:TriggerInput( inp, value )
 	end
 end
 
-function ACE_MakeLegacyExplosive(Owner, Pos, Angle, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Mdl, Data11, Data12, Data13, Data14, Data15)
+function ACE.MakeLegacyExplosive(Owner, Pos, Angle, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Mdl, Data11, Data12, Data13, Data14, Data15)
 
 	if not Owner:CheckLimit("_ace_explosive") then return false end
 
@@ -69,7 +69,7 @@ function ACE_MakeLegacyExplosive(Owner, Pos, Angle, Data1, Data2, Data3, Data4, 
 	return Bomb
 end
 list.Set( "ACFCvars", "acf_explosive", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "mdl", "data11", "data12", "data13", "data14", "data15"} )
-duplicator.RegisterEntityClass("acf_explosive", ACE_MakeLegacyExplosive, "Pos", "Angle", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "Model" , "RoundData11" , "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
+duplicator.RegisterEntityClass("acf_explosive", ACE.MakeLegacyExplosive, "Pos", "Angle", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "Model" , "RoundData11" , "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
 
 function ENT:CreateBomb(Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Mdl, bdata,Data11 ,Data12, Data13 ,Data14, Data15)
 
@@ -91,7 +91,7 @@ function ENT:CreateBomb(Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, 
 	self.RoundData14		= ( Data14 or 0 )
 	self.RoundData15		= ( Data15 or 0 )
 
-	local PlayerData = bdata or ACE_Missile_CompactBulletData(self)
+	local PlayerData = bdata or ACE.Missile_CompactBulletData(self)
 
 	--local guntable = ACE.Weapons.Guns
 	--local gun = guntable[self.RoundId] or {}
@@ -127,7 +127,7 @@ function ENT:SetBulletData(bdata)
 
 	if not (bdata.IsShortForm or bdata.Data5) then error("acf_explosive requires short-form bullet-data but was given expanded bullet-data.") end
 
-	bdata = ACE_Missile_CompactBulletData(bdata)
+	bdata = ACE.Missile_CompactBulletData(bdata)
 
 	self:CreateBomb(
 		bdata.Data1 or bdata.Id,
@@ -152,7 +152,7 @@ function ENT:SetBulletData(bdata)
 end
 
 function ENT:ConfigBulletDataShortForm(bdata)
-	bdata = ACE_Missile_ExpandBulletData(bdata)
+	bdata = ACE.Missile_ExpandBulletData(bdata)
 
 	self.BulletData = bdata
 	self.BulletData.Entity = self
@@ -222,17 +222,17 @@ function ENT:DoReplicatedPropHit(Bullet)
 	--Internally used in case of HEAT hitting world, penetrating or not
 	if Retry == "Penetrated" then
 
-		ACE_Missile_ResetVelocity(Bullet)
+		ACE.Missile_ResetVelocity(Bullet)
 
 		if Bullet.OnPenetrated then Bullet.OnPenetrated(Index, Bullet, FlightRes) end
 
-		ACE_BulletClient( Index, Bullet, "Update" , 2 , FlightRes.HitPos  )
-		ACE_CalcBulletFlight( Index, Bullet, true )
+		ACE.BulletClient( Index, Bullet, "Update" , 2 , FlightRes.HitPos  )
+		ACE.CalcBulletFlight( Index, Bullet, true )
 	else
 
 		if Bullet.OnEndFlight then Bullet.OnEndFlight(Index, Bullet, FlightRes) end
 
-		ACE_BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
+		ACE.BulletClient( Index, Bullet, "Update" , 1 , FlightRes.HitPos  )
 		local bulletEndFlight = ACE.RoundTypes[Bullet.Type]["endflight"]
 		bulletEndFlight( Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal )
 	end
@@ -250,6 +250,6 @@ end
 
 function ENT:RefreshClientInfo()
 
-	ACE_Missile_MakeCrateForBullet(self, self.BulletData)
+	ACE.Missile_MakeCrateForBullet(self, self.BulletData)
 
 end

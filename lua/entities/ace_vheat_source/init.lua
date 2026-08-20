@@ -52,7 +52,7 @@ function ENT:ACF_Activate( _ )
 	self.ACF.Type		= "Prop"
 end
 
-function ACE_MakeVHeatSource(Owner, Pos, Angle, Id)
+function ACE.MakeVHeatSource(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_vheat_source") then return false end
 
 	Id = Id or "VHeatSrc"
@@ -84,7 +84,7 @@ function ACE_MakeVHeatSource(Owner, Pos, Angle, Id)
 end
 
 list.Set( "ACFCvars", "ace_vheat_source", {"id"} )
-duplicator.RegisterEntityClass("ace_vheat_source", ACE_MakeVHeatSource, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_vheat_source", ACE.MakeVHeatSource, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )

@@ -24,7 +24,7 @@ function ENT:Initialize()
 	self:UpdateOverlayText()
 end
 
-function ACE_MakeWindSensor(Owner, Pos, Angle, Id)
+function ACE.MakeWindSensor(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_wind_sensor") then return false end
 
 	Id = Id or "WindSensor"
@@ -60,7 +60,7 @@ function ACE_MakeWindSensor(Owner, Pos, Angle, Id)
 end
 
 list.Set("ACFCvars", "ace_wind_sensor", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_wind_sensor", ACE_MakeWindSensor, "Pos", "Angle", "Id", "Data")
+duplicator.RegisterEntityClass("ace_wind_sensor", ACE.MakeWindSensor, "Pos", "Angle", "Id", "Data")
 
 function ENT:SetNWNetwork()
 	self:SetNWString("WireName", self.ACFName)

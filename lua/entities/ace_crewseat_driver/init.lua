@@ -8,7 +8,7 @@ local round, ceil = math.Round, math.ceil
 local CrewseatTable = ACE.Weapons.Crewseats
 
 function ENT:Initialize()
-	ACE_InitializeCrewseat(self, self.ModelType)
+	ACE.InitializeCrewseat(self, self.ModelType)
 
 	self.LinkedEngine = nil
 
@@ -23,7 +23,7 @@ function ENT:Initialize()
 	self:UpdateWireOutputs()
 end
 
-function ACE_MakeCrewseatDriver(Owner, Pos, Angle, Id, EntityData)
+function ACE.MakeCrewseatDriver(Owner, Pos, Angle, Id, EntityData)
 	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
@@ -60,15 +60,15 @@ function ACE_MakeCrewseatDriver(Owner, Pos, Angle, Id, EntityData)
 end
 
 list.Set("ACFCvars", "ace_crewseat_driver", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_crewseat_driver", ACE_MakeCrewseatDriver, "Pos", "Angle", "Id", "ModelType")
+duplicator.RegisterEntityClass("ace_crewseat_driver", ACE.MakeCrewseatDriver, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
-	return ACE_GetPoseModifiers(self) or { gforce = 1, tilt = 1 }
+	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1 }
 end
 
 function ENT:Think()
-	ACE_UpdateCrewseatAnglePenalty(self)
-	ACE_CrewseatLegalCheck(self)
+	ACE.UpdateCrewseatAnglePenalty(self)
+	ACE.CrewseatLegalCheck(self)
 
 	local eng = self.LinkedEngine
 	if not self.Legal and IsValid(eng) then
@@ -80,7 +80,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	ACE_CrewseatOnRemove(self)
+	ACE.CrewseatOnRemove(self)
 end
 
 function ENT:UpdateWireOutputs()
@@ -95,7 +95,7 @@ end
 function ENT:UpdateOverlayText()
 	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
 	local pose = self:GetPoseModifiers()
-	local isStanding = ACE_IsStandingPose(self.ModelType)
+	local isStanding = ACE.IsStandingPose(self.ModelType)
 
 	local str = self.Name
 	str = str .. "\n\nHealth: " .. hp .. "%"
@@ -131,14 +131,14 @@ function ENT:ApplyDupeInfo(ply, ent, info, GetEntByID)
 	local class = self:GetClass()
 	local defaultModelType = (ACE.CrewseatDefaults and ACE.CrewseatDefaults[class]) or "Sitting"
 
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
-	local modelType, _, reason = ACE_CrewseatApplyDupeModel(self, info, defaultModelType, false)
-	ACE_CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
-	ACE_CrewseatDeferredModelSync(self, info)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
+	local modelType, _, reason = ACE.CrewseatApplyDupeModel(self, info, defaultModelType, false)
+	ACE.CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
+	ACE.CrewseatDeferredModelSync(self, info)
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
-	local HitRes = ACE_CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
+	local HitRes = ACE.CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
 
 	if HitRes.Kill or HitRes.Overkill > 1 then
 		self:ConsumeCrewseats()
@@ -190,7 +190,7 @@ function ENT:ConsumeCrewseats()
 		if IsValid(ReplaceEnt) then
 			ReplaceSeat = true
 			self.Name = ReplaceEnt.Name
-			ACE_HEKill( ReplaceEnt, VectorRand(), 0)
+			ACE.HEKill( ReplaceEnt, VectorRand(), 0)
 		end
 	end
 
@@ -201,7 +201,7 @@ function ENT:ConsumeCrewseats()
 			if IsValid(self) then self:ResetLinks() end
 		end)
 	else
-		ACE_HEKill( self, VectorRand(), 0)
+		ACE.HEKill( self, VectorRand(), 0)
 	end
 
 	return ReplaceSeat

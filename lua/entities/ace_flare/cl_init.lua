@@ -36,7 +36,7 @@ function ENT:Draw()
 	if self.IsFlare then
 		if CT > self.LightUpdate then
 			self.LightUpdate = CurTime() + 0.05
-			ACE_RenderLight(self:EntIndex(), 20000, Color(255, 196, 0), self:GetPos(), 0.1)
+			ACE.RenderLight(self:EntIndex(), 20000, Color(255, 196, 0), self:GetPos(), 0.1)
 		end
 	else --Not a flare
 		if CT > self.CutOffTime then

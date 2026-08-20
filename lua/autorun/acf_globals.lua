@@ -47,7 +47,7 @@ ACE.LegacyCompatibility = ACECompatibilityView
 -- install legacy globals themselves, ahead of any content they in turn load.
 -- This must exist before anything that might load third-party content packs
 -- still calling pre-rename ACF_ names directly.
-function ACE_InstallLegacyGlobal(name, implementation)
+function ACE.InstallLegacyGlobal(name, implementation)
     if not ACE.LegacyCompatibility then return end
     if rawget(_G, name) == nil and implementation ~= nil then
         rawset(_G, name, implementation)
@@ -55,7 +55,7 @@ function ACE_InstallLegacyGlobal(name, implementation)
     end
 end
 
-function ACE_RunLegacyHook(Name, ...)
+function ACE.RunLegacyHook(Name, ...)
     if ACE.LegacyCompatibility then
         return hook.Run(Name, ...)
     end
@@ -367,7 +367,7 @@ if SERVER then
     --Uses non-torqueing recoil if there are problems
     CreateConVar("ace_legacyrecoil", 0, FCVAR_ARCHIVE)
 
-    function ACE_CVarChangeCallback(CVar, _, New)
+    function ACE.CVarChangeCallback(CVar, _, New)
 
         if CVar == "ace_healthmod" then
             ACE.Threshold = 264.7 / math.max(New, 0.01)
@@ -408,23 +408,23 @@ if SERVER then
         end
     end
 
-cvars.AddChangeCallback("ace_healthmod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_armormod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_ammomod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_spalling", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_spalling_multiplier", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_gunfire", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_debris_lifetime", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_debris_children", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_explosions_scaled_he_max", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_explosions_scaled_ents_max", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legacyrecoil", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_enginesrequirefuel", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_enable_dp", ACE_CVarChangeCallback)
+cvars.AddChangeCallback("ace_healthmod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_armormod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_ammomod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling_multiplier", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_gunfire", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_lifetime", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_children", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_he_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_ents_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legacyrecoil", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_enginesrequirefuel", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_enable_dp", ACE.CVarChangeCallback)
 
 -- Apply archived/server convars at startup so values persist across restarts and reconnects.
 local startupSync = {
@@ -611,7 +611,7 @@ end )
 
 if SERVER then
 
-    function ACE_SendDPStatus()
+    function ACE.SendDPStatus()
 
         local Cvar = GetConVar("ace_enable_dp"):GetInt()
         local bool = tobool(Cvar)
@@ -622,7 +622,7 @@ if SERVER then
 
     end
 
-    function ACE_SendNotify( ply, success, msg )
+    function ACE.SendNotify( ply, success, msg )
         net.Start( "ACE_Notify" )
         net.WriteBit( success )
         net.WriteString( msg or "" )
@@ -684,14 +684,6 @@ end
 
 cleanup.Register( "aceexplosives" )
 
--- The deferred E2 and Starfall adapters still use the dotted ACE table API.
--- Keep that adapter surface on ACE without reintroducing ACF-owned globals.
-ACE.GetMaterialData = ACE_GetMaterialData
-ACE.CheckRound = ACE_CheckRound
-ACE.HeatFromGun = ACE_HeatFromGun
-ACE.HeatFromEngine = ACE_HeatFromEngine
-ACE.MarkArmorDirty = ACE_MarkArmorDirty
-
 -- The unchanged adapters still call these legacy global entry points. Preserve
 -- an independently loaded ACF implementation, otherwise route them to ACE.
 --
@@ -701,20 +693,20 @@ ACE.MarkArmorDirty = ACE_MarkArmorDirty
 -- See the ACE_InstallLegacyGlobal calls there.
 if ACECompatibilityView then
     local LegacyGlobals = {
-        ACF_CalcArmor = ACE_CalcArmor,
-        ACF_Check = ACE_Check,
-        ACF_CheckClips = ACE_CheckClips,
-        ACF_GetHitAngle = ACE_GetHitAngle,
-        ACF_GetLinkedWheels = ACE_GetLinkedWheels,
-        ACF_SendNotify = ACE_SendNotify,
-        ACF_GetPhysicalParent = ACE_GetPhysicalParent,
-        ACF_Kinetic = ACE_Kinetic,
-        ACF_MuzzleVelocity = ACE_MuzzleVelocity,
-        ACF_HE = ACE_HE
+        ACF_CalcArmor = ACE.CalcArmor,
+        ACF_Check = ACE.Check,
+        ACF_CheckClips = ACE.CheckClips,
+        ACF_GetHitAngle = ACE.GetHitAngle,
+        ACF_GetLinkedWheels = ACE.GetLinkedWheels,
+        ACF_SendNotify = ACE.SendNotify,
+        ACF_GetPhysicalParent = ACE.GetPhysicalParent,
+        ACF_Kinetic = ACE.Kinetic,
+        ACF_MuzzleVelocity = ACE.MuzzleVelocity,
+        ACF_HE = ACE.HE
     }
 
     for name, implementation in pairs(LegacyGlobals) do
-        ACE_InstallLegacyGlobal(name, implementation)
+        ACE.InstallLegacyGlobal(name, implementation)
     end
 end
 

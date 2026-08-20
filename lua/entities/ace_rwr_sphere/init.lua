@@ -39,7 +39,7 @@ function ENT:Initialize()
 	self.LegalIssues = ""
 
 	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
-	self:SetActive(ACE_GetDefaultActiveInputState(self))
+	self:SetActive(ACE.GetDefaultActiveInputState(self))
 
 end
 
@@ -47,7 +47,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -88,10 +88,10 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)

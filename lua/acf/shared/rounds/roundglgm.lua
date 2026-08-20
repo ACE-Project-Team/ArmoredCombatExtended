@@ -78,7 +78,7 @@ function Round.create( Gun, BulletData )
 	BData.Crate = BData.FakeCrate:EntIndex()
 	--self:DeleteOnRemove(BData.FakeCrate)
 
-	ACE_GenerateMissile(MDat,BData.FakeCrate,BData)
+	ACE.GenerateMissile(MDat,BData.FakeCrate,BData)
 end
 
 function Round.ConeCalc( ConeAngle, Radius )

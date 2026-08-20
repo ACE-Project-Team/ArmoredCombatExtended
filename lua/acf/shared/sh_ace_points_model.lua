@@ -409,37 +409,3 @@ function ACE.Points.PropArmor(ent)
 	local ke, chem = materialEff(acf.Material or ent.ACF_Material)
 	return ACE.Points.EffectiveMm(armourMm, ke, chem), hp
 end
-
-
--- Legacy aliases retained for external ACE callers during the namespace migration.
-ACE_Points_ArmorProp = ACE.Points.ArmorProp
-ACE_Points_BaseRoundCost = ACE.Points.BaseRoundCost
-ACE_Points_ChargeCost = ACE.Points.ChargeCost
-ACE_Points_ChargeEntCost = ACE.Points.ChargeEntCost
-ACE_Points_CrewCost = ACE.Points.CrewCost
-ACE_Points_EffectiveMm = ACE.Points.EffectiveMm
-ACE_Points_EngineCost = ACE.Points.EngineCost
-ACE_Points_Gate = ACE.Points.Gate
-ACE_Points_GatePen = ACE.Points.GatePen
-ACE_Points_GuidanceMul = ACE.Points.GuidanceMul
-ACE_Points_GunCost = ACE.Points.GunCost
-ACE_Points_GunSustainedRps = ACE.Points.GunSustainedRps
-ACE_Points_IntrinsicValueMul = ACE.Points.IntrinsicValueMul
-ACE_Points_IsBetterCandidate = ACE.Points.IsBetterCandidate
-ACE_Points_LethalityPen = ACE.Points.LethalityPen
-ACE_Points_MaterialEff = ACE.Points.MaterialEff
-ACE_Points_PostPenMult = ACE.Points.PostPenMult
-ACE_Points_PostPenParts = ACE.Points.PostPenParts
-ACE_Points_PropArmor = ACE.Points.PropArmor
-ACE_Points_RackCost = ACE.Points.RackCost
-ACE_Points_RackCostFromRate = ACE.Points.RackCostFromRate
-ACE_Points_RackRate = ACE.Points.RackRate
-ACE_Points_RateFloor = ACE.Points.RateFloor
-ACE_Points_RoundFromBullet = ACE.Points.RoundFromBullet
-ACE_Points_RoundScore = ACE.Points.RoundScore
-ACE_Points_SustainedRps = ACE.Points.SustainedRps
-
--- A few older consumers still address the migrated API as ACE.Points_<Name>.
-for name, fn in pairs(ACE.Points) do
-	ACE["Points_" .. name] = fn
-end

@@ -25,7 +25,7 @@ class NamespaceCorrectionsInventoryTests(unittest.TestCase):
             self.assertGreater(data["counts"]["lua_files"], 0)
             self.assertGreater(data["counts"]["functions"], 0)
             names = {(item["name"], item["scope"]) for item in data["functions"]}
-            self.assertIn(("ACE_CalcArmor", "ace-flat-global"), names)
+            self.assertIn(("ACE.CalcArmor", "global"), names)
             self.assertIn(("ACE_CalcSubsystem", "ace-private-local"), names)
 
     def test_output_is_sorted_by_source_order(self):

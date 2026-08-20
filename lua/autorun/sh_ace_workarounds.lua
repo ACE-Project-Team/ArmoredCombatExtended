@@ -3,7 +3,7 @@
 if CLIENT then
 
 	--Copied from garrysmod CalcVehicleView function, to allow acf ents to be included into the filter
-	function ACE_CalcVehicleView( Vehicle, ply, view )
+	function ACE.CalcVehicleView( Vehicle, ply, view )
 
 		--Make sure that allowed seats use this override.
 		if not Vehicle.ACE_CamOverride then return end
@@ -55,7 +55,7 @@ if CLIENT then
 	end
 
 	hook.Remove( "CalcVehicleView", "ACE_VehicleViewOverride")
-	hook.Add( "CalcVehicleView", "ACE_VehicleViewOverride", ACE_CalcVehicleView)
+	hook.Add( "CalcVehicleView", "ACE_VehicleViewOverride", ACE.CalcVehicleView)
 
 end
 

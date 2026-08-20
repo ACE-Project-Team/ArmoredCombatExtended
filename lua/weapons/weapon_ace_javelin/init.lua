@@ -23,16 +23,16 @@ function SWEP:DoAmmoStatDisplay()
 
 	sendInfo = sendInfo .. string.format("%.1fm blast", bdata.BoomFillerMass ^ 0.33 * 8)
 
-	local Energy = ACE_Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
+	local Energy = ACE.Kinetic(bdata.SlugMV * 39.37, bdata.SlugMass, 999999)
 	local MaxPen = (Energy.Penetration / bdata.SlugPenArea) * ACE.KEtoRHA
 	sendInfo = sendInfo .. string.format(", (1) %.1fmm pen", MaxPen)
 
-	Energy = ACE_Kinetic(bdata.SlugMV2 * 39.37, bdata.SlugMass2, 999999)
+	Energy = ACE.Kinetic(bdata.SlugMV2 * 39.37, bdata.SlugMass2, 999999)
 	MaxPen = (Energy.Penetration / bdata.SlugPenArea2) * ACE.KEtoRHA
 	sendInfo = sendInfo .. string.format(", (2) %.1fmm pen", MaxPen)
 
 	sendInfo = sendInfo .. ", Burn time: 15s"
 
 
-	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
 end

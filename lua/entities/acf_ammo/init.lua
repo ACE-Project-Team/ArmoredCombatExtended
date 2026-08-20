@@ -147,7 +147,7 @@ function ENT:Initialize()
 
 	self.Inputs              = Wire_CreateInputs( self, Inputs ) --, "Fuse Length"
 	self.Outputs             = Wire_CreateOutputs( self, Outputs )
-	ACE_GetDefaultActiveInputState(self)
+	ACE.GetDefaultActiveInputState(self)
 
 	ACE.AmmoCrates           = ACE.AmmoCrates or {}
 
@@ -236,7 +236,7 @@ do
 	function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 		local Mul	= (( HEATtbl[Type] and ACE.HEATMulAmmo ) or 1) --Heat penetrators deal bonus damage to ammo
-		local HitRes	= ACE_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+		local HitRes	= ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
@@ -314,7 +314,7 @@ do
 		return Scale
 	end
 
-	function ACE_MakeAmmo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data14, Data15)
+	function ACE.MakeAmmo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data14, Data15)
 
 		if not Owner:CheckLimit("_ace_ammo") then return false end
 
@@ -331,7 +331,7 @@ do
 			Ammo:Spawn()
 
 			-- If the crate is not valid in the system, but it could be in the LegacyAmmoTable o be scalable.
-			if not ACE_CheckAmmo( Id ) then
+			if not ACE.CheckAmmo( Id ) then
 
 				local Scale
 
@@ -377,7 +377,7 @@ do
 			end
 
 			-- If the crate is legacy, but still valid in the system
-			if ACE_CheckAmmo( Id ) then
+			if ACE.CheckAmmo( Id ) then
 
 				local AmmoData = AmmoTable[Id]
 
@@ -428,7 +428,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_ammo", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "data14", "data15"} )
-duplicator.RegisterEntityClass("acf_ammo", ACE_MakeAmmo, "Pos", "Angle", "Id", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10" , "RoundData11", "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
+duplicator.RegisterEntityClass("acf_ammo", ACE.MakeAmmo, "Pos", "Angle", "Id", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10" , "RoundData11", "RoundData12", "RoundData13", "RoundData14", "RoundData15" )
 
 
 function ENT:Update( ArgsTable )
@@ -476,7 +476,7 @@ function ENT:Update( ArgsTable )
 	self.LastMass = 1 -- force update of mass
 	self:UpdateMass()
 
-	if ACE_PointsInputChanged then ACE_PointsInputChanged(pointSources, "ammo-updated") end
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-updated") end
 
 	return true, msg
 
@@ -514,7 +514,7 @@ function ENT:UpdateOverlayText()
 		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost then
 			local round = ACE.Points.RoundFromBullet( self.BulletData )
 			if round then
-				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine( round )
+				local roundLine = ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine( round )
 				if roundLine then text = text .. "\nLethality: " .. roundLine end
 				text = text .. "\nBase Round Cost: " .. string.Comma(math.Round(ACE.Points.BaseRoundCost(round)))
 				text = text .. "\nCrate Inventory Points: 0"
@@ -572,10 +572,10 @@ do
 
 	function ENT:CreateAmmo(_, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10 , Data11 , Data12 , Data13 , Data14 , Data15)
 
-		if not ACE_CheckGun( Data1 ) then
+		if not ACE.CheckGun( Data1 ) then
 			Data1 = BackComp[Data1] or "100mmC"
 		end
-		if not ACE_CheckRound( Data2 ) then
+		if not ACE.CheckRound( Data2 ) then
 			Data2 = AmmoComp[ Data2 ] or "AP"
 		end
 
@@ -753,7 +753,7 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		local active = ACE_GetDefaultActiveInputState(self, value)
+		local active = ACE.GetDefaultActiveInputState(self, value)
 
 		if active then
 			self.Active = true
@@ -787,8 +787,8 @@ function ENT:Think()
 
 	if not self.BulletData then return false end
 
-	if not ACE_IsDefaultActiveInputWired(self) then
-		local active = ACE_GetDefaultActiveInputState(self)
+	if not ACE.IsDefaultActiveInputWired(self) then
+		local active = ACE.GetDefaultActiveInputState(self)
 		self.Active = active
 
 		if active and self.Legal and not self.Load then
@@ -801,7 +801,7 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.min(math.Round(self.EmptyMass,2),50000), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 
@@ -883,7 +883,7 @@ function ENT:Think()
 								if not IsValid(self) then return end
 								self.CookoffScale = 0.4
 								self.CookoffExplosionPos = self.CookoffExplosionPos or self:LocalToWorld(self:OBBCenter())
-								ACE_ScaledExplosion( self, true )
+								ACE.ScaledExplosion( self, true )
 								self.CookoffExplosionPos = nil
 							end)
 						end
@@ -898,7 +898,7 @@ function ENT:Think()
 						local isMG = IsMachineGunAmmo( self )
 
 						self:EmitSound( "acf_other/explosions/cookoff/cookOff" .. math.random(1,4) .. ".mp3", 250, math.max(140 - self.BulletData.PropMass * 35,35)  )
-						self.BulletCookSpeed	= self.BulletCookSpeed or ACE_MuzzleVelocity( self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber )
+						self.BulletCookSpeed	= self.BulletCookSpeed or ACE.MuzzleVelocity( self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber )
 
 						self.BulletData.Tracer = 1
 						self.RoundData10 = 1
@@ -947,17 +947,17 @@ function ENT:Think()
 							end )
 
 							local MiniRoundType = self.BulletData.Type
-							local MiniClass = ACE_GetAmmoCookoffClass(MiniRoundType, IsMissile)
-							local HE = ACE_GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
+							local MiniClass = ACE.GetAmmoCookoffClass(MiniRoundType, IsMissile)
+							local HE = ACE.GetAmmoCookoffBlastMass(MiniRoundType, self.BulletData)
 							local Propel = self.BulletData.PropMass or 0
-							local PropScale = ACE_GetAmmoCookoffPropScale(MiniClass)
+							local PropScale = ACE.GetAmmoCookoffPropScale(MiniClass)
 							local HEWeight = ((HE + Propel * PropScale * ACE.APAmmoDetonateFactor * (ACE.PBase / ACE.HEPower)) * ACE.BoomMult)
 							local RunHE = self.CookoffHEToggle
 							self.CookoffHEToggle = not self.CookoffHEToggle
 
 							if HEWeight > 0 and RunHE then
 								local MiniWeight = HEWeight * 0.2
-								ACE_HE( self.BulletData.Pos , vector_origin , MiniWeight , MiniWeight , self.Inflictor , self, self, 0.5 )
+								ACE.HE( self.BulletData.Pos , vector_origin , MiniWeight , MiniWeight , self.Inflictor , self, self, 0.5 )
 								local radius = math.Clamp(self.BulletData.RoundVolume ^ 0.4 * 0.8, 0.8, 10)
 								timer.Simple(0.001, function()
 									SpawnMiniHEFlash(self, self.BulletData.Pos, radius)
@@ -1081,7 +1081,7 @@ function ENT:OnRemove()
 		end
 	end
 	self._ACEPointsSuppress = nil
-	if ACE_PointsInputChanged then ACE_PointsInputChanged(pointSources, "ammo-removed") end
+	if ACE.PointsInputChanged then ACE.PointsInputChanged(pointSources, "ammo-removed") end
 	for k,v in pairs(ACE.AmmoCrates) do
 		if v == self then
 			table.remove(ACE.AmmoCrates,k)

@@ -11,7 +11,7 @@ local Cast =
 
 
 
-function ACE_Missile_CreateConfigurable(str, configurables, bdata, wlistPath)
+function ACE.Missile_CreateConfigurable(str, configurables, bdata, wlistPath)
 
 	local success, ret = xpcall( -- we're eating arbitrary user input, so let's not fuck up if they fuck up
 						function()
@@ -28,7 +28,7 @@ end
 
 
 
-function ACE_Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
+function ACE.Missile_CreateConfigurable_Raw(str, configurables, bdata, wlistPath)
 
 	-- we're parsing a string of the form "NAME:CMD=VAL:CMD=VAL"... potentially.
 

@@ -212,7 +212,6 @@ hook.Add("Primitive_PreRebuildPhysics", "ACE_RememberPrimitiveCollisionGroup", f
 	ent.ACE_PrimitiveClippingHandled = nil
 end)
 
-ACE_PrimitivePropertiesApplied = ACE.PrimitivePropertiesApplied
 
 hook.Add("Primitive_PostRebuildPhysics", "ACE_PrimitiveArmorRecalc", function(ent, props)
 	if not IsValid(ent) then return end

@@ -136,7 +136,7 @@ end
 -- Be patient. There are alot of functions here
 
 --Gun class definition
-function ACE_DefineGunClass( id, data )
+function ACE.DefineGunClass( id, data )
 	if (data.year or 0) < ACE.Year then
 		data.id = id
 		GunClasses[ id ] = data
@@ -144,21 +144,21 @@ function ACE_DefineGunClass( id, data )
 end
 
 -- Crewseat definition
-function ACE_DefineCrewseat( id, data )
+function ACE.DefineCrewseat( id, data )
 	data.id = id
 	table.Inherit( data, crewseat_base )
 	Crewseats[ id ] = data
 end
 
 -- Extras definition (wind sensor, gforce meter, etc.)
-function ACE_DefineExtras( id, data )
+function ACE.DefineExtras( id, data )
 	data.id = id
 	table.Inherit( data, extras_base )
 	Extras[ id ] = data
 end
 
 -- Generic entity-definition entry point retained for shared metadata files.
-function ACE_DefineEntity( id, data )
+function ACE.DefineEntity( id, data )
 	if data.category == "Crew" then
 		return ACE.DefineCrewseat(id, data)
 	end
@@ -167,7 +167,7 @@ function ACE_DefineEntity( id, data )
 end
 
 -- Gun definition
-function ACE_DefineGun( id, data )
+function ACE.DefineGun( id, data )
 	if (data.year or 0) < ACE.Year then
 		data.id = id
 		data.round.id = id
@@ -177,12 +177,12 @@ function ACE_DefineGun( id, data )
 end
 
 -- Muzzleflash definition. The definitions are likely to be placed at the same location as the gun itself
-function ACE_DefineMuzzleFlash(id, data)
+function ACE.DefineMuzzleFlash(id, data)
 	data.id = id
 	MuzzleFlashTable[ id ] = data
 end
 
-function ACE_DefineAmmoCrate( id, data )
+function ACE.DefineAmmoCrate( id, data )
 	data.id = id
 
 	-- Backwards/forwards compatibility for legacy typo key.
@@ -200,26 +200,26 @@ function ACE_DefineAmmoCrate( id, data )
 end
 
 -- Legacy Ammo crate definition
-function ACE_DefineLegacyAmmoCrate( id, data )
+function ACE.DefineLegacyAmmoCrate( id, data )
 	data.id = id
 	LegacyAmmoTable[ id ] = data
 end
 
 -- Rack definition
-function ACE_DefineRack( id, data )
+function ACE.DefineRack( id, data )
 	data.id = id
 	table.Inherit( data, rack_base )
 	RackTable[ id ] = data
 end
 
 -- Rack class definition
-function ACE_DefineRackClass( id, data )
+function ACE.DefineRackClass( id, data )
 	data.id = id
 	RackClasses[ id ] = data
 end
 
 --Engine definition
-function ACE_DefineEngine( id, data )
+function ACE.DefineEngine( id, data )
 	if (data.year or 0) < ACE.Year then
 		local engineData = ACE.CalcEnginePerformanceData(data.torquecurve or ACE.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
 
@@ -238,7 +238,7 @@ function ACE_DefineEngine( id, data )
 end
 
 -- Gearbox definition
-function ACE_DefineGearbox( id, data )
+function ACE.DefineGearbox( id, data )
 	data.id = id
 	table.Inherit( data, gearbox_base )
 	GearboxTable[ id ] = data
@@ -246,7 +246,7 @@ function ACE_DefineGearbox( id, data )
 end
 
 -- fueltank definition
-function ACE_DefineFuelTank( id, data )
+function ACE.DefineFuelTank( id, data )
 	data.id = id
 	table.Inherit( data, fueltank_base )
 	FuelTankTable[ id ] = data
@@ -254,94 +254,94 @@ function ACE_DefineFuelTank( id, data )
 end
 
 -- fueltank size definition
-function ACE_DefineFuelTankSize( id, data )
+function ACE.DefineFuelTankSize( id, data )
 	data.id = id
 	table.Inherit( data, fueltank_base )
 	FuelTankSizeTable[ id ] = data
 end
 
 -- Radar definition
-function ACE_DefineRadar( id, data )
+function ACE.DefineRadar( id, data )
 	data.id = id
 	table.Inherit( data, radar_base )
 	Radars[ id ] = data
 end
 
 -- Explosive charge definition
-function ACE_DefineExplosive( id, data )
+function ACE.DefineExplosive( id, data )
 	data.id = id
 	table.Inherit( data, explosive_base )
 	ExplosiveTable[ id ] = data
 end
 
 -- Radar Class definition
-function ACE_DefineRadarClass( id, data )
+function ACE.DefineRadarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 
 -- Tracking Radar definition
-function ACE_DefineTrackRadar( id, data )
+function ACE.DefineTrackRadar( id, data )
 	data.id = id
 	table.Inherit( data, trackradar_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar Class definition
-function ACE_DefineTrackRadarClass( id, data )
+function ACE.DefineTrackRadarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Sonar Array Class definition
-function ACE_DefineSonarClass( id, data )
+function ACE.DefineSonarClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Sonar definition
-function ACE_DefineSonar( id, data )
+function ACE.DefineSonar( id, data )
 	data.id = id
 	table.Inherit( data, sonar_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar definition
-function ACE_DefineIRST( id, data )
+function ACE.DefineIRST( id, data )
 	data.id = id
 	table.Inherit( data, irst_base )
 	Radars[ id ] = data
 end
 
 -- Tracking Radar Class definition
-function ACE_DefineIRSTClass( id, data )
+function ACE.DefineIRSTClass( id, data )
 	data.id = id
 	RadarClasses[ id ] = data
 end
 
 -- Virtual Heat Source definition
-function ACE_DefineVHeatSource( id, data )
+function ACE.DefineVHeatSource( id, data )
 	data.id = id
 	table.Inherit( data, vheat_source_base )
 	Tools[ id ] = data
 end
 
 --Step 2: gather specialized sounds. Normally sounds that have associated sounds into it. Literally using the string path as id.
-function ACE_DefineGunFireSound( id, data )
+function ACE.DefineGunFireSound( id, data )
 	data.id = id
 	GSoundData[id] = data
 end
 
 -- The model definition. This is where you can "add" scalable models.
-function ACE_DefineModelData( id, data )
+function ACE.DefineModelData( id, data )
 	data.id = id
 	ModelData[id] = data
 	ModelData[data.Model] = data -- I will allow both model or fast name as id.
 end
 
 -- Where you define a new Mine
-function ACE_DefineMine(id, data)
+function ACE.DefineMine(id, data)
 	data.id = id
 	MineData[id] = data
 end
@@ -362,7 +362,7 @@ local function GetAllInTableExcept(tbl, list)
 	return ret
 end
 
-function ACE_GetAllGuidanceNames()
+function ACE.GetAllGuidanceNames()
 
 	local ret = {}
 	for name, _ in pairs(ACE.Guidance) do
@@ -371,12 +371,12 @@ function ACE_GetAllGuidanceNames()
 	return ret
 end
 
-function ACE_GetAllGuidanceNamesExcept(list)
+function ACE.GetAllGuidanceNamesExcept(list)
 	return GetAllInTableExcept(ACE.Guidance, list)
 end
 
 -- Getters for fuse names, for use in missile definitions.
-function ACE_GetAllFuseNames()
+function ACE.GetAllFuseNames()
 
 	local ret = {}
 	for name, _ in pairs(ACE.Fuse) do
@@ -385,15 +385,15 @@ function ACE_GetAllFuseNames()
 	return ret
 end
 
-function ACE_GetAllFuseNamesExcept(list)
+function ACE.GetAllFuseNamesExcept(list)
 	return GetAllInTableExcept(ACE.Fuse, list)
 end
 
 -- Used by ACF Unofficial Extras, these need to exist before any definitions are loaded
-if ACE_InstallLegacyGlobal then
-	ACE_InstallLegacyGlobal( "ACF_DefineEngine", ACE_DefineEngine )
-	ACE_InstallLegacyGlobal( "ACF_DefineGearbox", ACE_DefineGearbox )
-	ACE_InstallLegacyGlobal( "ACF_DefineFuelTankSize", ACE_DefineFuelTankSize )
+if ACE.InstallLegacyGlobal then
+	ACE.InstallLegacyGlobal( "ACF_DefineEngine", ACE.DefineEngine )
+	ACE.InstallLegacyGlobal( "ACF_DefineGearbox", ACE.DefineGearbox )
+	ACE.InstallLegacyGlobal( "ACF_DefineFuelTankSize", ACE.DefineFuelTankSize )
 end
 
 -- search for and load a bunch of files or whatever

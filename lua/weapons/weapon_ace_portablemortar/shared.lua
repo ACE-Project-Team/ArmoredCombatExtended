@@ -309,7 +309,7 @@ function SWEP:InitBulletData()
 	self.BulletData.DragCoef = 0
 
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod
@@ -319,7 +319,7 @@ function SWEP:InitBulletData()
 	self.BulletData.Flight = Vector(0, 0, 0)
 	self.BulletData.BoomPower = self.BulletData.PropMass + self.BulletData.FillerMass
 	--		local SlugEnergy = ACE_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-	local SlugEnergy = ACE_Kinetic(self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
+	local SlugEnergy = ACE.Kinetic(self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACE.KEtoRHA
 	--		print("SlugPen: " .. self.BulletData.MaxPen)
 	--For Fake Crate
@@ -382,7 +382,7 @@ function SWEP:InitBulletData2()
 	self.BulletData.DragCoef = 0
 
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod
@@ -392,7 +392,7 @@ function SWEP:InitBulletData2()
 	self.BulletData.Flight = Vector(0, 0, 0)
 	self.BulletData.BoomPower = self.BulletData.PropMass + self.BulletData.FillerMass
 	--		local SlugEnergy = ACE_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-	local SlugEnergy = ACE_Kinetic(self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
+	local SlugEnergy = ACE.Kinetic(self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACE.KEtoRHA
 	--		print("SlugPen: " .. self.BulletData.MaxPen)
 	--For Fake Crate
@@ -436,7 +436,7 @@ function SWEP:InitBulletData3()
 
 	self.BulletData.DragCoef = 0--Alternatively manually set it
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod
@@ -546,13 +546,13 @@ function SWEP:PrimaryAttack()
 		end
 
 		if game.SinglePlayer() then
-			ACE_NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
+			ACE.NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
 		else
 			--Client is called here. So lets go as usual.
 			local sounds = ACE.GSounds.GunFire[self.Primary.Sound]
 			if next(sounds) then
 				if SERVER then
-					ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
+					ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
 				else
 					self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 				end
@@ -561,7 +561,7 @@ function SWEP:PrimaryAttack()
 			end
 
 			if CLIENT then
-				ACE_RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
+				ACE.RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
 			end
 		end
 

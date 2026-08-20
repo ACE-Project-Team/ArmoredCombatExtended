@@ -223,12 +223,12 @@ end
 
 -- Legacy aliases retained for external ACE callers during the namespace migration.
 ACE_Manu_ArmorCost = ACE.Manufacturing.ArmorCost
-ACE_Manu_ContraptionCost = ACE.Manufacturing.ContraptionCost
-ACE_Manu_CrewCost = ACE.Manufacturing.CrewCost
-ACE_Manu_ElectronicsCost = ACE.Manufacturing.ElectronicsCost
-ACE_Manu_EngineCost = ACE.Manufacturing.EngineCost
-ACE_Manu_EntCost = ACE.Manufacturing.EntCost
-ACE_Manu_GunCost = ACE.Manufacturing.GunCost
-ACE_Manu_RackCost = ACE.Manufacturing.RackCost
-ACE_Manu_RefillCost = ACE.Manufacturing.RefillCost
-ACE_Manu_RoundCost = ACE.Manufacturing.RoundCost
+ACE.Manu_ContraptionCost = ACE.Manufacturing.ContraptionCost
+ACE.Manu_CrewCost = ACE.Manufacturing.CrewCost
+ACE.Manu_ElectronicsCost = ACE.Manufacturing.ElectronicsCost
+ACE.Manu_EngineCost = ACE.Manufacturing.EngineCost
+ACE.Manu_EntCost = ACE.Manufacturing.EntCost
+ACE.Manu_GunCost = ACE.Manufacturing.GunCost
+ACE.Manu_RackCost = ACE.Manufacturing.RackCost
+ACE.Manu_RefillCost = ACE.Manufacturing.RefillCost
+ACE.Manu_RoundCost = ACE.Manufacturing.RoundCost

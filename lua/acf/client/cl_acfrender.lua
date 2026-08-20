@@ -83,7 +83,7 @@ do
 		- pos 		: the position
 		- duration	: the duration, in seconds, that this light will stand before turning off.
 	]]
-	function ACE_RenderLight(idx, lightSize, colour, pos, duration)
+	function ACE.RenderLight(idx, lightSize, colour, pos, duration)
 		if not CanEmitLight(lightSize) then return end
 
 		local dlight = DynamicLight( idx )

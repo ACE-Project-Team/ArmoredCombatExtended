@@ -35,11 +35,11 @@ ACE.BallisticsStats = ACE.BallisticsStats or {
 	Impacts = 0,
 }
 
-function ACE_GetBallisticsStats()
+function ACE.GetBallisticsStats()
 	return table.Copy(ACE.BallisticsStats)
 end
 
-function ACE_ResetBallisticsStats()
+function ACE.ResetBallisticsStats()
 	for Key in pairs(ACE.BallisticsStats) do
 		ACE.BallisticsStats[Key] = 0
 	end
@@ -165,7 +165,7 @@ local function UpdateBulletFilter(Bullet)
 	end
 end
 
-function ACE_AcquireBullet(BulletData)
+function ACE.AcquireBullet(BulletData)
 	local Filter = BulletData.Filter
 	local LaunchFilter = BulletData.LaunchFilter
 	local Acquired = {}
@@ -181,7 +181,7 @@ function ACE_AcquireBullet(BulletData)
 	return Acquired
 end
 
-function ACE_RegisterBullet(Index, Bullet)
+function ACE.RegisterBullet(Index, Bullet)
 	if Bullet.ActiveSlot then return end
 	local Existing = ACE.Bullet[Index]
 	if Existing and Existing ~= Bullet then ACE.RemoveBullet(Index) end
@@ -234,7 +234,7 @@ local DebugTime = 1
 --[[------------------------------------------------------------------------------------------------
 	creates a new bullet being fired
 ]]--------------------------------------------------------------------------------------------------
-function ACE_CreateBullet( BulletData )
+function ACE.CreateBullet( BulletData )
 
 	-- Increment the index
 	ACE.CurBulletIndex = ACE.CurBulletIndex + 1
@@ -298,7 +298,7 @@ end
 	global update function where acf updates ALL bullets at once.
 	this runs once per tick, handling bullet physics for all bullets in table.
 ]]--------------------------------------------------------------------------------------------------
-function ACE_ManageBullets()
+function ACE.ManageBullets()
 
 	ACE.BallisticsStats.Frames = ACE.BallisticsStats.Frames + 1
 	CurrentBallisticsFrame = CurrentBallisticsFrame + 1
@@ -332,12 +332,12 @@ function ACE_ManageBullets()
 	CurrentActiveSlot = 0
 end
 hook.Remove( "Tick", "ACE_ManageBullets" )
-hook.Add("Tick", "ACE_ManageBullets", ACE_ManageBullets)
+hook.Add("Tick", "ACE_ManageBullets", ACE.ManageBullets)
 
 --[[------------------------------------------------------------------------------------------------
 	removes the bullet from acf
 ]]--------------------------------------------------------------------------------------------------
-function ACE_RemoveBullet( Index )
+function ACE.RemoveBullet( Index )
 
 	local Bullet = ACE.Bullet[Index]
 	ACE.Bullet[Index] = nil
@@ -367,7 +367,7 @@ local ValidClipEnts = {
 	["primitive_ladder"]         = true
 }
 
-function ACE_CheckClips( Ent, HitPos )
+function ACE.CheckClips( Ent, HitPos )
 
 	if not IsValid(Ent) or Ent.ClipData == nil then return false end		-- only valid visclipped ents
 	if not ValidClipEnts[Ent:GetClass()] then return false end			-- only props
@@ -397,7 +397,7 @@ do
 	--[[------------------------------------------------------------------------------------------------
 	handles non-terminal ballistics and fusing of bullets
 	]]--------------------------------------------------------------------------------------------------
-	function ACE_CalcBulletFlight( Index, Bullet, BackTraceOverride )
+	function ACE.CalcBulletFlight( Index, Bullet, BackTraceOverride )
 
 		-- perf concern: use direct function call stored on bullet over hook system.
 		if Bullet.PreCalcFlight then Bullet:PreCalcFlight() end
@@ -665,12 +665,12 @@ do
 			end
 		}
 
-		function ACE_PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
+		function ACE.PerformHitResolution( Index, Bullet, FlightRes, Retry, Type )
 			Hit_Resolutions[Retry or "Hit"](Index, Bullet, FlightRes, Type)
 		end
 	end
 
-	function ACE_DoBulletsFlight( Index, Bullet )
+	function ACE.DoBulletsFlight( Index, Bullet )
 
 		local CanDo = hook.Run("ACE_BulletsFlight", Index, Bullet )
 		if CanDo == false then return end
@@ -899,7 +899,7 @@ end
 --[[------------------------------------------------------------------------------------------------
 	Provides the data for the bullet effect
 ]]--------------------------------------------------------------------------------------------------
-function ACE_BulletClient( Index, Bullet, Type, Hit, HitPos )
+function ACE.BulletClient( Index, Bullet, Type, Hit, HitPos )
 
 	--Uncheck this to disable effects
 	--if Index then return end
@@ -972,7 +972,7 @@ MDat = {
 }
 ]]--
 
-function ACE_GenerateMissile(MissileData,Crate,BData) --Shorthand function for generating and launching a missile without a rack.
+function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for generating and launching a missile without a rack.
 
 	if not IsValid(Crate) then return false end
 

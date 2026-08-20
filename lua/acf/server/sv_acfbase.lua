@@ -6,13 +6,13 @@ do
 		Entities = {},
 		Clock = 0
 	}
-	function ACE_UpdateVisualHealth( Entity )
+	function ACE.UpdateVisualHealth( Entity )
 		if not Entity.ACF.OnRenderQueue then
 			table.insert(RenderProps.Entities, Entity )
 			Entity.ACF.OnRenderQueue = true
 		end
 	end
-	function ACE_SendVisualDamage()
+	function ACE.SendVisualDamage()
 
 		local Time = CurTime()
 
@@ -39,11 +39,11 @@ do
 			RenderProps.Clock = Time + (SendDelay / 1000)
 		end
 	end
-	hook.Add("Think","ACE_RenderPropDamage", ACE_SendVisualDamage )
+	hook.Add("Think","ACE_RenderPropDamage", ACE.SendVisualDamage )
 end
 
 --Creates or updates the ACF entity data in a passive way. Meaning this entity wont be updated unless it really requires it (like a shot, damage, looking it using armor tool, etc)
-function ACE_Activate( Entity , Recalc )
+function ACE.Activate( Entity , Recalc )
 
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	if Entity.SpecialHealth then
@@ -118,7 +118,7 @@ local IGNORED_CLASSES = {
 	sent_prop2mesh = true,
 }
 
-function ACE_Check( Entity )
+function ACE.Check( Entity )
 
 	if not IsValid(Entity) then return false end
 
@@ -138,7 +138,7 @@ function ACE_Check( Entity )
 	return Entity.ACF.Type
 end
 
-function ACE_Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
+function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
 
 	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
@@ -186,7 +186,7 @@ end
 
 
 
-function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
+function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	local HitRes			= {}
 
@@ -241,7 +241,7 @@ function ACE_CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 end
 
 -- replaced with _ due to lack of use: Inflictor, Bone
-function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
+function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
 	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
 
@@ -272,7 +272,7 @@ function ACE_PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 end
 
 -- replaced with _ due to lack of use: Bone
-function ACE_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Type)
+function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Type)
 
 	--We create a dummy table to pass armour values to the calc function
 	local Target = {
@@ -308,7 +308,7 @@ function ACE_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	return HitRes
 end
 
-function ACE_SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type)
+function ACE.SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type)
 	--local Size = Entity:BoundingRadius()
 	local Mass = Entity:GetPhysicsObject():GetMass()
 	local MaxPen = Energy.Penetration
@@ -502,7 +502,7 @@ end
 -- Returns a table of all physically connected entities
 -- ignoring ents attached by only nocollides
 ----------------------------------------------------------
-function ACE_GetAllPhysicalConstraints( ent, ResultTable )
+function ACE.GetAllPhysicalConstraints( ent, ResultTable )
 
 	ResultTable = ResultTable or {}
 
@@ -529,7 +529,7 @@ function ACE_GetAllPhysicalConstraints( ent, ResultTable )
 end
 
 -- for those extra sneaky bastards
-function ACE_GetAllChildren( ent, ResultTable )
+function ACE.GetAllChildren( ent, ResultTable )
 
 	--if not ent.GetChildren then return end  --shouldn't need to check anymore, built into glua now
 
@@ -553,7 +553,7 @@ function ACE_GetAllChildren( ent, ResultTable )
 end
 
 -- returns any wheels linked to this or child gearboxes
-function ACE_GetLinkedWheels( MobilityEnt )
+function ACE.GetLinkedWheels( MobilityEnt )
 	if not IsValid( MobilityEnt ) then return {} end
 
 	local ToCheck = {}
@@ -611,7 +611,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE_CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
+function ACE.CreateLinkRope( Pos, Ent1, LPos1, Ent2, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -646,7 +646,7 @@ end
 	This one is more simple than the original function.
 	Creates a rope without any constraint
 ------------------------------------------------------------------------]]
-function ACE_CreateSZRope( Pos, Ent, LPos1, LPos2 )
+function ACE.CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 	local rope = ents.Create( "keyframe_rope" )
 	rope:SetPos( Pos )
@@ -675,7 +675,7 @@ function ACE_CreateSZRope( Pos, Ent, LPos1, LPos2 )
 
 end
 
-function ACE_VisualizeSZ(Point1, Point2)
+function ACE.VisualizeSZ(Point1, Point2)
 
 	local SZEnt = ents.Create("prop_physics")
 	if SZEnt:IsValid() then
@@ -788,7 +788,7 @@ local WireTable = {
 	gmod_wire_joystick_multi = true
 }
 
-function ACE_GetWeaponUser( Weapon, inp )
+function ACE.GetWeaponUser( Weapon, inp )
 	if not IsValid(inp) then return end
 
 	if inp:GetClass() == "gmod_wire_adv_pod" then
@@ -831,7 +831,7 @@ end
 util.AddNetworkString( "ACE_ColorChatMessage" )
 
 	--Sends a colored message to a specified player.
-function ACE_ChatMessagePly( ply , message, color) --
+function ACE.ChatMessagePly( ply , message, color) --
 
 	net.Start( "ACE_ColorChatMessage" )
 		net.WriteColor( color or Color( 255, 255, 255 ) ) --Must go first
@@ -841,7 +841,7 @@ function ACE_ChatMessagePly( ply , message, color) --
 end
 
 
-function ACE_ChatMessageGlobal( message, color) --Like ACE_ChatMessagePly but it just goes to everyone.
+function ACE.ChatMessageGlobal( message, color) --Like ACE_ChatMessagePly but it just goes to everyone.
 
 	print(message)
 	net.Start( "ACE_ColorChatMessage" )

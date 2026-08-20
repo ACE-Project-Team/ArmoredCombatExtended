@@ -31,7 +31,7 @@ function ENT:Initialize()
 	self:UpdateOverlayText()
 end
 
-function ACE_MakeGForceMeter(Owner, Pos, Angle, Id)
+function ACE.MakeGForceMeter(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_gforce_meter") then return false end
 
 	Id = Id or "GForceMeter"
@@ -66,7 +66,7 @@ function ACE_MakeGForceMeter(Owner, Pos, Angle, Id)
 end
 
 list.Set("ACFCvars", "ace_gforce_meter", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_gforce_meter", ACE_MakeGForceMeter, "Pos", "Angle", "Id", "Data")
+duplicator.RegisterEntityClass("ace_gforce_meter", ACE.MakeGForceMeter, "Pos", "Angle", "Id", "Data")
 
 function ENT:SetNWNetwork()
 	self:SetNWString("WireName", self.ACFName or "G-Force Meter")

@@ -359,7 +359,7 @@ do
 
 	-- Compatibility entry points for late-loaded tools and older addons. The implementation
 	-- remains owned by ACE.* so the namespace migration has one source of truth.
-	function ACE_NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
+	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
 		return ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
 	end
 
@@ -533,7 +533,6 @@ do
 		return event
 	end
 
-	ACE_PointsInputChanged = ACE.PointsInputChanged
 
 	-- Initialize point tracking when a contraption is created.
 	hook.Add("cfw.contraption.created", "ACE_InitPoints", ACE_InitPts)
@@ -851,7 +850,7 @@ end
 -- Keep the legacy wrapper pointed at the implementation even when the
 -- compatibility loader aliases it back onto ACE.MarkArmorDirty.
 local ACE_MarkArmorDirtyImplementation = ACE.MarkArmorDirty
-function ACE_MarkArmorDirty(con, ent, reason)
+function ACE.MarkArmorDirty(con, ent, reason)
 	return ACE_MarkArmorDirtyImplementation(con, ent, reason)
 end
 

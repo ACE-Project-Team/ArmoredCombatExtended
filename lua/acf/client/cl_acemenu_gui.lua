@@ -439,7 +439,7 @@ function PANEL:UpdateRoundCostPreview()
 
 	local DisplayTable = self.ActiveDisplayTable
 	if not istable(DisplayTable) or DisplayTable.type ~= "Ammo" or DisplayTable.Type == "Refill" then return end
-	if not ACE_GetRoundFromCVars or not ACE.Points.RoundFromBullet or not ACE.Points.BaseRoundCost then return end
+	if not ACE.GetRoundFromCVars or not ACE.Points.RoundFromBullet or not ACE.Points.BaseRoundCost then return end
 	if not IsValid(self.CustomDisplay) then return end
 
 	local RoundType = ACE.RoundTypes[DisplayTable.Type or ""]
@@ -539,7 +539,7 @@ end
 --[[=========================
 	ACE information folder content
 ]]--=========================
-function ACE_HomeGUICreate()
+function ACE.HomeGUICreate()
 
 	if not acemenupanel.CustomDisplay then return end
 
@@ -617,7 +617,7 @@ end
 --[[=========================
 	ACE information folder content updater
 ]]--=========================
-function ACE_HomeGUIUpdate( Table )
+function ACE.HomeGUIUpdate( Table )
 
 	acemenupanel:CPanelText("Changelog", acemenupanel.Changelog[Table["rev"]])
 	acemenupanel.CustomDisplay:PerformLayout()
@@ -657,7 +657,7 @@ end
 	Changelog.txt
 ]]--=========================
 
-function ACE_ChangelogHTTPCallBack(contents)
+function ACE.ChangelogHTTPCallBack(contents)
 	local Temp = string.Explode( "*", contents )
 
 	acemenupanel.Changelog = {}  --changelog table
@@ -674,12 +674,12 @@ function ACE_ChangelogHTTPCallBack(contents)
 
 end
 
-http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACE_ChangelogHTTPCallBack, function() end)
+http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACE.ChangelogHTTPCallBack, function() end)
 
 --[[=========================
 	Clientside folder content
 ]]--=========================
-function ACE_CLGUICreate()
+function ACE.CLGUICreate()
 
 	local Client = acemenupanel["CData"]["Options"]
 
@@ -807,7 +807,7 @@ end
 --[[=========================
 	Serverside folder content
 ]]--=========================
-function ACE_SVGUICreate()	--Serverside folder content
+function ACE.SVGUICreate()	--Serverside folder content
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
 	if not ply:IsSuperAdmin() then
@@ -986,7 +986,7 @@ end
 --[[=========================
 	Contact folder content
 ]]--=========================
-function ACE_ContactGUICreate()
+function ACE.ContactGUICreate()
 
 	acemenupanel["CData"]["Contact"] = vgui.Create( "DLabel" )
 	acemenupanel["CData"]["Contact"]:SetPos( 0, 0 )
@@ -1495,7 +1495,7 @@ end
 	- Role + Pose are selected here
 	- Spawning still uses the 3 existing entities (Driver/Gunner/Loader), so no builds/dupes break.
 ]]--=========================
-function ACE_CrewMenuGUICreate(Table)
+function ACE.CrewMenuGUICreate(Table)
 	-- Enable scrolling for this page
 	if acemenupanel.CustomDisplay and acemenupanel.CustomDisplay.EnableVerticalScrollbar then
 		acemenupanel.CustomDisplay:EnableVerticalScrollbar(true)
@@ -1690,7 +1690,7 @@ end
 --[[=========================
 	Extras GUI (Wind Sensor, G-Force Meter, etc.)
 ]]--=========================
-function ACE_ExtrasGUICreate(Table)
+function ACE.ExtrasGUICreate(Table)
 	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
 	if Table.model then
@@ -1769,7 +1769,7 @@ do
 		return out
 	end
 
-	function ACE_BuildScalableConfig(Table, statsFn)
+	function ACE.BuildScalableConfig(Table, statsFn)
 		if not acemenupanel.CustomDisplay then return end
 		local MainPanel = acemenupanel.CustomDisplay
 		local cfg = getCfg(Table)
@@ -1858,7 +1858,7 @@ end
 -- Scalable charge: pick a shape and size; the filler is read from the resulting
 -- physical volume (same HE maths as shells). Pre-built model charges live in the
 -- Q spawnmenu instead.
-function ACE_ExplosiveGUICreate(Table)
+function ACE.ExplosiveGUICreate(Table)
 	ACE.BuildScalableConfig(Table, function(_cfg, vol)
 		local CM3 = 16.387
 		local f   = Table.FillerFraction or 0.65
@@ -1874,7 +1874,7 @@ function ACE_ExplosiveGUICreate(Table)
 			.. "\nPoints: " .. points .. " (mounted ordnance)"
 	end)
 end
-function ACE_ExplosiveGUIUpdate() end
+function ACE.ExplosiveGUIUpdate() end
 
 if not ACE then ACE = {} end
 if not ACE.ChatMessageReceiver then

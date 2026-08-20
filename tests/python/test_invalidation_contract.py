@@ -40,11 +40,11 @@ def call_with_reason(text, function_name, reason):
 class InvalidationContractTests(unittest.TestCase):
     def assert_reasons(self, relative, reasons):
         text = source(relative)
-        self.assertIn("ACE_PointsInputChanged", text, relative)
+        self.assertIn("ACE.PointsInputChanged", text, relative)
         for reason in reasons:
             with self.subTest(source=relative, reason=reason):
                 self.assertTrue(
-                    call_with_reason(text, "ACE_PointsInputChanged", reason),
+                    call_with_reason(text, "ACE.PointsInputChanged", reason),
                     f"{reason} is not an active ACE.PointsInputChanged reason",
                 )
 
@@ -93,17 +93,17 @@ class InvalidationContractTests(unittest.TestCase):
                 self.assertIn(f'"{final_reason}"', text)
 
         gun_endpoint_calls = [
-            span for span in call_spans(gun, "ACE_PointsInputChanged") if "self, Target" in span
+            span for span in call_spans(gun, "ACE.PointsInputChanged") if "self, Target" in span
         ]
         rack_endpoint_calls = [
-            span for span in call_spans(rack, "ACE_PointsInputChanged") if "self, Target" in span
+            span for span in call_spans(rack, "ACE.PointsInputChanged") if "self, Target" in span
         ]
         self.assertEqual(len(gun_endpoint_calls), 4)
         self.assertEqual(len(rack_endpoint_calls), 2)
         self.assertIn("ReadyRack = true", rack)
-        self.assertIn("if missile and ACE_PointsInputChanged", rack)
-        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-fired"', rack)
-        self.assertIn('ACE_PointsInputChanged(self, "rack-missile-reloaded"', rack)
+        self.assertIn("if missile and ACE.PointsInputChanged", rack)
+        self.assertIn('ACE.PointsInputChanged(self, "rack-missile-fired"', rack)
+        self.assertIn('ACE.PointsInputChanged(self, "rack-missile-reloaded"', rack)
 
         self.assertIn("self._ACEPointsSuppress = true", ammo)
         self.assertIn('"ammo-updated"', ammo)
@@ -132,7 +132,7 @@ class InvalidationContractTests(unittest.TestCase):
         ):
             with self.subTest(source=relative):
                 text = source(relative)
-                function_name = "ACE.MarkArmorDirty" if "starfall" in relative or "expression2" in relative else "ACE_MarkArmorDirty"
+                function_name = "ACE.MarkArmorDirty"
                 self.assertTrue(call_with_reason(text, function_name, reason))
 
         primitive = source("lua/autorun/server/sv_ace_primitive_compat.lua")
@@ -144,7 +144,7 @@ class InvalidationContractTests(unittest.TestCase):
         legality = source("lua/ace/server/sv_contraptionlegality.lua")
         pointshandling = source("lua/ace/server/sv_pointshandling.lua")
 
-        self.assertIn("function ACE_NotifyPointsInvalidated", legality)
+        self.assertIn("function ACE.NotifyPointsInvalidated", legality)
 
         version = re.search(r"local\s+POINTS_STATE_VERSION\s*=\s*(\d+)", legality)
         self.assertIsNotNone(version, "points-state schema version is missing")

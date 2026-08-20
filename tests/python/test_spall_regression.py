@@ -339,7 +339,7 @@ class SpallSourceContractTests(unittest.TestCase):
         self.assertGreaterEqual(len(callers), 2)
 
     def test_post_penetration_contract_is_shared_by_round_impact(self):
-        self.assertIn("function ACE_GetPostPenetration( HitRes, Energy )", self.source)
+        self.assertIn("function ACE.GetPostPenetration( HitRes, Energy )", self.source)
         self.assertIn("HitRes.PostPenetration = ACE.GetPostPenetration( HitRes, Energy )", self.source)
 
     def test_ricochet_is_finalized_before_killing_the_target(self):
@@ -408,7 +408,7 @@ class TheatDamageContractTests(unittest.TestCase):
         cls.source = cls.SOURCE.read_text(encoding="utf-8")
 
     def test_tandem_impact_normal_has_a_safe_fallback(self):
-        self.assertIn("function ACE_GetHitAngle( HitNormal , HitVector )", self.source)
+        self.assertIn("function ACE.GetHitAngle( HitNormal , HitVector )", self.source)
         self.assertIn("HitNormal:LengthSqr() < 0.0001", self.source)
         self.assertIn("return 0", self.source)
 

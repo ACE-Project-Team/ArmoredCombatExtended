@@ -698,7 +698,7 @@ local function GetDefaultActiveInput(ent, inputName)
 	return input
 end
 
-function ACF.SetDefaultActiveInputState(ent, value, inputName)
+function ACE.SetDefaultActiveInputState(ent, value, inputName)
 	local input = GetDefaultActiveInput(ent, inputName)
 
 	if input and input.Src == nil then
@@ -711,7 +711,7 @@ function ACF.SetDefaultActiveInputState(ent, value, inputName)
 	return false
 end
 
-function ACF.HasDefaultActiveInputState(ent, inputName)
+function ACE.HasDefaultActiveInputState(ent, inputName)
 	if not IsValid(ent) then return false end
 
 	local inputs = ent.Inputs
@@ -720,7 +720,7 @@ function ACF.HasDefaultActiveInputState(ent, inputName)
 	return input and input.ACFDefaultValue ~= nil or false
 end
 
-function ACF.IsDefaultActiveInputWired(ent, inputName)
+function ACE.IsDefaultActiveInputWired(ent, inputName)
 	return ACE.IsDefaultActiveInputWired(ent, inputName)
 end
 
@@ -730,7 +730,7 @@ function ACE.IsDefaultActiveInputWired(ent, inputName)
 	return input and input.Src ~= nil
 end
 
-function ACF.GetDefaultActiveInputState(ent, value, inputName)
+function ACE.GetDefaultActiveInputState(ent, value, inputName)
 	return ACE.GetDefaultActiveInputState(ent, value, inputName)
 end
 

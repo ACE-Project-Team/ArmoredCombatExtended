@@ -155,11 +155,7 @@ function this:GetWhitelistedEntsInCone(missile)
 	local foundAnim = {}
 
 
-
-
-
-	if not missile.IsJammed then --Guidance operating normally. Missile is not jammed.
-
+	if missile.IsJammed == 0 then --Guidance operating normally. Missile is not jammed.
 		local DPLRFAC = 65 - (self.SeekCone / 2)
 
 		local ConeInducedGCTRSize = self.SeekCone * 120 --2 meter wide tracehull for every 100m distance
@@ -227,7 +223,6 @@ function this:GetWhitelistedEntsInCone(missile)
 		end
 
 	else --Missile is being jammed. Utilize Home-On-Jam fallback and target emitting jammers.
-
 		for _, scanEnt in pairs(ACE.ECMPods) do
 
 			-- skip any invalid entity

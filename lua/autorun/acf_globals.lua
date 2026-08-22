@@ -116,7 +116,7 @@ ACE.TraceFilter       = {        -- entities that cause issue with acf and shoul
     prop_vehicle_crane   = true,
     prop_dynamic         = true,
     npc_strider          = true,
-    -- sent_prop2mesh       = true,
+    sent_prop2mesh       = true,
     worldspawn           = true, --The worldspawn in infinite maps is fake. Since the IsWorld function will not do something to avoid this case, that i will put it here.
 
 }

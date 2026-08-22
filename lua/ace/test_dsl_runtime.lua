@@ -64,16 +64,16 @@ local function fixture(State, Name, Definitions)
 		overrideMethod(State, Ent, "GetClass", function() return Class end)
 	end
 	if Definition.exploding then Ent.Exploding = true end
-	if Definition.acf then
-		Ent.ACF = Ent.ACF or {}
-		for Key, Value in pairs(Definition.acf) do Ent.ACF[Key] = Value end
+	if Definition.ace then
+		Ent.ACE = Ent.ACE or {}
+		for Key, Value in pairs(Definition.ace) do Ent.ACE[Key] = Value end
 	end
 	if Definition.name then
 		Ent.ACE_TestName = Definition.name
 		if Ent.SetName then Ent:SetName(Definition.name) end
 	end
 	if Definition.stalePhysics then
-		ACE_Activate(Ent)
+		ACE.Activate(Ent)
 		local Phys = Ent:GetPhysicsObject()
 		if IsValid(Phys) then Phys:SetMass(Phys:GetMass() + 1) end
 	end
@@ -82,10 +82,10 @@ local function fixture(State, Name, Definitions)
 	end
 	if Definition.clipData then Ent.ClipData = Definition.clipData end
 	if Definition.activate then
-		ACE_Activate(Ent)
+		ACE.Activate(Ent)
 	end
 	if Definition.uninitialized then
-		Ent.ACF = nil
+		Ent.ACE = nil
 	end
 
 	return Ent
@@ -133,32 +133,32 @@ local function action(State, Spec)
 	local ArgCount = #Spec.args
 
 	local Function
-	if Spec.action == "ACE_CheckLegal" then
-		Function = ACE_CheckLegal
+	if Spec.action == "ACE.CheckLegal" then
+		Function = ACE.CheckLegal
 	else
 		Function = resolveGlobal(Spec.path or Spec.action)
 		if not isfunction(Function) then error("unknown registered action path: " .. (Spec.path or Spec.action), 0) end
 	end
 
-	local Original = ACE_Activate
+	local Original = ACE.Activate
 	State.OriginalActivate = Original
-	ACE_Activate = function(...)
+	ACE.Activate = function(...)
 		local ActivatedEntity = select(1, ...)
 		State.Activations[ActivatedEntity] = (State.Activations[ActivatedEntity] or 0) + 1
 		return Original(...)
 	end
 
 	local Ok, A, B, C, D
-	if Spec.action == "ACE_CheckLegal" then
+	if Spec.action == "ACE.CheckLegal" then
 		ACE.Legal.IsActivated = 1
 		Ok, A, B = pcall(Function, Args[1], nil, nil, nil, nil, false)
 	else
 		Ok, A, B, C, D = pcall(Function, unpack(Args, 1, ArgCount))
 	end
 
-	ACE_Activate = Original
+	ACE.Activate = Original
 	if not Ok then error(A, 0) end
-	if Spec.action == "ACE_CheckLegal" then
+	if Spec.action == "ACE.CheckLegal" then
 		if istable(A) then
 			local Problems = A.Problems or {}
 			return { legal = A.Legal == true, reason = table.concat(Problems, ", ") }
@@ -175,8 +175,8 @@ local function expectCase(State, Spec, Expect)
 		if Check.operator == "was reactivated" or Check.operator == "was activated" then
 			Value = (State.Activations[State.Bindings[Subject]] or 0) > 0
 		elseif Check.operator == "has armor and health" then
-			local ACF = pathValue(State, Subject)
-			Value = ACF and ACF.Armour ~= nil and ACF.Health ~= nil
+			local ACEState = pathValue(State, Subject)
+			Value = ACEState and ACEState.Armour ~= nil and ACEState.Health ~= nil
 		elseif Check.operator == "reason is" then
 			Value = State.Values[Subject].reason
 		else
@@ -217,7 +217,7 @@ function Runtime.Run(State, Spec, Expect)
 	State.Activations = {}
 	State.OriginalLegalActivated = ACE.Legal and ACE.Legal.IsActivated
 	State.OriginalLegalActivatedCaptured = ACE.Legal ~= nil
-	State.OriginalActivate = ACE_Activate
+	State.OriginalActivate = ACE.Activate
 	State.FixtureDefinitions = Spec.fixturesRegistry or {}
 
 	for _, Item in ipairs(Spec.fixtures) do
@@ -234,7 +234,7 @@ function Runtime.Run(State, Spec, Expect)
 end
 
 function Runtime.Cleanup(State)
-	if State.OriginalActivate ~= nil then ACE_Activate = State.OriginalActivate end
+	if State.OriginalActivate ~= nil then ACE.Activate = State.OriginalActivate end
 	if ACE.Legal and State.OriginalLegalActivatedCaptured then
 		ACE.Legal.IsActivated = State.OriginalLegalActivated
 	end

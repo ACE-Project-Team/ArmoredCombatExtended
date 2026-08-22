@@ -24,7 +24,7 @@ class InterpretedTestPrototypeTests(unittest.TestCase):
         for symbol in (
             "ACE.Check",
             "ACE.Activate",
-            "ACE_CheckLegal",
+            "ACE.CheckLegal",
         ):
             with self.subTest(symbol=symbol):
                 self.assertIn(symbol, source)
@@ -34,7 +34,7 @@ class InterpretedTestPrototypeTests(unittest.TestCase):
 
         self.assertIn("is not legal", source)
         self.assertIn("requires native", source)
-        self.assertIn("Prop.ACF exists", source)
+        self.assertIn("Prop.ACE exists", source)
         self.assertIn("Prop was activated", source)
 
 

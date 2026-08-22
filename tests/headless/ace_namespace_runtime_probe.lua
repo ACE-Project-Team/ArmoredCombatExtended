@@ -306,7 +306,7 @@ hook.Add("InitPostEntity", "ACE_NamespaceRuntimeProbe", function()
         -- owner. ACE's scalability adapter reads the player option through GetInfo;
         -- provide the server-only equivalent on the existing headless owner shim.
         owner.GetInfo = function() return "0" end
-        local pasted, constraints = duplicator.Paste(owner, copied.Entities, copied.Constraints or {})
+        local pasted = duplicator.Paste(owner, copied.Entities, copied.Constraints or {})
         local pastedCount = 0
         for _, ent in pairs(pasted or {}) do
             if IsValid(ent) then

@@ -7,9 +7,9 @@ do
 		Clock = 0
 	}
 	function ACE.UpdateVisualHealth( Entity )
-		if not Entity.ACF.OnRenderQueue then
+		if not Entity.ACE.OnRenderQueue then
 			table.insert(RenderProps.Entities, Entity )
-			Entity.ACF.OnRenderQueue = true
+			Entity.ACE.OnRenderQueue = true
 		end
 	end
 	function ACE.SendVisualDamage()
@@ -28,11 +28,11 @@ do
 			if IsValid(Entity) then
 				net.Start("ACE_RenderDamage", true) -- i dont care if the message is not received under extreme cases since its simply a visual effect only.
 					net.WriteUInt(Entity:EntIndex(), 13)
-					net.WriteFloat(Entity.ACF.MaxHealth)
-					net.WriteFloat(Entity.ACF.Health)
+					net.WriteFloat(Entity.ACE.MaxHealth)
+					net.WriteFloat(Entity.ACE.Health)
 				net.Broadcast()
 
-				Entity.ACF.OnRenderQueue = nil
+				Entity.ACE.OnRenderQueue = nil
 			end
 			table.remove( RenderProps.Entities, 1 )
 
@@ -51,33 +51,33 @@ function ACE.Activate( Entity , Recalc )
 		return
 	end
 
-	Entity.ACF = Entity.ACF or {}
+	ACE.GetEntityState(Entity, true)
 
 	local Count
 	local PhysObj = Entity:GetPhysicsObject()
-	Entity.ACF.PhysObj = PhysObj
+	Entity.ACE.PhysObj = PhysObj
 
 	if PhysObj:GetMesh() then Count = #PhysObj:GetMesh() end
 	if PhysObj:IsValid() and Count and Count > 100 then
 
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
 		end
 	else
 		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
 		end
 	end
 
 	-- Setting Armor properties for the first time (or reuse old data if present)
-	Entity.ACF.Ductility	= Entity.ACF.Ductility or 0
-	Entity.ACF.Material	= not isstring(Entity.ACF.Material) and ACE.BackCompMat[Entity.ACF.Material] or Entity.ACF.Material or "RHA"
+	Entity.ACE.Ductility	= Entity.ACE.Ductility or 0
+	Entity.ACE.Material	= not isstring(Entity.ACE.Material) and ACE.BackCompMat[Entity.ACE.Material] or Entity.ACE.Material or "RHA"
 
-	local Area	= Entity.ACF.Area
-	local Ductility = math.Clamp( Entity.ACF.Ductility, -0.8, 0.8 )
+	local Area	= Entity.ACE.Area
+	local Ductility = math.Clamp( Entity.ACE.Ductility, -0.8, 0.8 )
 
-	local Mat	= Entity.ACF.Material or "RHA"
+	local Mat	= Entity.ACE.Material or "RHA"
 	local MatData	= ACE.GetMaterialData( Mat )
 
 	local massMod	= MatData.massMod
@@ -87,23 +87,23 @@ function ACE.Activate( Entity , Recalc )
 
 	local Percent	= 1
 
-	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
-		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
+	if Recalc and Entity.ACE.Health and Entity.ACE.MaxHealth then
+		Percent = Entity.ACE.Health / Entity.ACE.MaxHealth
 	end
 
-	Entity.ACF.Health	= Health * Percent
-	Entity.ACF.MaxHealth	= Health
-	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour	= Armour * ACE.ArmorMod
-	Entity.ACF.Type		= nil
-	Entity.ACF.Mass		= PhysObj:GetMass()
+	Entity.ACE.Health	= Health * Percent
+	Entity.ACE.MaxHealth	= Health
+	Entity.ACE.Armour = Armour * (0.5 + Percent / 2)
+	Entity.ACE.MaxArmour	= Armour * ACE.ArmorMod
+	Entity.ACE.Type		= nil
+	Entity.ACE.Mass		= PhysObj:GetMass()
 
 	if Entity:IsPlayer() or Entity:IsNPC() then
-		Entity.ACF.Type = "Squishy"
+		Entity.ACE.Type = "Squishy"
 	elseif Entity:IsVehicle() then
-		Entity.ACF.Type = "Vehicle"
+		Entity.ACE.Type = "Vehicle"
 	else
-		Entity.ACF.Type = "Prop"
+		Entity.ACE.Type = "Prop"
 	end
 
 	if Entity:GetClass() == "func_breakable" then
@@ -129,13 +129,13 @@ function ACE.Check( Entity )
 	if IGNORED_CLASSES[Class] or (ACE.TraceFilter and ACE.TraceFilter[Class]) or ( Class ~= "func_breakable" and string.find( Class , "func_" )) then return false end
 	if Entity.Exploding then return false end
 
-	if not Entity.ACF or (Entity.ACF and isnumber(Entity.ACF.Material)) then
+	if not Entity.ACE or (Entity.ACE and isnumber(Entity.ACE.Material)) then
 		ACE.Activate( Entity )
-	elseif Entity.ACF.Mass ~= physobj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= physobj) then
+	elseif Entity.ACE.Mass ~= physobj:GetMass() or (not IsValid(Entity.ACE.PhysObj) or Entity.ACE.PhysObj ~= physobj) then
 		ACE.Activate( Entity , true )
 	end
 
-	return Entity.ACF.Type
+	return Entity.ACE.Type
 end
 
 function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
@@ -146,7 +146,7 @@ function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
 
-	local oldACFTbl = table.Copy( Entity.ACF or {} )
+	local oldACFTbl = table.Copy( Entity.ACE or {} )
 	local hitRes = nil
 
 	if Entity.SpecialDamage then
@@ -190,11 +190,11 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	local HitRes			= {}
 
-	local armor			= Entity.ACF.Armour																						-- Armor
+	local armor			= Entity.ACE.Armour																						-- Armor
 	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
-	local Mat			= Entity.ACF.Material or "RHA"	--very important thing
+	local Mat			= Entity.ACE.Material or "RHA"	--very important thing
 	local MatData		= ACE.GetMaterialData( Mat )
 
 	local damageMult		= 1
@@ -251,20 +251,20 @@ function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 	local BaseDamage = caliber * (4 + 0.1 * caliber)
 
 	Entity:TakeDamage(BaseDamage * 15) --Felt about right. Allows destroying physically destructible props.
-	if HitRes.Damage >= Entity.ACF.Health then
+	if HitRes.Damage >= Entity.ACE.Health then
 		HitRes.Kill = true
 	else
 
 		--In case of HitRes becomes NAN. That means theres no damage, so leave it as 0
 		if HitRes.Damage ~= HitRes.Damage then HitRes.Damage = 0 end
 
-		Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) --Simulating the plate weakening after a hit
+		Entity.ACE.Health = Entity.ACE.Health - HitRes.Damage
+		Entity.ACE.Armour = Entity.ACE.MaxArmour * (0.5 + Entity.ACE.Health / Entity.ACE.MaxHealth / 2) --Simulating the plate weakening after a hit
 
-		if Entity.ACF.PrHealth then
+		if Entity.ACE.PrHealth then
 			ACE.UpdateVisualHealth(Entity)
 		end
-		Entity.ACF.PrHealth = Entity.ACF.Health
+		Entity.ACE.PrHealth = Entity.ACE.Health
 	end
 
 	return HitRes
@@ -295,14 +295,14 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	end
 
 	HitRes.Kill = false
-	if HitRes.Damage >= Entity.ACF.Health then --Drivers will no longer survive seat destruction
+	if HitRes.Damage >= Entity.ACE.Health then --Drivers will no longer survive seat destruction
 		if canDamageDriver then
 			Driver:Kill()
 		end
 		HitRes.Kill = true
 	else
-		Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.Armour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) --Simulating the plate weakening after a hit
+		Entity.ACE.Health = Entity.ACE.Health - HitRes.Damage
+		Entity.ACE.Armour = Entity.ACE.Armour * (0.5 + Entity.ACE.Health / Entity.ACE.MaxHealth / 2) --Simulating the plate weakening after a hit
 	end
 
 	return HitRes

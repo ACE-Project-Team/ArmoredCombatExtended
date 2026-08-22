@@ -317,10 +317,10 @@ function ACE.InitializeCrewseat(ent, modelType)
 	end
 
 	ent.Master = {}
-	ent.ACF = ent.ACF or {}
-	ent.ACF.Health = ent.ACF.Health or 1
-	ent.ACF.MaxHealth = ent.ACF.MaxHealth or 1
-	ent.ACF.Armour = ent.ACF.Armour or 1
+	ACE.GetEntityState(ent, true)
+	ent.ACE.Health = ent.ACE.Health or 1
+	ent.ACE.MaxHealth = ent.ACE.MaxHealth or 1
+	ent.ACE.Armour = ent.ACE.Armour or 1
 
 	ent.Name = ent.Name or ACE.GenerateCrewName()
 	ent.Weight = weight
@@ -410,7 +410,7 @@ end
 
 -- Shared damage function
 function ACE.CrewseatDamage(ent, Entity, Energy, FrArea, Inflictor)
-	ent.ACF.Armour = 3
+	ent.ACE.Armour = 3
 	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, 0, Inflictor)
 	return HitRes
 end

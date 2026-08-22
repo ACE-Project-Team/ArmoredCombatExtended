@@ -48,7 +48,7 @@ if SERVER then
 			effectiveness = Material.spallresist
 		end
 
-		local ductilityvalue = (Entity.ACF.Ductility or 0) * 1.25 --The ductility value of the armor. Outputs 1 to -1 depending on max ductility
+		local ductilityvalue = (Entity.ACE.Ductility or 0) * 1.25 --The ductility value of the armor. Outputs 1 to -1 depending on max ductility
 		local ductilitymult    = 2 / (2 + ductilityvalue * 1.5) -- Direct damage multiplier based on ductility.
 
 		armor	= armor ^ curve

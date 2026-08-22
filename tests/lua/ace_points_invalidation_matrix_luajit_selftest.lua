@@ -93,12 +93,6 @@ end
 
 dofile(root .. "/lua/ace/server/sv_contraptionlegality.lua")
 
-setmetatable(ACE, {
-	__index = function(_, key)
-		return _G["ACE_" .. key]
-	end,
-})
-
 local batches = {}
 local compat = {}
 local recalculated = {}

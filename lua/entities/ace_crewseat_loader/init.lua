@@ -148,7 +148,7 @@ function ENT:OnRemove()
 end
 
 function ENT:UpdateWireOutputs()
-	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
+	local hp = round(self.ACE.Health / self.ACE.MaxHealth * 100)
 	local isLinked = IsValid(self.LinkedGun) and 1 or 0
 
 	WireLib.TriggerOutput(self, "Health", hp)
@@ -158,7 +158,7 @@ function ENT:UpdateWireOutputs()
 end
 
 function ENT:UpdateOverlayText()
-	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
+	local hp = round(self.ACE.Health / self.ACE.MaxHealth * 100)
 	local stamina = round(self.Stamina)
 	local pose = self:GetPoseModifiers()
 	local isStanding = ACE.IsStandingPose(self.ModelType)

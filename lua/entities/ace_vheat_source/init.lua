@@ -36,20 +36,20 @@ function ENT:Initialize()
 end
 
 function ENT:ACF_Activate( _ )
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 
 	local PhysObj = self:GetPhysicsObject()
 
-	self.ACF.Area 		= PhysObj:GetSurfaceArea()
-	self.ACF.Volume 	= PhysObj:GetVolume()
-	self.ACF.Health		= 9999
-	self.ACF.MaxHealth  = self.ACF.Health
-	self.ACF.Armour		= 0.1
-	self.ACF.MaxArmour  = self.ACF.Armour
-	self.ACF.Type		= nil
-	self.ACF.Mass		= self.Mass
-	self.ACF.Density	= (PhysObj:GetMass() * 1000) / self.ACF.Volume
-	self.ACF.Type		= "Prop"
+	self.ACE.Area 		= PhysObj:GetSurfaceArea()
+	self.ACE.Volume 	= PhysObj:GetVolume()
+	self.ACE.Health		= 9999
+	self.ACE.MaxHealth  = self.ACE.Health
+	self.ACE.Armour		= 0.1
+	self.ACE.MaxArmour  = self.ACE.Armour
+	self.ACE.Type		= nil
+	self.ACE.Mass		= self.Mass
+	self.ACE.Density	= (PhysObj:GetMass() * 1000) / self.ACE.Volume
+	self.ACE.Type		= "Prop"
 end
 
 function ACE.MakeVHeatSource(Owner, Pos, Angle, Id)
@@ -87,7 +87,7 @@ list.Set( "ACFCvars", "ace_vheat_source", {"id"} )
 duplicator.RegisterEntityClass("ace_vheat_source", ACE.MakeVHeatSource, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
-	self:SetNWString( "WireName", self.ACFName )
+	self:SetNWString( "WireName", self.ACEName )
 end
 
 function ENT:SetModelEasy(mdl)

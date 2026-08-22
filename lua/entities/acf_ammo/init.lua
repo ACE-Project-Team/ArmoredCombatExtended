@@ -157,36 +157,36 @@ function ENT:ACF_Activate( Recalc )
 
 	local EmptyMass = math.max(self.EmptyMass, self:GetPhysicsObject():GetMass() - self.AmmoMassMax)
 
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 
 	local PhysObj = self:GetPhysicsObject()
 
-	if not self.ACF.Area then
-		self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+	if not self.ACE.Area then
+		self.ACE.Area = PhysObj:GetSurfaceArea() * 6.45
 	end
 
-	if not self.ACF.Volume then
-		self.ACF.Volume = PhysObj:GetVolume() * 16.38
+	if not self.ACE.Volume then
+		self.ACE.Volume = PhysObj:GetVolume() * 16.38
 	end
 
-	local Armour	= EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health	= (self.ACF.Volume / ACE.Threshold) / 20					--Ammo crates get reduced HP relative to props
+	local Armour	= EmptyMass * 1000 / self.ACE.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
+	local Health	= (self.ACE.Volume / ACE.Threshold) / 20					--Ammo crates get reduced HP relative to props
 	local Percent	= 1
 
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
+	if Recalc and self.ACE.Health and self.ACE.MaxHealth then
+		Percent = self.ACE.Health / self.ACE.MaxHealth
 	end
 
-	self.ACF.Health	= Health * Percent
-	self.ACF.MaxHealth  = Health
-	self.ACF.Armour	= Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour  = Armour
-	self.ACF.Type	= nil
-	self.ACF.Mass	= self.Mass
-	self.ACF.Density	= (self:GetPhysicsObject():GetMass() * 1000) / self.ACF.Volume
-	self.ACF.Type	= "Prop"
+	self.ACE.Health	= Health * Percent
+	self.ACE.MaxHealth  = Health
+	self.ACE.Armour	= Armour * (0.5 + Percent / 2)
+	self.ACE.MaxArmour  = Armour
+	self.ACE.Type	= nil
+	self.ACE.Mass	= self.Mass
+	self.ACE.Density	= (self:GetPhysicsObject():GetMass() * 1000) / self.ACE.Volume
+	self.ACE.Type	= "Prop"
 
-	self.ACF.Material	= not isstring(self.ACF.Material) and ACE.BackCompMat[self.ACF.Material] or self.ACF.Material or "RHA"
+	self.ACE.Material	= not isstring(self.ACE.Material) and ACE.BackCompMat[self.ACE.Material] or self.ACE.Material or "RHA"
 
 	--Forces an update of mass
 	self.LastMass = 1
@@ -253,12 +253,12 @@ do
 			return HitRes
 		end
 
-		local maxHealth = (self.ACF and self.ACF.MaxHealth) or 0
+		local maxHealth = (self.ACE and self.ACE.MaxHealth) or 0
 		local damageFrac = maxHealth > 0 and ((HitRes.Damage or 0) / maxHealth) or 0
 		local hpThreshold = 0.5
 
 		if damageFrac < COOKOFF_THRESHOLD and (HitRes.Damage or 0) < hpThreshold then
-			local healthFrac = maxHealth > 0 and math.Clamp((self.ACF.Health or 0) / maxHealth, 0, 1) or 0
+			local healthFrac = maxHealth > 0 and math.Clamp((self.ACE.Health or 0) / maxHealth, 0, 1) or 0
 			local newAmmo = math.ceil((self.Capacity or 0) * healthFrac)
 			if self.Ammo and newAmmo < self.Ammo then
 				self.Ammo = newAmmo

@@ -1,0 +1,333 @@
+{
+  "algorithm": "bootstrap-installed production ACE.* functions and literal hook.Add registrations; entity-local definitions remain in the exhaustive inventory",
+  "functions": {
+    "server": [
+      "ACE.APKill",
+      "ACE.AcquireBullet",
+      "ACE.Activate",
+      "ACE.AddPts",
+      "ACE.BulletClient",
+      "ACE.CalcBulletFlight",
+      "ACE.CalcContraptionArmorPoints",
+      "ACE.CalcDamage",
+      "ACE.CalcEntityGForce",
+      "ACE.CalcNonArmorPoints",
+      "ACE.CalculateHERadius",
+      "ACE.ChatMessageGlobal",
+      "ACE.ChatMessagePly",
+      "ACE.Check",
+      "ACE.CheckClips",
+      "ACE.CheckLegal",
+      "ACE.CheckLegalCont",
+      "ACE.ClearContraptionPointLedger",
+      "ACE.CreateBullet",
+      "ACE.CreateLinkRope",
+      "ACE.CreateSZRope",
+      "ACE.CrewseatApplyDupeModel",
+      "ACE.CrewseatDamage",
+      "ACE.CrewseatDeathSound",
+      "ACE.CrewseatDebugEnabled",
+      "ACE.CrewseatDebugLog",
+      "ACE.CrewseatDeferredModelSync",
+      "ACE.CrewseatLegalCheck",
+      "ACE.CrewseatOnRemove",
+      "ACE.CrewseatResolveModelType",
+      "ACE.Damage",
+      "ACE.DoBulletsFlight",
+      "ACE.DoContraptionLegalCheck",
+      "ACE.DropContraptionPointLedger",
+      "ACE.EnsureCacheVersion",
+      "ACE.EnsureContraptionPoints",
+      "ACE.EnsurePointsState",
+      "ACE.FindReplacementLoader",
+      "ACE.FlushQueuedPointChanges",
+      "ACE.GenerateCrewName",
+      "ACE.GenerateMissile",
+      "ACE.GetAllChildren",
+      "ACE.GetAllPhysicalConstraints",
+      "ACE.GetBallisticsStats",
+      "ACE.GetHitAngle",
+      "ACE.GetLinkedWheels",
+      "ACE.GetPostPenetration",
+      "ACE.GetWeaponUser",
+      "ACE.HE",
+      "ACE.HEFind",
+      "ACE.HEKill",
+      "ACE.HasQueuedPointChanges",
+      "ACE.HeatFromEngine",
+      "ACE.HeatFromGearbox",
+      "ACE.HeatFromGun",
+      "ACE.HeatFromRadar",
+      "ACE.InfraredHeatFromProp",
+      "ACE.InitializeCrewseat",
+      "ACE.KEShove",
+      "ACE.LOSMultiTrace",
+      "ACE.Legal.NextCheck",
+      "ACE.LegalityCallBack",
+      "ACE.ManageBullets",
+      "ACE.MarkArmorDirty",
+      "ACE.MarkContraptionPointsDirty",
+      "ACE.Missile_BulletLaunch",
+      "ACE.Missile_CompactBulletData",
+      "ACE.Missile_CreateConfigurable",
+      "ACE.Missile_CreateConfigurable_Raw",
+      "ACE.Missile_ExpandBulletData",
+      "ACE.Missile_MakeCrateForBullet",
+      "ACE.Missile_ResetVelocity",
+      "ACE.NotifyContraptionPointsInvalidated",
+      "ACE.NotifyCrateWeapons",
+      "ACE.NotifyPointsInvalidated",
+      "ACE.PenetrateGround",
+      "ACE.PerformHitResolution",
+      "ACE.PointsInputChanged",
+      "ACE.PrimitivePropertiesApplied",
+      "ACE.PropDamage",
+      "ACE.PropShockwave",
+      "ACE.QueueContraptionPointRebuild",
+      "ACE.QueueContraptionPointWarning",
+      "ACE.QueuePointEntityChange",
+      "ACE.RebuildContraptionPointLedger",
+      "ACE.RebuildContraptionPoints",
+      "ACE.RegisterBullet",
+      "ACE.RemPts",
+      "ACE.RemoveBullet",
+      "ACE.ResetBallisticsStats",
+      "ACE.RicochetVector",
+      "ACE.RoundImpact",
+      "ACE.ScaledExplosion",
+      "ACE.SendVisualDamage",
+      "ACE.Spall",
+      "ACE.SpallTrace",
+      "ACE.Spall_HESH",
+      "ACE.SquishyDamage",
+      "ACE.UpdateCrewseatAnglePenalty",
+      "ACE.UpdateGForcePenalty",
+      "ACE.UpdateVisualHealth",
+      "ACE.VehicleDamage",
+      "ACE.VisualizeSZ",
+      "ACE.refreshdata"
+    ],
+    "client": [
+      "ACE.Approaching",
+      "ACE.EmitSound",
+      "ACE.GetDistanceTime",
+      "ACE.GetHeadPos",
+      "ACE.IsValidSound",
+      "ACE.ManageBulletEffects",
+      "ACE.Missiles_CreateMenuConfiguration",
+      "ACE.Missiles_MenuSlider",
+      "ACE.Missiles_RemoveMenuConfiguration",
+      "ACE.Missiles_SetCommand",
+      "ACE.ReceiveDPStatus",
+      "ACE.RemoveBulletClient",
+      "ACE.RenderLight",
+      "ACE.SBlast",
+      "ACE.SBulletCrack",
+      "ACE.SBulletImpact",
+      "ACE.SBulletWhistle",
+      "ACE.SGetHearingEntity",
+      "ACE.SGunFire",
+      "ACE.SHasLOS",
+      "ACE.SInDistance",
+      "ACE.SIsInDoor",
+      "ACE.SPenetration",
+      "ACE.SRicochet",
+      "ACE.SimBulletFlight",
+      "ACE.SimpleSound"
+    ]
+  },
+  "hooks": {
+    "server": [
+      {
+        "event": "ACE_BulletDamage",
+        "identifier": "ACE_DamagePermissionCore"
+      },
+      {
+        "event": "ACE_PlayerChangedZone",
+        "identifier": "ACE_TellPlyAboutSafezoneBattle"
+      },
+      {
+        "event": "ACE_ProtectionModeChanged",
+        "identifier": "ACE_ResendPermissionsOnChanged"
+      },
+      {
+        "event": "ACE_ProtectionModeChanged",
+        "identifier": "ACE_TellPlysAboutDPMode"
+      },
+      {
+        "event": "AdvDupe_FinishPasting",
+        "identifier": "ACE_CapturePrimitiveArmor"
+      },
+      {
+        "event": "AdvDupe_FinishPasting",
+        "identifier": "ACE_refresh"
+      },
+      {
+        "event": "CleanUpMap",
+        "identifier": "ACE_RestoreSZsCleanup"
+      },
+      {
+        "event": "EntityRemoved",
+        "identifier": "ACE_ClearPrimitiveArmorState"
+      },
+      {
+        "event": "EntityRemoved",
+        "identifier": "ACE_EntRemoval"
+      },
+      {
+        "event": "InitPostEntity",
+        "identifier": "ACE_Missiles_AddLinkable"
+      },
+      {
+        "event": "InitPostEntity",
+        "identifier": "ACE_Missiles_DupeDeny"
+      },
+      {
+        "event": "Initialize",
+        "identifier": "ACE_LoadSafesForMap"
+      },
+      {
+        "event": "OnEntityCreated",
+        "identifier": "ACE_EntRegister"
+      },
+      {
+        "event": "PlayerDisconnected",
+        "identifier": "ACE_PermissionDisconnect"
+      },
+      {
+        "event": "PlayerEnteredVehicle",
+        "identifier": "ACE_PointsVehicleUnfreezeInvalidation"
+      },
+      {
+        "event": "PlayerFrozeObject",
+        "identifier": "ACE_PointsFreezeInvalidation"
+      },
+      {
+        "event": "PlayerNoClip",
+        "identifier": "ACE_DisableNoclipPressInBattle"
+      },
+      {
+        "event": "PlayerUnfrozeObject",
+        "identifier": "ACE_PointsUnfreezeInvalidation"
+      },
+      {
+        "event": "Primitive_PostRebuildPhysics",
+        "identifier": "ACE_PrimitiveArmorRecalc"
+      },
+      {
+        "event": "Primitive_PreRebuildPhysics",
+        "identifier": "ACE_RememberPrimitiveCollisionGroup"
+      },
+      {
+        "event": "ProperClippingClipAdded",
+        "identifier": "ACE_RememberClipCollisionGroup"
+      },
+      {
+        "event": "ProperClippingPhysicsClipped",
+        "identifier": "ACE_PhysicsClippedArmorRecalc"
+      },
+      {
+        "event": "ProperClippingPhysicsClipped",
+        "identifier": "ACE_ProperClippingArmorChanged"
+      },
+      {
+        "event": "ProperClippingPhysicsReset",
+        "identifier": "ACE_PhysicsResetArmorRecalc"
+      },
+      {
+        "event": "ProperClippingPhysicsReset",
+        "identifier": "ACE_ProperClippingArmorReset"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_DetectSZTransition"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_FlushQueuedPointChanges"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_RenderPropDamage"
+      },
+      {
+        "event": "Tick",
+        "identifier": "ACE_ManageBullets"
+      },
+      {
+        "event": "cfw.contraption.created",
+        "identifier": "ACE_InitPoints"
+      },
+      {
+        "event": "cfw.contraption.entityAdded",
+        "identifier": "ACE_AddPoints"
+      },
+      {
+        "event": "cfw.contraption.entityRemoved",
+        "identifier": "ACE_RemPoints"
+      },
+      {
+        "event": "cfw.contraption.merged",
+        "identifier": "ACE_InvalidateMergedContraptions"
+      },
+      {
+        "event": "cfw.contraption.removed",
+        "identifier": "ACE_ContraptionRemoving"
+      },
+      {
+        "event": "cfw.contraption.split",
+        "identifier": "ACE_InheritPointWarning"
+      },
+      {
+        "event": "cfw.family.added",
+        "identifier": "ACE_RecoverFamilyMassOnAdd"
+      },
+      {
+        "event": "cfw.family.created",
+        "identifier": "ACE_InitFamilyMass"
+      },
+      {
+        "event": "cfw.family.subbed",
+        "identifier": "ACE_RecoverFamilyMassOnRemove"
+      }
+    ],
+    "client": [
+      {
+        "event": "HUDPaint",
+        "identifier": "ACE_VignetteDraw"
+      },
+      {
+        "event": "PopulateToolMenu",
+        "identifier": "ACE.PopulateToolMenu."
+      },
+      {
+        "event": "PopulateToolMenu",
+        "identifier": "ACEPermissionsPopulateToolMenu"
+      },
+      {
+        "event": "PostDrawOpaqueRenderables",
+        "identifier": "ACE_RenderDamage"
+      },
+      {
+        "event": "SpawnMenuOpen",
+        "identifier": "ACE.SpawnMenuOpen."
+      },
+      {
+        "event": "SpawnMenuOpen",
+        "identifier": "ACEPermissionsSpawnMenuOpen"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_ManageBulletEffects"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_Think_SpeedOfSound"
+      },
+      {
+        "event": "Think",
+        "identifier": "ACE_VignetteFade"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+commit,dependency,failure_trigger,reversal_command,known_good_reference,status
+aba0118b7b87e10cfc48fb1ce8e4610ce654e65b,upstream/dev,Any parity or namespace contract failure,git revert <repair-commit>,runtime-probe.json and client-probe.json,review-required

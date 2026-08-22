@@ -260,7 +260,7 @@ function ACE.HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 					Table.Vec		= (TargetPos - Hitpos):GetNormalized()
 
 					local Sphere		= math.max(4 * PI * (Table.Dist * 2.54 ) ^ 2,1) --Surface Area of the sphere at the range of that prop
-					local AreaAdjusted  = Tar.ACF.Area
+					local AreaAdjusted  = Tar.ACE.Area
 
 					--Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 					Table.Area = math.min(AreaAdjusted / Sphere,0.5) * MaxSphere * ACE.HEFragRadiusMul --Don't forget to scale blast down by the frag adjustment factor.
@@ -287,8 +287,8 @@ function ACE.HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 			local FRFeathering       = (1-math.min(1,Table.Dist / Radius / ACE.HEFragRadiusMul)) ^ ACE.HEFeatherExp
 			local AreaFraction     = Table.Area / TotalArea
 			local PowerFraction    = Power * AreaFraction  --How much of the total power goes to that prop
-			local AreaAdjusted     = (Tar.ACF.Area / ACE.Threshold) * Feathering
-			local FRAreaAdjusted     = (Tar.ACF.Area / ACE.Threshold) * FRFeathering
+			local AreaAdjusted     = (Tar.ACE.Area / ACE.Threshold) * Feathering
+			local FRAreaAdjusted     = (Tar.ACE.Area / ACE.Threshold) * FRFeathering
 
 			--HE tends to pick some props where simply will not apply damage. So lets ignore it.
 			if FRAreaAdjusted <= 0 then continue end
@@ -552,7 +552,7 @@ function ACE.PropShockwave( HitPos, HitVec, Filter, Caliber )
 		local distToFront = math.abs( (HitPos - HitFront):Length() )
 		table.insert( FrontDists, distToFront)
 		--TraceFront's armor entity
-		local Armour = tracefront.Entity.ACF and tracefront.Entity.ACF.Armour or 0
+		local Armour = tracefront.Entity.ACE and tracefront.Entity.ACE.Armour or 0
 		--Code executed once its scanning the 2nd prop
 		if iteration > 1 then
 			--check if they are totally overlapped
@@ -560,7 +560,7 @@ function ACE.PropShockwave( HitPos, HitVec, Filter, Caliber )
 				--distance between the start of ent1 and end of ent2
 				local space = math.abs( (HitFronts[iteration] - HitBacks[iteration - 1]):Length() )
 				--prop's material
-				local mat = tracefront.Entity.ACF and tracefront.Entity.ACF.Material or "RHA"
+				local mat = tracefront.Entity.ACE and tracefront.Entity.ACE.Material or "RHA"
 				local MatData = ACE.GetMaterialData( mat )
 				local Hasvoid = false
 				local NotOverlap = false
@@ -809,7 +809,7 @@ function ACE.SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 		local Angle		= ACE.GetHitAngle( SpallRes.HitNormal , SpallDirection )
 		-- print("ANGLE: " .. Angle)
 
-		local Mat		= SpallRes.Entity.ACF.Material or "RHA"
+		local Mat		= SpallRes.Entity.ACE.Material or "RHA"
 		local MatData	= ACE.GetMaterialData( Mat )
 
 		local spall_resistance = MatData.spallresist
@@ -927,7 +927,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 			ricoProb = 0
 
 		--Guarenteed to not richochet
-		elseif Bullet.Caliber * 3.33 > Target.ACF.Armour  then -- / math.max(math.sin(90-Angle),0.0001)
+		elseif Bullet.Caliber * 3.33 > Target.ACE.Armour  then -- / math.max(math.sin(90-Angle),0.0001)
 			ricoProb = 1
 
 		else
@@ -1111,7 +1111,7 @@ local function KillChildProps( Entity, BlastPos, Energy )
 			if Entity:EntIndex() == ent:EntIndex() then children[ent] = nil continue end
 
 			-- mark that it's already processed
-			ent.ACF_Killed = true
+			ent.ACE_Killed = true
 
 			local class = ent:GetClass()
 
@@ -1181,11 +1181,11 @@ end
 function ACE.HEKill( Entity , HitVector , Energy , BlastPos )
 
 	-- if it hasn't been processed yet, check for children
-	if not Entity.ACF_Killed then KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy ) end
+	if not Entity.ACE_Killed then KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy ) end
 
 	do
 		--ERA props should not create debris
-		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
+		local Mat = (Entity.ACE and Entity.ACE.Material) or "RHA"
 		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
@@ -1241,7 +1241,7 @@ function ACE.APKill( Entity , HitVector , Power )
 
 	do
 		--ERA props should not create debris
-		local Mat = (Entity.ACF and Entity.ACF.Material) or "RHA"
+		local Mat = (Entity.ACE and Entity.ACE.Material) or "RHA"
 		local MatData = ACE.GetMaterialData( Mat )
 		if MatData.IsExplosive then return end
 	end
@@ -1746,9 +1746,9 @@ function ACE.LOSMultiTrace(StartVec, EndVec, PenetrationMax)
 					table.insert( TrTable.filter , TraceEnt )
 				else
 					local Angle		= ACE.GetHitAngle( TraceLine.HitNormal , Normal )
-					local Mat			= TraceEnt.ACF.Material or "RHA"	--very important thing
+					local Mat			= TraceEnt.ACE.Material or "RHA"	--very important thing
 					local MatData		= ACE.GetMaterialData( Mat )
-					local armor = TraceEnt.ACF.Armour
+					local armor = TraceEnt.ACE.Armour
 					local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor ) * MatData["effectiveness"]
 					TotalArmor = TotalArmor + losArmor
 					table.insert( TrTable.filter , TraceEnt )

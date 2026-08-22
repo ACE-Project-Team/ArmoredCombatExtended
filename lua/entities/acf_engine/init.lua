@@ -441,46 +441,46 @@ end
 function ENT:ACF_Activate()
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Entity = self
-	Entity.ACF = Entity.ACF or {}
+	ACE.GetEntityState(Entity, true)
 
 	local Count
 	local PhysObj = Entity:GetPhysicsObject()
 	if PhysObj:GetMesh() then Count = #PhysObj:GetMesh() end
 	if PhysObj:IsValid() and Count and Count > 100 then
 
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
 		end
 
 	else
 		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
 		end
 
 	end
 
-	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
+	Entity.ACE.Ductility = Entity.ACE.Ductility or 0
 
-	local Area = Entity.ACF.Area
+	local Area = Entity.ACE.Area
 	local Armour = (Entity:GetPhysicsObject():GetMass() * 1000 / Area / 0.78)
 	local Health = Area / ACE.Threshold
 
 	local Percent = 1
 
-	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
-		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
+	if Recalc and Entity.ACE.Health and Entity.ACE.MaxHealth then
+		Percent = Entity.ACE.Health / Entity.ACE.MaxHealth
 	end
 
-	Entity.ACF.Health    = Health * Percent * ACE.EngineHPMult[self.EngineType]
-	Entity.ACF.MaxHealth = Health * ACE.EngineHPMult[self.EngineType]
-	Entity.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour = Armour * ACE.ArmorMod
-	Entity.ACF.Type      = nil
-	Entity.ACF.Mass      = PhysObj:GetMass()
-	Entity.ACF.Type      = "Prop"
+	Entity.ACE.Health    = Health * Percent * ACE.EngineHPMult[self.EngineType]
+	Entity.ACE.MaxHealth = Health * ACE.EngineHPMult[self.EngineType]
+	Entity.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	Entity.ACE.MaxArmour = Armour * ACE.ArmorMod
+	Entity.ACE.Type      = nil
+	Entity.ACE.Mass      = PhysObj:GetMass()
+	Entity.ACE.Type      = "Prop"
 
-	Entity.ACF.Material	= not isstring(Entity.ACF.Material) and ACE.BackCompMat[Entity.ACF.Material] or Entity.ACF.Material or "RHA"
+	Entity.ACE.Material	= not isstring(Entity.ACE.Material) and ACE.BackCompMat[Entity.ACE.Material] or Entity.ACE.Material or "RHA"
 
 end
 
@@ -709,7 +709,7 @@ function ENT:CalcRPM()
 	-- TorqueMult is a mutipler that affects the final Torque an engine can offer at its max.
 	-- PeakTorque is the final possible torque to get.
 	local DriverBoost = self.HasDriver and ACE.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
-	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACE.Health / self.ACE.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 	self.PeakTorque = self.BaseTorque * self.TorqueMult * DriverBoost
 
 	-- Calculate the current torque from flywheel RPM.
@@ -755,7 +755,7 @@ function ENT:CalcRPM()
 	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
 	self.Heat = ACE.HeatFromEngine( self )
 
-	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
+	local HealthRatio = self.ACE.Health / self.ACE.MaxHealth
 	if HealthRatio < 0.995 then
 		if HealthRatio > 0.025 then
 			local PhysObj = self:GetPhysicsObject()

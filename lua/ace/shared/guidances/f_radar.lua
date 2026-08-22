@@ -158,7 +158,7 @@ function this:GetWhitelistedEntsInCone(missile)
 
 
 
-	if not missile.IsJammed then --Guidance operating normally. Missile is not jammed.
+	if missile.IsJammed == 0 then --Guidance operating normally. Missile is not jammed.
 
 		local DPLRFAC = 65 - (self.SeekCone / 2)
 

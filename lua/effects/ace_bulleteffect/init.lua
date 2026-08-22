@@ -220,7 +220,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 
 	local setPos = Bullet.SimPos
 	if (math.abs(setPos.x) > 16380) or (math.abs(setPos.y) > 16380) or (setPos.z < -16380) then -- the bullet will never come back to the map.
-		ACE_RemoveBulletClient( Bullet, Index )
+		ACE.RemoveBulletClient( Bullet, Index )
 
 		return
 	end

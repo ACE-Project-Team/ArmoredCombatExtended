@@ -60,24 +60,24 @@ end
 
 local function E2SetACEArmor(ent, armor, ductility, material)
 
-	ent.ACF = ent.ACF or {}
+	ACE.GetEntityState(ent, true)
 
-		local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
-	local thickness = math.Clamp( armor or ent.ACF.Armour or 1, 0.1, 50000 )
-	local mat  = material or ent.ACF.Material or "RHA"
+		local duct = math.Clamp( ductility or (ent.ACE.Ductility * 100) or 80, -80, 80 )
+	local thickness = math.Clamp( armor or ent.ACE.Armour or 1, 0.1, 50000 )
+	local mat  = material or ent.ACE.Material or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, duct / 100, thickness , mat)
+	local mass		= CalcArmor( ent.ACE.Area, duct / 100, thickness , mat)
 
 	local phys = ent:GetPhysicsObject()
 	if IsValid( phys ) then phys:SetMass( mass ) end
 	duplicator.StoreEntityModifier( ent, "mass", { Mass = mass } )
 
-	ent.ACF.Ductility = duct / 100
+	ent.ACE.Ductility = duct / 100
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
 	local con = ent:CFW_GetContraption()
 
-	ent.ACF.Material = mat
+	ent.ACE.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
 	ACE.MarkArmorDirty(con, ent, "armor-starfall")
@@ -523,7 +523,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.Health, 3)
+		return round(this.ACE.Health, 3)
 	end
 
 	--- Returns the current armor of an entity
@@ -536,7 +536,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.Armour, 3)
+		return round(this.ACE.Armour, 3)
 	end
 
 	--- Returns the max health of an entity
@@ -549,7 +549,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.MaxHealth, 3)
+		return round(this.ACE.MaxHealth, 3)
 	end
 
 	--- Returns the max armor of an entity
@@ -562,7 +562,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.MaxArmour, 3)
+		return round(this.ACE.MaxArmour, 3)
 	end
 
 	--- Returns the ductility of an entity
@@ -575,7 +575,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.Check(this) then return 0 end
 
-		return this.ACF.Ductility * 100
+		return this.ACE.Ductility * 100
 	end
 
 	--- Returns the armor data of an entity
@@ -589,7 +589,7 @@ do
 		if restrictInfo(this) then return empty end
 		if not ACE.Check(this) then return empty end
 
-		local mat = this.ACF.Material
+		local mat = this.ACE.Material
 		if not mat then return empty end
 
 		local matData = ACE.ArmorTypes[mat]
@@ -640,10 +640,10 @@ do
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		local dmgInfo = {}
-		if oldACFTbl and entity.ACF then
+		if oldACFTbl and entity.ACE then
 			dmgInfo = {
-				health = (entity.ACF.Health or 0) - (oldACFTbl.Health or 0),
-				armour = (entity.ACF.Armour or 0) - (oldACFTbl.Armour or 0),
+				health = (entity.ACE.Health or 0) - (oldACFTbl.Health or 0),
+				armour = (entity.ACE.Armour or 0) - (oldACFTbl.Armour or 0),
 			}
 		end
 		return true,

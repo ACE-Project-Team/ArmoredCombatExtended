@@ -567,7 +567,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile.DoNotDuplicate  = true
 	missile.Launcher		= self
 
-	missile.ContrapId = ACE.Check( self ) and self.ACF.ContraptionId or 1
+	missile.ContrapId = ACE.Check( self ) and self.ACE.ContraptionId or 1
 
 	local BulletData = ACE.Missile_CompactBulletData(Crate)
 	BulletData.IsShortForm  = true
@@ -575,7 +575,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile:SetBulletData(BulletData)
 	missile.Bulletdata2 = Crate.BulletData --Sets non compacted bulletdata for spawning a shell. I guarantee there's a better way to do this.
 
-	ACE_BulletDataMath(missile)
+	ACE.BulletDataMath(missile)
 
 	missile.OutSideRackModel = ACE.GetRackValue(self.Id, "rocketmdl") or ACE.GetGunValue(BulletData.Id, "rocketmdl")
 
@@ -596,9 +596,9 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	local prop = missile.BulletData.FrArea * (missile.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	local ThrustRatio = 1 + (prop-( ACE.GetRackValue(BulletData, "propweight") or ACE.GetGunValue(BulletData.Id, "propweight") or 1 ))	--Multiplies burntime by the amount of proppelant compared to max.
 
-	missile.ACF = missile.ACF or {}
-	missile.ACF.Ductility = -0.8
-	missile.ACF.Material = "RHA" --Add material customization option to missiles?
+	ACE.GetEntityState(missile, true)
+	missile.ACE.Ductility = -0.8
+	missile.ACE.Material = "RHA" --Add material customization option to missiles?
 	self.RoundWeight = ACE.GetGunValue(BulletData, "weight") or 10
 	missile.RoundWeight = self.RoundWeight --Used to scale thrust acceleration.
 
@@ -673,8 +673,8 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	if (IsValid(phys)) then
 
 				--1.8 is 80 ductility
-		missile.ACF.Area = (phys:GetSurfaceArea() * 6.45) * 0.52505066107
-		phys:SetMass( missile.ACF.Area * 0.2 ^ 0.5 * (ACE.GetRackValue(self.Id, "armour") or ACE.GetGunValue(BulletData.Id, "armour") or 10) * 0.00078 ) --Sets missile armor thickness.
+		missile.ACE.Area = (phys:GetSurfaceArea() * 6.45) * 0.52505066107
+		phys:SetMass( missile.ACE.Area * 0.2 ^ 0.5 * (ACE.GetRackValue(self.Id, "armour") or ACE.GetGunValue(BulletData.Id, "armour") or 10) * 0.00078 ) --Sets missile armor thickness.
 	end
 
 	if self.HideMissile then missile:SetNoDraw(true) end
@@ -833,8 +833,8 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 	local pointSources = { self }
 	self._ACEPointsSuppress = true
 
-	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
-		local AmmoLink = Ent.EntityMods.ACFAmmoLink
+	if Ent.EntityMods and Ent.EntityMods.ACEAmmoLink and Ent.EntityMods.ACEAmmoLink.entities then
+		local AmmoLink = Ent.EntityMods.ACEAmmoLink
 		if AmmoLink.entities and next(AmmoLink.entities) then
 			for _,AmmoID in pairs(AmmoLink.entities) do
 				local Ammo = CreatedEntities[ AmmoID ]
@@ -844,7 +844,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 				end
 			end
 		end
-		Ent.EntityMods.ACFAmmoLink = nil
+		Ent.EntityMods.ACEAmmoLink = nil
 	end
 
 	self._ACEPointsSuppress = nil

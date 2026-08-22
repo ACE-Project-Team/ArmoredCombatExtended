@@ -685,14 +685,14 @@ function ENT:Heat_Function()
 		--local Mass = phys:GetMass()
 
 		--[[
-		HitRes = ACE_Damage(self, {
+		HitRes = ACE.Damage(self, {
 			Kinetic = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1)),
 			Momentum = 0,
 			Penetration = (1 * OverHeat) * (1 + math.max(Mass - 300, 0.1))
 		}, 2, 0, self:CPPIGetOwner())
 
 		if HitRes.Kill then
-			ACE_HEKill( self, VectorRand() , 0)
+			ACE.HEKill( self, VectorRand() , 0)
 		end
 		]]--
 
@@ -893,8 +893,8 @@ do
 		local SpreadScale = ACE.SpreadScale
 		local IaccMult = 1
 
-		if self.ACF.Health and self.ACF.MaxHealth then
-			IaccMult = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
+		if self.ACE.Health and self.ACE.MaxHealth then
+			IaccMult = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACE.Health / self.ACE.MaxHealth) - 1) + 1, 1, SpreadScale)
 		end
 
 		-- Increased FS accuracy. Hardcoded.
@@ -1221,9 +1221,8 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 	local pointSources = { self }
 	self._ACEPointsSuppress = true
 
-	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
-
-		local AmmoLink = Ent.EntityMods.ACFAmmoLink
+	local AmmoLink = Ent.EntityMods and (Ent.EntityMods.ACEAmmoLink or Ent.EntityMods.ACFAmmoLink)
+	if AmmoLink and AmmoLink.entities then
 
 		if AmmoLink.entities and table.Count(AmmoLink.entities) > 0 then
 
@@ -1247,6 +1246,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 			end
 		end
 
+		Ent.EntityMods.ACEAmmoLink = nil
 		Ent.EntityMods.ACFAmmoLink = nil
 	end
 

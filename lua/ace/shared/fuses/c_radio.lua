@@ -112,7 +112,7 @@ do
 					continue
 				end
 			else
-				local HitId = HitEnt.ACF and HitEnt.ACF.ContraptionId or nil
+				local HitId = HitEnt.ACE and HitEnt.ACE.ContraptionId or nil
 				local OwnId = missile.ContrapId or nil
 
 				if HitId and OwnId and HitId == OwnId then

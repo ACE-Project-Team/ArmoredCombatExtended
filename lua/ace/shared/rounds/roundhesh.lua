@@ -128,16 +128,16 @@ function Round.propimpact( _, Bullet, Target, _, HitPos, Bone ) --Hitnormal not 
 		local ImpactMass = math.max(Bullet.ProjMass - Bullet.FillerMass * 0.85, Bullet.ProjMass * 0.1)
 		local Energy = ACE.Kinetic(Speed, ImpactMass, Bullet.LimitVel)
 
-		local Mat		= Target.ACF.Material or "RHA"
+		local Mat		= Target.ACE.Material or "RHA"
 		local MatData	= ACE.GetMaterialData( Mat )
 
 		local Pen = Bullet.FillerMass / 300 * ACE.HEPower
-		if ( Pen * 1.25 ) > ( Target.ACF.Armour * (MatData.ArmorMul or 1) ) then
+		if ( Pen * 1.25 ) > ( Target.ACE.Armour * (MatData.ArmorMul or 1) ) then
 
 			ACE.RoundImpact(Bullet, Speed, Energy, Target, HitPos, -Bullet.Flight:GetNormalized(), Bone) --( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
 
 			table.insert( Bullet.Filter , Target )
-			ACE.Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACE.HEPower, Bullet.Caliber, Target.ACF.Armour, Bullet.Owner, Target.ACF.Material) --Do some spalling
+			ACE.Spall_HESH( HitPos, Bullet.Flight, Bullet.Filter, Bullet.FillerMass * ACE.HEPower, Bullet.Caliber, Target.ACE.Armour, Bullet.Owner, Target.ACE.Material) --Do some spalling
 
 		end
 

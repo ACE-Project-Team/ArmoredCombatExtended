@@ -57,16 +57,16 @@ local function ApplySettings( _, ent, data )
 	end
 
 	if data.Ductility then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Ductility = data.Ductility / 100
+		ACE.GetEntityState(ent, true)
+		ent.ACE.Ductility = data.Ductility / 100
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
 	end
 
 	local con = ent:CFW_GetContraption()
 
 	if data.Material then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Material = data.Material
+		ACE.GetEntityState(ent, true)
+		ent.ACE.Material = data.Material
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
 	end
 
@@ -92,7 +92,7 @@ function TOOL:LeftClick( trace )
 	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
 	local material  = self:GetClientInfo( "material" ) or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, ductility / 100, thickness , material)
+	local mass		= CalcArmor( ent.ACE.Area, ductility / 100, thickness , material)
 
 	ApplySettings( ply, ent, { Mass = mass , Ductility = ductility, Material = material} )
 
@@ -116,9 +116,9 @@ function TOOL:RightClick( trace )
 
 	local legacyMode = "acf" .. "armorprop"
 	local prefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
-	ply:ConCommand( prefix .. "_ductility " .. (ent.ACF.Ductility or 0) * 100 )
-	ply:ConCommand( prefix .. "_thickness " .. ent.ACF.MaxArmour )
-	ply:ConCommand( prefix .. "_material " .. (ent.ACF.Material or "RHA") )
+	ply:ConCommand( prefix .. "_ductility " .. (ent.ACE.Ductility or 0) * 100 )
+	ply:ConCommand( prefix .. "_thickness " .. ent.ACE.MaxArmour )
+	ply:ConCommand( prefix .. "_material " .. (ent.ACE.Material or "RHA") )
 
 	-- Clear cached target to force a fresh network update of armor values.
 	self.AimEntity = nil
@@ -387,7 +387,7 @@ function TOOL:Think()
 	-- Primitive can expose a transient non-ACF state while it rebuilds. Do not cache that failed
 	-- observation forever: the client preview divides its zero area by zero and displays "nan".
 	if ent == self.AimEntity and self.AimEntityArmorReady then
-		local acf = ent.ACF
+		local acf = ent.ACE
 		local phys = ent:GetPhysicsObject()
 
 		if istable(acf) and IsValid(phys)
@@ -405,18 +405,18 @@ function TOOL:Think()
 
 	if ACE.Check( ent ) then
 
-		local Mat = ent.ACF.Material or "RHA"
+		local Mat = ent.ACE.Material or "RHA"
 		local MatData = ACE.GetMaterialData( Mat )
 		local AcePts, pointsLabel, pointBreakdown, componentCost = getPopupPoints(ent)
 
 		if not MatData then return end
 
-		ply:ConCommand( "acearmorprop_area " .. ent.ACF.Area )
+		ply:ConCommand( "acearmorprop_area " .. ent.ACE.Area )
 		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
-		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
-		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
-		self.Weapon:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-		self.Weapon:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+		self.Weapon:SetNWFloat( "HP", ent.ACE.Health )
+		self.Weapon:SetNWFloat( "Armour", ent.ACE.Armour )
+		self.Weapon:SetNWFloat( "MaxHP", ent.ACE.MaxHealth )
+		self.Weapon:SetNWFloat( "MaxArmour", ent.ACE.MaxArmour )
 		self.Weapon:SetNWString( "Material", MatData.sname or "RHA")
 		self.Weapon:SetNWString( "PointCostLabel", pointsLabel )
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
@@ -424,12 +424,12 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
 		self.AimEntityPhysics = ent:GetPhysicsObject()
 		self.AimEntityMass = self.AimEntityPhysics:GetMass()
-		self.AimEntityArea = ent.ACF.Area
-		self.AimEntityArmor = ent.ACF.Armour
-		self.AimEntityMaxArmor = ent.ACF.MaxArmour
-		self.AimEntityHealth = ent.ACF.Health
-		self.AimEntityMaxHealth = ent.ACF.MaxHealth
-		self.AimEntityMaterial = ent.ACF.Material
+		self.AimEntityArea = ent.ACE.Area
+		self.AimEntityArmor = ent.ACE.Armour
+		self.AimEntityMaxArmor = ent.ACE.MaxArmour
+		self.AimEntityHealth = ent.ACE.Health
+		self.AimEntityMaxHealth = ent.ACE.MaxHealth
+		self.AimEntityMaterial = ent.ACE.Material
 		self.AimEntityArmorReady = true
 
 	else

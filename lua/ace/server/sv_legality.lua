@@ -118,7 +118,7 @@ do
 	-- Allowed materials: rha, cast and aluminum
 	if ACE.Legal.Ignore.Material <= 0 then
 
-		local material = Ent.ACF.Material or "RHA"
+		local material = Ent.ACE.Material or "RHA"
 
 		if not AllowedMaterials[material] then
 			table.insert(problems,"Material not legal")

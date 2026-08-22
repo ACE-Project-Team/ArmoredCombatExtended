@@ -166,10 +166,14 @@ Rename canonical entity directories and registrations from `acf_*` to `ace_*`, t
 - duplicator factories and modifier keys;
 - all server/shared/client includes.
 
-Convert canonical entity state from `ent.ACF` to `ent.ACE`. Dupe imports use a versioned,
-explicit migration function at the dupe boundary; they do not recreate `ent.ACF` or an ACF
-global. Saved identifiers that must break are listed in the release notes and tested as
-forward-only migrations.
+Convert canonical entity state from `ent.ACF` to `ent.ACE`. The first state-boundary slice is
+now source-owned by `ACE.GetEntityState`/`ACE.SetEntityState`: it adopts legacy state once,
+repairs the compatibility alias, and gives ACE consumers one migration seam. Dupe imports use
+a versioned, explicit migration function at the dupe boundary; they do not recreate `ent.ACF` or
+an ACF global. The boundary is transitional until all production consumers and host adapters
+use it; the entity ledger remains review-required while direct state consumers exist. Saved
+identifiers that must break are listed in the release notes and tested as forward-only
+migrations.
 
 Rollback: each entity family has a path/registration commit and a dupe migration commit.
 Never mix a path move, state rename, and balance change. A failed family rolls back its

@@ -289,7 +289,6 @@ function ACE.CreateBullet( BulletData )
 
 	hook.Run("ACE_OnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 	hook.Run("ACEOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
-	hook.Run("ACEOnBulletCreation", ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex] or BulletData)
 
 	return BulletData.LaunchFilter
 end
@@ -347,7 +346,6 @@ function ACE.RemoveBullet( Index )
 	end
 
 	hook.Run("ACE_OnBulletRemoved", Index, Bullet)
-	hook.Run("ACEOnBulletRemoved", Index, Bullet)
 	hook.Run("ACEOnBulletRemoved", Index, Bullet)
 end
 
@@ -582,7 +580,6 @@ do
 
 				hook.Run("ACE_OnBulletPenetrated", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletPenetrated", Index, Bullet, FlightRes)
-				hook.Run("ACEOnBulletPenetrated", Index, Bullet, FlightRes)
 
 				if Bullet.OnPenetrated then
 					Bullet.OnPenetrated(Index, Bullet, FlightRes)
@@ -620,7 +617,6 @@ do
 
 				hook.Run("ACE_OnBulletRicochet", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletRicochet", Index, Bullet, FlightRes)
-				hook.Run("ACEOnBulletRicochet", Index, Bullet, FlightRes)
 
 				if Bullet.OnRicocheted then
 					Bullet.OnRicocheted(Index, Bullet, FlightRes)
@@ -651,7 +647,6 @@ do
 			Hit = function(Index, Bullet, FlightRes, _)
 
 				hook.Run("ACE_OnBulletHit", Index, Bullet, FlightRes)
-				hook.Run("ACEOnBulletHit", Index, Bullet, FlightRes)
 				hook.Run("ACEOnBulletHit", Index, Bullet, FlightRes)
 
 				if Bullet.OnEndFlight then
@@ -985,7 +980,7 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 	missile.DoNotDuplicate  = true
 	missile.Launcher		= MissileData.Launcher
 
-	missile.ContrapId = ACE.Check( MissileData.Launcher ) and MissileData.Launcher.ACF.ContraptionId or 1
+	missile.ContrapId = ACE.Check( MissileData.Launcher ) and MissileData.Launcher.ACE.ContraptionId or 1
 
 	local BulletData = ACE.Missile_CompactBulletData(Crate)
 	BulletData.IsShortForm  = true
@@ -1003,9 +998,9 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 	missile:SetPos(MissileData.Pos)
 	missile:SetAngles(MissileData.Ang)
 
-	missile.ACF = missile.ACF or {}
-	missile.ACF.Ductility = -0.8
-	missile.ACF.Material = "RHA"
+	ACE.GetEntityState(missile, true)
+	missile.ACE.Ductility = -0.8
+	missile.ACE.Material = "RHA"
 	missile.RoundWeight = ACE.GetGunValue(BulletData, "weight") or 10
 
 	missile.Drag = MissileData.Drag
@@ -1068,8 +1063,8 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 	local phys = missile:GetPhysicsObject()
 	if (IsValid(phys)) then
 		--1.8 is 80 ductility
-		missile.ACF.Area = (phys:GetSurfaceArea() * 6.45) * 0.52505066107
-		phys:SetMass( missile.ACF.Area * 0.2 ^ 0.5 * (MissileData.ArmorThickness or 10) * 0.00078 ) --Sets missile armor thickness.
+		missile.ACE.Area = (phys:GetSurfaceArea() * 6.45) * 0.52505066107
+		phys:SetMass( missile.ACE.Area * 0.2 ^ 0.5 * (MissileData.ArmorThickness or 10) * 0.00078 ) --Sets missile armor thickness.
 	end
 
 	missile:Spawn()

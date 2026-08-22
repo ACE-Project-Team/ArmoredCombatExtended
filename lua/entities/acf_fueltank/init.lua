@@ -64,34 +64,34 @@ end
 
 function ENT:ACF_Activate( Recalc )
 
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 
 	local PhysObj = self:GetPhysicsObject()
-	if not self.ACF.Area then
-		self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+	if not self.ACE.Area then
+		self.ACE.Area = PhysObj:GetSurfaceArea() * 6.45
 	end
-	if not self.ACF.Volume then
-		self.ACF.Volume = PhysObj:GetVolume() * 1
+	if not self.ACE.Volume then
+		self.ACE.Volume = PhysObj:GetVolume() * 1
 	end
 
-	local Armour = self.EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health = (self.ACF.Volume / ACE.Threshold) * 0.5					--Setting the threshold of the prop Area gone
+	local Armour = self.EmptyMass * 1000 / self.ACE.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
+	local Health = (self.ACE.Volume / ACE.Threshold) * 0.5					--Setting the threshold of the prop Area gone
 
 	local Percent = 1
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
+	if Recalc and self.ACE.Health and self.ACE.MaxHealth then
+		Percent = self.ACE.Health / self.ACE.MaxHealth
 	end
 
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	self.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = nil
-	self.ACF.Mass      = self.Mass
-	self.ACF.Density   = (PhysObj:GetMass() * 1000) / self.ACF.Volume
-	self.ACF.Type      = "Prop"
+	self.ACE.Health    = Health * Percent
+	self.ACE.MaxHealth = Health
+	self.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	self.ACE.MaxArmour = Armour
+	self.ACE.Type      = nil
+	self.ACE.Mass      = self.Mass
+	self.ACE.Density   = (PhysObj:GetMass() * 1000) / self.ACE.Volume
+	self.ACE.Type      = "Prop"
 
-	self.ACF.Material	= not isstring(self.ACF.Material) and ACE.BackCompMat[self.ACF.Material] or self.ACF.Material or "RHA"
+	self.ACE.Material	= not isstring(self.ACE.Material) and ACE.BackCompMat[self.ACE.Material] or self.ACE.Material or "RHA"
 
 	--Forces an update of mass
 	self.LastMass = 1
@@ -122,7 +122,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 		return HitRes
 	end
 
-	local Ratio = (HitRes.Damage / self.ACF.Health) ^ 0.75 --chance to explode from sheer damage, small shots = small chance
+	local Ratio = (HitRes.Damage / self.ACE.Health) ^ 0.75 --chance to explode from sheer damage, small shots = small chance
 	local ExplodeChance = (1-(self.Fuel / self.Capacity)) ^ 0.75 --chance to explode from fumes in tank, less fuel = more explodey
 
 	--it's gonna blow
@@ -142,7 +142,7 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 	else												--spray some fuel around
 		self:NextThink( CurTime() + 0.1 )
 		if self.FuelType ~= "Electric" then
-			self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
+			self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACE.Health) ^ 1.5) * 0.25
 		end
 	end
 

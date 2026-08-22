@@ -284,7 +284,7 @@ do
 
 					if IsValid(PhysObj) then
 
-						local material		= v.ACF and v.ACF.Material or "RHA"
+						local material		= v.ACE and v.ACE.Material or "RHA"
 
 						--ACE doesnt update their material stats actively, so we need to update it manually here.
 						if not isstring(material) then
@@ -691,8 +691,8 @@ local function GetDefaultActiveInput(ent, inputName)
 	local input = inputs and inputs[inputName or "Active"]
 
 	if input and input.Src == nil then
-		input.ACFDefaultValue = input.ACFDefaultValue or 1
-		input.Value = input.ACFDefaultValue
+		input.ACEDefaultValue = input.ACEDefaultValue or 1
+		input.Value = input.ACEDefaultValue
 	end
 
 	return input
@@ -702,8 +702,8 @@ function ACE.SetDefaultActiveInputState(ent, value, inputName)
 	local input = GetDefaultActiveInput(ent, inputName)
 
 	if input and input.Src == nil then
-		input.ACFDefaultValue = value ~= 0 and 1 or 0
-		input.Value = input.ACFDefaultValue
+		input.ACEDefaultValue = value ~= 0 and 1 or 0
+		input.Value = input.ACEDefaultValue
 
 		return true
 	end
@@ -717,11 +717,7 @@ function ACE.HasDefaultActiveInputState(ent, inputName)
 	local inputs = ent.Inputs
 	local input = inputs and inputs[inputName or "Active"]
 
-	return input and input.ACFDefaultValue ~= nil or false
-end
-
-function ACE.IsDefaultActiveInputWired(ent, inputName)
-	return ACE.IsDefaultActiveInputWired(ent, inputName)
+	return input and input.ACEDefaultValue ~= nil or false
 end
 
 function ACE.IsDefaultActiveInputWired(ent, inputName)
@@ -731,17 +727,13 @@ function ACE.IsDefaultActiveInputWired(ent, inputName)
 end
 
 function ACE.GetDefaultActiveInputState(ent, value, inputName)
-	return ACE.GetDefaultActiveInputState(ent, value, inputName)
-end
-
-function ACE.GetDefaultActiveInputState(ent, value, inputName)
 	if not IsValid(ent) then return false end
 
 	local legal = ent.Legal ~= false
 	local input = GetDefaultActiveInput(ent, inputName)
 
 	if not input then return legal end
-	if input.Src == nil then return input.ACFDefaultValue ~= 0 and legal end
+	if input.Src == nil then return input.ACEDefaultValue ~= 0 and legal end
 
 	local wireValue = value
 	if wireValue == nil then wireValue = input.Value or 0 end
@@ -932,11 +924,11 @@ end
 function ACE.GetArmorPoints(ent)
 	if not ACE.IsEnt(ent) then return 0 end
 
-	local previousACF = ent.ACF
+	local previousACF = ent.ACE
 	local previousMaxArmour = previousACF and previousACF.MaxArmour
 	local previousMaxHealth = previousACF and previousACF.MaxHealth
 	local previousMaterial = previousACF and previousACF.Material
-	local previousFallbackMaterial = ent.ACF_Material
+	local previousFallbackMaterial = ent.ACE_Material
 
 	local primitiveArmorPending = ent.IsPrimitive and (
 		ent.ACE_PrimitiveRestoreSavedArmor or ent.ACE_PrimitiveArmorPending
@@ -948,11 +940,11 @@ function ACE.GetArmorPoints(ent)
 	local cacheKey = ent:EntIndex()
 	ACE.ArmorPointCache = ACE.ArmorPointCache or {}
 
-	local currentACF = ent.ACF
+	local currentACF = ent.ACE
 	if previousMaxArmour ~= (currentACF and currentACF.MaxArmour)
 		or previousMaxHealth ~= (currentACF and currentACF.MaxHealth)
 		or previousMaterial ~= (currentACF and currentACF.Material)
-		or previousFallbackMaterial ~= ent.ACF_Material then
+		or previousFallbackMaterial ~= ent.ACE_Material then
 		ACE.ArmorPointCache[cacheKey] = nil
 	end
 

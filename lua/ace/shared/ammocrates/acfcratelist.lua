@@ -697,7 +697,7 @@ ACE.DefineModelData("Wedge",{
 })
 
 --Another type of wedge.
-ACE_DefineModelData("Prism",{
+ACE.DefineModelData("Prism",{
 
 	Shape = "Prism",
 	Model = "models/holograms/prism.mdl",
@@ -758,7 +758,7 @@ ACE.DefineModelData("Cylinder",{
 })
 
 -- The sphere. Dont ask how i got its vertex.
-ACE_DefineModelData("Sphere",{
+ACE.DefineModelData("Sphere",{
 
 	Shape = "Sphere",
 	Model = "models/holograms/hq_sphere.mdl", --Note: The model can be used as ID if needed.

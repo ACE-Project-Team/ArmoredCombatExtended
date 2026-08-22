@@ -186,11 +186,11 @@ function ACE.Manufacturing.EntCost(ent)
 	-- by physics mass x the prop's armor-material $/ton.
 	if cls:sub(1, 4) ~= "ACE_" and cls:sub(1, 4) ~= "ace_" and cls:sub(1, 5) ~= "gmod_"
 		and not cls:find("pod", 1, true) then
-		local acf = ent.ACF
+	local acf = ACE.GetEntityState(ent)
 		if istable(acf) and acf.Armour then
 			local phys = ent:GetPhysicsObject()
 			local mass = (IsValid(phys) and phys:GetMass()) or 0
-			return ACE.Manufacturing.ArmorCost(mass, acf.Material or ent.ACF_Material), "Armor"
+			return ACE.Manufacturing.ArmorCost(mass, acf.Material or ent.ACE_Material), "Armor"
 		end
 		return 0, nil
 	end

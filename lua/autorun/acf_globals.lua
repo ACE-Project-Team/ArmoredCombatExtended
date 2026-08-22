@@ -1,5 +1,10 @@
 ACE               = ACE or {}
 
+include("ace/shared/sh_ace_entity_state.lua")
+
+ACE.CurTime       = CurTime()
+ACE.SysTime       = SysTime()
+
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
 ACE.AmmoBlacklist = {}
@@ -554,8 +559,8 @@ do
     local function OnInitialSpawn( ply )
         local Table = {}
         for _, v in pairs( ents.GetAll() ) do
-            if v.ACF and v.ACF.PrHealth then
-                table.insert(Table,{ID = v:EntIndex(), Health = v.ACF.Health, v.ACF.MaxHealth})
+            if v.ACE and v.ACE.PrHealth then
+                table.insert(Table,{ID = v:EntIndex(), Health = v.ACE.Health, v.ACE.MaxHealth})
             end
         end
         if Table ~= {} then

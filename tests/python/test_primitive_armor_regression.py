@@ -65,7 +65,7 @@ class PrimitiveArmorSnapshotTests(unittest.TestCase):
         )
         self.assertIsNotNone(restore)
         self.assertIn("local saved = CopyArmorValues(ent.ACE_PrimitiveSavedArmor)", restore.group("body"))
-        self.assertIn("ent.ACF = acf", restore.group("body"))
+        self.assertIn("local acf = ACE.GetEntityState(ent, true)", restore.group("body"))
 
     def test_fallback_drops_other_non_finite_inputs_before_recalculation(self):
         source = SOURCE.read_text(encoding="utf-8")
@@ -73,8 +73,8 @@ class PrimitiveArmorSnapshotTests(unittest.TestCase):
         self.assertIn("local function ClearInvalidLiveArmorValues(acf)", source)
         self.assertIn("acf.Ductility = nil", source)
         self.assertIn("acf.Health = nil", source)
-        self.assertIn("ent.ACF = acf", source)
-        self.assertIn("ClearInvalidLiveArmorValues(ent.ACF)", source)
+        self.assertIn("local state = ACE.GetEntityState(ent)", source)
+        self.assertIn("ClearInvalidLiveArmorValues(state)", source)
 
     def test_legacy_acfsettings_are_rebuilt_from_final_primitive_state(self):
         source = SOURCE.read_text(encoding="utf-8")

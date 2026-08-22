@@ -48,7 +48,7 @@ function EFFECT:Init( data )
 	if Ground.HitNonWorld then
 		Mat = Mat
 
-		--I guess the material is serverside only ATM? TEnt.ACF.Material doesn't return anything valid.
+		--I guess the material is serverside only ATM? TEnt.ACE.Material doesn't return anything valid.
 		--TODO: Add clienside way to get ACF Material
 		Material = "Metal"
 	end

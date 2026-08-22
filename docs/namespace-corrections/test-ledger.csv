@@ -1,0 +1,44 @@
+old_assertion,new_assertion,fixture,status
+tests/client/ace_namespace_client_probe.lua,tests/client/ace_namespace_client_probe.lua,live client probe,runner-defined
+tests/fixtures/general_use_manifest.json,tests/fixtures/general_use_manifest.json,fixture-specific runner required,review-required
+tests/fixtures/static_allowlist.json,tests/fixtures/static_allowlist.json,fixture-specific runner required,review-required
+tests/gluatest_overrides/lua/autorun/ace_gluatest_guard.lua,tests/gluatest_overrides/lua/autorun/ace_gluatest_guard.lua,native GLuaTest suite,runner-defined
+tests/headless/ace_namespace_runtime_probe.lua,tests/headless/ace_namespace_runtime_probe.lua,live dedicated-server probe,runner-defined
+tests/lua/ace_bullet_filter_selftest.lua,tests/lua/ace_bullet_filter_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_entity_state_luajit_selftest.lua,tests/lua/ace_entity_state_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_legacy_compatibility_luajit_selftest.lua,tests/lua/ace_legacy_compatibility_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_missile_launch_luajit_selftest.lua,tests/lua/ace_missile_launch_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_points_invalidation_matrix_luajit_selftest.lua,tests/lua/ace_points_invalidation_matrix_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_points_model_luajit_selftest.lua,tests/lua/ace_points_model_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/ace_primitive_armor_luajit_selftest.lua,tests/lua/ace_primitive_armor_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/active_input_persistence_luajit_selftest.lua,tests/lua/active_input_persistence_luajit_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/lua/missile_visclip_selftest.lua,tests/lua/missile_visclip_selftest.lua,python tests/run_luajit_tests.py .,runner-defined
+tests/prepare_gluatest_dependencies.sh,tests/prepare_gluatest_dependencies.sh,fixture-specific runner required,review-required
+tests/python/ace_static/__init__.py,tests/python/ace_static/__init__.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/ace_static/allowlist.py,tests/python/ace_static/allowlist.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/ace_static/annotations.py,tests/python/ace_static/annotations.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/ace_static/namespace.py,tests/python/ace_static/namespace.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/ace_static/scanner.py,tests/python/ace_static/scanner.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/lua_source.py,tests/python/lua_source.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_armor_tool_primitive_retry.py,tests/python/test_armor_tool_primitive_retry.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_behavior_contracts.py,tests/python/test_behavior_contracts.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_general_suite_manifest.py,tests/python/test_general_suite_manifest.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_invalidation_contract.py,tests/python/test_invalidation_contract.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_legacy_extension_compat.py,tests/python/test_legacy_extension_compat.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_lua_source.py,tests/python/test_lua_source.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_missile_definitions.py,tests/python/test_missile_definitions.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_namespace_contracts.py,tests/python/test_namespace_contracts.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_namespace_corrections_inventory.py,tests/python/test_namespace_corrections_inventory.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_namespace_refactor.py,tests/python/test_namespace_refactor.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_native_suite_manifest.py,tests/python/test_native_suite_manifest.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_primitive_armor_regression.py,tests/python/test_primitive_armor_regression.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_registry_definitions.py,tests/python/test_registry_definitions.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_repository_structure.py,tests/python/test_repository_structure.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_runtime_artifact_schema.py,tests/python/test_runtime_artifact_schema.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_self_fire_prevention.py,tests/python/test_self_fire_prevention.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_spall_regression.py,tests/python/test_spall_regression.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/python/test_static_safety_contracts.py,tests/python/test_static_safety_contracts.py,python -m unittest discover -s tests/python -p 'test_*.py',runner-defined
+tests/run_headless_scenarios.py,tests/run_headless_scenarios.py,fixture-specific runner required,review-required
+tests/run_luajit_tests.py,tests/run_luajit_tests.py,fixture-specific runner required,review-required
+tests/run_perf_scenarios.py,tests/run_perf_scenarios.py,fixture-specific runner required,review-required
+tests/run_static_safety.py,tests/run_static_safety.py,fixture-specific runner required,review-required

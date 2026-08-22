@@ -102,7 +102,7 @@ function ENT:Detonate()
 	if not IsValid(owner) then owner = self:CPPIGetOwner() end
 
 	-- Identical to how HE rounds deal their blast.
-	ACE_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
+	ACE.HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
 	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
@@ -122,27 +122,27 @@ end
 
 -- ACF health setup, mirrored from the ammo crate (volume-based HP).
 function ENT:ACF_Activate(Recalc)
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 	local phys = self:GetPhysicsObject()
 	if not IsValid(phys) then return end
 
-	self.ACF.Area   = self.ACF.Area or (phys:GetSurfaceArea() * 6.45)
-	self.ACF.Volume = self.ACF.Volume or (phys:GetVolume() * 16.38)
+	self.ACE.Area   = self.ACE.Area or (phys:GetSurfaceArea() * 6.45)
+	self.ACE.Volume = self.ACE.Volume or (phys:GetVolume() * 16.38)
 
-	local Health  = (self.ACF.Volume / ACE.Threshold) / 20
+	local Health  = (self.ACE.Volume / ACE.Threshold) / 20
 	local Percent = 1
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
+	if Recalc and self.ACE.Health and self.ACE.MaxHealth then
+		Percent = self.ACE.Health / self.ACE.MaxHealth
 	end
 
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	local Armour = (phys:GetMass() * 1000 / self.ACF.Area / 0.78)
-	self.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-	self.ACF.Mass      = self.Mass
-	self.ACF.Material  = self.ACF.Material or "RHA"
+	self.ACE.Health    = Health * Percent
+	self.ACE.MaxHealth = Health
+	local Armour = (phys:GetMass() * 1000 / self.ACE.Area / 0.78)
+	self.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	self.ACE.MaxArmour = Armour
+	self.ACE.Type      = "Prop"
+	self.ACE.Mass      = self.Mass
+	self.ACE.Material  = self.ACE.Material or "RHA"
 end
 
 -- Cook off when shot. Each hit has a chance to set it off that grows with how
@@ -154,8 +154,8 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
 
 	if IsValid(Inflictor) and Inflictor:IsPlayer() then self.DamageOwner = Inflictor end
 
-	local maxHealth  = (self.ACF and self.ACF.MaxHealth) or 1
-	local health     = (self.ACF and self.ACF.Health) or maxHealth
+	local maxHealth  = (self.ACE and self.ACE.MaxHealth) or 1
+	local health     = (self.ACE and self.ACE.Health) or maxHealth
 	local dmgFrac    = (HitRes.Damage or 0) / math.max(maxHealth, 1)
 	local healthFrac = math.Clamp(health / math.max(maxHealth, 1), 0, 1)
 

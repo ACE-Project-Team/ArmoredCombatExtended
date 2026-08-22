@@ -399,13 +399,13 @@ function ACE.Points.PropArmor(ent)
 		return nil
 	end
 
-	local acf = ent.ACF
+	local acf = ACE.GetEntityState(ent)
 	if not istable(acf) then return nil end
 
 	local armourMm = tonumber(acf.MaxArmour) or 0
 	local hp       = tonumber(acf.MaxHealth) or 0
 	if armourMm <= 0 or hp <= 0 then return nil end
 
-	local ke, chem = materialEff(acf.Material or ent.ACF_Material)
+	local ke, chem = materialEff(acf.Material or ent.ACE_Material)
 	return ACE.Points.EffectiveMm(armourMm, ke, chem), hp
 end

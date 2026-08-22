@@ -69,10 +69,10 @@ function SWEP:Think()
 		local ent = tr.Entity
 
 		if IsValid(ent) and not ent:IsPlayer() and not ent:IsNPC() and ACE.Check( ent ) then
-			self:SetNWFloat( "HP", ent.ACF.Health )
-			self:SetNWFloat( "Armour", ent.ACF.Armour )
-			self:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-			self:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+			self:SetNWFloat( "HP", ent.ACE.Health )
+			self:SetNWFloat( "Armour", ent.ACE.Armour )
+			self:SetNWFloat( "MaxHP", ent.ACE.MaxHealth )
+			self:SetNWFloat( "MaxArmour", ent.ACE.MaxArmour )
 		end
 
 		self:NextThink(CurTime() + 0.2)
@@ -137,19 +137,19 @@ do
 
 				if CPPI and not ent:CPPICanTool( self:GetOwner(), "torch" ) then return false end
 
-				if ACE.Check( ent ) and ent.ACF.Health < ent.ACF.MaxHealth then
+				if ACE.Check( ent ) and ent.ACE.Health < ent.ACE.MaxHealth then
 
-					ent.ACF.Health = math.min(ent.ACF.Health + (600 / ent.ACF.MaxArmour), ent.ACF.MaxHealth)
-					ent.ACF.Armour = math.min(ent.ACF.MaxArmour * (ent.ACF.Health / ent.ACF.MaxHealth), ent.ACF.MaxArmour)
+					ent.ACE.Health = math.min(ent.ACE.Health + (600 / ent.ACE.MaxArmour), ent.ACE.MaxHealth)
+					ent.ACE.Armour = math.min(ent.ACE.MaxArmour * (ent.ACE.Health / ent.ACE.MaxHealth), ent.ACE.MaxArmour)
 					ent:EmitSound( "ambient/energy/NewSpark0" .. tostring( math.random( 3, 5 ) ) .. ".wav", 75, 100, 1, CHAN_WEAPON )
 					ACE.TeslaSpark(tr.HitPos , 1 )
 
 					ACE.UpdateVisualHealth(ent)
 
-					self:SetNWFloat( "HP", ent.ACF.Health )
-					self:SetNWFloat( "Armour", ent.ACF.Armour )
-					self:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-					self:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+					self:SetNWFloat( "HP", ent.ACE.Health )
+					self:SetNWFloat( "Armour", ent.ACE.Armour )
+					self:SetNWFloat( "MaxHP", ent.ACE.MaxHealth )
+					self:SetNWFloat( "MaxArmour", ent.ACE.MaxArmour )
 
 				end
 			end
@@ -188,10 +188,10 @@ do
 
 		if ACE.Check( ent ) then
 
-			self:SetNWFloat( "HP", ent.ACF.Health )
-			self:SetNWFloat( "Armour", ent.ACF.Armour )
-			self:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-			self:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+			self:SetNWFloat( "HP", ent.ACE.Health )
+			self:SetNWFloat( "Armour", ent.ACE.Armour )
+			self:SetNWFloat( "MaxHP", ent.ACE.MaxHealth )
+			self:SetNWFloat( "MaxArmour", ent.ACE.MaxArmour )
 
 			local HitRes = {}
 			local Energy = {}

@@ -99,6 +99,15 @@ class EntityPipelineContractTests(unittest.TestCase):
         self.assertIn("ACE.DefineTrackRadar", tracking)
         self.assertIn("ACE.DefineTrackRadar", search)
 
+    def test_radar_missile_guidance_distinguishes_jam_state_and_owner_radars(self):
+        radar = source("ace/shared/guidances/f_radar.lua")
+        semi = source("ace/shared/guidances/i_radarsemi.lua")
+        self.assertIn("if missile.IsJammed == 0 then", radar)
+        self.assertIn("if missile.IsJammed == 0 then", semi)
+        self.assertIn("if scanEnt:CPPIGetOwner() ~= missile.DamageOwner then continue end", semi)
+        self.assertNotIn("if not missile.IsJammed then", radar)
+        self.assertNotIn("if not missile.IsJammed then", semi)
+
     def test_revving_contract_keeps_engine_torque_and_rpm_inputs(self):
         engines = list((LUA / "ace/shared/engines").glob("*.lua"))
         self.assertTrue(engines)
@@ -155,6 +164,7 @@ class EntityPipelineContractTests(unittest.TestCase):
         ):
             with self.subTest(name=name):
                 self.assertIn(f'hook.Run("ACEOn{name}"', ballistics)
+                self.assertEqual(ballistics.count(f'hook.Run("ACEOn{name}"'), 1)
 
         damage = source("ace/server/sv_acfbase.lua")
         self.assertIn('hook.Run("ACEOnDamage"', damage)

@@ -1,6 +1,7 @@
 local function makeEntity(name)
 	return {
 		name = name,
+		ACF = { Ductility = 0 },
 		ACE = { Ductility = 0 },
 		GetClass = function() return "prop_physics" end,
 		GetPhysicsObject = function() return nil end,
@@ -62,7 +63,7 @@ return {
 			func = function()
 				withSuccessfulArmorRoll(function()
 					local rubber = ACE.ArmorTypes.Rub
-					local entity = { ACE = { Ductility = 0 } }
+					local entity = { ACF = { Ductility = 0 }, ACE = { Ductility = 0 } }
 					local result = rubber.ArmorResolution(entity, 15, 15, 15 ^ 1.1 * 3.5, 100, 1, 1, 1, "Spall")
 					local expectedLoss = 15 ^ 0.93 * 0.15 / 100
 

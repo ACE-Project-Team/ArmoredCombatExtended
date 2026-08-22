@@ -699,6 +699,14 @@ class NamespaceRefactorTests(unittest.TestCase):
             if relative.endswith("custom/acf.lua"):
                 self.assertIn('"acfmenu"', source)
 
+    def test_gun_dupe_accepts_canonical_and_legacy_ammo_link_keys(self):
+        source = (REPO / "lua" / "entities" / "acf_gun" / "init.lua").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("Ent.EntityMods.ACEAmmoLink or Ent.EntityMods.ACFAmmoLink", source)
+        self.assertIn("Ent.EntityMods.ACEAmmoLink = nil", source)
+        self.assertIn("Ent.EntityMods.ACFAmmoLink = nil", source)
+
     def test_named_global_functions_are_namespaced_or_entity_methods(self):
         for path in LUA_ROOT.rglob("*.lua"):
             source = code_without_comments_and_strings(

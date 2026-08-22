@@ -65,24 +65,24 @@ end
 
 local function E2SetACEArmor(ent, armor, ductility, material)
 
-	ent.ACF = ent.ACF or {}
+	ACE.GetEntityState(ent, true)
 
-	local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
-	local thickness = math.Clamp( armor or ent.ACF.Armour or 1, 0.1, 50000 )
-	local mat  = material or ent.ACF.Material or "RHA"
+	local duct = math.Clamp( ductility or (ent.ACE.Ductility * 100) or 80, -80, 80 )
+	local thickness = math.Clamp( armor or ent.ACE.Armour or 1, 0.1, 50000 )
+	local mat  = material or ent.ACE.Material or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, duct / 100, thickness , mat)
+	local mass		= CalcArmor( ent.ACE.Area, duct / 100, thickness , mat)
 
 	local phys = ent:GetPhysicsObject()
 	if IsValid( phys ) then phys:SetMass( mass ) end
 	duplicator.StoreEntityModifier( ent, "mass", { Mass = mass } )
 
-	ent.ACF.Ductility = duct / 100
+	ent.ACE.Ductility = duct / 100
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
 	local con = ent:CFW_GetContraption()
 
-	ent.ACF.Material = mat
+	ent.ACE.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
 	ACE.MarkArmorDirty(con, ent, "armor-expression2")
@@ -1283,13 +1283,13 @@ do
 	e2function number entity:acfPropHealth()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.Health then
+		if not this.ACE or not this.ACE.Health then
 			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Health, 3)
+		return round(this.ACE.Health, 3)
 	end
 
 	-- Returns the current armor of an entity
@@ -1297,13 +1297,13 @@ do
 	e2function number entity:acfPropArmor()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.Armour then
+		if not this.ACE or not this.ACE.Armour then
 			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Armour, 3)
+		return round(this.ACE.Armour, 3)
 	end
 
 	-- Returns the max health of an entity
@@ -1311,13 +1311,13 @@ do
 	e2function number entity:acfPropHealthMax()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.MaxHealth then
+		if not this.ACE or not this.ACE.MaxHealth then
 			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.MaxHealth, 3)
+		return round(this.ACE.MaxHealth, 3)
 	end
 
 	-- Returns the max armor of an entity
@@ -1325,13 +1325,13 @@ do
 	e2function number entity:acfPropArmorMax()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.MaxArmour then
+		if not this.ACE or not this.ACE.MaxArmour then
 			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.MaxArmour, 3)
+		return round(this.ACE.MaxArmour, 3)
 	end
 
 	-- Returns the ductility of an entity
@@ -1339,13 +1339,13 @@ do
 	e2function number entity:acfPropDuctility()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF then
+		if not this.ACE then
 			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Ductility, 3)
+		return round(this.ACE.Ductility, 3)
 	end
 
 	-- Returns the effective armor from a trace hitting a prop
@@ -1354,13 +1354,13 @@ do
 		local ent = this.Entity
 		if not (this and validPhysics(ent)) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, ent) then return 0 end
-		if not ent.ACF then
+		if not ent.ACE then
 			local check = ACE.Check(ent)
 
 			if not check then return 0 end
 		end
 
-		local eff = ent.ACF.Armour / abs(cos(rad(ACE.GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
+		local eff = ent.ACE.Armour / abs(cos(rad(ACE.GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
 		return round(eff, 1)
 	end
 
@@ -1369,13 +1369,13 @@ do
 	e2function string entity:acfPropMaterial()
 		if not validPhysics(this) then return self:throw("Entity is not valid", "") end
 		if restrictInfo(self.player, this) then return "" end
-		if not this.ACF then
+		if not this.ACE then
 			local check = ACE.Check(this)
 
 			if not check then return "" end
 		end
 
-		return this.ACF.Material
+		return this.ACE.Material
 	end
 
 	__e2setcost(10)
@@ -1387,13 +1387,13 @@ do
 		
 		if not validPhysics(this) then return self:throw("Entity is not valid", ret) end
 		if restrictInfo(self.player, this) then return ret end
-		if not this.ACF then
+		if not this.ACE then
 			local check = ACE.Check(this)
 
 			if not check then return ret end
 		end
 
-		local mat = this.ACF.Material
+		local mat = this.ACE.Material
 		if not mat then return ret end
 
 		local matData = ACE.ArmorTypes[mat]
@@ -1426,7 +1426,7 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", ret) end
 		if restrictInfo(self.player, this) then return end
 
-		if not this.ACF then
+		if not this.ACE then
 			local check = ACE.Check(this)
 
 			if not check then return end

@@ -607,7 +607,7 @@ function ENT:Act( Torque, DeltaTime, MassRatio )
 
 	if not self.Legal then self.LastActive = CurTime() return end
 	--internal torque loss from being damaged
-	local Loss = math.Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1)
+	local Loss = math.Clamp(((1 - 0.4) / 0.5) * ((self.ACE.Health / self.ACE.MaxHealth) - 1) + 1, 0.4, 1)
 
 	--internal torque loss from inefficiency
 	local Slop = self.Auto and 0.9 or 1

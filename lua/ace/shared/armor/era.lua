@@ -73,7 +73,7 @@ if SERVER then
 		local resiliance	= Material.resiliance
 		local sensor		= Material.APSensorFactor
 
-		local blastArmor = effectiveness * losArmor * (Entity.ACF.Health / Entity.ACF.MaxHealth)
+		local blastArmor = effectiveness * losArmor * (Entity.ACE.Health / Entity.ACE.MaxHealth)
 
 		--ERA is more effective vs HEAT than vs kinetic
 		if Material.HEATList[Type] then
@@ -91,7 +91,7 @@ if SERVER then
 		end
 
 		--ERA detonates and shell is completely stopped
-		if not Material.HEList[Type] and maxPenetration > (blastArmor / sensor) or (Entity.ACF.Health / Entity.ACF.MaxHealth) < 0.15 then --ERA was penetrated
+		if not Material.HEList[Type] and maxPenetration > (blastArmor / sensor) or (Entity.ACE.Health / Entity.ACE.MaxHealth) < 0.15 then --ERA was penetrated
 
 			--Importart to remove the ent before the explosions begin
 			Entity:Remove()

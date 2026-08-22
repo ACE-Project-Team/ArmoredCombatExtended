@@ -293,8 +293,8 @@ function ACE.refreshdata(Data)
 
 		for _, ent in pairs(Entities) do
 			if not IsValid(ent) then continue end
-			ent.ACF = ent.ACF or {}
-			ent.ACF.ContraptionId = ContrId --Id is always changing.
+			ACE.GetEntityState(ent, true)
+			ent.ACE.ContraptionId = ContrId --Id is always changing.
 		end
 	end
 

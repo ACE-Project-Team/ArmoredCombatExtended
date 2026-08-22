@@ -31,12 +31,12 @@ if SERVER then
 		local effectiveness = Material.effectiveness
 		local resiliance	= Material.resiliance
 
-		local ductilityvalue = (Entity.ACF.Ductility or 0) * 1.25 --The ductility value of the armor. Outputs 1 to -1 depending on max ductility
+		local ductilityvalue = (Entity.ACE.Ductility or 0) * 1.25 --The ductility value of the armor. Outputs 1 to -1 depending on max ductility
 		local ductilitymult    = 2 / (2 + ductilityvalue * 1.5) -- Direct damage multiplier based on ductility.
 
 
 
-		--(Entity.ACF.Ductility or 0)*2.5
+		--(Entity.ACE.Ductility or 0)*2.5
 
 		--2.5 = (100)/40. Multiplies the decimal ductility. Will make damage multiplier 2 or 1/2 at max ductility
 

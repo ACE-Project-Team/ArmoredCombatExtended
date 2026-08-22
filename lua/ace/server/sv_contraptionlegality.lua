@@ -354,12 +354,6 @@ do
 		return event
 	end
 
-	-- Compatibility entry points for late-loaded tools and older addons. The implementation
-	-- remains owned by ACE.* so the namespace migration has one source of truth.
-	function ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
-		return ACE.NotifyPointsInvalidated(sources, reason, categories, explicitContraptions, ledgerKnown)
-	end
-
 	-- Initialize per-contraption points state.
 	function ACE.EnsurePointsState(con)
 		if not ACE_IsLiveContraption(con) then return false end

@@ -54,7 +54,7 @@ function this:Configure(missile)
 
 		-- skip any invalid entity
 		if not scanEnt:IsValid() then continue end
-		if scanEnt:CPPIGetOwner() == missile.DamageOwner then continue end --Owned by owner
+		if scanEnt:CPPIGetOwner() ~= missile.DamageOwner then continue end --Owned by owner
 
 		table.insert(MyRadars , scanEnt)
 
@@ -134,7 +134,7 @@ function this:GetWhitelistedEntsInCone(missile)
 	local missilePos = missile:GetPos()
 	local foundAnim = {}
 
-	if not missile.IsJammed then --Guidance operating normally. Missile is not jammed.
+	if missile.IsJammed == 0 then --Guidance operating normally. Missile is not jammed.
 		local ScanArray = {}
 
 		--table.Merge(

@@ -143,7 +143,7 @@
       "realm": "headless",
       "timeout_seconds": 10,
       "ci": true,
-      "artifacts": ["errors.txt"],
+      "artifacts": ["unexpected_error_capture.json", "errors.txt"],
       "expected_events": ["boot", "done"]
     },
     {

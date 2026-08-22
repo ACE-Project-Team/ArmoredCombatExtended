@@ -1,4 +1,7 @@
-"""Regression checks for the non-entity ACE namespace migration."""
+"""Regression checks for the non-entity ACE namespace migration.
+
+Scenario: ace.offline.namespace.no_accidental_collisions
+"""
 
 from pathlib import Path
 import re

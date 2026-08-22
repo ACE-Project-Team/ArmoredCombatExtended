@@ -8,12 +8,14 @@ on:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
       - '.glualint.json'
+      - 'tests/**'
       - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - 'lua/**'
       - '!lua/entities/gmod_wire_expression2/**'
       - '.glualint.json'
+      - 'tests/**'
       - '.github/workflows/glualint.yml'
 
 permissions:
@@ -26,15 +28,18 @@ jobs:
       config: .glualint.json
 
   OfflineTests:
-    name: Offline definition tests
+    name: Offline ACE safety checks
     needs: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out ACE
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Run Python tests
+      - name: Run Python contract tests
         run: python -m unittest discover -s tests/python -p 'test_*.py' -v
+
+      - name: Compile maintainer-facing ACE tests
+        run: python tests/ace_test_compiler.py
 
       - name: Emit static safety warnings
         run: python tests/run_static_safety.py --report static_safety_report.json

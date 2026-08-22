@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Compile the only maintainer-authored test surface into a GLuaTest group before
+# the reusable native runner starts GMod. The generated Lua is ignored and never
+# edited by maintainers.
+python3 project/tests/ace_test_compiler.py \
+	project/tests/prototypes/acf_core_suite_applied.ace_test \
+	--registry project/tests/prototypes/ace_core_fixture_registry.json \
+	--actions project/tests/prototypes/ace_test_action_registry.json \
+	--output project/lua/tests/ace/generated_core_validation.lua
+
 # GLuaTest's requirements file accepts branches, not immutable commit IDs. Clone
 # the exact reviewed dependency commits into its override tree instead, so the
 # native job does not silently change when a dependency's default branch moves.

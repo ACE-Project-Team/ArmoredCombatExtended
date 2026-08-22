@@ -85,6 +85,7 @@ def main() -> int:
     parser.add_argument("--console-log", type=Path, required=True)
     parser.add_argument("--console-output", type=Path, required=True)
     parser.add_argument("--command", required=True)
+    parser.add_argument("--server-executable", required=True)
     parser.add_argument("--map", default="gm_construct")
     parser.add_argument("--addon-mount", type=Path, required=True)
     args = parser.parse_args()
@@ -203,7 +204,7 @@ def main() -> int:
         "run_id": run_id,
         "run_marker": run_marker,
         "server_command": args.command,
-        "server_executable": "C:\\Users\\dabes\\gmodds\\server\\srcds.exe",
+        "server_executable": args.server_executable,
         "map": args.map,
         "runtime_realm": "dedicated-server",
         "addon_mount": str(args.addon_mount),

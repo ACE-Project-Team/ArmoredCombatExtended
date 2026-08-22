@@ -86,7 +86,7 @@ def main() -> int:
     parser.add_argument("--console-output", type=Path, required=True)
     parser.add_argument("--command", required=True)
     parser.add_argument("--map", default="gm_construct")
-    parser.add_argument("--addon-mount", type=Path, default=Path(r"C:\Users\dabes\gmodds\server\garrysmod\addons\ArmoredCombatExtended"))
+    parser.add_argument("--addon-mount", type=Path, required=True)
     args = parser.parse_args()
 
     for stale in (args.output, args.output.with_name(args.output.stem + "-raw.json"), args.console_output):

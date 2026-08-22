@@ -50,6 +50,7 @@ def selected_scenarios(manifest: dict, ci: bool) -> list[dict]:
 def write_resolved_manifest(run_dir: Path, scenarios: list[dict]) -> None:
     payload = {
         "schema": 1,
+        "run_id": run_dir.name,
         "repo": str(REPO),
         "branch": git_output("branch", "--show-current") or "detached-HEAD",
         "ace_commit": git_output("rev-parse", "HEAD"),
@@ -90,7 +91,7 @@ def stop_process_tree(process: subprocess.Popen, force: bool = False) -> None:
         process.terminate()
 
 
-def validate_run_artifacts(run_dir: Path, scenarios: list[dict]) -> None:
+def validate_run_artifacts(run_dir: Path, scenarios: list[dict], run_context: dict | None = None) -> None:
     for scenario in scenarios:
         for artifact_name in scenario.get("artifacts", []):
             artifact_path = run_dir / artifact_name
@@ -99,6 +100,10 @@ def validate_run_artifacts(run_dir: Path, scenarios: list[dict]) -> None:
             if artifact_path.suffix.lower() == ".json":
                 artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
                 validate_artifact(artifact)
+                if run_context:
+                    for key in ("run_id", "ace_commit", "branch"):
+                        if artifact[key] != run_context[key]:
+                            raise SystemExit(f"Headless artifact {artifact_name} is not bound to this run's {key}")
                 if artifact["scenario_id"] != scenario["id"]:
                     raise SystemExit(f"Artifact scenario mismatch: {artifact_name}")
                 event_types = [event["type"] for event in artifact["events"]]
@@ -131,6 +136,10 @@ def run_server(command: list[str], run_dir: Path, timeout: int) -> int:
     environment = os.environ.copy()
     environment["ACE_HEADLESS_RUN_DIR"] = str(run_dir)
     environment["ACE_HEADLESS_MANIFEST"] = str(run_dir / "manifest_resolved.json")
+    environment["ACE_HEADLESS_SCENARIO_TIMEOUTS"] = json.dumps({
+        scenario["id"]: scenario["timeout_seconds"]
+        for scenario in scenarios_from_manifest(run_dir / "manifest_resolved.json")
+    }, sort_keys=True)
     completed = False
 
     with log.open("w", encoding="utf-8", errors="replace") as handle:
@@ -170,8 +179,9 @@ def run_server(command: list[str], run_dir: Path, timeout: int) -> int:
         raise SystemExit("Headless run did not write boot sentinel")
     if not done.exists():
         raise SystemExit("Headless run did not write done sentinel")
-    scenarios = scenarios_from_manifest(run_dir / "manifest_resolved.json")
-    validate_run_artifacts(run_dir, scenarios)
+    resolved_manifest = json.loads((run_dir / "manifest_resolved.json").read_text(encoding="utf-8"))
+    scenarios = resolved_manifest["scenarios"]
+    validate_run_artifacts(run_dir, scenarios, resolved_manifest)
     errors = run_dir / "errors.txt"
     if errors.is_file() and errors.read_text(encoding="utf-8", errors="replace").strip():
         raise SystemExit("Headless run reported errors in errors.txt")
@@ -200,7 +210,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Selected {len(scenarios)} headless scenario(s); dry-run only")
             return 0
 
-        timeout = max(scenario["timeout_seconds"] for scenario in scenarios) + 30
+        timeout = sum(scenario["timeout_seconds"] for scenario in scenarios) + 30
         return run_server(args.srcds_command, run_dir, timeout)
 
 

@@ -9,7 +9,7 @@ requires native
 uses valid_prop as Prop
 do ACE.Check on Prop as EntityType
 expect EntityType is "Prop"
-expect Prop.ACF exists
+expect Prop.ACE exists
 cleanup automatic
 
 new Test "An invalid entity is refused without activation"
@@ -18,7 +18,7 @@ requires native
 uses invalid_prop as Prop
 do ACE.Check on Prop as Result
 expect Result is false
-expect Prop.ACF does not exist
+expect Prop.ACE does not exist
 cleanup automatic
 
 new Test "An entity with invalid physics is refused"
@@ -69,7 +69,7 @@ new Test "A valid prop passes legality"
 scenario ace.native.core.legal_prop
 requires native
 uses legal_prop as Prop
-do ACE_CheckLegal on Prop as LegalResult
+do ACE.CheckLegal on Prop as LegalResult
 expect LegalResult is legal
 cleanup automatic
 
@@ -77,7 +77,7 @@ new Test "A non-solid prop fails legality with a useful reason"
 scenario ace.native.core.non_solid_legality
 requires native
 uses non_solid_prop as Prop
-do ACE_CheckLegal on Prop as LegalResult
+do ACE.CheckLegal on Prop as LegalResult
 expect LegalResult is not legal
 expect LegalResult reason is "Not solid"
 cleanup automatic
@@ -86,7 +86,7 @@ new Test "A prop with visual clipping fails legality"
 scenario ace.native.core.visual_clip_legality
 requires native
 uses clipped_prop as Prop
-do ACE_CheckLegal on Prop as LegalResult
+do ACE.CheckLegal on Prop as LegalResult
 expect LegalResult is not legal
 expect LegalResult reason is "Has visclip"
 cleanup automatic
@@ -105,6 +105,6 @@ scenario ace.native.core.activation_state
 requires native
 uses uninitialized_prop as Prop
 do ACE.Activate on Prop as Activation
-expect Prop.ACF exists
-expect Prop.ACF has armor and health
+expect Prop.ACE exists
+expect Prop.ACE has armor and health
 cleanup automatic

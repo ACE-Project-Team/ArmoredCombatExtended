@@ -34,7 +34,7 @@ class RealCorePrototypeTests(unittest.TestCase):
         for symbol in (
             "ACE.Check",
             "ACE.Activate",
-            "ACE_CheckLegal",
+            "ACE.CheckLegal",
         ):
             self.assertIn(symbol, suite)
         self.assertEqual(suite.count("requires native"), 12)

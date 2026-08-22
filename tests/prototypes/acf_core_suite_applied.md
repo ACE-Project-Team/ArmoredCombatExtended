@@ -13,7 +13,7 @@ TEST "A valid prop is accepted and classified"
 USING a valid prop
 WHEN Check on Prop
 EXPECT result is "Prop"
-EXPECT Prop.ACF exists
+EXPECT Prop.ACE exists
 CLEANUP automatic
 ```
 
@@ -22,7 +22,7 @@ TEST "An invalid entity is refused without activation"
 USING an invalid prop
 WHEN Check on Prop
 EXPECT result is false
-EXPECT Prop.ACF does not exist
+EXPECT Prop.ACE does not exist
 CLEANUP automatic
 ```
 
@@ -58,8 +58,8 @@ CLEANUP automatic
 TEST "Activation creates ACE state for a valid prop"
 USING a fresh prop without ACE state
 WHEN Activate on Prop
-EXPECT Prop.ACF exists
-EXPECT Prop.ACF has armor and health
+EXPECT Prop.ACE exists
+EXPECT Prop.ACE has armor and health
 CLEANUP automatic
 ```
 

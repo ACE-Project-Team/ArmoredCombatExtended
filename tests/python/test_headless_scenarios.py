@@ -54,6 +54,16 @@ class HeadlessScenarioRunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "events"):
                 validate_run_artifacts(root, self.scenario())
 
+    def test_artifact_must_match_resolved_run_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact = self.artifact()
+            artifact["run_id"] = "wrong-run"
+            (root / "tank_duel_ap.json").write_text(json.dumps(artifact), encoding="utf-8")
+            context = {"run_id": "expected-run", "ace_commit": "test", "branch": "test"}
+            with self.assertRaisesRegex(SystemExit, "not bound"):
+                validate_run_artifacts(root, self.scenario(), context)
+
     def test_console_lua_errors_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

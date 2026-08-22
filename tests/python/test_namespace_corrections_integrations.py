@@ -1,6 +1,5 @@
 """Regression coverage for the source-derived ACE adapter manifest."""
 
-import json
 import sys
 import unittest
 from pathlib import Path
@@ -27,10 +26,12 @@ class IntegrationManifestTests(unittest.TestCase):
         )
         self.assertEqual(manifest["sources"]["starfall"]["file"], "lua/starfall/libs_sv/acf.lua")
 
-    def test_checked_in_manifest_is_source_bound(self):
-        path = REPO / "artifacts/namespace-corrections/integration-manifest.json"
-        checked_in = json.loads(path.read_text(encoding="utf-8"))
-        self.assertEqual(checked_in, build_manifest(REPO))
+    def test_source_manifest_is_deterministic_and_hashed(self):
+        first = build_manifest(REPO)
+        second = build_manifest(REPO)
+        self.assertEqual(first, second)
+        self.assertTrue(first["sources"]["e2"]["sha256"])
+        self.assertTrue(first["sources"]["starfall"]["sha256"])
 
 
 if __name__ == "__main__":

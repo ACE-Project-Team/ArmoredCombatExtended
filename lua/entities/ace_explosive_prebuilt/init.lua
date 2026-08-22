@@ -27,7 +27,7 @@ end
 -- the model + filler fraction through its ENT table (read off the created
 -- entity), and we read the model's REAL physics volume at its natural size -
 -- no model scaling on these props.
-function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
+function ACE.MakePrebuiltExplosive(Owner, class, Pos, Angle)
 	if IsValid(Owner) and not Owner:CheckLimit("_ace_explosive") then return false end
 
 	local stored = scripted_ents.GetStored(class)
@@ -46,11 +46,11 @@ function ACE_MakePrebuiltExplosive(Owner, class, Pos, Angle)
 
 	local phys    = Charge:GetPhysicsObject()
 	local volCuIn = (IsValid(phys) and phys:GetVolume()) or 1000   -- model's true volume
-	local fillerMass, fragMass, physMass = ACE_GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
+	local fillerMass, fragMass, physMass = ACE.GetExplosiveMasses(volCuIn, Charge.FillerFraction or def.FillerFraction)
 
 	Charge.FillerMass  = fillerMass
 	Charge.FragMass    = fragMass
-	Charge.BlastRadius = ACE_CalculateHERadius(fillerMass) / 39.37
+	Charge.BlastRadius = ACE.CalculateHERadius(fillerMass) / 39.37
 	Charge.Mass        = physMass
 	Charge.DamageOwner = Owner
 
@@ -82,7 +82,7 @@ function ENT:SpawnFunction(ply, tr, ClassName)
 	local class = ClassName or self.ClassName or "ace_bomb_satchel"
 	local pos = tr.HitPos + tr.HitNormal * 16
 	local ang = Angle(0, IsValid(ply) and ply:EyeAngles().yaw or 0, 0)
-	return ACE_MakePrebuiltExplosive(ply, class, pos, ang)
+	return ACE.MakePrebuiltExplosive(ply, class, pos, ang)
 end
 
 function ENT:Detonate()
@@ -93,9 +93,9 @@ function ENT:Detonate()
 	local owner  = self.DamageOwner
 	if not IsValid(owner) then owner = self:CPPIGetOwner() end
 
-	ACE_HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
+	ACE.HE(origin, Vector(0, 0, 1), self.FillerMass or 0, self.FragMass or 0, owner, self, self)
 
-	local radiusIn = ACE_CalculateHERadius(self.FillerMass or 0)
+	local radiusIn = ACE.CalculateHERadius(self.FillerMass or 0)
 	local Flash = EffectData()
 		Flash:SetOrigin(origin)
 		Flash:SetNormal(Vector(0, 0, -1))
@@ -112,37 +112,37 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:ACF_Activate(Recalc)
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 	local phys = self:GetPhysicsObject()
 	if not IsValid(phys) then return end
 
-	self.ACF.Area   = self.ACF.Area or (phys:GetSurfaceArea() * 6.45)
-	self.ACF.Volume = self.ACF.Volume or (phys:GetVolume() * 16.38)
+	self.ACE.Area   = self.ACE.Area or (phys:GetSurfaceArea() * 6.45)
+	self.ACE.Volume = self.ACE.Volume or (phys:GetVolume() * 16.38)
 
-	local Health  = (self.ACF.Volume / ACE.Threshold) / 20
+	local Health  = (self.ACE.Volume / ACE.Threshold) / 20
 	local Percent = 1
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
+	if Recalc and self.ACE.Health and self.ACE.MaxHealth then
+		Percent = self.ACE.Health / self.ACE.MaxHealth
 	end
 
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	local Armour = (phys:GetMass() * 1000 / self.ACF.Area / 0.78)
-	self.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-	self.ACF.Mass      = self.Mass
-	self.ACF.Material  = self.ACF.Material or "RHA"
+	self.ACE.Health    = Health * Percent
+	self.ACE.MaxHealth = Health
+	local Armour = (phys:GetMass() * 1000 / self.ACE.Area / 0.78)
+	self.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	self.ACE.MaxArmour = Armour
+	self.ACE.Type      = "Prop"
+	self.ACE.Mass      = self.Mass
+	self.ACE.Material  = self.ACE.Material or "RHA"
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, _Type)
-	local HitRes = ACE_PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
+	local HitRes = ACE.PropDamage(Entity, Energy, FrArea, Angle, Inflictor)
 	if self.Detonated then return HitRes end
 
 	if IsValid(Inflictor) and Inflictor:IsPlayer() then self.DamageOwner = Inflictor end
 
-	local maxHealth  = (self.ACF and self.ACF.MaxHealth) or 1
-	local health     = (self.ACF and self.ACF.Health) or maxHealth
+	local maxHealth  = (self.ACE and self.ACE.MaxHealth) or 1
+	local health     = (self.ACE and self.ACE.Health) or maxHealth
 	local dmgFrac    = (HitRes.Damage or 0) / math.max(maxHealth, 1)
 	local healthFrac = math.Clamp(health / math.max(maxHealth, 1), 0, 1)
 
@@ -163,9 +163,9 @@ function ENT:UpdateOverlayText()
 	txt = txt .. "\nBlast Energy: " .. math.Round((self.FillerMass or 0) * (ACE.HEPower or 8000), 0) .. " KJ"
 	txt = txt .. "\nMass: " .. math.Round(self.Mass or 0, 1) .. " kg"
 
-	if ACE_GetRoundLethalityLine then
+	if ACE.GetRoundLethalityLine then
 		local round = { Type = "HE", maxPen = 0, FrArea = 0, blastMass = self.FillerMass or 0, guidance = "Dumb" }
-		local lethality = ACE_GetRoundLethalityLine(round)
+		local lethality = ACE.GetRoundLethalityLine(round)
 		if lethality then
 			txt = txt .. "\nLethality: " .. lethality
 		end

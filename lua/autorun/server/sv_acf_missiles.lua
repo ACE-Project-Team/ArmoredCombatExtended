@@ -13,16 +13,15 @@
 
 -- Lookup table of all currently flying missiles.
 ACE = ACE or {}
-ACE_ActiveMissiles = ACE_ActiveMissiles or ACE.ActiveMissiles or {}
-ACE.ActiveMissiles = ACE_ActiveMissiles
+ACE.ActiveMissiles = ACE.ActiveMissiles or {}
 
-include("acf/shared/sh_acfm_getters.lua")
+include("ace/shared/sh_acfm_getters.lua")
 
 --[[
 	Differences with the default bullet function:
 		1.- It doesnt count traceback, since the missile has no velocity and the bullet will not be hitting the initial launcher.
 ]]--
-function ACE_Missile_BulletLaunch(BulletData)
+function ACE.Missile_BulletLaunch(BulletData)
 
 	-- Increment the index
 	ACE.CurBulletIndex = ACE.CurBulletIndex + 1
@@ -53,7 +52,7 @@ end
 
 
 
-function ACE_Missile_ExpandBulletData(bullet)
+function ACE.Missile_ExpandBulletData(bullet)
 
 	-- print("==== ACE_Missile_ExpandBulletData")
 	-- pbn(bullet)
@@ -98,7 +97,7 @@ end
 
 
 
-function ACE_Missile_MakeCrateForBullet(self, bullet)
+function ACE.Missile_MakeCrateForBullet(self, bullet)
 
 	if type(bullet) ~= "table" and bullet.BulletData then
 		self:SetNWString( "Sound", bullet.Sound or (bullet.Primary and bullet.Primary.Sound))
@@ -136,7 +135,7 @@ ACE.FillerDensity =
 
 
 
-function ACE_Missile_CompactBulletData(crate)
+function ACE.Missile_CompactBulletData(crate)
 
 	local compact = {}
 	local source = crate.BulletData or {}
@@ -225,7 +224,7 @@ end
 
 -- Resets the velocity of the bullet based on its current state on the serverside only.
 -- This will de-sync the clientside effect!
-function ACE_Missile_ResetVelocity(bdata)
+function ACE.Missile_ResetVelocity(bdata)
 
 	local resetFunc = ResetVelocity[bdata.Type]
 
@@ -249,8 +248,8 @@ end )
 hook.Add( "InitPostEntity", "ACE_Missiles_AddLinkable", function()
 	-- Need to ensure this is called after InitPostEntity because Adv. Dupe 2 resets its whitelist upon this event.
 	timer.Simple(1, function()
-		if ACF_E2_LinkTables and istable(ACF_E2_LinkTables) then
-			ACF_E2_LinkTables["acf_rack"] = {AmmoLink = false}
+		if ACE.E2_LinkTables and istable(ACE.E2_LinkTables) then
+			ACE.E2_LinkTables["acf_rack"] = {AmmoLink = false}
 		end
 	end)
 end )

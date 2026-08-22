@@ -1,5 +1,5 @@
 local root = assert(arg[1], "usage: missile_visclip_selftest.lua <ACE repo>")
-local trace_path = root .. "/lua/acf/shared/sh_ace_missiletrace.lua"
+local trace_path = root .. "/lua/ace/shared/sh_ace_missiletrace.lua"
 
 local function run_case(name, results, expected_calls, expected_entity, expected_clip_count)
 	local calls = 0
@@ -17,10 +17,9 @@ local function run_case(name, results, expected_calls, expected_entity, expected
 		end
 	}
 
-	_G.ACE_CheckClips = function(entity, hit_pos)
+	_G.ACE = { CheckClips = function(entity, hit_pos)
 		return entity and entity.clip == true and entity.clip_pos == hit_pos
-	end
-	_G.ACE = {CheckClips = _G.ACE_CheckClips}
+	end }
 
 	local trace = dofile(trace_path)
 	local result = trace("start", "end", filter)

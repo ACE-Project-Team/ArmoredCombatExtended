@@ -17,7 +17,7 @@ return {
 		{
 			name = "exposes every loader category",
 			func = function()
-				expect(ACF).to.exist()
+				expect(ACE).to.exist()
 				expect(ACE.Weapons).to.exist()
 				expect(ACE.Classes).to.exist()
 				expect(ACE).to.exist()

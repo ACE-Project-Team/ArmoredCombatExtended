@@ -12,7 +12,7 @@ from lua_source import (
 
 
 REPO = Path(__file__).resolve().parents[2]
-SHARED_ROOT = REPO / "lua" / "acf" / "shared"
+SHARED_ROOT = REPO / "lua" / "ace" / "shared"
 ROUND_ROOT = SHARED_ROOT / "rounds"
 DEFINITION_FUNCTIONS = {
     "ACE.DefineEntity",

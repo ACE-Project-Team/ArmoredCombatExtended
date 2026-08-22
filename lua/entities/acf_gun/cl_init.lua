@@ -80,7 +80,7 @@ function ENT:Animate( _, ReloadTime, LoadOnly )
 
 end
 
-function ACE_GunGUICreate( Table )
+function ACE.GunGUICreate( Table )
 
 	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 

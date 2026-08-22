@@ -5,7 +5,7 @@ local match = string.match
 local abs, round, clamp, floor, min, max = math.abs, math.Round, math.Clamp, math.floor, math.min, math.max
 local cos, rad, pi = math.cos, math.rad, math.pi
 local tableCopy = table.Copy
-local ACF = ACF
+local ACE = ACE
 
 local function isACF(ent)
 	if not validPhysics(ent) then return false end
@@ -56,8 +56,8 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
-	local health		= ( Area + Area * Ductility ) / ACF.Threshold
+	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
+	local health		= ( Area + Area * Ductility ) / ACE.Threshold
 
 	return mass, armor, health
 
@@ -65,24 +65,24 @@ end
 
 local function E2SetACEArmor(ent, armor, ductility, material)
 
-	ent.ACF = ent.ACF or {}
+	ACE.GetEntityState(ent, true)
 
-	local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
-	local thickness = math.Clamp( armor or ent.ACF.Armour or 1, 0.1, 50000 )
-	local mat  = material or ent.ACF.Material or "RHA"
+	local duct = math.Clamp( ductility or (ent.ACE.Ductility * 100) or 80, -80, 80 )
+	local thickness = math.Clamp( armor or ent.ACE.Armour or 1, 0.1, 50000 )
+	local mat  = material or ent.ACE.Material or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, duct / 100, thickness , mat)
+	local mass		= CalcArmor( ent.ACE.Area, duct / 100, thickness , mat)
 
 	local phys = ent:GetPhysicsObject()
 	if IsValid( phys ) then phys:SetMass( mass ) end
 	duplicator.StoreEntityModifier( ent, "mass", { Mass = mass } )
 
-	ent.ACF.Ductility = duct / 100
+	ent.ACE.Ductility = duct / 100
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
 	local con = ent:CFW_GetContraption()
 
-	ent.ACF.Material = mat
+	ent.ACE.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
 	ACE.MarkArmorDirty(con, ent, "armor-expression2")
@@ -120,7 +120,7 @@ local function hasActiveInput(ent)
 end
 
 local function restrictInfo(ply, ent)
-	if not ACF.RestrictInfo then return false end
+	if not ACE.RestrictInfo then return false end
 
 	return not ent:CPPICanTool(ply, "acfmenu")
 end
@@ -131,10 +131,10 @@ do
 		if not validPhysics(ent) then return false end
 		local entClass = ent:GetClass()
 	
-		return ACF_E2_LinkTables[entClass] ~= nil
+		return ACE.E2_LinkTables[entClass] ~= nil
 	end
 
-	ACF_E2_LinkTables = ACF_E2_LinkTables or
+	ACE.E2_LinkTables = ACE.E2_LinkTables or
 	{ -- link resources within each ent type.  should point to an ent: true if adding link.Ent, false to add link itself
 		acf_engine		= {GearLink = true, FuelLink = false},
 		acf_gearbox		= {WheelLink = true, Master = false},
@@ -147,7 +147,7 @@ do
 	local function getLinks(ent, enttype)
 		local ret = {}
 		-- find the link resources available for this ent type
-		for entry, mode in pairs(ACF_E2_LinkTables[enttype]) do
+		for entry, mode in pairs(ACE.E2_LinkTables[enttype]) do
 			if not ent[entry] then
 				error("Couldn't find link resource " .. entry .. " for entity " .. tostring(ent))
 
@@ -190,7 +190,7 @@ do
 
 		local class = this:GetClass()
 
-		if not ACF_E2_LinkTables[class] then
+		if not ACE.E2_LinkTables[class] then
 			return searchForGearboxLinks(this)
 		end
 
@@ -203,7 +203,7 @@ do
 
 		local wheels = {}
 
-		for _, ent in pairs(ACF_GetLinkedWheels(this)) do
+		for _, ent in pairs(ACE.GetLinkedWheels(this)) do
 			wheels[#wheels + 1] = ent
 		end
 
@@ -217,7 +217,7 @@ do
 
 	[nodiscard]
 	e2function number acfInfoRestricted()
-		return ACF.RestrictInfo and 1 or 0
+		return ACE.RestrictInfo and 1 or 0
 	end
 
 	[nodiscard]
@@ -261,7 +261,7 @@ do
 		if not hasActiveInput(this) then return self:throw("Entity is not a valid active-capable ACF entity") end
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot control this entity") end
 
-		ACF.SetDefaultActiveInputState(this, on)
+		ACE.SetDefaultActiveInputState(this, on)
 		this:TriggerInput("Active", on)
 	end
 
@@ -269,7 +269,7 @@ do
 	[nodiscard]
 	e2function number entity:acfHitClip(vector hitPos)
 		if not this:CPPICanTool(self.player, "acfmenu") then return self:throw("You cannot target this entity", 0) end
-		return ACF_CheckClips(this, hitPos) and 1 or 0
+		return ACE.CheckClips(this, hitPos) and 1 or 0
 	end
 
 	__e2setcost(2)
@@ -298,7 +298,7 @@ do
 
 		if acftype == "" then return "" end
 
-		return ACF.Weapons[acftype][this.Id]["name"] or ""
+		return ACE.Weapons[acftype][this.Id]["name"] or ""
 	end
 
 	-- Returns the type of ACF entity
@@ -307,15 +307,15 @@ do
 		if not isACF(this) then return self:throw("Entity is not a valid ACF component", "") end
 
 		if isEngine(this) then
-			return ACF.Weapons["Engines"][this.Id]["category"] or ""
+			return ACE.Weapons["Engines"][this.Id]["category"] or ""
 		elseif isGearbox(this) then
-			return ACF.Weapons["Gearboxes"][this.Id]["category"] or ""
+			return ACE.Weapons["Gearboxes"][this.Id]["category"] or ""
 		elseif isGun(this) then
-			return ACF.Classes["GunClass"][this.Class]["name"] or ""
+			return ACE.Classes["GunClass"][this.Class]["name"] or ""
 		elseif isRack(this) then
-			return ACF.Classes["Rack"][this.Class]["name"] or ""
+			return ACE.Classes["Rack"][this.Class]["name"] or ""
 		elseif isRadar(this) then
-			return ACF.Classes["Radar"][this.Class]["name"] or ""
+			return ACE.Classes["Radar"][this.Class]["name"] or ""
 		end
 
 		if isAmmo(this) then return this.RoundType or "" end
@@ -329,7 +329,7 @@ do
 	-- Return the current ACF drag divisor
 	[nodiscard]
 	e2function number acfDragDiv()
-		return ACF.DragDiv
+		return ACE.DragDiv
 	end
 
 	-- Returns the temperature of an ACF entity
@@ -344,25 +344,25 @@ do
 	-- Returns the latest ACE version
 	[nodiscard]
 	e2function number acfVersion()
-		return ACF.CurrentVersion
+		return ACE.CurrentVersion
 	end
 
 	-- Returns the current ACE version
 	[nodiscard]
 	e2function number acfCurVersion()
-		return ACF.Version
+		return ACE.Version
 	end
 
 	-- Returns the current air gap factor (air effectiveness against HEAT)
 	[nodiscard]
 	e2function number acfHEATAirGapFactor()
-		return ACF.HeatAirGapFactor
+		return ACE.HeatAirGapFactor
 	end
 
 	-- Returns the current ACE wind direction
 	[nodiscard]
 	e2function vector acfWindVector()
-		return ACF.Wind
+		return ACE.Wind
 	end
 
 	-- Returns 1 if the entity is an ACF engine
@@ -432,7 +432,7 @@ do
 		end
 
 		if notify > 0 then
-			ACF_SendNotify(self.player, success, msg)
+			ACE.SendNotify(self.player, success, msg)
 		end
 
 		return success and 1 or 0
@@ -463,7 +463,7 @@ do
 		end
 
 		if notify > 0 then
-			ACF_SendNotify(self.player, success, msg)
+			ACE.SendNotify(self.player, success, msg)
 		end
 
 		return success and 1 or 0
@@ -480,7 +480,7 @@ do
 		if not isEngine(this) then return self:throw("Entity is not a valid ACF engine", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
-		return ACF.Weapons["Engines"][this.Id]["category"] == "Electric" and 1 or 0
+		return ACE.Weapons["Engines"][this.Id]["category"] == "Electric" and 1 or 0
 	end
 
 	-- Returns the peak torque in Nm of an ACF engine
@@ -1167,7 +1167,7 @@ do
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
-		return round((this.BulletData.MuzzleVel or 0) * ACF.VelScale, 3)
+		return round((this.BulletData.MuzzleVel or 0) * ACE.VelScale, 3)
 	end
 
 	-- Returns the projectile mass of the ammo in an ACF ammo crate or gun
@@ -1212,7 +1212,7 @@ do
 		if not (isAmmo(this) or isGun(this)) then return self:throw("Entity is not a valid ACF ammo crate or gun", 0) end
 		if restrictInfo(self.player, this) then return 0 end
 
-		return (this.BulletData.DragCoef or 0) / ACF.DragDiv
+		return (this.BulletData.DragCoef or 0) / ACE.DragDiv
 	end
 
 	__e2setcost(2)
@@ -1224,7 +1224,7 @@ do
 		if restrictInfo(self.player, this) then return 0 end
 		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
-		return ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
+		return ACE.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
 	end
 
 	-- Returns the penetration of a round in an ACF ammo crate or gun, with an index to check penetration for THEAT (uses indexes 1 and 2)
@@ -1234,7 +1234,7 @@ do
 		if restrictInfo(self.player, this) then return 0 end
 		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
-		local displayData = ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData)
+		local displayData = ACE.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData)
 
 		if index == 1 then
 			return displayData.MaxPen or 0
@@ -1283,13 +1283,13 @@ do
 	e2function number entity:acfPropHealth()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.Health then
-			local check = ACF_Check(this)
+		if not this.ACE or not this.ACE.Health then
+			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Health, 3)
+		return round(this.ACE.Health, 3)
 	end
 
 	-- Returns the current armor of an entity
@@ -1297,13 +1297,13 @@ do
 	e2function number entity:acfPropArmor()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.Armour then
-			local check = ACF_Check(this)
+		if not this.ACE or not this.ACE.Armour then
+			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Armour, 3)
+		return round(this.ACE.Armour, 3)
 	end
 
 	-- Returns the max health of an entity
@@ -1311,13 +1311,13 @@ do
 	e2function number entity:acfPropHealthMax()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.MaxHealth then
-			local check = ACF_Check(this)
+		if not this.ACE or not this.ACE.MaxHealth then
+			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.MaxHealth, 3)
+		return round(this.ACE.MaxHealth, 3)
 	end
 
 	-- Returns the max armor of an entity
@@ -1325,13 +1325,13 @@ do
 	e2function number entity:acfPropArmorMax()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF or not this.ACF.MaxArmour then
-			local check = ACF_Check(this)
+		if not this.ACE or not this.ACE.MaxArmour then
+			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.MaxArmour, 3)
+		return round(this.ACE.MaxArmour, 3)
 	end
 
 	-- Returns the ductility of an entity
@@ -1339,13 +1339,13 @@ do
 	e2function number entity:acfPropDuctility()
 		if not validPhysics(this) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, this) then return 0 end
-		if not this.ACF then
-			local check = ACF_Check(this)
+		if not this.ACE then
+			local check = ACE.Check(this)
 
 			if not check then return 0 end
 		end
 
-		return round(this.ACF.Ductility, 3)
+		return round(this.ACE.Ductility, 3)
 	end
 
 	-- Returns the effective armor from a trace hitting a prop
@@ -1354,13 +1354,13 @@ do
 		local ent = this.Entity
 		if not (this and validPhysics(ent)) then return self:throw("Entity is not valid", 0) end
 		if restrictInfo(self.player, ent) then return 0 end
-		if not ent.ACF then
-			local check = ACF_Check(ent)
+		if not ent.ACE then
+			local check = ACE.Check(ent)
 
 			if not check then return 0 end
 		end
 
-		local eff = ent.ACF.Armour / abs(cos(rad(ACF_GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
+		local eff = ent.ACE.Armour / abs(cos(rad(ACE.GetHitAngle(this.HitNormal, this.HitPos - this.StartPos))))
 		return round(eff, 1)
 	end
 
@@ -1369,13 +1369,13 @@ do
 	e2function string entity:acfPropMaterial()
 		if not validPhysics(this) then return self:throw("Entity is not valid", "") end
 		if restrictInfo(self.player, this) then return "" end
-		if not this.ACF then
-			local check = ACF_Check(this)
+		if not this.ACE then
+			local check = ACE.Check(this)
 
 			if not check then return "" end
 		end
 
-		return this.ACF.Material
+		return this.ACE.Material
 	end
 
 	__e2setcost(10)
@@ -1387,13 +1387,13 @@ do
 		
 		if not validPhysics(this) then return self:throw("Entity is not valid", ret) end
 		if restrictInfo(self.player, this) then return ret end
-		if not this.ACF then
-			local check = ACF_Check(this)
+		if not this.ACE then
+			local check = ACE.Check(this)
 
 			if not check then return ret end
 		end
 
-		local mat = this.ACF.Material
+		local mat = this.ACE.Material
 		if not mat then return ret end
 
 		local matData = ACE.ArmorTypes[mat]
@@ -1426,8 +1426,8 @@ do
 		if not validPhysics(this) then return self:throw("Entity is not valid", ret) end
 		if restrictInfo(self.player, this) then return end
 
-		if not this.ACF then
-			local check = ACF_Check(this)
+		if not this.ACE then
+			local check = ACE.Check(this)
 
 			if not check then return end
 		end
@@ -1534,7 +1534,7 @@ do
 			Consumption = 60 * (this.Torque * this.FlyRPM / 9548.8) * this.FuelUse
 		else
 			local Load = 0.3 + this.Throttle * 0.7
-			Consumption = 60 * Load * this.FuelUse * (this.FlyRPM / this.PeakKwRPM) / ACF.FuelDensity[Tank.FuelType]
+			Consumption = 60 * Load * this.FuelUse * (this.FlyRPM / this.PeakKwRPM) / ACE.FuelDensity[Tank.FuelType]
 		end
 
 		return round(Consumption, 3)
@@ -1562,7 +1562,7 @@ do
 			consumption = 60 * (this.PeakTorque * this.LimitRPM / (4 * 9548.8)) * this.FuelUse
 		else
 			local Load = 0.3 + this.Throttle * 0.7
-			Consumption = 60 * this.FuelUse / ACF.FuelDensity[fuel]
+			Consumption = 60 * this.FuelUse / ACE.FuelDensity[fuel]
 		end
 
 		return round(consumption, 3)

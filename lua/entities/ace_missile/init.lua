@@ -2,7 +2,7 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
-local TraceMissileLOS = include("acf/shared/sh_ace_missiletrace.lua")
+local TraceMissileLOS = include("ace/shared/sh_ace_missiletrace.lua")
 
 DEFINE_BASECLASS("acf_explosive")
 
@@ -97,7 +97,7 @@ function ENT:Initialize()
 
 	self:SetNW2Bool("MissileActive", false)
 
-	ACE_AssignMissileUniqueID(self)
+	ACE.AssignMissileUniqueID(self)
 
 	--[[
 	self.LOSTraceData = {
@@ -295,7 +295,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACE_GetGunValue(self.BulletData, "effectbooster")
+							local effect = self.BoostEffect or ACE.GetGunValue(self.BulletData, "effectbooster")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -345,7 +345,7 @@ function ENT:Think()
 						self:StopParticles()
 						if TMul > 0 then
 							self:SetNW2Bool("MissileActive", true)
-							local effect = self.BoostEffect or ACE_GetGunValue(self.BulletData, "effect")
+							local effect = self.BoostEffect or ACE.GetGunValue(self.BulletData, "effect")
 							if effect then
 								ParticleEffectAttach( effect, PATTACH_POINT_FOLLOW, self, self:LookupAttachment("exhaust") or 0 )
 								self.UpdateFX = false
@@ -711,7 +711,7 @@ do
 	function ENT:ACF_OnDamage( Ent, Energy, FrArea, _, Inflictor, _, Type )	--This function needs to return HitRes
 
 		local Mul	= (( HEtbl[Type] and 0.1 ) or 1) --HE penetrators better penetrate the armor of missiles
-		local HitRes	= ACE_PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
+		local HitRes	= ACE.PropDamage( Ent, Energy , FrArea * Mul, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
 		--local Activated = ACE_Check( Ent )
 	--local CanDo = hook.Run("ACE_BulletDamage", Activated, Ent, Energy, FrArea, 0, Inflictor )
 

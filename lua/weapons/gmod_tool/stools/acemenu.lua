@@ -46,7 +46,7 @@ if CLIENT then
 	--------------------------------------]]
 	function TOOL.BuildCPanel( CPanel )
 
-		local pnldef_ACEmenu = vgui.RegisterFile( "acf/client/cl_acemenu_gui.lua" )
+		local pnldef_ACEmenu = vgui.RegisterFile( "ace/client/cl_acemenu_gui.lua" )
 
 		-- create
 		local DPanel = vgui.CreateFromTable( pnldef_ACEmenu )
@@ -98,11 +98,11 @@ function TOOL:LeftClick( trace )
 		if trace.Entity:GetClass() == entClass and trace.Entity.CanUpdate then
 			table.insert( ArgTable, 1, ply )
 			local success, msg = trace.Entity:Update( ArgTable )
-			ACE_SendNotify( ply, success, msg )
+			ACE.SendNotify( ply, success, msg )
 		else
 			-- Using the Duplicator entity register to find the right factory function
 			local Ent = DupeClass.Func( ply, unpack( ArgTable ) ) --aka function like MakeACF_Ammo
-			if not IsValid(Ent) then ACE_SendNotify(ply, false, "#tool.acemenu.creationfailed") return false end
+			if not IsValid(Ent) then ACE.SendNotify(ply, false, "#tool.acemenu.creationfailed") return false end
 
 			Ent:Activate()
 			Ent:DropToFloor()
@@ -197,7 +197,7 @@ function TOOL:RightClick( trace )
 					if ent ~= selected and validEnt and IsValid(selected) then
 						local success, msg = linkEnts(ent, selected, holdingUse)
 
-						ACE_SendNotify(ply, success, msg)
+						ACE.SendNotify(ply, success, msg)
 					end
 				end
 			end

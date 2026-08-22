@@ -147,7 +147,7 @@ function SWEP:InitBulletData()
 	self.BulletData.DragCoef = 0.01
 
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod * 1.1
@@ -296,7 +296,7 @@ function SWEP:DoSPClientEffects()
 		self:EmitSound(MainSound)
 	end
 
-	ACE_RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
+	ACE.RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
 
 end
 
@@ -320,16 +320,16 @@ function SWEP:PrimaryAttack()
 
 		if game.SinglePlayer() then
 			if owner:IsPlayer() then
-				ACE_NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
+				ACE.NetworkSPEffects( self, self.BulletData.PropMass) -- singleplayer, this whole function is not called clientside, so we need to network the client here
 			else
-				ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
+				ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
 			end
 		else
 			--Client is called here. So lets go as usual.
 			local sounds = ACE.GSounds.GunFire[self.Primary.Sound]
 			if next(sounds) then
 				if SERVER then
-					ACE_NetworkMPEffects(owner, self, self.BulletData.PropMass)
+					ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
 				else
 					self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 				end
@@ -338,7 +338,7 @@ function SWEP:PrimaryAttack()
 			end
 
 			if CLIENT then
-				ACE_RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
+				ACE.RenderLight(self:EntIndex(), self.Primary.LightScale, Color(255, 128, 48), self:GetPos())
 			end
 		end
 

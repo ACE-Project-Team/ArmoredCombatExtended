@@ -19,7 +19,7 @@ function ENT:Draw()
 
 end
 
-function ACE_GearboxGUICreate( Table )
+function ACE.GearboxGUICreate( Table )
 
 	if not acemenupanel.Serialize then
 		acemenupanel.Serialize = function( tbl, factor )
@@ -74,22 +74,22 @@ function ACE_GearboxGUICreate( Table )
 	end
 
 	if Table.cvt then
-		ACE_GearsSlider(2, acemenupanel.GearboxData[Table.id].GearTable[2], Table.id)
-		ACE_GearsSlider(3, acemenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
-		ACE_GearsSlider(4, acemenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
-		ACE_GearsSlider(10, acemenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
+		ACE.GearsSlider(2, acemenupanel.GearboxData[Table.id].GearTable[2], Table.id)
+		ACE.GearsSlider(3, acemenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
+		ACE.GearsSlider(4, acemenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
+		ACE.GearsSlider(10, acemenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
 		RunConsoleCommand( "acemenu_data1", 0.01 )
 	else
 		for ID,Value in pairs(acemenupanel.GearboxData[Table.id].GearTable) do
 			if ID > 0 and not (Table.auto and ID == 8) then
-				ACE_GearsSlider(ID, Value, Table.id)
+				ACE.GearsSlider(ID, Value, Table.id)
 				if Table.auto then
-					ACE_ShiftPoint(ID, acemenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
+					ACE.ShiftPoint(ID, acemenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
 				end
 			elseif Table.auto and (ID == -2 or ID == 8) then
-				ACE_GearsSlider(8, Value, Table.id, "Reverse")
+				ACE.GearsSlider(8, Value, Table.id, "Reverse")
 			elseif ID == -1 then
-				ACE_GearsSlider(10, Value, Table.id, "Final Drive")
+				ACE.GearsSlider(10, Value, Table.id, "Final Drive")
 			end
 		end
 	end
@@ -205,7 +205,7 @@ function ACE_GearboxGUICreate( Table )
 	maxtorque = Table.maxtq
 end
 
-function ACE_GearsSlider(Gear, Value, ID, Desc, CVT)
+function ACE.GearsSlider(Gear, Value, ID, Desc, CVT)
 
 	if Gear and not acemenupanel.CData[Gear] then
 
@@ -229,7 +229,7 @@ function ACE_GearsSlider(Gear, Value, ID, Desc, CVT)
 
 end
 
-function ACE_ShiftPoint(Gear, Value, ID, Desc)
+function ACE.ShiftPoint(Gear, Value, ID, Desc)
 	local Index = Gear + 10
 	if Gear and not acemenupanel.CData[Index] then
 		acemenupanel.CData[Index] = vgui.Create( "DPanel" )

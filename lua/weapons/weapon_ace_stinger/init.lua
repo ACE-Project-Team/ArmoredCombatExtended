@@ -22,5 +22,5 @@ function SWEP:DoAmmoStatDisplay()
 	sendInfo = sendInfo .. ", Burn time: 2.0s"
 
 
-	ACE_SendNotification(self:GetOwner(), sendInfo, 10)
+	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
 end

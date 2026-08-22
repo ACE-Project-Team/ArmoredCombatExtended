@@ -41,7 +41,7 @@ do
 
 		   local Id = X .. ":" .. Y .. ":" .. Z
 
-		   ACE_FuelTankGUIUpdate( Table )
+		   ACE.FuelTankGUIUpdate( Table )
 		   acemenupanel.FuelTankData["Id"] = Id
 		   RunConsoleCommand( "acemenu_data1", Id )
 
@@ -49,7 +49,7 @@ do
 
 	 end
 
-	function ACE_FuelTankGUICreate( Table )
+	function ACE.FuelTankGUICreate( Table )
 		if not acemenupanel.CustomDisplay then return end
 
 		local MainPanel = acemenupanel.CustomDisplay
@@ -91,7 +91,7 @@ do
 			FuelTypeComboList.OnSelect = function( _, _, data )
 				RunConsoleCommand( "acemenu_data2", data )
 				acemenupanel.FuelTankData.FuelID = data
-				ACE_FuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 			end
 
 			FuelTypeComboList:SetText(acemenupanel.FuelTankData.FuelID)
@@ -163,7 +163,7 @@ do
 			ShapeComboList.OnSelect = function( _, _, data )
 				acemenupanel.FuelPanelConfig["Crate_Shape"] = data
 				RunConsoleCommand( "acemenu_data3", data )
-				ACE_FuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 			end
 
 			RunConsoleCommand( "acemenu_data3", acemenupanel.FuelPanelConfig["Crate_Shape"] )
@@ -234,7 +234,7 @@ do
 				if val then
 					acemenupanel.FuelTankData.Id =  acemenupanel.FuelTankData.IdLegacy
 					RunConsoleCommand( "acemenu_data1", acemenupanel.FuelTankData.Id )
-					ACE_FuelTankGUIUpdate( Table )
+					ACE.FuelTankGUIUpdate( Table )
 				else
 					CreateIdForCrate()
 				end
@@ -253,7 +253,7 @@ do
 				acemenupanel.FuelTankData.Id = data
 				acemenupanel.FuelTankData.IdLegacy = data
 				RunConsoleCommand( "acemenu_data1", data )
-				ACE_FuelTankGUIUpdate( Table )
+				ACE.FuelTankGUIUpdate( Table )
 
 				if acemenupanel.CData.DisplayModel then
 
@@ -284,13 +284,13 @@ do
 
 		----------- The rest below -----------
 
-		ACE_FuelTankGUIUpdate( Table )
+		ACE.FuelTankGUIUpdate( Table )
 
 		MainPanel:PerformLayout()
 
 	end
 
-	function ACE_FuelTankGUIUpdate( _ )
+	function ACE.FuelTankGUIUpdate( _ )
 
 		if not acemenupanel.CustomDisplay then return end
 

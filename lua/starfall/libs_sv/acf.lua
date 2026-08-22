@@ -51,8 +51,8 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACF_CalcArmor( Area, Ductility, mass / MassMod )
-	local health		= ( Area + Area * Ductility ) / ACF.Threshold
+	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
+	local health		= ( Area + Area * Ductility ) / ACE.Threshold
 
 	return mass, armor, health
 
@@ -60,24 +60,24 @@ end
 
 local function E2SetACEArmor(ent, armor, ductility, material)
 
-	ent.ACF = ent.ACF or {}
+	ACE.GetEntityState(ent, true)
 
-	local duct = math.Clamp( ductility or (ent.ACF.Ductility * 100) or 80, -80, 80 )
-	local thickness = math.Clamp( armor or ent.ACF.Armour or 1, 0.1, 50000 )
-	local mat  = material or ent.ACF.Material or "RHA"
+		local duct = math.Clamp( ductility or (ent.ACE.Ductility * 100) or 80, -80, 80 )
+	local thickness = math.Clamp( armor or ent.ACE.Armour or 1, 0.1, 50000 )
+	local mat  = material or ent.ACE.Material or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, duct / 100, thickness , mat)
+	local mass		= CalcArmor( ent.ACE.Area, duct / 100, thickness , mat)
 
 	local phys = ent:GetPhysicsObject()
 	if IsValid( phys ) then phys:SetMass( mass ) end
 	duplicator.StoreEntityModifier( ent, "mass", { Mass = mass } )
 
-	ent.ACF.Ductility = duct / 100
+	ent.ACE.Ductility = duct / 100
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = duct } )
 
 	local con = ent:CFW_GetContraption()
 
-	ent.ACF.Material = mat
+	ent.ACE.Material = mat
 	duplicator.StoreEntityModifier( ent, "acfsettings", { Material = mat } )
 
 	ACE.MarkArmorDirty(con, ent, "armor-starfall")
@@ -170,7 +170,7 @@ local sanitize = instance.Sanitize
 local getent = instance.Types.Entity.Unwrap or instance.Types.Entity.GetEntity
 
 local function restrictInfo(ent)
-	if GetConVar("acf_restrictinfo"):GetInt() ~= 0 then
+	if GetConVar("ace_restrictinfo"):GetInt() ~= 0 then
 		return ent:CPPIGetOwner() ~= instance.player
 	end
 
@@ -201,7 +201,7 @@ do
 	-- @server
 	-- @return number The current drag divisor
 	function acf_library.dragDivisor()
-		return ACF.DragDiv
+		return ACE.DragDiv
 	end
 
 	--- Returns true if functions returning sensitive info are restricted to owned props
@@ -215,28 +215,28 @@ do
 	-- @server
 	-- @return number Version number
 	function acf_library.getVersion()
-		return ACF.CurrentVersion
+		return ACE.CurrentVersion
 	end
 
 	--- Returns server version of acf
 	-- @server
 	-- @return number Version number
 	function acf_library.getCurrentVersion()
-		return ACF.Version
+		return ACE.Version
 	end
 
 	--- Returns velocity loss for every meter traveled. 0.2x means HEAT loses 20% of its energy every 2m traveled. 1m is about typical for the sideskirt spaced armor of most tanks.
 	-- @server
 	-- @return number Air gap factor
 	function acf_library.getHEATAirGapFactor()
-		return ACF.HEATAirGapFactor
+		return ACE.HEATAirGapFactor
 	end
 
 	--- Returns ACF wind direction
 	-- @server
 	-- @return vector Wind direction
 	function acf_library.getWindVector()
-		return vwrap(ACF.Wind)
+		return vwrap(ACE.Wind)
 	end
 
 	--- Returns true if this entity contains sensitive info and is not accessable to us
@@ -300,7 +300,7 @@ do
 
 		if not hasActiveInput(this) then return end
 
-		ACF.SetDefaultActiveInputState(this, on and 1 or 0)
+		ACE.SetDefaultActiveInputState(this, on and 1 or 0)
 		this:TriggerInput("Active", on and 1 or 0)
 	end
 
@@ -315,7 +315,7 @@ do
 		hitpos = vunwrap(hitpos)
 
 		checkpermission(instance, this, "entities.acf")
-		if ACF_CheckClips(nil, nil, this, hitpos) then
+		if ACE.CheckClips(nil, nil, this, hitpos) then
 			return true
 		else
 			return false
@@ -350,7 +350,7 @@ do
 		if isGun(this) then acftype = "Guns" end
 
 		if acftype == "" then return "" end
-		local List = ACF.Weapons
+		local List = ACE.Weapons
 
 		return List[acftype][this.Id].name or ""
 	end
@@ -362,11 +362,11 @@ do
 		local this = getent(self)
 
 		if isEngine(this) or isGearbox(this) then
-			return ACF.Weapons["Mobility"][this.Id].category or ""
+			return ACE.Weapons["Mobility"][this.Id].category or ""
 		end
 
 		if isGun(this) then
-			return ACF.Classes["GunClass"][this.Class].name or ""
+			return ACE.Classes["GunClass"][this.Class].name or ""
 		end
 
 		if isAmmo(this) then return this.RoundType or "" end
@@ -409,7 +409,7 @@ do
 		end
 
 		if notify then
-			ACF_SendNotify(instance.player, success, msg)
+			ACE.SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -449,7 +449,7 @@ do
 		end
 
 		if notify then
-			ACF_SendNotify(instance.player, success, msg)
+			ACE.SendNotify(instance.player, success, msg)
 		end
 
 		return success, msg
@@ -521,9 +521,9 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.Health, 3)
+		return round(this.ACE.Health, 3)
 	end
 
 	--- Returns the current armor of an entity
@@ -534,9 +534,9 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.Armour, 3)
+		return round(this.ACE.Armour, 3)
 	end
 
 	--- Returns the max health of an entity
@@ -547,9 +547,9 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.MaxHealth, 3)
+		return round(this.ACE.MaxHealth, 3)
 	end
 
 	--- Returns the max armor of an entity
@@ -560,9 +560,9 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
-		return round(this.ACF.MaxArmour, 3)
+		return round(this.ACE.MaxArmour, 3)
 	end
 
 	--- Returns the ductility of an entity
@@ -573,9 +573,9 @@ do
 
 		if not validPhysics(this) then return 0 end
 		if restrictInfo(this) then return 0 end
-		if not ACF_Check(this) then return 0 end
+		if not ACE.Check(this) then return 0 end
 
-		return this.ACF.Ductility * 100
+		return this.ACE.Ductility * 100
 	end
 
 	--- Returns the armor data of an entity
@@ -587,9 +587,9 @@ do
 
 		if not validPhysics(this) then return empty end
 		if restrictInfo(this) then return empty end
-		if not ACF_Check(this) then return empty end
+		if not ACE.Check(this) then return empty end
 
-		local mat = this.ACF.Material
+		local mat = this.ACE.Material
 		if not mat then return empty end
 
 		local matData = ACE.ArmorTypes[mat]
@@ -612,7 +612,7 @@ do
 
 		if not validPhysics(this) then return end
 		if restrictInfo(this) then return end
-		if not ACF_Check(this) then return end
+		if not ACE.Check(this) then return end
 
 		local matData = ACE.ArmorTypes[material]
 		if not matData then return end
@@ -636,14 +636,14 @@ do
 	-- @param table hitRes The hit resolution table
 	-- @param table dmgInfo The damage info table, containing health and armor changes, if available
 	-- @server
-	SF.hookAdd("ACFOnDamage", nil, function(_, entity, energy, surface, angle, inflictor, bone, gun, type, hitRes, oldACFTbl)
+	SF.hookAdd("ACEOnDamage", nil, function(_, entity, energy, surface, angle, inflictor, bone, gun, type, hitRes, oldACFTbl)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		local dmgInfo = {}
-		if oldACFTbl and entity.ACF then
+		if oldACFTbl and entity.ACE then
 			dmgInfo = {
-				health = (entity.ACF.Health or 0) - (oldACFTbl.Health or 0),
-				armour = (entity.ACF.Armour or 0) - (oldACFTbl.Armour or 0),
+				health = (entity.ACE.Health or 0) - (oldACFTbl.Health or 0),
+				armour = (entity.ACE.Armour or 0) - (oldACFTbl.Armour or 0),
 			}
 		end
 		return true,
@@ -671,7 +671,7 @@ do
 	function acf_library.getGunSpecs(id)
 		checkluatype(id, TYPE_STRING)
 
-		local listEntries = ACF.Weapons.Guns
+		local listEntries = ACE.Weapons.Guns
 
 		-- Not a valid id, try name
 		if not listEntries[id] then
@@ -695,7 +695,7 @@ do
 	function acf_library.getAllGuns()
 		local tbl = {}
 
-		for id, _ in pairs(ACF.Weapons.Guns) do
+		for id, _ in pairs(ACE.Weapons.Guns) do
 			tbl[#tbl + 1] = id
 		end
 
@@ -1013,7 +1013,7 @@ do
 		if not (isAmmo(this) or isGun(this)) then return 0 end
 		if restrictInfo(this) then return 0 end
 
-		return round((this.BulletData["MuzzleVel"] or 0) * ACF.VelScale, 3)
+		return round((this.BulletData["MuzzleVel"] or 0) * ACE.VelScale, 3)
 	end
 
 	--- Returns the mass of the projectile in a crate or gun
@@ -1072,7 +1072,7 @@ do
 		if restrictInfo(this) then return 0 end
 		if not ACE.CheckRound(this.BulletData.Type) then return 0 end
 
-		return ACF.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
+		return ACE.RoundTypes[this.BulletData.Type].getDisplayData(this.BulletData).MaxPen or 0
 	end
 
 	--- Returns the blast radius of an HE, APHE, or HEAT round
@@ -1102,7 +1102,7 @@ do
 		if not (isAmmo(this) or isGun(this)) then return 0 end
 		if restrictInfo(this) then return 0 end
 
-		return (this.BulletData["DragCoef"] or 0) / ACF.DragDiv
+		return (this.BulletData["DragCoef"] or 0) / ACE.DragDiv
 	end
 
 	--- Returns the bullet data related to the index
@@ -1116,7 +1116,7 @@ do
 			return {} -- Should not be needed but just in case
 		end
 		checkluatype(index, TYPE_NUMBER)
-		return sanitize( ACF.Bullet[ index ] or {} )
+		return sanitize( ACE.Bullet[ index ] or {} )
 	end
 
 	--- This gets called everytime a bullet is fired.
@@ -1127,7 +1127,7 @@ do
 	-- @param number bulletIndex The index of the bullet fired
 	-- @param table bulletData The data of the bullet fired
 	-- @server
-	SF.hookAdd("ACFOnBulletCreation", nil, function(_, bulletIndex, bulletData)
+	SF.hookAdd("ACEOnBulletCreation", nil, function(_, bulletIndex, bulletData)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1145,7 +1145,7 @@ do
 	-- @param table bulletData The data of the bullet that hit
 	-- @param table flightRes The flight results of the bullet that hit
 	-- @server
-	SF.hookAdd("ACFOnBulletHit", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletHit", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1164,7 +1164,7 @@ do
 	-- @param table bulletData The data of the bullet that ricocheted
 	-- @param table flightRes The flight results of the bullet that ricocheted
 	-- @server
-	SF.hookAdd("ACFOnBulletRicochet", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletRicochet", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1183,7 +1183,7 @@ do
 	-- @param table bulletData The data of the bullet that penetrated
 	-- @param table flightRes The flight results of the bullet that penetrated
 	-- @server
-	SF.hookAdd("ACFOnBulletPenetrated", nil, function(_, bulletIndex, bulletData, flightRes)
+	SF.hookAdd("ACEOnBulletPenetrated", nil, function(_, bulletIndex, bulletData, flightRes)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1201,7 +1201,7 @@ do
 	-- @param number bulletIndex The index of the bullet that was removed
 	-- @param table bulletData The data of the bullet that was removed
 	-- @server
-	SF.hookAdd("ACFOnBulletRemoved", nil, function(_, bulletIndex, bulletData)
+	SF.hookAdd("ACEOnBulletRemoved", nil, function(_, bulletIndex, bulletData)
 		if not hasaccess(instance, nil, "acf.trackBullets") then return false end
 
 		return true,
@@ -1222,7 +1222,7 @@ do
 	function acf_library.getMobilitySpecs(id)
 		checkluatype(id, TYPE_STRING)
 
-		local listEntries = ACF.Weapons.Mobility
+		local listEntries = ACE.Weapons.Mobility
 
 		-- Not a valid id, try name
 		if not listEntries[id] then
@@ -1246,7 +1246,7 @@ do
 	function acf_library.getAllMobility()
 		local tbl = {}
 
-		for id, _ in pairs(ACF.Weapons.Mobility) do
+		for id, _ in pairs(ACE.Weapons.Mobility) do
 			tbl[#tbl + 1] = id
 		end
 
@@ -1259,7 +1259,7 @@ do
 	function acf_library.getAllEngines()
 		local tbl = {}
 
-		for id, d in pairs(ACF.Weapons.Mobility) do
+		for id, d in pairs(ACE.Weapons.Mobility) do
 			if d.ent == "acf_engine" then
 				tbl[#tbl + 1] = id
 			end
@@ -1274,7 +1274,7 @@ do
 	function acf_library.getAllGearboxes()
 		local tbl = {}
 
-		for id, d in pairs(ACF.Weapons.Mobility) do
+		for id, d in pairs(ACE.Weapons.Mobility) do
 			if d.ent == "acf_gearbox" then
 				tbl[#tbl + 1] = id
 			end
@@ -1294,7 +1294,7 @@ do
 		end
 
 		local wheels = {}
-		for _, ent in pairs(ACF_GetLinkedWheels(this)) do
+		for _, ent in pairs(ACE.GetLinkedWheels(this)) do
 			wheels[#wheels + 1] = ent
 		end
 
@@ -1951,7 +1951,7 @@ do
 			Consumption = 60 * (this.Torque * this.FlyRPM / 9548.8) * this.FuelUse
 		else
 			local Load = 0.3 + this.Throttle * 0.7
-			Consumption = 60 * Load * this.FuelUse * (this.FlyRPM / this.PeakKwRPM) / ACF.FuelDensity[tank.FuelType]
+			Consumption = 60 * Load * this.FuelUse * (this.FlyRPM / this.PeakKwRPM) / ACE.FuelDensity[tank.FuelType]
 		end
 
 		return round(Consumption, 3)
@@ -1984,7 +1984,7 @@ do
 		if this.FuelType == "Electric" then
 			Consumption = 60 * (this.PeakTorque * this.LimitRPM / (4 * 9548.8)) * this.FuelUse
 		else
-			Consumption = 60 * this.FuelUse / ACF.FuelDensity[fuel]
+			Consumption = 60 * this.FuelUse / ACE.FuelDensity[fuel]
 		end
 
 		return round(Consumption, 3)

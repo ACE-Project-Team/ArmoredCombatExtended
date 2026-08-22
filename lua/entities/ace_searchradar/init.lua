@@ -51,7 +51,7 @@ function ENT:Initialize()
 		IsJammed        = 0,
 		JamDirection    = vector_origin
 	}
-	self:SetActive(ACE_GetDefaultActiveInputState(self))
+	self:SetActive(ACE.GetDefaultActiveInputState(self))
 
 	--print(self.Class)
 end
@@ -62,7 +62,7 @@ local function SetConeParameters( Radar )
 
 end
 
-function ACE_MakeSearchRadar(Owner, Pos, Angle, Id)
+function ACE.MakeSearchRadar(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
@@ -103,7 +103,7 @@ function ACE_MakeSearchRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE.GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
@@ -116,7 +116,7 @@ function ACE_MakeSearchRadar(Owner, Pos, Angle, Id)
 
 end
 list.Set( "ACFCvars", "ace_searchradar", {"id"} )
-duplicator.RegisterEntityClass("ace_searchradar", ACE_MakeSearchRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_searchradar", ACE.MakeSearchRadar, "Pos", "Angle", "Id" )
 
 function ENT:SetModelEasy(mdl)
 
@@ -138,9 +138,9 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
 
-		if ACE_IsDefaultActiveInputWired(self) then
+		if ACE.IsDefaultActiveInputWired(self) then
 			local curTime = CurTime()
 			self.LastThink = ACE.CurTime
 			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
@@ -274,10 +274,10 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -313,7 +313,7 @@ function ENT:Think()
 		--Inaccuracy of radar per meter of range.
 		local BaseRadInaccuracy = 0.02 * 39.37 --0.02 meters per every meter. 8 meters @ 400m. 16 meters @ 100m.
 
-		local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
+		local CounterMeasures = ACE.Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 		local CMCount = table.Count(CounterMeasures)
 
 		for Contraption in pairs(CFW.Contraptions) do
@@ -406,8 +406,8 @@ function ENT:Think()
 
 				OutputPosition = BasePos + BaseInaccuracy
 
-				local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
-				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+				local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
+				local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
 
 
 				tableInsert(Owners, InsertionIndex, Owner:Nick())
@@ -446,7 +446,7 @@ function ENT:Think()
 					--Entity is within radar cone, has a valid owner, and is not terrain obscured
 					if not ((absang.y < self.Cone / 4) and IsValid(Owner) and not TraceHull(LOSTraceData).Hit) or not BurnThrough then continue end
 
-					local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
+					local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, MissileDistance)
 
 					tableInsert(Owners, InsertionIndex, Owner:Nick())
 					tableInsert(Distances, InsertionIndex, MissileDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.

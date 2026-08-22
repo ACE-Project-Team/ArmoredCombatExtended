@@ -77,7 +77,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(ACE_GetDefaultActiveInputState(self))
+	self:SetActive(ACE.GetDefaultActiveInputState(self))
 
 end
 
@@ -99,7 +99,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE.GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -137,7 +137,7 @@ end
 
 
 
-function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
+function ACE.MakeMissileRadar(Owner, Pos, Angle, Id)
 
 	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
@@ -169,7 +169,7 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE.GetDefaultActiveInputState(Radar), true)
 
 	Owner:AddCount( "_ace_missileradar", Radar )
 	Owner:AddCleanup( "acemenu", Radar )
@@ -182,7 +182,7 @@ function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 
 end
 list.Set( "ACFCvars", "acf_missileradar", {"id"} )
-duplicator.RegisterEntityClass("acf_missileradar", ACE_MakeMissileRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("acf_missileradar", ACE.MakeMissileRadar, "Pos", "Angle", "Id" )
 
 function ENT:CreateRadar(ACFName, ConeDegs)
 
@@ -232,10 +232,10 @@ function ENT:Think()
 
 	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -248,7 +248,7 @@ function ENT:Think()
 		self.LastStatusUpdate = curTime
 	end
 
-	self.Heat = ACE_HeatFromRadar(self, self.ThinkDelay)
+	self.Heat = ACE.HeatFromRadar(self, self.ThinkDelay)
 	WireLib.TriggerOutput(self, "Heat", self.Heat)
 	self:GetOverlayText()
 
@@ -318,7 +318,7 @@ function ENT:ScanForMissiles()
 		local Owner = missile:CPPIGetOwner()
 
 		-- Sort the missiles by distance from the radar
-		local insertionIndex = ACE_GetBinaryInsertIndex(distArray, distanceSqr)
+		local insertionIndex = ACE.GetBinaryInsertIndex(distArray, distanceSqr)
 		tableInsert(distArray, insertionIndex, distanceSqr)
 		tableInsert(entArray, insertionIndex, missile)
 		tableInsert(posArray, insertionIndex, missile.CurPos) --Replaced with non-cached value as to not lag behind.

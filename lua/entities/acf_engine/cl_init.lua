@@ -20,7 +20,7 @@ function ENT:Draw()
 
 end
 
-function ACE_EngineGUI_Update( Table )
+function ACE.EngineGUI_Update( Table )
 
 	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 

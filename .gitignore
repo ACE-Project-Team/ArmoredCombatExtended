@@ -1,2 +1,7 @@
 .vscode/
+__pycache__/
+*.py[cod]
 static_safety_report.json
+data/ace_test_artifacts/
+# Generated from the maintainer-facing DSL by the native test preparation step.
+lua/tests/ace/generated_*.lua

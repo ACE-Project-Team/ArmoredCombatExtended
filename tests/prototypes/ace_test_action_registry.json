@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "actions": {
+    "ACE.Check": {"kind": "global", "path": "ACE_Check"},
+    "ACE.Activate": {"kind": "global", "path": "ACE_Activate"},
+    "ACE_CheckLegal": {"kind": "global", "path": "ACE_CheckLegal", "returns": ["legal", "reason"]}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "status": "prototype",
+  "observations": {
+    "native_entity": ["ACF"]
+  },
+  "fixtures": {
+    "valid_prop": {"kind": "native_entity", "class": "prop_physics", "model": "models/props_junk/wood_crate001a.mdl", "mass": 10, "acf": {"Material": "RHA", "Type": "Prop"}},
+    "invalid_prop": {"kind": "native_entity", "class": "prop_physics", "invalid": true},
+    "prop_without_physics": {"kind": "native_entity", "class": "prop_physics", "physics": "invalid"},
+    "ignored_prop": {"kind": "native_entity", "class": "ace_debris", "spawnClass": "prop_physics"},
+    "exploding_prop": {"kind": "native_entity", "class": "prop_physics", "exploding": true},
+    "stale_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "acf": {"Material": "RHA", "Mass": 1, "Type": "Prop"}, "stalePhysics": true},
+    "test_player": {"kind": "native_player", "class": "prop_physics", "mass": 10, "name": "ACE test player"},
+    "test_vehicle": {"kind": "native_vehicle", "class": "prop_vehicle_jeep", "spawnClass": "prop_physics", "mass": 10},
+    "legal_prop": {"kind": "native_entity", "class": "prop_physics", "model": "models/props_junk/wood_crate001a.mdl", "mass": 10, "acf": {"Material": "RHA", "Type": "Prop"}, "activate": true},
+    "non_solid_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "solid": false},
+    "clipped_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "clipData": [{"type": "visual"}]},
+    "uninitialized_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "uninitialized": true}
+  }
+}

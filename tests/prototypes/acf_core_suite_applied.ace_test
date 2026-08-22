@@ -1,0 +1,110 @@
+# ACF-shaped ACE core validation prototype.
+# Focus: activation, acceptance/refusal, classification, legality, delegation, and cleanup.
+# These names map to verified ACE entry points; fixture ids are resolved by the registry.
+# Suite scope: ace.native.core core-function validation
+
+new Test "A valid prop is accepted and classified"
+scenario ace.native.core.valid_prop
+requires native
+uses valid_prop as Prop
+do ACE.Check on Prop as EntityType
+expect EntityType is "Prop"
+expect Prop.ACE exists
+cleanup automatic
+
+new Test "An invalid entity is refused without activation"
+scenario ace.native.core.invalid_entity
+requires native
+uses invalid_prop as Prop
+do ACE.Check on Prop as Result
+expect Result is false
+expect Prop.ACE does not exist
+cleanup automatic
+
+new Test "An entity with invalid physics is refused"
+scenario ace.native.core.invalid_physics
+requires native
+uses prop_without_physics as Prop
+do ACE.Check on Prop as Result
+expect Result is false
+cleanup automatic
+
+new Test "Ignored and exploding entities are refused"
+scenario ace.native.core.refusal_guards
+requires native
+uses ignored_prop as IgnoredProp
+uses exploding_prop as ExplodingProp
+do ACE.Check on IgnoredProp as IgnoredResult
+do ACE.Check on ExplodingProp as ExplodingResult
+expect IgnoredResult is false
+expect ExplodingResult is false
+cleanup automatic
+
+new Test "A stale prop is reactivated before it is accepted"
+scenario ace.native.core.stale_reactivation
+requires native
+uses stale_prop as Prop
+do ACE.Check on Prop as EntityType
+expect EntityType is "Prop"
+expect Prop was reactivated
+cleanup automatic
+
+new Test "A player is classified as squishy"
+scenario ace.native.core.player_classification
+requires native
+uses test_player as Entity
+do ACE.Check on Entity as EntityType
+expect EntityType is "Squishy"
+cleanup automatic
+
+new Test "A vehicle is classified as a vehicle"
+scenario ace.native.core.vehicle_classification
+requires native
+uses test_vehicle as Entity
+do ACE.Check on Entity as EntityType
+expect EntityType is "Vehicle"
+cleanup automatic
+
+new Test "A valid prop passes legality"
+scenario ace.native.core.legal_prop
+requires native
+uses legal_prop as Prop
+do ACE.CheckLegal on Prop as LegalResult
+expect LegalResult is legal
+cleanup automatic
+
+new Test "A non-solid prop fails legality with a useful reason"
+scenario ace.native.core.non_solid_legality
+requires native
+uses non_solid_prop as Prop
+do ACE.CheckLegal on Prop as LegalResult
+expect LegalResult is not legal
+expect LegalResult reason is "Not solid"
+cleanup automatic
+
+new Test "A prop with visual clipping fails legality"
+scenario ace.native.core.visual_clip_legality
+requires native
+uses clipped_prop as Prop
+do ACE.CheckLegal on Prop as LegalResult
+expect LegalResult is not legal
+expect LegalResult reason is "Has visclip"
+cleanup automatic
+
+new Test "A prop with missing ACE state is activated by checking"
+scenario ace.native.core.check_activation
+requires native
+uses uninitialized_prop as Prop
+do ACE.Check on Prop as EntityType
+expect EntityType is "Prop"
+expect Prop was activated
+cleanup automatic
+
+new Test "Cleanup removes native test state"
+scenario ace.native.core.activation_state
+requires native
+uses uninitialized_prop as Prop
+do ACE.Activate on Prop as Activation
+expect Prop.ACE exists
+expect Prop.ACE has armor and health
+cleanup automatic

@@ -11,6 +11,11 @@ ENTITY_ROOT = LUA_ROOT / "entities"
 
 
 class RepositoryStructureTests(unittest.TestCase):
+    def test_native_setup_generates_the_dsl_suite_in_the_mounted_addon(self):
+        setup = (REPO / "tests/prepare_gluatest_dependencies.sh").read_text(encoding="utf-8")
+        self.assertIn("garrysmod_override/addons/project", setup)
+        self.assertIn("generated_core_validation.lua", setup)
+
     def test_entity_directories_have_the_standard_file_set(self):
         entity_dirs = sorted(
             path

@@ -17,6 +17,7 @@ class NamespaceCorrectionsInventoryTests(unittest.TestCase):
         allowed = {
             REPO / "lua" / "ace" / "shared" / "sh_ace_entity_state.lua",
             REPO / "lua" / "autorun" / "server" / "sv_ace_primitive_compat.lua",
+            REPO / "lua" / "ace" / "test_dsl_runtime.lua",
         }
         direct_legacy = []
         for path in (REPO / "lua").rglob("*.lua"):

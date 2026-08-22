@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "scenarios": [
+    {
+      "id": "ace.offline.definitions.discoverable",
+      "title": "ACE definitions are defined and discoverable",
+      "reason": "Normal ACE content should have valid identifiers and the source entries the loader expects.",
+      "expected_outcome": "Every definition family has source entries, non-blank IDs, and no duplicate IDs within that family.",
+      "check_type": "registry",
+      "layer": "offline",
+      "runner": "python",
+      "dependencies": [],
+      "timeout_seconds": 10,
+      "tags": ["smoke", "definitions"],
+      "status": "implemented",
+      "implemented_by": "tests/python/test_registry_definitions.py"
+    },
+    {
+      "id": "ace.offline.namespace.no_accidental_collisions",
+      "title": "ACE Lua names do not collide accidentally",
+      "reason": "The addon must not silently replace another ACE function or table during loading.",
+      "expected_outcome": "The namespace scan completes without an accidental cross-file collision.",
+      "check_type": "static",
+      "layer": "offline",
+      "runner": "python",
+      "dependencies": [],
+      "timeout_seconds": 10,
+      "tags": ["smoke", "load-order"],
+      "status": "implemented",
+      "implemented_by": "tests/python/test_namespace_refactor.py"
+    },
+    {
+      "id": "ace.offline.points.stays_consistent",
+      "title": "The points model stays internally consistent",
+      "reason": "The same input should produce safe, deterministic point results in the offline model.",
+      "expected_outcome": "The model returns the expected point result for each supported input shape.",
+      "check_type": "behavior",
+      "layer": "offline",
+      "runner": "luajit",
+      "dependencies": ["luajit"],
+      "timeout_seconds": 20,
+      "tags": ["regression", "points"],
+      "status": "planned"
+    },
+    {
+      "id": "ace.native.entity.survives_lifecycle",
+      "title": "ACE entities survive a normal lifecycle",
+      "reason": "A player should be able to create, use, and remove an ACE entity without runtime errors.",
+      "expected_outcome": "The entity reaches each lifecycle step and is removed without a runtime error.",
+      "check_type": "lifecycle",
+      "layer": "native",
+      "runner": "gluatest",
+      "dependencies": ["gmod", "cfw", "wiremod"],
+      "timeout_seconds": 20,
+      "tags": ["smoke", "lifecycle"],
+      "status": "planned",
+      "source_manifest": "tests/fixtures/general_use_manifest.json",
+      "source_id": "entity_spawn_activate_link_remove"
+    },
+    {
+      "id": "ace.headless.tank_duel.completes_cleanly",
+      "title": "A representative tank duel completes cleanly",
+      "reason": "A normal shot-impact-damage sequence should finish without hangs or out-of-scope errors.",
+      "expected_outcome": "The scenario records fire, impact, damage, and clean termination.",
+      "check_type": "system",
+      "layer": "headless",
+      "runner": "headless",
+      "dependencies": ["gmod", "cfw", "wiremod"],
+      "timeout_seconds": 30,
+      "tags": ["scenario", "combat"],
+      "status": "planned",
+      "source_manifest": "tests/fixtures/general_use_manifest.json",
+      "source_id": "tank_duel_ap"
+    },
+    {
+      "id": "ace.headless.performance.finishes_with_artifacts",
+      "title": "Representative fire-rate smoke finishes with artifacts",
+      "reason": "A normal fire-rate sample should finish and report measurements instead of hanging.",
+      "expected_outcome": "The performance runner finds a bounded scenario with its declared perf artifact.",
+      "check_type": "performance",
+      "layer": "headless",
+      "runner": "headless",
+      "dependencies": ["gmod"],
+      "timeout_seconds": 60,
+      "tags": ["scenario", "performance"],
+      "status": "planned",
+      "source_manifest": "tests/fixtures/general_use_manifest.json",
+      "source_id": "representative_fire_rate_smoke"
+    }
+  ]
+}

@@ -96,7 +96,7 @@ local function literal(Value)
 	if Value == "false" then return false end
 	local Number = tonumber(Value)
 	if Number then return Number end
-	local Quoted = Value:match('^"(.*)"$')
+	local Quoted = Value:match("^\"(.*)\"$")
 	return Quoted or Value
 end
 
@@ -148,12 +148,12 @@ local function action(State, Spec)
 		return Original(...)
 	end
 
-	local Ok, A, B, C, D
+	local Ok, A, B
 	if Spec.action == "ACE.CheckLegal" then
 		ACE.Legal.IsActivated = 1
 		Ok, A, B = pcall(Function, Args[1], nil, nil, nil, nil, false)
 	else
-		Ok, A, B, C, D = pcall(Function, unpack(Args, 1, ArgCount))
+		Ok, A, B = pcall(Function, unpack(Args, 1, ArgCount))
 	end
 
 	ACE.Activate = Original

@@ -88,13 +88,13 @@ function SWEP:InitBulletData()
 	self.BulletData.AmmoType = self.BulletData.Type
 	self.BulletData.FrArea = 3.1416 * (self.BulletData.Caliber / 2) ^ 2
 	self.BulletData.SubFrArea = self.BulletData.FrArea * self.BulletData.Data5
-	self.BulletData.PenArea = (1.2 * self.BulletData.SubFrArea) ^ ACF.PenAreaMod
+	self.BulletData.PenArea = (1.2 * self.BulletData.SubFrArea) ^ ACE.PenAreaMod
 	self.BulletData.ProjMass = self.BulletData.SubFrArea * (self.BulletData.ProjLength * 7.9 / 1000) * 1.5 + (self.BulletData.FrArea - self.BulletData.SubFrArea) * (self.BulletData.ProjLength * 7.9 / 10000) --(Tungsten Core Mass + Sabot Exterior Mass) * Mass modifier used for bad aerodynamics
-	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 	self.BulletData.DragCoef = (self.BulletData.FrArea / 10000) / self.BulletData.ProjMass / 5
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACF_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.Pos = Vector(0, 0, 0)

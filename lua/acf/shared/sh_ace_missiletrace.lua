@@ -12,7 +12,7 @@ return function(StartPos, EndPos, Filter)
 	repeat
 		TraceResult = util.TraceLine(TraceData)
 
-		if not ACF_CheckClips(TraceResult.Entity, TraceResult.HitPos) then break end
+		if not ACE.CheckClips(TraceResult.Entity, TraceResult.HitPos) then break end
 
 		TraceData.filter[#TraceData.filter + 1] = TraceResult.Entity
 		VisclipCount = VisclipCount + 1

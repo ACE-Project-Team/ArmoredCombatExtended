@@ -7,14 +7,14 @@ include("shared.lua")
 
 DEFINE_BASECLASS( "base_wire_entity" )
 
---local GunClasses	= ACF.Classes.GunClass
-local RackClasses	= ACF.Classes.Rack
+--local GunClasses	= ACE.Classes.GunClass
+local RackClasses	= ACE.Classes.Rack
 
---local GunTable	= ACF.Weapons.Guns
-local RackTable	= ACF.Weapons.Racks
+--local GunTable	= ACE.Weapons.Guns
+local RackTable	= ACE.Weapons.Racks
 
-local GuidanceTable = ACF.Guidance
-local FuseTable	= ACF.Fuse
+local GuidanceTable = ACE.Guidance
+local FuseTable	= ACE.Fuse
 
 local AmmoLinkDistBase = 512
 
@@ -22,11 +22,14 @@ local RackWireDescs = {
 	--Inputs
 	["Reload"]       = "Arms this rack. Its mandatory to set this since racks don't reload automatically.",
 	["TargetPos"]    = "Defines the Target position for the ordnance in this rack. This only works for Wire and laser guidances.",
+	["ActivateGuidance"] = "This input is only used to activate the missile seeker while it is still on the rails.\nUseful to see what your missile is tracking or able to see before firing.\nRegardless of input missiles will activate their guidance when fired.",
 	["Delay"]        = "Sets a specific delay to guidance control over the default one in seconds.",
 	["Detonate"]        = "Remotely detonate any currently outbound missiles.",
 
-	--Outputs
+	--Outputs 
 	["Ready"]        = "Returns if the rack is ready to fire.",
+	["AcquiredTarget"]        = "Whether the missile currently on the rails has found a target.\n Requires ActivateGuidance to be active for the missile to see on the rails.",
+	["TargetDirection"]        = "If the missile on the rails currently has a target, outputs a direction vector towards the target.\n Requires ActivateGuidance to be active for the missile to see on the rails.",
 	["CurMissile"]        = "Outputs the next position of the missile in the rack getting fired.",
 	["PositionFiredMissile"] = "Outputs the position of the missile last fired by this launcher"
 
@@ -39,12 +42,12 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 	self:CPPISetOwner(self)
 
-	--self.NextLegalCheck  = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
-	self.NextLegalCheck  = ACF.CurTime + 3 -- give any spawning issues time to iron themselves out
+	--self.NextLegalCheck  = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck  = ACE.CurTime + 3 -- give any spawning issues time to iron themselves out
 	self.Legal			= true
 	self.LegalIssues	= ""
-	self.SpecialHealth	= false	--If true needs a special ACF_Activate function
-	self.SpecialDamage	= true	--If true needs a special ACF_OnDamage function --NOTE: you can't "fix" missiles with setting this to false, it acts like a prop!!!!
+	self.SpecialHealth	= false	--If true needs a special ACE_Activate function
+	self.SpecialDamage	= true	--If true needs a special ACE_OnDamage function --NOTE: you can't "fix" missiles with setting this to false, it acts like a prop!!!!
 
 	self.ReloadTime		= 1
 	self.ReloadDelay	= 1 --Delay before can fire again. Decreased by refills. Set to 30 for now.
@@ -79,10 +82,10 @@ function ENT:Initialize()
 
 	self.SelfContraption = nil
 
-	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")", "Activate Guidance", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
+	self.Inputs = WireLib.CreateSpecialInputs( self, { "Fire",	"Reload (" .. RackWireDescs["Reload"] .. ")",	"Target Pos (" .. RackWireDescs["TargetPos"] .. ")",	"Activate Guidance (" .. RackWireDescs["ActivateGuidance"] .. ")", "Track Delay (" .. RackWireDescs["Delay"] .. ")", "Detonate Missile (" .. RackWireDescs["Detonate"] .. ")" },
 													{ "NORMAL", "NORMAL", "VECTOR", "NORMAL", "NORMAL", "NORMAL" } )
 
-	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget", "TargetDirection", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
+	self.Outputs = WireLib.CreateSpecialOutputs( self,  { "Ready (" .. RackWireDescs["Ready"] .. ")",	"Shots Left", "AcquiredTarget (" .. RackWireDescs["AcquiredTarget"] .. ")", "TargetDirection (" .. RackWireDescs["TargetDirection"] .. ")", "Current Missile", "Missile Info", "CurMissile", "PositionFiredMissile" },
 														{ "NORMAL", "NORMAL", "NORMAL", "VECTOR", "ENTITY", "STRING", "NORMAL", "VECTOR" } )
 
 	Wire_TriggerOutput(self, "Ready", 1)
@@ -117,15 +120,15 @@ function ENT:Initialize()
 	self.CanLegalCheck = true
 
 	self:CallOnRemove("ACE_Points", function(ent)
-		if ACE.PointsInputChanged then ACE.PointsInputChanged(ent, "rack-removed") end
+		if ACE_PointsInputChanged then ACE_PointsInputChanged(ent, "rack-removed") end
 	end)
 end
 
 
-function MakeACF_Rack(Owner, Pos, Angle, Id)
+function ACE_MakeRack(Owner, Pos, Angle, Id)
 
 
-	if not Owner:CheckLimit("_acf_rack") then return false end
+	if not Owner:CheckLimit("_ace_rack") then return false end
 
 	local Rack = ents.Create("acf_rack")
 
@@ -135,10 +138,10 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 	Rack:SetPos(Pos)
 	Rack:Spawn()
 
-	Owner:AddCount("_acf_rack", Rack)
-	Owner:AddCleanup( "acfmenu", Rack )
+	Owner:AddCount("_ace_rack", Rack)
+	Owner:AddCleanup( "acemenu", Rack )
 
-	if not ACE.CheckRack( Id ) then
+	if not ACE_CheckRack( Id ) then
 		Id = "1xRK"
 	end
 
@@ -178,12 +181,12 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 	Rack.Inaccuracy        = gundef["spread"]	or gunclass["spread"]	or 0
 
 
-	Rack.HideMissile       = ACF_GetRackValue(Id, "hidemissile")			or false
+	Rack.HideMissile       = ACE_GetRackValue(Id, "hidemissile")			or false
 	Rack.ProtectMissile    = gundef.protectmissile or gunclass.protectmissile  or false
 	Rack.CustomArmour      = gundef.armour		or gunclass.armour		or 1
 
-	Rack.ReloadMultiplier  = ACF_GetRackValue(Id, "reloadmul")
-	Rack.WhitelistOnly     = ACF_GetRackValue(Id, "whitelistonly")
+	Rack.ReloadMultiplier  = ACE_GetRackValue(Id, "reloadmul")
+	Rack.WhitelistOnly     = ACE_GetRackValue(Id, "whitelistonly")
 
 	Rack:SetNWString("WireName",Rack.name)
 	Rack:SetNWString( "Class",  Rack.Class )
@@ -197,7 +200,7 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 		Rack.PhysObj:SetMass(Rack.Mass or 1)
 	end
 
-	hook.Call("ACF_RackCreate", nil, Rack)
+	hook.Call("ACE_RackCreate", nil, Rack)
 
 	undo.Create( "acf_rack" )
 		undo.AddEntity( Rack )
@@ -208,8 +211,9 @@ function MakeACF_Rack(Owner, Pos, Angle, Id)
 
 end
 
+
 list.Set( "ACFCvars", "acf_rack" , {"id"} )
-duplicator.RegisterEntityClass("acf_rack", MakeACF_Rack, "Pos", "Angle", "Id")
+duplicator.RegisterEntityClass("acf_rack", ACE_MakeRack, "Pos", "Angle", "Id")
 
 
 function ENT:TriggerInput( iname , value )
@@ -318,11 +322,11 @@ function ENT:UpdateValidMissiles()
 	return ValidCount
 end
 
-	--ACF.GunfireEnabled and self.Legal. Add to later think function.
+	--ACE.GunfireEnabled and self.Legal. Add to later think function.
 
 function ENT:Think()
 
-	local CT = ACF.CurTime
+	local CT = ACE.CurTime
 	self:NextThink( CT )
 
 	if self.CurMissile == 0 then
@@ -390,12 +394,12 @@ function ENT:Think()
 
 	if CT > self.NextAuxilaryFunctions then
 		self.NextAuxilaryFunctions = CT + 3
-		self.Parent = ACF_GetPhysicalParent(self)
+		self.Parent = ACE_GetPhysicalParent(self)
 	end
 
 	if CT > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, nil, math.Round(self.Mass,2), self.ModelInertia, nil, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, nil, math.Round(self.Mass,2), self.ModelInertia, nil, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
 		if not self.Legal and self.Firing then
 			self.Firing = false
@@ -426,7 +430,7 @@ function ENT:ShootMissile()
 
 	if not ShotMissile:IsValid() then self.CurMissile = self:UpdateValidMissiles() return end
 
-	ACE.DoContraptionLegalCheck(self)
+	ACE_DoContraptionLegalCheck(self)
 
 	self.NextReload = CT + self.ReloadTime
 
@@ -458,7 +462,7 @@ function ENT:ShootMissile()
 	--Shamelessly stolen from the gun code
 	local coneAng		= math.tan(math.rad(self.Inaccuracy))
 	local randUnitSquare	= (self.Missiles[MissileToShoot][1]:GetUp() * (2 * math.random() - 1) + self.Missiles[MissileToShoot][1]:GetRight() * (2 * math.random() - 1))
-	local spread		= randUnitSquare:GetNormalized() * coneAng * (math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)))
+	local spread		= randUnitSquare:GetNormalized() * coneAng * (math.random() ^ (1 / math.Clamp(ACE.GunInaccuracyBias, 0.5, 4)))
 	local ShootVec		= (ShotMissile:GetForward() + spread):GetNormalized()
 
 	self.Missiles[MissileToShoot][1]:SetAngles(ShootVec:Angle())
@@ -477,8 +481,8 @@ function ENT:ShootMissile()
 
 	self.Ready = false
 	self.NextFire = CT + self.FireDelay
-	if ACE.PointsInputChanged then
-		ACE.PointsInputChanged(self, "rack-missile-fired", {
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged(self, "rack-missile-fired", {
 			Ammo = true,
 			Firepower = true,
 			ReadyRack = true,
@@ -494,7 +498,7 @@ function ENT:Reload() --
 
 	local ValidCount = self:UpdateValidMissiles()
 
-	local ReloadTest = ACF.CurTime + self.ReloadDelay * self.ReloadMultiplierBonus
+	local ReloadTest = ACE.CurTime + self.ReloadDelay * self.ReloadMultiplierBonus
 	if self.NextFire > ReloadTest then
 	   self.NextFire = ReloadTest
 	end
@@ -532,8 +536,8 @@ function ENT:Reload() --
 		self.CurMissile = ValidCount + 1
 
 		Wire_TriggerOutput(self, "Shots Left", self.CurMissile)
-		if ACE.PointsInputChanged then
-			ACE.PointsInputChanged(self, "rack-missile-reloaded", {
+		if ACE_PointsInputChanged then
+			ACE_PointsInputChanged(self, "rack-missile-reloaded", {
 				Ammo = true,
 				Firepower = true,
 				ReadyRack = true,
@@ -563,19 +567,19 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile.DoNotDuplicate  = true
 	missile.Launcher		= self
 
-	missile.ContrapId = ACF_Check( self ) and self.ACF.ContraptionId or 1
+	missile.ContrapId = ACE_Check( self ) and self.ACF.ContraptionId or 1
 
-	local BulletData = ACFM_CompactBulletData(Crate)
+	local BulletData = ACE_Missile_CompactBulletData(Crate)
 	BulletData.IsShortForm  = true
 	BulletData.Owner		= ply
 	missile:SetBulletData(BulletData)
 	missile.Bulletdata2 = Crate.BulletData --Sets non compacted bulletdata for spawning a shell. I guarantee there's a better way to do this.
 
-	BulletDataMath(missile)
+	ACE_BulletDataMath(missile)
 
-	missile.OutSideRackModel = ACF_GetRackValue(self.Id, "rocketmdl") or ACF_GetGunValue(BulletData.Id, "rocketmdl")
+	missile.OutSideRackModel = ACE_GetRackValue(self.Id, "rocketmdl") or ACE_GetGunValue(BulletData.Id, "rocketmdl")
 
-	local rackmodel = ACF_GetRackValue(self.Id, "rackmdl") or ACF_GetGunValue(BulletData.Id, "rackmdl") or missile.OutSideRackModel
+	local rackmodel = ACE_GetRackValue(self.Id, "rackmdl") or ACE_GetGunValue(BulletData.Id, "rackmdl") or missile.OutSideRackModel
 	if rackmodel then
 		missile:SetModelEasy( rackmodel )
 		--missile.RackModelApplied = true
@@ -589,44 +593,44 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile:SetParent(self)
 	missile:SetParentPhysNum(0)
 
-	local prop = missile.BulletData.FrArea * (missile.BulletData.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
-	local ThrustRatio = 1 + (prop-( ACF_GetRackValue(BulletData, "propweight") or ACF_GetGunValue(BulletData.Id, "propweight") or 1 ))	--Multiplies burntime by the amount of proppelant compared to max.
+	local prop = missile.BulletData.FrArea * (missile.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	local ThrustRatio = 1 + (prop-( ACE_GetRackValue(BulletData, "propweight") or ACE_GetGunValue(BulletData.Id, "propweight") or 1 ))	--Multiplies burntime by the amount of proppelant compared to max.
 
 	missile.ACF = missile.ACF or {}
 	missile.ACF.Ductility = -0.8
 	missile.ACF.Material = "RHA" --Add material customization option to missiles?
-	self.RoundWeight = ACF_GetGunValue(BulletData, "weight") or 10
+	self.RoundWeight = ACE_GetGunValue(BulletData, "weight") or 10
 	missile.RoundWeight = self.RoundWeight --Used to scale thrust acceleration.
 
-	missile.Drag = ACF_GetRackValue(BulletData, "dragcoef") or ACF_GetGunValue(BulletData.Id, "dragcoef") or 0
+	missile.Drag = ACE_GetRackValue(BulletData, "dragcoef") or ACE_GetGunValue(BulletData.Id, "dragcoef") or 0
 
-	local TVal = (ACF_GetRackValue(BulletData, "thrust") or ACF_GetGunValue(BulletData.Id, "thrust") or 0)
+	local TVal = (ACE_GetRackValue(BulletData, "thrust") or ACE_GetGunValue(BulletData.Id, "thrust") or 0)
 	missile.Thrust = TVal
 
 
-	missile.BurnTime = (ACF_GetRackValue(BulletData, "burntime") or ACF_GetGunValue(BulletData.Id, "burntime") or 0) * ThrustRatio
-	missile.Burndelay = ACF_GetRackValue(BulletData, "startdelay") or ACF_GetGunValue(BulletData.Id, "startdelay") or 0
+	missile.BurnTime = (ACE_GetRackValue(BulletData, "burntime") or ACE_GetGunValue(BulletData.Id, "burntime") or 0) * ThrustRatio
+	missile.Burndelay = ACE_GetRackValue(BulletData, "startdelay") or ACE_GetGunValue(BulletData.Id, "startdelay") or 0
 
-	missile.BoostAccel = (ACF_GetRackValue(BulletData, "boostacceleration") or ACF_GetGunValue(BulletData.Id, "boostacceleration") or 0)
-	missile.BoostTime = (ACF_GetRackValue(BulletData, "boostertime") or ACF_GetGunValue(BulletData.Id, "boostertime") or 0) * ThrustRatio
-	missile.BoostIgnitionDelay = ACF_GetRackValue(BulletData, "boostdelay") or ACF_GetGunValue(BulletData.Id, "boostdelay") or 0
+	missile.BoostAccel = (ACE_GetRackValue(BulletData, "boostacceleration") or ACE_GetGunValue(BulletData.Id, "boostacceleration") or 0)
+	missile.BoostTime = (ACE_GetRackValue(BulletData, "boostertime") or ACE_GetGunValue(BulletData.Id, "boostertime") or 0) * ThrustRatio
+	missile.BoostIgnitionDelay = ACE_GetRackValue(BulletData, "boostdelay") or ACE_GetGunValue(BulletData.Id, "boostdelay") or 0
 
-	missile.BoostKick = ACF_GetRackValue(BulletData, "launchkick") or ACF_GetGunValue(BulletData.Id, "launchkick") or 0
+	missile.BoostKick = ACE_GetRackValue(BulletData, "launchkick") or ACE_GetGunValue(BulletData.Id, "launchkick") or 0
 
-	missile.Lifetime = ACF_GetRackValue(BulletData, "fusetime") or ACF_GetGunValue(BulletData.Id, "fusetime") or 20
+	missile.Lifetime = ACE_GetRackValue(BulletData, "fusetime") or ACE_GetGunValue(BulletData.Id, "fusetime") or 20
 
-	missile.TurnRate = ACF_GetRackValue(BulletData, "turnrate") or ACF_GetGunValue(BulletData.Id, "turnrate") or 50
-	missile.FinMul = ACF_GetRackValue(BulletData, "finefficiency") or ACF_GetGunValue(BulletData.Id, "finefficiency") or 0.2
-	missile.ThrustTurnRate = ACF_GetRackValue(BulletData, "thrusterturnrate") or ACF_GetGunValue(BulletData.Id, "thrusterturnrate") or 0
-	missile.HasInertial = ACF_GetRackValue(BulletData, "inertialcapable") or ACF_GetGunValue(BulletData.Id, "inertialcapable") or false
-	missile.HasDatalink = ACF_GetRackValue(BulletData, "datalink") or ACF_GetGunValue(BulletData.Id, "datalink") or false
+	missile.TurnRate = ACE_GetRackValue(BulletData, "turnrate") or ACE_GetGunValue(BulletData.Id, "turnrate") or 50
+	missile.FinMul = ACE_GetRackValue(BulletData, "finefficiency") or ACE_GetGunValue(BulletData.Id, "finefficiency") or 0.2
+	missile.ThrustTurnRate = ACE_GetRackValue(BulletData, "thrusterturnrate") or ACE_GetGunValue(BulletData.Id, "thrusterturnrate") or 0
+	missile.HasInertial = ACE_GetRackValue(BulletData, "inertialcapable") or ACE_GetGunValue(BulletData.Id, "inertialcapable") or false
+	missile.HasDatalink = ACE_GetRackValue(BulletData, "datalink") or ACE_GetGunValue(BulletData.Id, "datalink") or false
 
-	missile.StraightRunning = ACF_GetRackValue(BulletData, "predictiondelay") or ACF_GetGunValue(BulletData.Id, "predictiondelay") or 1.25
-	missile.StringName = (ACF_GetRackValue(BulletData, "name") or ACF_GetGunValue(BulletData.Id, "name") or "") .. " - " .. BulletData.Type
-	missile.MinStartDelay = ACF_GetRackValue(BulletData, "armdelay") or ACF_GetGunValue(BulletData.Id, "armdelay") or 0.3
+	missile.StraightRunning = ACE_GetRackValue(BulletData, "predictiondelay") or ACE_GetGunValue(BulletData.Id, "predictiondelay") or 1.25
+	missile.StringName = (ACE_GetRackValue(BulletData, "name") or ACE_GetGunValue(BulletData.Id, "name") or "") .. " - " .. BulletData.Type
+	missile.MinStartDelay = ACE_GetRackValue(BulletData, "armdelay") or ACE_GetGunValue(BulletData.Id, "armdelay") or 0.3
 
-	missile.MissileVelocityMul = ACF_GetRackValue(BulletData, "velmul") or ACF_GetGunValue(BulletData.Id, "velmul") or 3
-	missile.MissileCalMul = ACF_GetRackValue(BulletData, "calmul") or ACF_GetGunValue(BulletData.Id, "calmul") or 1
+	missile.MissileVelocityMul = ACE_GetRackValue(BulletData, "velmul") or ACE_GetGunValue(BulletData.Id, "velmul") or 3
+	missile.MissileCalMul = ACE_GetRackValue(BulletData, "calmul") or ACE_GetGunValue(BulletData.Id, "calmul") or 1
 
 	--0-stops underwater
 	--1-booster only underwater - DEFAULT
@@ -634,14 +638,14 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	--3-underwater only
 	--4-booster all and under thrust only
 
-	missile.UnderwaterThrust = ACF_GetRackValue(BulletData, "waterthrusttype") or ACF_GetGunValue(BulletData.Id, "waterthrusttype") or 1
-	missile.Buoyancy = ACF_GetRackValue(BulletData, "buoyancy") or ACF_GetGunValue(BulletData.Id, "buoyancy") or 0.5
+	missile.UnderwaterThrust = ACE_GetRackValue(BulletData, "waterthrusttype") or ACE_GetGunValue(BulletData.Id, "waterthrusttype") or 1
+	missile.Buoyancy = ACE_GetRackValue(BulletData, "buoyancy") or ACE_GetGunValue(BulletData.Id, "buoyancy") or 0.5
 
 	local guidance  = BulletData.Data7
 	local fuse	= BulletData.Data8
 
 	if guidance then
-		guidance = ACFM_CreateConfigurable(guidance, GuidanceTable, bdata, "guidance")
+		guidance = ACE_Missile_CreateConfigurable(guidance, GuidanceTable, bdata, "guidance")
 		--if guidance then missile:SetGuidance(guidance) end
 		if guidance then
 			missile.Guidance = guidance
@@ -652,7 +656,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	--print(GuidanceTable.guidance)
 
 	if fuse then
-		fuse = ACFM_CreateConfigurable(fuse, FuseTable, bdata, "fuses")
+		fuse = ACE_Missile_CreateConfigurable(fuse, FuseTable, bdata, "fuses")
 		if fuse then
 			missile.Fuse = fuse
 			fuse:Configure(missile, missile.Guidance or missile:SetGuidance(GuidanceTable.Dumb()))
@@ -660,8 +664,8 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	end
 
 
-	UpdateMissileBodygroups(missile)
-	UpdateMissileSkin(missile)
+	ACE_UpdateMissileBodygroups(missile)
+	ACE_UpdateMissileSkin(missile)
 
 
 
@@ -670,7 +674,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 
 				--1.8 is 80 ductility
 		missile.ACF.Area = (phys:GetSurfaceArea() * 6.45) * 0.52505066107
-		phys:SetMass( missile.ACF.Area * 0.2 ^ 0.5 * (ACF_GetRackValue(self.Id, "armour") or ACF_GetGunValue(BulletData.Id, "armour") or 10) * 0.00078 ) --Sets missile armor thickness.
+		phys:SetMass( missile.ACF.Area * 0.2 ^ 0.5 * (ACE_GetRackValue(self.Id, "armour") or ACE_GetGunValue(BulletData.Id, "armour") or 10) * 0.00078 ) --Sets missile armor thickness.
 	end
 
 	if self.HideMissile then missile:SetNoDraw(true) end
@@ -683,10 +687,10 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	self.Missiles[MissileSlot][1] = missile
 	self.Missiles[MissileSlot][2] = true
 
-	self.FireDelay = ACF_GetRackValue(BulletData, "firedelay") or ACF_GetGunValue(BulletData.Id, "firedelay") or 1
-	self.ReloadTime = ACF_GetRackValue(BulletData, "reloadspeed") or ACF_GetGunValue(BulletData.Id, "reloadspeed") or 1
-	self.ReloadDelay = ACF_GetRackValue(BulletData, "reloaddelay") or ACF_GetGunValue(BulletData.Id, "reloaddelay") or 1
-	self.Inaccuracy = ACF_GetRackValue(BulletData, "inaccuracy") or ACF_GetGunValue(BulletData.Id, "inaccuracy") or 0
+	self.FireDelay = ACE_GetRackValue(BulletData, "firedelay") or ACE_GetGunValue(BulletData.Id, "firedelay") or 1
+	self.ReloadTime = ACE_GetRackValue(BulletData, "reloadspeed") or ACE_GetGunValue(BulletData.Id, "reloadspeed") or 1
+	self.ReloadDelay = ACE_GetRackValue(BulletData, "reloaddelay") or ACE_GetGunValue(BulletData.Id, "reloaddelay") or 1
+	self.Inaccuracy = ACE_GetRackValue(BulletData, "inaccuracy") or ACE_GetGunValue(BulletData.Id, "inaccuracy") or 0
 
 	if missile:IsValid() then
 		self:EmitSound("acf_extra/tankfx/gnomefather/reload12.wav", 500, 110)
@@ -791,8 +795,8 @@ function ENT:LoadAmmo()
 	self:GetOverlayText()
 
 	self:Think()
-	if missile and ACE.PointsInputChanged then
-		ACE.PointsInputChanged(self, "rack-preloaded", {
+	if missile and ACE_PointsInputChanged then
+		ACE_PointsInputChanged(self, "rack-preloaded", {
 			Ammo = true,
 			Firepower = true,
 			ReadyRack = true,
@@ -847,8 +851,8 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste( self, Player, Ent, CreatedEntities )
-	if ACE.PointsInputChanged then
-		ACE.PointsInputChanged(pointSources, "rack-links-pasted")
+	if ACE_PointsInputChanged then
+		ACE_PointsInputChanged(pointSources, "rack-links-pasted")
 	end
 
 end
@@ -873,7 +877,7 @@ function ENT:GetOverlayText()
 
 	txt = "-  " .. Status
 	if self.RackStatus == "Loading" then
-		local reloadtime = math.max(math.Round(self.NextFire - ACF.CurTime),0)
+		local reloadtime = math.max(math.Round(self.NextFire - ACE.CurTime),0)
 		txt = txt .. " (Seconds left: " .. reloadtime .. ")"
 	end
 
@@ -908,20 +912,20 @@ function ENT:GetOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
-	if ACE.GetGunFirepowerReadout then
-		local readout = ACE.GetGunFirepowerReadout(self)
+	if ACE_GetGunFirepowerReadout then
+		local readout = ACE_GetGunFirepowerReadout(self)
 		if readout then
 			txt = txt .. "\nFirepower: " .. string.Comma(math.Round(readout.Points)) .. " pts"
-			local roundLine = readout.Round and ACE.GetRoundLethalityLine
-				and ACE.GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE_GetRoundLethalityLine
+				and ACE_GetRoundLethalityLine(readout.Round, true)
 			if roundLine then txt = txt .. "\nBest Round: " .. roundLine end
 			if readout.MinimumApplied then
 				txt = txt .. "\nWeapon Minimum Applied: " .. string.Comma(math.Round(readout.Points)) .. " pts"
 			end
-			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
+			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
 			if floorLine then txt = txt .. "\n" .. floorLine end
 		end
 	end
@@ -936,7 +940,7 @@ end
 
 function ENT:CanLoadCaliber(cal)
 
-	return ACF_RackCanLoadCaliber(self.Id, cal)
+	return ACE_RackCanLoadCaliber(self.Id, cal)
 
 end
 
@@ -951,8 +955,8 @@ function ENT:CanLinkCrate(crate)
 
 
 	-- Don't link if it's a blacklisted round type for this rack
-	local class = ACF_GetGunValue(bdata, "gunclass")
-	local Blacklist = ACF.AmmoBlacklist[ bdata.RoundType or bdata.Type ] or {}
+	local class = ACE_GetGunValue(bdata, "gunclass")
+	local Blacklist = ACE.AmmoBlacklist[ bdata.RoundType or bdata.Type ] or {}
 
 	if not class or table.HasValue( Blacklist, class ) then
 		return false, "That round type cannot be used with this rack!"
@@ -960,13 +964,13 @@ function ENT:CanLinkCrate(crate)
 
 
 	-- Dont't link if it's too far from this rack
-	if RetDist( self, crate ) >= AmmoLinkDistBase then
+	if ACE_RetDist( self, crate ) >= AmmoLinkDistBase then
 		return false, "That crate is too far to be connected with this rack!"
 	end
 
 
 	-- Don't link if it's not a missile.
-	local ret, msg = ACF_CanLinkRack(self.Id, bdata.Id, bdata, self)
+	local ret, msg = ACE_CanLinkRack(self.Id, bdata.Id, bdata, self)
 	if not ret then return ret, msg end
 
 
@@ -990,7 +994,7 @@ function ENT:Link( Target )
 	end
 
 	-- Don't link if it's a blacklisted round type for this gun
-	local Blacklist = ACF.AmmoBlacklist[ Target.RoundType ] or {}
+	local Blacklist = ACE.AmmoBlacklist[ Target.RoundType ] or {}
 
 	if table.HasValue( Blacklist, self.Class ) then
 		return false, "That round type cannot be used with this gun!"
@@ -1007,8 +1011,8 @@ function ENT:Link( Target )
 
 	self:SetOverlayText(txt)
 
-	if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-		ACE.PointsInputChanged({ self, Target }, "rack-ammo-linked")
+	if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+		ACE_PointsInputChanged({ self, Target }, "rack-ammo-linked")
 	end
 	return true, "Link successful!"
 
@@ -1028,8 +1032,8 @@ function ENT:Unlink( Target )
 
 		self:GetOverlayText()
 
-		if ACE.PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
-			ACE.PointsInputChanged({ self, Target }, "rack-unlinked")
+		if ACE_PointsInputChanged and not self._ACEPointsSuppress and (not Target or not Target._ACEPointsSuppress) then
+			ACE_PointsInputChanged({ self, Target }, "rack-unlinked")
 		end
 		return true, "Unlink successful!"
 	else
@@ -1039,7 +1043,7 @@ function ENT:Unlink( Target )
 end
 
 
-function RetDist( enta, entb )
+function ACE_RetDist( enta, entb )
 	if not ((enta and enta:IsValid()) or (entb and entb:IsValid())) then return 0 end
 	return enta:GetPos():Distance(entb:GetPos())
 end
@@ -1077,7 +1081,7 @@ end
 function ENT:TrimDistantCrates()
 
 	for _, Crate in pairs(self.AmmoLink) do
-		if IsValid( Crate ) and Crate.Load and RetDist( self, Crate ) >= AmmoLinkDistBase then
+		if IsValid( Crate ) and Crate.Load and ACE_RetDist( self, Crate ) >= AmmoLinkDistBase then
 			self:Unlink( Crate )
 			self:EmitSound("physics/metal/metal_box_impact_bullet" .. tostring(math.random(1, 3)) .. ".wav", 500, 100)
 		end
@@ -1095,7 +1099,7 @@ do
 	}
 
 	--Jank terrible bad hardcoded function to copy bullet data over so it can be spawned by the missle. Has variables to convert every type of round data. There has to be a better way.
-	function BulletDataMath(self)
+	function ACE_BulletDataMath(self)
 
 		local SourceData = self.Bulletdata2 or self.BulletData or {}
 
@@ -1133,7 +1137,7 @@ do
 		self.Bulletdata2.AmmoType = self.Bulletdata2.Type
 		self.Bulletdata2.FrArea = 3.1416 * (self.Bulletdata2.Caliber / 2) ^ 2
 		self.Bulletdata2.ProjMass = self.Bulletdata2.FrArea * (self.Bulletdata2.ProjLength * 7.9 / 1000)
-		self.Bulletdata2.PropMass = self.Bulletdata2.FrArea * (self.Bulletdata2.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+		self.Bulletdata2.PropMass = self.Bulletdata2.FrArea * (self.Bulletdata2.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 
 
 		self.Bulletdata2.FillerMass = self.Bulletdata2.Data5
@@ -1156,8 +1160,8 @@ do
 		end
 
 		self.Bulletdata2.SlugCaliber2 = self.Bulletdata2.Caliber - self.Bulletdata2.Caliber * (math.sin(Rad) * 0.5 + math.cos(Rad) * 1.5) / 2
-		self.Bulletdata2.SlugMV = ((self.Bulletdata2.FillerMass / 2 * ACF.HEPower * (1 - self.Bulletdata2.HEAllocation) * math.sin(math.rad(10 + self.Bulletdata2.Data6) / 2) / self.Bulletdata2.SlugMass) ^ ACF.HEATMVScale) * (ACF_GetRackValue(self.BulletData, "penmul") or ACF_GetGunValue(self.BulletData.Id, "penmul") or 1) / ACF.KEtoRHA -- / math.sqrt(ACF.ShellPenMul)
-		self.Bulletdata2.SlugMV2 = ((self.Bulletdata2.FillerMass / 2 * ACF.HEPower * self.Bulletdata2.HEAllocation * math.sin(math.rad(10 + self.Bulletdata2.Data13) / 2) / self.Bulletdata2.SlugMass2) ^ ACF.HEATMVScaleTan) --keep fillermass/2 so that penetrator stays the same
+		self.Bulletdata2.SlugMV = ((self.Bulletdata2.FillerMass / 2 * ACE.HEPower * (1 - self.Bulletdata2.HEAllocation) * math.sin(math.rad(10 + self.Bulletdata2.Data6) / 2) / self.Bulletdata2.SlugMass) ^ ACE.HEATMVScale) * (ACE_GetRackValue(self.BulletData, "penmul") or ACE_GetGunValue(self.BulletData.Id, "penmul") or 1) / ACE.KEtoRHA -- / math.sqrt(ACE.ShellPenMul)
+		self.Bulletdata2.SlugMV2 = ((self.Bulletdata2.FillerMass / 2 * ACE.HEPower * self.Bulletdata2.HEAllocation * math.sin(math.rad(10 + self.Bulletdata2.Data13) / 2) / self.Bulletdata2.SlugMass2) ^ ACE.HEATMVScaleTan) --keep fillermass/2 so that penetrator stays the same
 
 		local BoomMul = 1
 		if self.Bulletdata2.Type == "HEAT" or self.Bulletdata2.Type == "THEAT" then
@@ -1167,37 +1171,37 @@ do
 		self.Bulletdata2.BoomFillerMass = self.Bulletdata2.FillerMass
 		self.Bulletdata2.FillerVol = self.Bulletdata2.BoomFillerMass or self.Bulletdata2.FillerMass
 
-		--data.SlugMV = (slugMV or 0) * (ACF_GetGunValue(data.Id, "penmul") or 1.2)
-		--data.SlugMV2 = (slugMV2 or 0) * (ACF_GetGunValue(data.Id, "penmul") or 1.2)
+		--data.SlugMV = (slugMV or 0) * (ACE_GetGunValue(data.Id, "penmul") or 1.2)
+		--data.SlugMV2 = (slugMV2 or 0) * (ACE_GetGunValue(data.Id, "penmul") or 1.2)
 
 		--		print("SlugMV: " .. self.BulletData.SlugMV)
 		local SlugFrArea = 3.1416 * (self.Bulletdata2.SlugCaliber / 2) ^ 2
-		self.Bulletdata2.SlugPenArea = SlugFrArea ^ ACF.PenAreaMod
+		self.Bulletdata2.SlugPenArea = SlugFrArea ^ ACE.PenAreaMod
 		self.Bulletdata2.SlugDragCoef = ((SlugFrArea / 10000) / self.Bulletdata2.SlugMass)
 		SlugFrArea = 3.1416 * (self.Bulletdata2.SlugCaliber2 / 2) ^ 2
-		self.Bulletdata2.SlugPenArea2 = SlugFrArea ^ ACF.PenAreaMod
+		self.Bulletdata2.SlugPenArea2 = SlugFrArea ^ ACE.PenAreaMod
 		self.Bulletdata2.SlugDragCoef2 = ((SlugFrArea / 10000) / self.Bulletdata2.SlugMass2)
 		self.Bulletdata2.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 		self.Bulletdata2.CasingMass = self.Bulletdata2.ProjMass - self.Bulletdata2.FillerMass - ConeVol * 7.9 / 1000
-		self.Bulletdata2.Fragments = math.max(math.floor((self.Bulletdata2.BoomFillerMass / self.Bulletdata2.CasingMass) * ACF.HEFrag), 2)
+		self.Bulletdata2.Fragments = math.max(math.floor((self.Bulletdata2.BoomFillerMass / self.Bulletdata2.CasingMass) * ACE.HEFrag), 2)
 		self.Bulletdata2.FragMass = self.Bulletdata2.CasingMass / self.Bulletdata2.Fragments
 		--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 		self.Bulletdata2.DragCoef = ((self.Bulletdata2.FrArea / 10000) / self.Bulletdata2.ProjMass)
 		--print(self.BulletData.SlugDragCoef)
 		--Don't touch below here
-		self.Bulletdata2.MuzzleVel = ACF_MuzzleVelocity(self.Bulletdata2.PropMass, self.Bulletdata2.ProjMass, self.Bulletdata2.Caliber)
+		self.Bulletdata2.MuzzleVel = ACE_MuzzleVelocity(self.Bulletdata2.PropMass, self.Bulletdata2.ProjMass, self.Bulletdata2.Caliber)
 		self.Bulletdata2.ShovePower = 0.1
 		self.Bulletdata2.KETransfert = 0.3
-		self.Bulletdata2.PenArea = self.Bulletdata2.FrArea ^ ACF.PenAreaMod
+		self.Bulletdata2.PenArea = self.Bulletdata2.FrArea ^ ACE.PenAreaMod
 		self.Bulletdata2.Pos = Vector(0, 0, 0)
 		self.Bulletdata2.LimitVel = 800
 		self.Bulletdata2.Ricochet = 999
 		self.Bulletdata2.Flight = Vector(0, 0, 0)
 		self.Bulletdata2.BoomPower = self.Bulletdata2.PropMass + self.Bulletdata2.FillerMass
-		--		local SlugEnergy = ACF_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-		local SlugEnergy = ACF_Kinetic(self.Bulletdata2.SlugMV * 39.37, self.Bulletdata2.SlugMass, 999999)
-		self.Bulletdata2.MaxPen = (SlugEnergy.Penetration / self.Bulletdata2.SlugPenArea) * ACF.KEtoRHA
-				--print(((SlugEnergy.Penetration / self.Bulletdata2.SlugPenArea) * ACF.KEtoRHA))
+		--		local SlugEnergy = ACE_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
+		local SlugEnergy = ACE_Kinetic(self.Bulletdata2.SlugMV * 39.37, self.Bulletdata2.SlugMass, 999999)
+		self.Bulletdata2.MaxPen = (SlugEnergy.Penetration / self.Bulletdata2.SlugPenArea) * ACE.KEtoRHA
+				--print(((SlugEnergy.Penetration / self.Bulletdata2.SlugPenArea) * ACE.KEtoRHA))
 		--For Fake Crate
 		self.BoomFillerMass = self.Bulletdata2.BoomFillerMass
 		self.Type = self.Bulletdata2.Type
@@ -1213,13 +1217,13 @@ do
 
 end
 
-function UpdateMissileSkin(Missile)
+function ACE_UpdateMissileSkin(Missile)
 
 	if Missile.BulletData then
 
 		local warhead = Missile.BulletData.Type
 
-		local skins = ACF_GetGunValue(Missile.BulletData, "skinindex")
+		local skins = ACE_GetGunValue(Missile.BulletData, "skinindex")
 		if not skins then return end
 
 		local skin = skins[warhead] or 0
@@ -1229,7 +1233,7 @@ function UpdateMissileSkin(Missile)
 	end
 end
 
-function UpdateMissileBodygroups(Missile) --Guidance
+function ACE_UpdateMissileBodygroups(Missile) --Guidance
 
 
 
@@ -1239,14 +1243,14 @@ function UpdateMissileBodygroups(Missile) --Guidance
 
 		if string.lower(group.name) == "guidance" and Missile.Guidance then
 
-			ApplyBodySubgroup(Missile, group, Missile.Guidance.Name) --Applies if not dumb guidance. Taken from original missiles. Replace with table lookup for guidance bodygroups.
+			ACE_ApplyBodySubgroup(Missile, group, Missile.Guidance.Name) --Applies if not dumb guidance. Taken from original missiles. Replace with table lookup for guidance bodygroups.
 			continue
 
 		end
 
 		if string.lower(group.name) == "warhead" and Missile.BulletData then
 
-			ApplyBodySubgroup(Missile, group, Missile.BulletData.Type)
+			ACE_ApplyBodySubgroup(Missile, group, Missile.BulletData.Type)
 			continue
 		end
 
@@ -1254,7 +1258,7 @@ function UpdateMissileBodygroups(Missile) --Guidance
 	end
 end
 
-function ApplyBodySubgroup(missile, group, targetname)
+function ACE_ApplyBodySubgroup(missile, group, targetname)
 
 	local name = string.lower(targetname) .. ".smd"
 
@@ -1271,11 +1275,11 @@ function ENT:UpdateRefillBonus()
 	local totalBonus			= 0
 	local selfPos			= self:GetPos()
 
-	local Efficiency			= 0.11 * ACF.AmmoMod		-- Copied from acf_ammo, beware of changes!
+	local Efficiency			= 0.11 * ACE.AmmoMod		-- Copied from acf_ammo, beware of changes!
 	local minFullEfficiency	= 50000 * Efficiency	-- The minimum crate volume to provide full efficiency bonus all by itself.
-	local maxDist			= ACF.RefillDistance
+	local maxDist			= ACE.RefillDistance
 
-	for _, crate in pairs(ACF.AmmoCrates or {}) do
+	for _, crate in pairs(ACE.AmmoCrates or {}) do
 
 		if crate.RoundType ~= "Refill" then
 			continue
@@ -1307,7 +1311,7 @@ end
 
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, _, Inflictor, _, _ )	--This function needs to return HitRes
 
-	local HitRes	= ACF_PropDamage( Entity, Energy , FrArea, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
+	local HitRes	= ACE_PropDamage( Entity, Energy , FrArea, 0, Inflictor ) --Calling the standard damage prop function. Angle of incidence set to 0 for more consistent damage.
 
 	--print(math.Round(HitRes.Damage * 100))
 	--print(HitRes.Loss * 100)

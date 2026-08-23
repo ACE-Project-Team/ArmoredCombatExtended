@@ -20,21 +20,23 @@ function ENT:Initialize()
 	self.ResetJamDelay		= 0.45 --Periodically resets jamming strength to zero for the jammer to apply the highest noise available. This means the jamming won't always remain at full strength without a lot of networking.
 	self.NextJamCheck		= 0
 	self.StatusUpdateDelay	= 0.5
-	self.LastStatusUpdate	= ACF.CurTime
+	self.LastStatusUpdate	= ACE.CurTime
 	self.Active				= false
 
 	self.Heat				= 21
 	self.IsJammed			= 0
 	self.JamStrength		= 0
 	self.JamDir				= vector_origin
+	self.FilterMissiles = false
 
-	self.NextLegalCheck		= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+
+	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
 	self.LegalIssues		= ""
 
 	self.AcquiredTargets	= {}
 
-	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone"})
+	self.Inputs = WireLib.CreateInputs(self, {"Active", "Cone", "FilterMissiles"})
 	self.Outputs = WireLib.CreateOutputs(self, {
 		"Detected",
 		"Owner [ARRAY]",
@@ -55,7 +57,7 @@ function ENT:Initialize()
 	}
 
 	self.TargetDetected = false
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 end
 
@@ -65,13 +67,13 @@ local function SetConeParameters( Radar )
 
 end
 
-function MakeACE_TrackingRadar(Owner, Pos, Angle, Id)
+function ACE_MakeTrackingRadar(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Large-TRACK"
 
-	local radar = ACF.Weapons.Radars[Id]
+	local radar = ACE.Weapons.Radars[Id]
 
 	if not radar then return false end
 
@@ -105,20 +107,20 @@ function MakeACE_TrackingRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 
 	Radar:UpdateOverlayText()
 
-	Owner:AddCount( "_acf_missileradar", Radar )
-	Owner:AddCleanup( "acfmenu", Radar )
+	Owner:AddCount( "_ace_missileradar", Radar )
+	Owner:AddCleanup( "acemenu", Radar )
 
 	return Radar
 
 end
 list.Set( "ACFCvars", "ace_trackingradar", {"id"} )
-duplicator.RegisterEntityClass("ace_trackingradar", MakeACE_TrackingRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_trackingradar", ACE_MakeTrackingRadar, "Pos", "Angle", "Id" )
 
 function ENT:SetModelEasy(mdl)
 
@@ -140,9 +142,9 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 
-		if ACF.IsDefaultActiveInputWired(self) then
+		if ACE_IsDefaultActiveInputWired(self) then
 			local curTime = CurTime()
 			self:NextThink(curTime + 3) --Radar takes a moment to power up. Used to prevent radar flickering to avoid ECM.
 		end
@@ -160,6 +162,12 @@ function ENT:TriggerInput( inp, value )
 		end
 
 		self:UpdateOverlayText()
+	elseif inp == "FilterMissiles" then
+		if value > 0 then
+			self.FilterMissiles = true
+		else
+			self.FilterMissiles = false
+		end
 	end
 end
 
@@ -232,7 +240,7 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	txt = txt .. "\nTemp: " .. math.Round(self.Heat) .. "C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "F"
@@ -278,9 +286,18 @@ function ENT:ScanForContraptions()
 	GCTraceData.mins = Vector(-ConeClutterSize, -ConeClutterSize, -ConeClutterSize)
 	GCTraceData.maxs = Vector(ConeClutterSize, ConeClutterSize, ConeClutterSize)
 
-	local BTFactor = 1 / (1 + ((self.Cone - 1) / (self.ICone - 1)) * 2)
+	--0-1x multiplier. Scales down burnthrough range based on fraction of radar cone used. 
+	--1x at 5 degrees.
+	--0.33x at max radar cone.
+	--Intermittent values fall somewhere between the two.
+	local BTFactor = 1 / (1 + (math.max(self.Cone - 5,0) / math.max(self.ICone - 5,1)) * 2)
 
-	local CounterMeasures = ACFM_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
+
+	--Inaccuracy of radar per meter of range.
+	local BaseRadInaccuracy = 0.01 * 39.37 --0.01 meters per every meter. 4 meters @ 400m. 8 meters @ 100m.
+
+
+	local CounterMeasures = ACE_Missile_GetFlaresInCone(SelfPos, SelfForward, self.Cone * 2)
 	local CMCount = table.Count(CounterMeasures)
 
 	for Contraption in pairs(CFW.Contraptions) do
@@ -297,86 +314,125 @@ function ENT:ScanForContraptions()
 			LOSTraceData.start = SelfPos
 			LOSTraceData.endpos = BasePos
 
-			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * 100 * BTFactor) / self.JamStrength >= BaseDistance
+			--If not jammed 
+			--OR
+			--Burnthrough distance is greater than the current distrance to the target(In meters)
+			local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= BaseDistance
 
-			if AngleFromTarget < SearchCone and IsValid(Owner) and not TraceHull(LOSTraceData).Hit and BurnThrough then
-				--debugoverlay.Line(SelfPos, BasePos, 0.15, Color(0, 255, 0))
+			if AngleFromTarget > SearchCone or not IsValid(Owner) or TraceHull(LOSTraceData).Hit or not BurnThrough then continue end
 
-				GCTraceData.start = BasePos
-				GCTraceData.endpos = BasePos + DirectionToTarget * 50000
+			--debugoverlay.Line(SelfPos, BasePos, 0.15, Color(0, 255, 0))
 
-				local GCTrace = TraceHull(GCTraceData)
-				local GCTraceHitPos = GCTrace.HitPos
+			GCTraceData.start = BasePos
+			GCTraceData.endpos = BasePos + DirectionToTarget * 50000
+
+			local GCTrace = TraceHull(GCTraceData)
+			local GCTraceHitPos = GCTrace.HitPos
 
 
-				local ClutterDistance
-				if not GCTrace.HitSky then
-					-- If the trace is starting in a solid, the ground is right behind/below the target
-					ClutterDistance = GCTrace.StartSolid and 0 or (GCTraceHitPos:Distance(BasePos) / 39.3701)
+			local ClutterDistance
+			if not GCTrace.HitSky then
+				-- If the trace is starting in a solid, the ground is right behind/below the target
+				ClutterDistance = GCTrace.StartSolid and 0 or (GCTraceHitPos:Distance(BasePos) / 39.3701)
 
-					if (Contraption.totalMass or 0) > 20000 then --The contraption weighs more than 20 tons. About the weight of most planes. It is clearly a large target.
-						WaterTraceData.start = BasePos + vector_up * 5000
-						WaterTraceData.endpos = BasePos - vector_up * 5000
-						local WaterTrace = TraceHull(WaterTraceData)
-						if WaterTrace.Hit and abs(BasePos.z-WaterTrace.HitPos.z) < 250 then --Target is on the water. Assuming the target is large enough, makes radar returns easier to find.
-							ClutterDistance = mathHuge
-						end
+				if (Contraption.totalMass or 0) > 20000 then --The contraption weighs more than 20 tons. About the weight of most planes. It is clearly a large target.
+					WaterTraceData.start = BasePos + vector_up * 5000
+					WaterTraceData.endpos = BasePos - vector_up * 5000
+					local WaterTrace = TraceHull(WaterTraceData)
+					if WaterTrace.Hit and abs(BasePos.z-WaterTrace.HitPos.z) < 250 then --Target is on the water. Assuming the target is large enough, makes radar returns easier to find.
+						ClutterDistance = mathHuge
 					end
-				else
-					ClutterDistance = mathHuge
 				end
+			else
+				ClutterDistance = mathHuge
+			end
 
-				local BaseVelocityVector = Base:GetVelocity() / 39.3701
+			local BaseVelocityVector = Base:GetVelocity() / 39.3701
 
-				local OutputPosition, ValidTarget
+			local OutputPosition, ValidTarget
 
-				if ClutterDistance < PDClutterSwitchDistance then -- PD mode
-					debugoverlay.Line(BasePos, GCTraceHitPos, 0.15, Color(255, 0, 0))
-					debugoverlay.Box(GCTraceHitPos, GCTraceData.mins, GCTraceData.maxs, 0.15, Color(255, 0, 0, 0))
-					debugoverlay.Text(GCTraceHitPos, "Ground Clutter", 0.15)
+			if ClutterDistance < PDClutterSwitchDistance then -- PD mode
+				debugoverlay.Line(BasePos, GCTraceHitPos, 0.15, Color(255, 0, 0))
+				debugoverlay.Box(GCTraceHitPos, GCTraceData.mins, GCTraceData.maxs, 0.15, Color(255, 0, 0, 0))
+				debugoverlay.Text(GCTraceHitPos, "Ground Clutter", 0.15)
 
-					local RadialVelocity = BaseVelocityVector:Dot(DirectionToTarget)
+				local RadialVelocity = BaseVelocityVector:Dot(DirectionToTarget)
 
-					if abs(RadialVelocity) > PDMinVelocity then
-						ValidTarget = true
-					end
-				else
+				if abs(RadialVelocity) > PDMinVelocity then
 					ValidTarget = true
 				end
+			else
+				ValidTarget = true
+			end
 
-				if ValidTarget then
-					local BaseInaccuracy = VectorRand() * (BaseDistance / 10) * (1 + self.JamStrength / 2)
-					local OffboreInaccuracy = 1 + (AngleFromTarget / self.ICone) * self.OffBoreInaccFactor
+			if ValidTarget then
+				local BaseInaccuracy = VectorRand() * BaseDistance * BaseRadInaccuracy * (1 + self.JamStrength / 2)
+				local OffboreInaccuracy = 1 + (AngleFromTarget / self.ICone) * self.OffBoreInaccFactor
 
 
-					if CMCount > 0 then
-						BaseInaccuracy = BaseInaccuracy * 1.25
-						OffboreInaccuracy = OffboreInaccuracy * 3
-						local ratio = math.Rand(0,1)
-						if ratio > 0.6 then
-							local CM = CounterMeasures[math.random(1,CMCount)]
-							local SigStrength = CM.RadarSig
-							if SigStrength > 0.2 then
-								BasePos = CM:GetPos()
-								BaseInaccuracy = BaseInaccuracy * 2.25
-							end
+				if CMCount > 0 then
+					BaseInaccuracy = BaseInaccuracy * 1.25
+					OffboreInaccuracy = OffboreInaccuracy * 3 --Added to help countermeasures break locks. Radar that isn't aiming directly at the target will suffer accuracy penalties and have a harder time re-acquiring.
+					local ratio = math.Rand(0,1)
+					if ratio > 0.6 then
+						local CM = CounterMeasures[math.random(1,CMCount)]
+						local SigStrength = CM.RadarSig
+						if SigStrength > 0.2 then
+							BasePos = CM:GetPos()
+							BaseInaccuracy = BaseInaccuracy * 2.25
 						end
 					end
-
-					OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
-
-					local ContraptionIndex = ACE.GetContraptionIndex(Contraption)
-					local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, BaseDistance)
-
-					tableInsert(Owners, InsertionIndex, Owner:Nick())
-					tableInsert(Distances, InsertionIndex, BaseDistance)
-					tableInsert(Positions, InsertionIndex, OutputPosition)
-					tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
-					tableInsert(IDs, InsertionIndex, ContraptionIndex)
-					tableInsert(self.AcquiredTargets, Base)
-
-					debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
 				end
+
+				OutputPosition = BasePos + BaseInaccuracy * OffboreInaccuracy
+
+				local ContraptionIndex = ACE_GetContraptionIndex(Contraption)
+				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, BaseDistance)
+
+				tableInsert(Owners, InsertionIndex, Owner:Nick())
+				tableInsert(Distances, InsertionIndex, BaseDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
+				tableInsert(Positions, InsertionIndex, OutputPosition)
+				tableInsert(Velocities, InsertionIndex, Base:GetVelocity())
+				tableInsert(IDs, InsertionIndex, ContraptionIndex)
+				tableInsert(self.AcquiredTargets, Base)
+
+				debugoverlay.Line(SelfPos, OutputPosition, 0.15, Color(0, 255, 0))
+			end
+		end
+	end
+
+	--It's ugly I know. But it's simplified and doesn't copy the CFW table.
+	if not self.FilterMissiles then
+		for Missile in pairs(ACE.ActiveMissiles) do
+			if IsValid(Missile) then
+				local MissilePos = Missile:GetPos()
+				local PosDiff = MissilePos - SelfPos
+				local MissileDistance = PosDiff:Length()
+				local DirectionToTarget = PosDiff / MissileDistance
+				local AngleFromTarget = GetAngleBetweenVectors(DirectionToTarget, SelfForward)
+				local Owner = Missile:CPPIGetOwner()
+				MissileDistance = MissileDistance / 39.3701 --Used to normalize vector. Convert to meters for other calcs
+
+				LOSTraceData.start = SelfPos
+				LOSTraceData.endpos = MissilePos
+
+				--If not jammed 
+				--OR
+				--Burnthrough distance is greater than the current distrance to the target(In meters)
+				local BurnThrough = self.IsJammed == 0 or (self.Burnthrough * BTFactor) / self.JamStrength >= MissileDistance
+
+				if AngleFromTarget > SearchCone or not IsValid(Owner) or TraceHull(LOSTraceData).Hit or not BurnThrough then continue end
+
+				local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, MissileDistance)
+
+				tableInsert(Owners, InsertionIndex, Owner:Nick())
+				tableInsert(Distances, InsertionIndex, MissileDistance) --If this becomes too intensive the SRC and TRK radar can be rewritten to use sqrt distance. Biggest issue will be refactoring inaccuracy.
+				tableInsert(Positions, InsertionIndex, MissilePos)
+				tableInsert(Velocities, InsertionIndex, Missile.Flight * 39.37)
+				tableInsert(IDs, InsertionIndex, -Missile.MissileID)
+				tableInsert(self.AcquiredTargets, Missile)
+
+				debugoverlay.Line(SelfPos, MissilePos, 0.15, Color(255, 0, 140))
 			end
 		end
 	end
@@ -420,12 +476,12 @@ function ENT:Think()
 	local curTime = CurTime()
 	self:NextThink(curTime + self.ThinkDelay)
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -448,8 +504,8 @@ function ENT:Think()
 	WireLib.TriggerOutput( self, "JamDirection", self.JamDir )
 	self:UpdateOverlayText()
 
-	if self.IsJammed ~= 0 and ACF.CurTime > self.NextJamCheck then
-		self.NextJamCheck = ACF.CurTime + self.ResetJamDelay
+	if self.IsJammed ~= 0 and ACE.CurTime > self.NextJamCheck then
+		self.NextJamCheck = ACE.CurTime + self.ResetJamDelay
 
 		--Reset everything for next check
 		self.IsJammed			= 0

@@ -1,9 +1,9 @@
 
 AddCSLuaFile()
 
-local GunsTable = ACF.Weapons.Guns
+local GunsTable = ACE.Weapons.Guns
 
-function ACF_GetGunValue(bdata, val)
+function ACE_GetGunValue(bdata, val)
 
 	bdata = (type(bdata) == "table" and bdata.Id) or bdata
 
@@ -24,7 +24,7 @@ function ACF_GetGunValue(bdata, val)
 		if ret ~= nil then
 			return ret
 		else
-			local classes = ACF.Classes.GunClass
+			local classes = ACE.Classes.GunClass
 			class = classes[class.gunclass]
 
 			if class then
@@ -39,18 +39,18 @@ end
 
 
 
-function ACF_GetRackValue(rdata, val)
+function ACE_GetRackValue(rdata, val)
 
 	rdata = (type(rdata) == "table" and rdata.Id) or rdata
 
-	local guns = ACF.Weapons.Racks
+	local guns = ACE.Weapons.Racks
 	local class = guns[rdata]
 
 	if class then
 		if class[val] ~= nil then
 			return class[val]
 		else
-			local classes = ACF.Classes.Rack
+			local classes = ACE.Classes.Rack
 			class = classes[class.gunclass]
 
 			if class then
@@ -64,9 +64,9 @@ end
 
 
 
-function ACF_RackCanLoadCaliber(rackId, cal)
+function ACE_RackCanLoadCaliber(rackId, cal)
 
-	local rack = ACF.Weapons.Racks[rackId]
+	local rack = ACE.Weapons.Racks[rackId]
 	if not rack then return false, "Rack '" .. tostring(rackId) .. "' does not exist." end
 
 	if rack.caliber then
@@ -90,16 +90,16 @@ end
 
 
 
-function ACF_CanLinkRack(rackId, ammoId, bdata, rack)
+function ACE_CanLinkRack(rackId, ammoId, bdata, rack)
 
-	local rack = ACF.Weapons.Racks[rackId]
+	local rack = ACE.Weapons.Racks[rackId]
 	if not rack then return false, "Rack '" .. tostring(rackId) .. "' does not exist." end
 
 	local gun = GunsTable[ammoId]
 	if not rack then return false, "Ammo '" .. tostring(ammoId) .. "' does not exist." end
 
 
-	local rackAllow = ACF_GetGunValue(ammoId, "racks")
+	local rackAllow = ACE.GetGunValue(ammoId, "racks")
 
 	local rackAllowed = true
 	local allowType = type(rackAllow)
@@ -117,12 +117,12 @@ function ACF_CanLinkRack(rackId, ammoId, bdata, rack)
 	end
 
 
-	local canCaliber, calMsg = ACF_RackCanLoadCaliber(rackId, gun.caliber)
+	local canCaliber, calMsg = ACE.RackCanLoadCaliber(rackId, gun.caliber)
 	if not canCaliber then
 		return false, calMsg
 	end
 
-	local Classes = ACF.Classes.GunClass
+	local Classes = ACE.Classes.GunClass
 	if "missile" ~= Classes[gun.gunclass].type then
 		return false, "Racks cannot be linked to ammo crates of type '" .. tostring(ammoId) .. "'!"
 	end
@@ -134,12 +134,12 @@ end
 
 
 
-function ACF_GetCompatibleRacks(ammoId)
+function ACE_GetCompatibleRacks(ammoId)
 
 	local ret = {}
 
-	for rackId in pairs(ACF.Weapons.Racks) do
-		if ACF_CanLinkRack(rackId, ammoId) then
+	for rackId in pairs(ACE.Weapons.Racks) do
+		if ACE.CanLinkRack(rackId, ammoId) then
 			ret[#ret + 1] = rackId
 		end
 	end
@@ -151,25 +151,25 @@ end
 
 
 
-function ACF_GetRoundFromCVars()
+function ACE_GetRoundFromCVars()
 
 	local round = {}
 
-	round.Id = GetConVar("acfmenu_data1"):GetString()
-	round.Type = GetConVar("acfmenu_data2"):GetString()
-	round.PropLength = GetConVar("acfmenu_data3"):GetFloat()
-	round.ProjLength = GetConVar("acfmenu_data4"):GetFloat()
-	round.Data5 = GetConVar("acfmenu_data5"):GetFloat()
-	round.Data6 = GetConVar("acfmenu_data6"):GetFloat()
-	round.Data7 = GetConVar("acfmenu_data7"):GetString()
-	round.Data8 = GetConVar("acfmenu_data8"):GetString()
-	round.Data9 = GetConVar("acfmenu_data9"):GetString()
-	round.Data10 = GetConVar("acfmenu_data10"):GetFloat()
-	round.Data11 = GetConVar("acfmenu_data11"):GetFloat()
-	round.Data12 = GetConVar("acfmenu_data12"):GetFloat()
-	round.Data13 = GetConVar("acfmenu_data13"):GetFloat()
-	round.Data14 = GetConVar("acfmenu_data14"):GetFloat()
-	round.Data15 = GetConVar("acfmenu_data15"):GetFloat()
+	round.Id = GetConVar("acemenu_data1"):GetString()
+	round.Type = GetConVar("acemenu_data2"):GetString()
+	round.PropLength = GetConVar("acemenu_data3"):GetFloat()
+	round.ProjLength = GetConVar("acemenu_data4"):GetFloat()
+	round.Data5 = GetConVar("acemenu_data5"):GetFloat()
+	round.Data6 = GetConVar("acemenu_data6"):GetFloat()
+	round.Data7 = GetConVar("acemenu_data7"):GetString()
+	round.Data8 = GetConVar("acemenu_data8"):GetString()
+	round.Data9 = GetConVar("acemenu_data9"):GetString()
+	round.Data10 = GetConVar("acemenu_data10"):GetFloat()
+	round.Data11 = GetConVar("acemenu_data11"):GetFloat()
+	round.Data12 = GetConVar("acemenu_data12"):GetFloat()
+	round.Data13 = GetConVar("acemenu_data13"):GetFloat()
+	round.Data14 = GetConVar("acemenu_data14"):GetFloat()
+	round.Data15 = GetConVar("acemenu_data15"):GetFloat()
 
 	return round
 

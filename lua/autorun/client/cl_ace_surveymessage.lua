@@ -8,8 +8,8 @@ if not EnableSurveyMessage then return end
 local SurveyDesc = "A Survey is out! We would love to hear your feedback!"
 local Surveylink = "https://forms.gle/aowZ32cDkJhE6m9f9"
 
-CreateClientConVar("acf_survey_message", "1", true, false, "Set to 0 to disable the ACE survey message.")
-if GetConVar("acf_survey_message"):GetInt() == 0 then return end
+CreateClientConVar("ace_survey_message", "1", true, false, "Set to 0 to disable the ACE survey message.")
+if GetConVar("ace_survey_message"):GetInt() == 0 then return end
 
 hook.Add("CreateMove", "ACE Survey", function(Move)
     if Move:GetButtons() ~= 0 then

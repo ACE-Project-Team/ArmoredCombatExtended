@@ -12,7 +12,9 @@
 ]]
 
 -- Lookup table of all currently flying missiles.
-ACF_ActiveMissiles = ACF_ActiveMissiles or {}
+ACE = ACE or {}
+ACE_ActiveMissiles = ACE_ActiveMissiles or ACE.ActiveMissiles or {}
+ACE.ActiveMissiles = ACE_ActiveMissiles
 
 include("acf/shared/sh_acfm_getters.lua")
 
@@ -20,19 +22,19 @@ include("acf/shared/sh_acfm_getters.lua")
 	Differences with the default bullet function:
 		1.- It doesnt count traceback, since the missile has no velocity and the bullet will not be hitting the initial launcher.
 ]]--
-function ACFM_BulletLaunch(BulletData)
+function ACE_Missile_BulletLaunch(BulletData)
 
 	-- Increment the index
-	ACF.CurBulletIndex = ACF.CurBulletIndex + 1
+	ACE.CurBulletIndex = ACE.CurBulletIndex + 1
 
-	if ACF.CurBulletIndex > ACF.BulletIndexLimit then
-		ACF.CurBulletIndex = 1
+	if ACE.CurBulletIndex > ACE.BulletIndexLimit then
+		ACE.CurBulletIndex = 1
 	end
 
 	--Those are BulletData settings that are global and shouldn't change round to round
-	BulletData.Gravity		= ACF.BallisticsGravity
-	BulletData.Accel		= ACF.BallisticsGravityVector
-	BulletData.LastThink	= ACF.SysTime
+	BulletData.Gravity		= ACE.BallisticsGravity
+	BulletData.Accel		= ACE.BallisticsGravityVector
+	BulletData.LastThink	= ACE.SysTime
 	BulletData.FlightTime	= 0
 	BulletData.TraceBackComp	= 0
 
@@ -41,19 +43,19 @@ function ACFM_BulletLaunch(BulletData)
 	BulletData.Filter = BulletData.Filter or {}
 	table.insert(BulletData.Filter, BulletData.Gun)
 
-	BulletData.Index		= ACF.CurBulletIndex
+	BulletData.Index		= ACE.CurBulletIndex
 	BulletData.ActiveFrame = ACE.BallisticsFrame
-	local ActiveBullet = ACF_AcquireBullet(BulletData)
-	ACF_RegisterBullet(ACF.CurBulletIndex, ActiveBullet)
-	ACF_BulletClient( ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init" , 0 )
+	local ActiveBullet = ACE.AcquireBullet(BulletData)
+	ACE.RegisterBullet(ACE.CurBulletIndex, ActiveBullet)
+	ACE.BulletClient( ACE.CurBulletIndex, ACE.Bullet[ACE.CurBulletIndex], "Init" , 0 )
 
 end
 
 
 
-function ACFM_ExpandBulletData(bullet)
+function ACE_Missile_ExpandBulletData(bullet)
 
-	-- print("==== ACFM_ExpandBulletData")
+	-- print("==== ACE_Missile_ExpandBulletData")
 	-- pbn(bullet)
 
 
@@ -73,7 +75,7 @@ function ACFM_ExpandBulletData(bullet)
 	toconvert["Data14"]	= bullet["HEAllocation"]	or bullet["Data14"]		or 0
 	toconvert["Data15"]	= bullet["Data15"]		or 0
 
-	local rounddef	= ACF.RoundTypes[bullet.Type] or error("No definition for the shell-type", bullet.Type)
+	local rounddef	= ACE.RoundTypes[bullet.Type] or error("No definition for the shell-type", bullet.Type)
 	local conversion	= rounddef.convert
 
 	if not conversion then error("No conversion available for this shell!") end
@@ -83,8 +85,7 @@ function ACFM_ExpandBulletData(bullet)
 	ret.Flight	= bullet.Flight or Vector(0,0,0)
 	ret.Type		= ret.Type	or bullet.Type
 
-	local cvarGrav  = GetConVar("sv_gravity")
-	ret.Accel	= cvarGrav
+	ret.Accel	= ACE.BallisticsGravityVector
 	if ret.Tracer == 0 and bullet["Tracer"] and bullet["Tracer"] > 0 then ret.Tracer = bullet["Tracer"] end
 	ret.Colour	= toconvert["Colour"]
 
@@ -97,7 +98,7 @@ end
 
 
 
-function ACFM_MakeCrateForBullet(self, bullet)
+function ACE_Missile_MakeCrateForBullet(self, bullet)
 
 	if type(bullet) ~= "table" and bullet.BulletData then
 		self:SetNWString( "Sound", bullet.Sound or (bullet.Primary and bullet.Primary.Sound))
@@ -123,7 +124,7 @@ end
 
 
 -- TODO: modify ACF to use this global table, so any future tweaks won't break anything here.
-ACF.FillerDensity =
+ACE.FillerDensity =
 {
 	SM =	2000,
 	HE =	1000,
@@ -135,7 +136,7 @@ ACF.FillerDensity =
 
 
 
-function ACFM_CompactBulletData(crate)
+function ACE_Missile_CompactBulletData(crate)
 
 	local compact = {}
 	local source = crate.BulletData or {}
@@ -161,10 +162,10 @@ function ACFM_CompactBulletData(crate)
 
 
 	if not compact.Data5 and crate.FillerMass then
-		local Filler = ACF.FillerDensity[compact.Type]
+		local Filler = ACE.FillerDensity[compact.Type]
 
 		if Filler then
-			compact.Data5 = crate.FillerMass / ACF.HEDensity * Filler
+			compact.Data5 = crate.FillerMass / ACE.HEDensity * Filler
 		end
 	end
 
@@ -194,7 +195,7 @@ function ResetVelocity.HEAT(bdata)
 
 	bdata.Flight:Normalize()
 
-	local penmul = (bdata.penmul or ACF_GetGunValue(bdata, "penmul") or 1.2) * 0.77	--local penmul = (bdata.penmul or ACF_GetGunValue(bdata, "penmul") or 1.2) * 0.77
+	local penmul = (bdata.penmul or ACE.GetGunValue(bdata, "penmul") or 1.2) * 0.77	--local penmul = (bdata.penmul or ACE_GetGunValue(bdata, "penmul") or 1.2) * 0.77
 
 	bdata.Flight = bdata.Flight * (bdata.SlugMV * penmul) * 39.37
 	bdata.NotFirstPen = false
@@ -209,7 +210,7 @@ function ResetVelocity.THEAT(bdata)
 
 	bdata.Flight:Normalize()
 
-	local penmul = (bdata.penmul or ACF_GetGunValue(bdata, "penmul") or 1.2) * 0.77
+	local penmul = (bdata.penmul or ACE.GetGunValue(bdata, "penmul") or 1.2) * 0.77
 
 	if DetCount == 1 then
 		--print("Detonation1")
@@ -224,7 +225,7 @@ end
 
 -- Resets the velocity of the bullet based on its current state on the serverside only.
 -- This will de-sync the clientside effect!
-function ACFM_ResetVelocity(bdata)
+function ACE_Missile_ResetVelocity(bdata)
 
 	local resetFunc = ResetVelocity[bdata.Type]
 
@@ -236,7 +237,7 @@ end
 
 include("autorun/server/duplicatorDeny.lua")
 
-hook.Add( "InitPostEntity", "ACFMissiles_DupeDeny", function()
+hook.Add( "InitPostEntity", "ACE_Missiles_DupeDeny", function()
 	-- Need to ensure this is called after InitPostEntity because Adv. Dupe 2 resets its whitelist upon this event.
 	timer.Simple(1, function()
 		duplicator.Deny("ace_missile")
@@ -245,7 +246,7 @@ hook.Add( "InitPostEntity", "ACFMissiles_DupeDeny", function()
 end )
 
 
-hook.Add( "InitPostEntity", "ACFMissiles_AddLinkable", function()
+hook.Add( "InitPostEntity", "ACE_Missiles_AddLinkable", function()
 	-- Need to ensure this is called after InitPostEntity because Adv. Dupe 2 resets its whitelist upon this event.
 	timer.Simple(1, function()
 		if ACF_E2_LinkTables and istable(ACF_E2_LinkTables) then

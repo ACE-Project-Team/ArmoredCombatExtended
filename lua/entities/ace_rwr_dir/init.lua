@@ -33,12 +33,12 @@ function ENT:Initialize()
 	self.Inputs = WireLib.CreateInputs( self, { "Active" } )
 	self.Outputs = WireLib.CreateOutputs( self, {"Detected", "Radar ID [ARRAY]", "Angle [ARRAY]", "Radar Power [ARRAY]"} )
 
-	self.NextLegalCheck	= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck	= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
 
 	-- Must run after legal state is set: SetActive -> UpdateOverlayText reads Legal/NextLegalCheck
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 
 	self.Cone = 50
@@ -48,7 +48,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -88,12 +88,12 @@ function ENT:Think()
 	local curTime = CurTime()
 	self:NextThink(curTime + self.ThinkDelay)
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -104,7 +104,15 @@ function ENT:Think()
 
 	if self.Active and self.Legal then
 
-		local ScanArray = ACE.radarEntities
+		local ScanArray = table.Copy(ACE.radarEntities)
+
+		for _, ECMEnt in pairs(ACE.ECMPods) do
+			table.insert( ScanArray, ECMEnt )
+		end
+
+		for MissileEnt, _ in pairs(ACE.ActiveMissiles) do
+			table.insert( ScanArray, MissileEnt )
+		end
 
 		local thisPos = self:GetPos()
 		local detected = 0
@@ -119,30 +127,36 @@ function ENT:Think()
 
 				local entpos = scanEnt:GetPos()
 				local difpos = (thisPos - entpos)
+				local Eclass = scanEnt:GetClass()
 
-				local radActive = scanEnt.Active
+				local Bypass = false
+				if Eclass == "ace_missile" then --It's a missile. Bit of a patchwork fix for missiles.
+					if scanEnt.Guidance.Name ~= "Radar" then continue end --Not a radar missile
+					Bypass = true
+					scanEnt.Cone = scanEnt.Guidance.ViewCone
+				end
 
-				if radActive then
+				if scanEnt.Active or Bypass then
 					local nonlocang = (-difpos):Angle()
 
 
-					local ang = angle_zero
-					local absang = angle_zero
-					local ScanCone1 = 5
-					local ScanCone2 = 5
-
-					if scanEnt:GetClass() ~= "ace_searchradar" then
+					if Eclass == "ace_trackingradar" or scanEnt.Class == "DIR-AM" or Eclass == "ace_missile" then --Directional Radar
 						ang = scanEnt:WorldToLocalAngles(difpos:Angle())	--Used for testing if inrange
 						absang = Angle(math.abs(ang.p),math.abs(ang.y),0) --Since I like ABS so much
 
 						ScanCone1 = (scanEnt.Cone or scanEnt.ConeDegs or 0 ) + 8
 						ScanCone2 = (scanEnt.Cone or scanEnt.ConeDegs  or 0 ) + 8
-					else --Search radar
+					elseif Eclass == "ace_searchradar" then --Search Radar
 						ang	=  scanEnt:WorldToLocalAngles(difpos:Angle())  - Angle(0,scanEnt.CurrentScanAngle,0)	--Used for testing if inrange
 						--absang	= Angle(math.abs(math.NormalizeAngle(ang.p)),math.abs(math.NormalizeAngle(ang.y)),0)  --Since I like ABS so much
 						absang	= Angle(0,math.abs(math.NormalizeAngle(ang.y)),0)  --Because elevation limits are disabled on search radars
 						ScanCone1 = 99999
 						ScanCone2 = scanEnt.Cone / 4 + 8
+					else --Omnidirectional emitter
+						ang	=  angle_zero
+						absang	= angle_zero
+						ScanCone1 = 99999
+						ScanCone2 = 99999
 					end
 
 
@@ -194,7 +208,7 @@ function ENT:UpdateOverlayText()
 	local str = string.format("Active: %s\nDetected: %s", Active, Detected)
 
 	if not self.Legal then
-		str = str .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		str = str .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(str)

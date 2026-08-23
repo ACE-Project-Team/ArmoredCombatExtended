@@ -29,6 +29,6 @@ function ENT:RenderMotorLight()
 	local colour = Color(255, 128, 48)
 	local pos = self:GetPos() - self:GetForward() * 64
 
-	ACF_RenderLight(idx, self.LightSize, colour, pos, 1)
-	--ACF_RenderLight(self:EntIndex(), 5000, Color(255, 196, 0), self:GetPos(), 0.1)
+	ACE_RenderLight(idx, self.LightSize, colour, pos, 1)
+	--ACE_RenderLight(self:EntIndex(), 5000, Color(255, 196, 0), self:GetPos(), 0.1)
 end

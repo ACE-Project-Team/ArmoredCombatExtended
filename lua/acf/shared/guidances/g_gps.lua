@@ -2,18 +2,18 @@
 local ClassName = "GPS"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
 -- An entity with a Position wire-output
 this.InputSource = nil
 
-this.desc = "This guidance package recieves a one-time position and guides to it regardless of LOS."
+this.desc = "A form of guidance that guides directly towards a target point. Programmed at the time of launch and cannot be adjusted after. Will head straight towards the target position regardless of line of sight or seeker cone. Fire and forget."
 
 -- Disables guidance when true
 this.FirstGuidance = true
@@ -50,7 +50,9 @@ function this:GetGuidance(missile)
 			return {TargetPos = nil}
 		end
 
-		self.FirstGuidance = false
+		if missile.MissileActive then
+			self.FirstGuidance = false
+		end
 		self.TargetPos = posVec
 	end
 

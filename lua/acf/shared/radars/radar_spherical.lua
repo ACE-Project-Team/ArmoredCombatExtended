@@ -1,44 +1,44 @@
 
-ACF_DefineRadarClass("OMNI-AM", {
+ACE.DefineRadarClass("OMNI-AM", {
 	name = "Spherical Anti-missile Radar",
 	type = "Anti-missile",
-	desc = ACFTranslation.Radar[5],
+	desc = ACE.Translation.Radar[5],
 } )
 
 
 
 
-ACF_DefineRadar("SmallOMNI-AM", {
+ACE.DefineRadar("SmallOMNI-AM", {
 	name		= "Small Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[6],
+	desc		= ACE.Translation.Radar[6],
 	model		= "models/radar/radar_sp_sml.mdl",
 	class		= "OMNI-AM",
 	weight		= 300,
 	range		= 7874, -- range in inches.
-	acepoints = 900
+	acepoints = 450 --In current system roughly amounts to ~300pts
 } )
 
 
-ACF_DefineRadar("MediumOMNI-AM", {
+ACE.DefineRadar("MediumOMNI-AM", {
 	name		= "Medium Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[7],
+	desc		= ACE.Translation.Radar[7],
 	model		= "models/radar/radar_sp_mid.mdl", -- medium one is for now scalled big one - will be changed
 	class		= "OMNI-AM",
 	weight		= 600,
 	range		= 15748, -- range in inches.
-	acepoints = 1400
+	acepoints = 600 --In current system roughly amounts to ~400pts
 } )
 
 
-ACF_DefineRadar("LargeOMNI-AM", {
+ACE.DefineRadar("LargeOMNI-AM", {
 	name		= "Large Spherical Anti-Missile Radar",
 	ent			= "acf_missileradar",
-	desc		= ACFTranslation.Radar[8],
+	desc		= ACE.Translation.Radar[8],
 	model		= "models/radar/radar_sp_big.mdl",
 	class		= "OMNI-AM",
 	weight		= 1200,
 	range		= 31496, -- range in inches.
-	acepoints = 2000
+	acepoints = 900 --In current system roughly amounts to ~600pts
 } )

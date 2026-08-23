@@ -8,12 +8,12 @@ local min, Clamp = math.min, math.Clamp
 local insert = table.insert
 local Rand = math.Rand
 local TraceHull = util.TraceHull
-local RadarTable = ACF.Weapons.Radars
+local RadarTable = ACE.Weapons.Radars
 
 function ENT:Initialize()
 
 	self.ThinkDelay			= 0.1
-	self.StatusUpdateDelay	= 0.5
+	self.StatusUpdateDelay	= 0.6
 	self.LastStatusUpdate	= CurTime()
 	self.Active				= false
 
@@ -40,41 +40,39 @@ function ENT:Initialize()
 	self.HeatAboveAmbient   = 10 -- Targets below this temperature above ambient will be ignored
 
 	self.MinViewCone        = 2
-	self.MaxViewCone        = 60
 
-	self.NextLegalCheck     = ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck     = ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal              = true
 	self.LegalIssues        = ""
 
 	self.TargetDetected		= false
 
-	self.MaxInaccuracy = 40 --The minimum detection accuracy of targets
-	self.MaxAccuracyOutsideSweetspot = 10
+	self.MaxInaccuracy = 60 --The starting and max detection inaccuracy of targets
+	self.MaxAccuracyOutsideSweetspot = 15
 	self.MinInaccuracy = 2
 
 	--Deg/s of inaccuracy reduced per second as the IRST dials in.
-	self.ResolveSpeedBase = 2
+	self.ResolveSpeedBase = 0.04
 	--Targets near the center are resolved fastest and at the highest resolution
 	self.SweetspotResolveSpeedMul = 2
 	--Hotter targets resolve faster. Every 100C, multiple by this value.
-	self.HeatResolveMul = 3
-	self.HeatRegionMul = 1 --Every 100C adds another multiple of the regionsize
+	self.HeatResolveMul = 1
+	self.HeatRegionMul = 8 --Every 100C adds another multiple of the regionsize
 
-	--The outer detection area of the IRST
-	self.RoughDetectionArea = 10
+	self.BaseOuterDetectionCone = 3 --Base max conesize of IRST. Heat will increase the region this can see.
 
 	--The Inner and more accurate detection area of the IRST
-	self.BaseSweetSpotSize = 4
+	self.BaseSweetSpotSize = 7
 
 	self.IRResolution = {}
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 	self:UpdateOverlayText()
 
 end
 
-function MakeACE_IRST(Owner, Pos, Angle, Id)
+function ACE_MakeIRST(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
 	Id = Id or "Small-IRST"
 
@@ -93,6 +91,7 @@ function MakeACE_IRST(Owner, Pos, Angle, Id)
 		IRST.ACFName			= radar.name
 		IRST.ICone				= radar.viewcone	--Note: intentional. --Recorded initial cone
 		IRST.Cone				= IRST.ICone
+		IRST.MaxViewCone        = IRST.ICone
 		IRST.ACEPoints			= radar.acepoints or 0.9
 
 		IRST.Id					= Id
@@ -106,8 +105,8 @@ function MakeACE_IRST(Owner, Pos, Angle, Id)
 		IRST:SetModelEasy(radar.model)
 		IRST:UpdateOverlayText()
 
-		Owner:AddCount( "_acf_missileradar", IRST )
-		Owner:AddCleanup( "acfmenu", IRST )
+		Owner:AddCount( "_ace_missileradar", IRST )
+		Owner:AddCleanup( "acemenu", IRST )
 
 		return IRST
 	end
@@ -115,7 +114,7 @@ function MakeACE_IRST(Owner, Pos, Angle, Id)
 	return false
 end
 list.Set( "ACFCvars", "ace_irst", {"id"} )
-duplicator.RegisterEntityClass("ace_irst", MakeACE_IRST, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("ace_irst", ACE_MakeIRST, "Pos", "Angle", "Id" )
 
 function ENT:SetNWNetwork()
 	self:SetNWString( "WireName", self.ACFName )
@@ -139,7 +138,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 	elseif inp == "Cone" then
 		if value > 0 then
 			self.Cone = Clamp(value / 2, self.MinViewCone ,self.MaxViewCone )
@@ -199,7 +198,7 @@ function ENT:CleanupIRTracks()
 
 	-- Collect IDs that need removal
 	for ID, Resolution in pairs(self.IRResolution) do
-		Resolution = Resolution + self.ResolveSpeedBase * self.ThinkDelay * 4
+		Resolution = Resolution + 10
 		if Resolution > RemovalThreshold then
 			table.insert(IDsToRemove, ID)
 		else
@@ -241,7 +240,7 @@ function ENT:ScanForContraptions()
 		local BaseTemp = 0
 
 		if IsValid(BasePhys) and BasePhys:IsMoveable() then
-			BaseTemp = ACE.InfraredHeatFromProp(Base, self.HeatAboveAmbient)
+			BaseTemp = ACE_InfraredHeatFromProp(Base, self.HeatAboveAmbient)
 		end
 
 		local Pos
@@ -273,11 +272,11 @@ function ENT:ScanForContraptions()
 		-- instead of tracing every contraption on the server each think.
 		if AngleFromTarget < self.Cone and Heat > MinTrackingHeat and not TraceHull(LOSTraceData).Hit then
 
-			local RegionMul = Heat / 100 * self.HeatRegionMul
-			local ResolveMul = Heat / 100 * self.HeatResolveMul
+			local RegionMul = 1 + (Heat / 100) * self.HeatRegionMul
+			local ResolveMul = 1 + 1 + (Heat / 100) * self.HeatResolveMul
 
-			local OuterDetectRegion = self.RoughDetectionArea * RegionMul
-			local InnerDetectRegion = self.BaseSweetSpotSize * RegionMul
+			local OuterDetectRegion = self.BaseOuterDetectionCone * RegionMul
+			local InnerDetectRegion = self.BaseSweetSpotSize-- * RegionMul
 
 			local ClampMin = self.MaxAccuracyOutsideSweetspot
 
@@ -293,9 +292,9 @@ function ENT:ScanForContraptions()
 
 			self.TargetDetected = true
 
-			local Index = ACE.GetContraptionIndex(Contraption)
+			local Index = ACE_GetContraptionIndex(Contraption)
 
-			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 2.5,ClampMin,self.MaxInaccuracy)
+			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase / self.ThinkDelay * ResolveMul - 10, ClampMin, self.MaxInaccuracy) --10 is to prevent decay from occuring if actively tracking the target
 
 			--print(self.IRResolution[Index])
 
@@ -308,7 +307,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -317,7 +316,10 @@ function ENT:ScanForContraptions()
 		end
 	end
 
-	for _, Ply in ipairs(player.GetAll()) do
+	local Creatures = player.GetAll()
+	table.Merge(Creatures,ents.FindByClass( "npc_*" ))
+
+	for _, Ply in ipairs(Creatures) do
 
 		if not IsValid(Ply) then continue end
 
@@ -337,11 +339,11 @@ function ENT:ScanForContraptions()
 		-- short-circuits, so only players within the view cone get a TraceHull.
 		if AngleFromTarget < self.Cone and not TraceHull(LOSTraceData).Hit then
 
-			local RegionMul = Heat / 100 * self.HeatRegionMul
-			local ResolveMul = Heat / 100 * self.HeatResolveMul
+			local RegionMul = 1 + (Heat / 100) * self.HeatRegionMul
+			local ResolveMul = 1 + (Heat / 100) * self.HeatResolveMul
 
-			local OuterDetectRegion = self.RoughDetectionArea * RegionMul
-			local InnerDetectRegion = self.BaseSweetSpotSize * RegionMul
+			local OuterDetectRegion = self.BaseOuterDetectionCone * RegionMul
+			local InnerDetectRegion = self.BaseSweetSpotSize-- * RegionMul
 
 			local ClampMin = self.MaxAccuracyOutsideSweetspot
 
@@ -356,8 +358,8 @@ function ENT:ScanForContraptions()
 			end
 
 			self.TargetDetected = true
-			local Index = Ply:Nick()
-			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase * self.ThinkDelay * ResolveMul * 5,ClampMin,self.MaxInaccuracy)
+			local Index = "Nil"--Ply:Nick()
+			self.IRResolution[Index] = Clamp((self.IRResolution[Index] or self.MaxInaccuracy) - self.ResolveSpeedBase / self.ThinkDelay * ResolveMul - 10, ClampMin, self.MaxInaccuracy) --10 is to prevent decay from occuring if actively tracking the target
 
 			--print(self.IRResolution[Index])
 
@@ -370,7 +372,7 @@ function ENT:ScanForContraptions()
 
 			FinalAngle.r = 0
 
-			local InsertionIndex = ACE.GetBinaryInsertIndex(Distances, Distance)
+			local InsertionIndex = ACE_GetBinaryInsertIndex(Distances, Distance)
 
 			insert(Distances, InsertionIndex, Distance)
 			insert(AngTable, InsertionIndex, FinalAngle)
@@ -417,12 +419,12 @@ function ENT:Think()
 	local curTime = CurTime()
 
 	-- Legal check system
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -454,12 +456,26 @@ function ENT:UpdateOverlayText()
 
 	txt = txt .. "\n\nView Cone: " .. math.Round(cone * 2, 2) .. " deg"
 
+	txt = txt .. "\nDetection Cone for each temperature: "
+	txt = txt .. "\nHuman - " .. math.Round(self.BaseOuterDetectionCone * 1 + (38 / 100) * self.HeatRegionMul, 1) .. " deg"
+	txt = txt .. "\n50C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (50 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n100C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (100 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n150C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (150 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n200C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (200 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n250C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (250 / 100) * self.HeatRegionMul, 1) .. " deg"
+
+	txt = txt .. "\n300C - " .. math.Round(self.BaseOuterDetectionCone * 1 + (300 / 100) * self.HeatRegionMul, 1) .. " deg"
+
 	if detected then
 		txt = txt .. "\n\nTarget Detected!"
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(txt)

@@ -1,13 +1,13 @@
 
 include("shared.lua")
 
-CreateClientConVar("ACF_GearboxInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_gearbox_info_while_seated", 0, true, false)
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 
 	local lply = LocalPlayer()
-	local hideBubble = not GetConVar("ACF_GearboxInfoWhileSeated"):GetBool() and IsValid(lply) and lply:InVehicle()
+	local hideBubble = not GetConVar("ace_gearbox_info_while_seated"):GetBool() and IsValid(lply) and lply:InVehicle()
 
 	self.BaseClass.DoNormalDraw(self, false, hideBubble)
 	Wire_Render(self)
@@ -19,77 +19,77 @@ function ENT:Draw()
 
 end
 
-function ACFGearboxGUICreate( Table )
+function ACE_GearboxGUICreate( Table )
 
-	if not acfmenupanel.Serialize then
-		acfmenupanel.Serialize = function( tbl, factor )
+	if not acemenupanel.Serialize then
+		acemenupanel.Serialize = function( tbl, factor )
 			local str = ""
 			for i = 1,7 do
 				str = str .. math.Round(tbl[i] * factor,1) .. ","
 			end
-			RunConsoleCommand( "acfmenu_data9", str )
+			RunConsoleCommand( "acemenu_data9", str )
 		end
 	end
 
-	if not acfmenupanel.GearboxData then
-		acfmenupanel.GearboxData = {}
+	if not acemenupanel.GearboxData then
+		acemenupanel.GearboxData = {}
 	end
 
-	if not acfmenupanel.GearboxData[Table.id] then
-		acfmenupanel.GearboxData[Table.id] = {}
-		acfmenupanel.GearboxData[Table.id].GearTable = Table.geartable
+	if not acemenupanel.GearboxData[Table.id] then
+		acemenupanel.GearboxData[Table.id] = {}
+		acemenupanel.GearboxData[Table.id].GearTable = Table.geartable
 	end
 
-	if Table.auto and not acfmenupanel.GearboxData[Table.id].ShiftTable then
-		acfmenupanel.GearboxData[Table.id].ShiftTable = {10,20,30,40,50,60,70}
+	if Table.auto and not acemenupanel.GearboxData[Table.id].ShiftTable then
+		acemenupanel.GearboxData[Table.id].ShiftTable = {10,20,30,40,50,60,70}
 	end
 
-	acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
-	acfmenupanel.CData.DisplayModel = vgui.Create( "DModelPanel", acfmenupanel.CustomDisplay )
-		acfmenupanel.CData.DisplayModel:SetModel( Table.model )
-		acfmenupanel.CData.DisplayModel:SetCamPos( Vector( 250, 500, 250 ) )
-		acfmenupanel.CData.DisplayModel:SetLookAt( Vector( 0, 0, 0 ) )
-		acfmenupanel.CData.DisplayModel:SetFOV( 20 )
-		acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(),acfmenupanel:GetWide())
-		acfmenupanel.CData.DisplayModel.LayoutEntity = function() end
-	acfmenupanel.CustomDisplay:AddItem( acfmenupanel.CData.DisplayModel )
+	acemenupanel.CData.DisplayModel = vgui.Create( "DModelPanel", acemenupanel.CustomDisplay )
+		acemenupanel.CData.DisplayModel:SetModel( Table.model )
+		acemenupanel.CData.DisplayModel:SetCamPos( Vector( 250, 500, 250 ) )
+		acemenupanel.CData.DisplayModel:SetLookAt( Vector( 0, 0, 0 ) )
+		acemenupanel.CData.DisplayModel:SetFOV( 20 )
+		acemenupanel.CData.DisplayModel:SetSize(acemenupanel:GetWide(),acemenupanel:GetWide())
+		acemenupanel.CData.DisplayModel.LayoutEntity = function() end
+	acemenupanel.CustomDisplay:AddItem( acemenupanel.CData.DisplayModel )
 
-	acfmenupanel:CPanelText("Desc", Table.desc) --Description (Name, Desc)
+	acemenupanel:CPanelText("Desc", Table.desc) --Description (Name, Desc)
 
-	if Table.auto and not acfmenupanel.CData.UnitsInput then
-		acfmenupanel.CData.UnitsInput = vgui.Create( "DComboBox", acfmenupanel.CustomDisplay )
-			acfmenupanel.CData.UnitsInput.ID = Table.id
-			acfmenupanel.CData.UnitsInput.Gears = Table.gears
-			acfmenupanel.CData.UnitsInput:SetSize( 60,22 )
-			acfmenupanel.CData.UnitsInput:SetTooltip( "If using the shift point generator, recalc after changing units." )
-			acfmenupanel.CData.UnitsInput:AddChoice( "KPH", 10.936, true )
-			acfmenupanel.CData.UnitsInput:AddChoice( "MPH", 17.6 )
-			acfmenupanel.CData.UnitsInput:AddChoice( "GMU", 1 )
-			acfmenupanel.CData.UnitsInput:SetDark( true )
-			acfmenupanel.CData.UnitsInput.OnSelect = function( panel, _, _, data )
-				acfmenupanel.Serialize( acfmenupanel.GearboxData[panel.ID].ShiftTable, data )  --dot intentional
+	if Table.auto and not acemenupanel.CData.UnitsInput then
+		acemenupanel.CData.UnitsInput = vgui.Create( "DComboBox", acemenupanel.CustomDisplay )
+			acemenupanel.CData.UnitsInput.ID = Table.id
+			acemenupanel.CData.UnitsInput.Gears = Table.gears
+			acemenupanel.CData.UnitsInput:SetSize( 60,22 )
+			acemenupanel.CData.UnitsInput:SetTooltip( "If using the shift point generator, recalc after changing units." )
+			acemenupanel.CData.UnitsInput:AddChoice( "KPH", 10.936, true )
+			acemenupanel.CData.UnitsInput:AddChoice( "MPH", 17.6 )
+			acemenupanel.CData.UnitsInput:AddChoice( "GMU", 1 )
+			acemenupanel.CData.UnitsInput:SetDark( true )
+			acemenupanel.CData.UnitsInput.OnSelect = function( panel, _, _, data )
+				acemenupanel.Serialize( acemenupanel.GearboxData[panel.ID].ShiftTable, data )  --dot intentional
 			end
-		acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.UnitsInput)
+		acemenupanel.CustomDisplay:AddItem(acemenupanel.CData.UnitsInput)
 	end
 
 	if Table.cvt then
-		ACF_GearsSlider(2, acfmenupanel.GearboxData[Table.id].GearTable[2], Table.id)
-		ACF_GearsSlider(3, acfmenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
-		ACF_GearsSlider(4, acfmenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
-		ACF_GearsSlider(10, acfmenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
-		RunConsoleCommand( "acfmenu_data1", 0.01 )
+		ACE_GearsSlider(2, acemenupanel.GearboxData[Table.id].GearTable[2], Table.id)
+		ACE_GearsSlider(3, acemenupanel.GearboxData[Table.id].GearTable[-3], Table.id, "Min Target RPM",true)
+		ACE_GearsSlider(4, acemenupanel.GearboxData[Table.id].GearTable[-2], Table.id, "Max Target RPM",true)
+		ACE_GearsSlider(10, acemenupanel.GearboxData[Table.id].GearTable[-1], Table.id, "Final Drive")
+		RunConsoleCommand( "acemenu_data1", 0.01 )
 	else
-		for ID,Value in pairs(acfmenupanel.GearboxData[Table.id].GearTable) do
+		for ID,Value in pairs(acemenupanel.GearboxData[Table.id].GearTable) do
 			if ID > 0 and not (Table.auto and ID == 8) then
-				ACF_GearsSlider(ID, Value, Table.id)
+				ACE_GearsSlider(ID, Value, Table.id)
 				if Table.auto then
-					ACF_ShiftPoint(ID, acfmenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
+					ACE_ShiftPoint(ID, acemenupanel.GearboxData[Table.id].ShiftTable[ID], Table.id, "Gear " .. ID .. " upshift speed: ")
 				end
 			elseif Table.auto and (ID == -2 or ID == 8) then
-				ACF_GearsSlider(8, Value, Table.id, "Reverse")
+				ACE_GearsSlider(8, Value, Table.id, "Reverse")
 			elseif ID == -1 then
-				ACF_GearsSlider(10, Value, Table.id, "Final Drive")
+				ACE_GearsSlider(10, Value, Table.id, "Final Drive")
 			end
 		end
 	end
@@ -99,167 +99,167 @@ function ACFGearboxGUICreate( Table )
 	InvertButton:SetText( "Invert Final drive" )
 	InvertButton:SetIcon( "icon16/arrow_refresh.png" )
 	InvertButton.DoClick = function()
-		if acfmenupanel.CData[10] then ---10 gear is the final drive
+		if acemenupanel.CData[10] then ---10 gear is the final drive
 
-			local oldValue = acfmenupanel.CData[10]:GetValue()
-			acfmenupanel.CData[10]:SetValue( oldValue * -1 )
+			local oldValue = acemenupanel.CData[10]:GetValue()
+			acemenupanel.CData[10]:SetValue( oldValue * -1 )
 		end
 	end
-	acfmenupanel.CustomDisplay:AddItem(InvertButton)
+	acemenupanel.CustomDisplay:AddItem(InvertButton)
 
-	acfmenupanel:CPanelText("Desc", Table.desc)
-	acfmenupanel:CPanelText("MaxTorque", "Clutch Maximum Torque Rating : " .. Table.maxtq .. "n-m / " .. math.Round(Table.maxtq * 0.73) .. "ft-lb")
-	acfmenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. "kg\n")
+	acemenupanel:CPanelText("Desc", Table.desc)
+	acemenupanel:CPanelText("MaxTorque", "Clutch Maximum Torque Rating : " .. Table.maxtq .. "n-m / " .. math.Round(Table.maxtq * 0.73) .. "ft-lb")
+	acemenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. "kg\n")
 
 	if Table.auto then
-		acfmenupanel:CPanelText( "ShiftPointGen", "Shift Point Generator:", "DermaDefaultBold" )
+		acemenupanel:CPanelText( "ShiftPointGen", "Shift Point Generator:", "DermaDefaultBold" )
 
-		if not acfmenupanel.CData.ShiftGenPanel then
-			acfmenupanel.CData.ShiftGenPanel = vgui.Create( "DPanel" )
-				acfmenupanel.CData.ShiftGenPanel:SetPaintBackground( false )
-				acfmenupanel.CData.ShiftGenPanel:DockPadding( 4, 0, 4, 0 )
-				acfmenupanel.CData.ShiftGenPanel:SetTall( 60 )
-				acfmenupanel.CData.ShiftGenPanel:SizeToContentsX()
-				acfmenupanel.CData.ShiftGenPanel.Gears = Table.gears
+		if not acemenupanel.CData.ShiftGenPanel then
+			acemenupanel.CData.ShiftGenPanel = vgui.Create( "DPanel" )
+				acemenupanel.CData.ShiftGenPanel:SetPaintBackground( false )
+				acemenupanel.CData.ShiftGenPanel:DockPadding( 4, 0, 4, 0 )
+				acemenupanel.CData.ShiftGenPanel:SetTall( 60 )
+				acemenupanel.CData.ShiftGenPanel:SizeToContentsX()
+				acemenupanel.CData.ShiftGenPanel.Gears = Table.gears
 
-			acfmenupanel.CData.ShiftGenPanel.Calc = acfmenupanel.CData.ShiftGenPanel:Add( "DButton" )
-				acfmenupanel.CData.ShiftGenPanel.Calc:SetText( "Calculate" )
-				acfmenupanel.CData.ShiftGenPanel.Calc:Dock( BOTTOM )
-				acfmenupanel.CData.ShiftGenPanel.Calc:SetTall( 20 )
+			acemenupanel.CData.ShiftGenPanel.Calc = acemenupanel.CData.ShiftGenPanel:Add( "DButton" )
+				acemenupanel.CData.ShiftGenPanel.Calc:SetText( "Calculate" )
+				acemenupanel.CData.ShiftGenPanel.Calc:Dock( BOTTOM )
+				acemenupanel.CData.ShiftGenPanel.Calc:SetTall( 20 )
 
-				acfmenupanel.CData.ShiftGenPanel.Calc.DoClick = function()
-					local _, factor = acfmenupanel.CData.UnitsInput:GetSelected()
-					local mul = math.pi * acfmenupanel.CData.ShiftGenPanel.RPM:GetValue() * acfmenupanel.CData.ShiftGenPanel.Ratio:GetValue() * acfmenupanel.CData[10]:GetValue() * acfmenupanel.CData.ShiftGenPanel.Wheel:GetValue() / (60 * factor)
-					for i = 1,acfmenupanel.CData.ShiftGenPanel.Gears do
-						acfmenupanel.CData[10 + i].Input:SetValue( math.Round( math.abs( mul * acfmenupanel.CData[i]:GetValue() ), 2 ) )
-						acfmenupanel.GearboxData[acfmenupanel.CData.UnitsInput.ID].ShiftTable[i] = tonumber(acfmenupanel.CData[10 + i].Input:GetValue())
+				acemenupanel.CData.ShiftGenPanel.Calc.DoClick = function()
+					local _, factor = acemenupanel.CData.UnitsInput:GetSelected()
+					local mul = math.pi * acemenupanel.CData.ShiftGenPanel.RPM:GetValue() * acemenupanel.CData.ShiftGenPanel.Ratio:GetValue() * acemenupanel.CData[10]:GetValue() * acemenupanel.CData.ShiftGenPanel.Wheel:GetValue() / (60 * factor)
+					for i = 1,acemenupanel.CData.ShiftGenPanel.Gears do
+						acemenupanel.CData[10 + i].Input:SetValue( math.Round( math.abs( mul * acemenupanel.CData[i]:GetValue() ), 2 ) )
+						acemenupanel.GearboxData[acemenupanel.CData.UnitsInput.ID].ShiftTable[i] = tonumber(acemenupanel.CData[10 + i].Input:GetValue())
 					end
-					acfmenupanel.Serialize( acfmenupanel.GearboxData[acfmenupanel.CData.UnitsInput.ID].ShiftTable, factor )  --dot intentional
+					acemenupanel.Serialize( acemenupanel.GearboxData[acemenupanel.CData.UnitsInput.ID].ShiftTable, factor )  --dot intentional
 				end
 
-				acfmenupanel.CData.WheelPanel = acfmenupanel.CData.ShiftGenPanel:Add( "DPanel" )
-					acfmenupanel.CData.WheelPanel:SetPaintBackground( false )
-					acfmenupanel.CData.WheelPanel:DockMargin( 4, 0, 4, 0 )
-					acfmenupanel.CData.WheelPanel:Dock( RIGHT )
-					acfmenupanel.CData.WheelPanel:SetWide( 76 )
-					acfmenupanel.CData.WheelPanel:SetTooltip( "If you use default spherical settings, add 0.5 to your wheel diameter.\nFor treaded vehicles, use the diameter of road wheels, not drive wheels." )
+				acemenupanel.CData.WheelPanel = acemenupanel.CData.ShiftGenPanel:Add( "DPanel" )
+					acemenupanel.CData.WheelPanel:SetPaintBackground( false )
+					acemenupanel.CData.WheelPanel:DockMargin( 4, 0, 4, 0 )
+					acemenupanel.CData.WheelPanel:Dock( RIGHT )
+					acemenupanel.CData.WheelPanel:SetWide( 76 )
+					acemenupanel.CData.WheelPanel:SetTooltip( "If you use default spherical settings, add 0.5 to your wheel diameter.\nFor treaded vehicles, use the diameter of road wheels, not drive wheels." )
 
-					acfmenupanel.CData.ShiftGenPanel.WheelLabel = acfmenupanel.CData.WheelPanel:Add( "DLabel" )
-						acfmenupanel.CData.ShiftGenPanel.WheelLabel:Dock( TOP )
-						acfmenupanel.CData.ShiftGenPanel.WheelLabel:SetDark( true )
-						acfmenupanel.CData.ShiftGenPanel.WheelLabel:SetText( "Wheel Diameter:" )
+					acemenupanel.CData.ShiftGenPanel.WheelLabel = acemenupanel.CData.WheelPanel:Add( "DLabel" )
+						acemenupanel.CData.ShiftGenPanel.WheelLabel:Dock( TOP )
+						acemenupanel.CData.ShiftGenPanel.WheelLabel:SetDark( true )
+						acemenupanel.CData.ShiftGenPanel.WheelLabel:SetText( "Wheel Diameter:" )
 
-					acfmenupanel.CData.ShiftGenPanel.Wheel = acfmenupanel.CData.WheelPanel:Add( "DNumberWang" )
-						acfmenupanel.CData.ShiftGenPanel.Wheel:HideWang()
-						acfmenupanel.CData.ShiftGenPanel.Wheel:SetDrawBorder( false )
-						acfmenupanel.CData.ShiftGenPanel.Wheel:Dock( BOTTOM )
-						acfmenupanel.CData.ShiftGenPanel.Wheel:SetDecimals( 2 )
-						acfmenupanel.CData.ShiftGenPanel.Wheel:SetMinMax( 0, 9999 )
-						acfmenupanel.CData.ShiftGenPanel.Wheel:SetValue( 30 )
+					acemenupanel.CData.ShiftGenPanel.Wheel = acemenupanel.CData.WheelPanel:Add( "DNumberWang" )
+						acemenupanel.CData.ShiftGenPanel.Wheel:HideWang()
+						acemenupanel.CData.ShiftGenPanel.Wheel:SetDrawBorder( false )
+						acemenupanel.CData.ShiftGenPanel.Wheel:Dock( BOTTOM )
+						acemenupanel.CData.ShiftGenPanel.Wheel:SetDecimals( 2 )
+						acemenupanel.CData.ShiftGenPanel.Wheel:SetMinMax( 0, 9999 )
+						acemenupanel.CData.ShiftGenPanel.Wheel:SetValue( 30 )
 
-				acfmenupanel.CData.RatioPanel = acfmenupanel.CData.ShiftGenPanel:Add( "DPanel" )
-					acfmenupanel.CData.RatioPanel:SetPaintBackground( false )
-					acfmenupanel.CData.RatioPanel:DockMargin( 4, 0, 4, 0 )
-					acfmenupanel.CData.RatioPanel:Dock( RIGHT )
-					acfmenupanel.CData.RatioPanel:SetWide( 76 )
-					acfmenupanel.CData.RatioPanel:SetTooltip( "Total ratio is the ratio of all gearboxes (excluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio)." )
+				acemenupanel.CData.RatioPanel = acemenupanel.CData.ShiftGenPanel:Add( "DPanel" )
+					acemenupanel.CData.RatioPanel:SetPaintBackground( false )
+					acemenupanel.CData.RatioPanel:DockMargin( 4, 0, 4, 0 )
+					acemenupanel.CData.RatioPanel:Dock( RIGHT )
+					acemenupanel.CData.RatioPanel:SetWide( 76 )
+					acemenupanel.CData.RatioPanel:SetTooltip( "Total ratio is the ratio of all gearboxes (excluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio)." )
 
-					acfmenupanel.CData.ShiftGenPanel.RatioLabel = acfmenupanel.CData.RatioPanel:Add( "DLabel" )
-						acfmenupanel.CData.ShiftGenPanel.RatioLabel:Dock( TOP )
-						acfmenupanel.CData.ShiftGenPanel.RatioLabel:SetDark( true )
-						acfmenupanel.CData.ShiftGenPanel.RatioLabel:SetText( "Total ratio:" )
+					acemenupanel.CData.ShiftGenPanel.RatioLabel = acemenupanel.CData.RatioPanel:Add( "DLabel" )
+						acemenupanel.CData.ShiftGenPanel.RatioLabel:Dock( TOP )
+						acemenupanel.CData.ShiftGenPanel.RatioLabel:SetDark( true )
+						acemenupanel.CData.ShiftGenPanel.RatioLabel:SetText( "Total ratio:" )
 
-					acfmenupanel.CData.ShiftGenPanel.Ratio = acfmenupanel.CData.RatioPanel:Add( "DNumberWang" )
-						acfmenupanel.CData.ShiftGenPanel.Ratio:HideWang()
-						acfmenupanel.CData.ShiftGenPanel.Ratio:SetDrawBorder( false )
-						acfmenupanel.CData.ShiftGenPanel.Ratio:Dock( BOTTOM )
-						acfmenupanel.CData.ShiftGenPanel.Ratio:SetDecimals( 2 )
-						acfmenupanel.CData.ShiftGenPanel.Ratio:SetMinMax( 0, 9999 )
-						acfmenupanel.CData.ShiftGenPanel.Ratio:SetValue( 0.1 )
+					acemenupanel.CData.ShiftGenPanel.Ratio = acemenupanel.CData.RatioPanel:Add( "DNumberWang" )
+						acemenupanel.CData.ShiftGenPanel.Ratio:HideWang()
+						acemenupanel.CData.ShiftGenPanel.Ratio:SetDrawBorder( false )
+						acemenupanel.CData.ShiftGenPanel.Ratio:Dock( BOTTOM )
+						acemenupanel.CData.ShiftGenPanel.Ratio:SetDecimals( 2 )
+						acemenupanel.CData.ShiftGenPanel.Ratio:SetMinMax( 0, 9999 )
+						acemenupanel.CData.ShiftGenPanel.Ratio:SetValue( 0.1 )
 
-				acfmenupanel.CData.RPMPanel = acfmenupanel.CData.ShiftGenPanel:Add( "DPanel" )
-					acfmenupanel.CData.RPMPanel:SetPaintBackground( false )
-					acfmenupanel.CData.RPMPanel:DockMargin( 4, 0, 4, 0 )
-					acfmenupanel.CData.RPMPanel:Dock( RIGHT )
-					acfmenupanel.CData.RPMPanel:SetWide( 76 )
-					acfmenupanel.CData.RPMPanel:SetTooltip( "Target engine RPM to upshift at." )
+				acemenupanel.CData.RPMPanel = acemenupanel.CData.ShiftGenPanel:Add( "DPanel" )
+					acemenupanel.CData.RPMPanel:SetPaintBackground( false )
+					acemenupanel.CData.RPMPanel:DockMargin( 4, 0, 4, 0 )
+					acemenupanel.CData.RPMPanel:Dock( RIGHT )
+					acemenupanel.CData.RPMPanel:SetWide( 76 )
+					acemenupanel.CData.RPMPanel:SetTooltip( "Target engine RPM to upshift at." )
 
-					acfmenupanel.CData.ShiftGenPanel.RPMLabel = acfmenupanel.CData.RPMPanel:Add( "DLabel" )
-						acfmenupanel.CData.ShiftGenPanel.RPMLabel:Dock( TOP )
-						acfmenupanel.CData.ShiftGenPanel.RPMLabel:SetDark( true )
-						acfmenupanel.CData.ShiftGenPanel.RPMLabel:SetText( "Upshift RPM:" )
+					acemenupanel.CData.ShiftGenPanel.RPMLabel = acemenupanel.CData.RPMPanel:Add( "DLabel" )
+						acemenupanel.CData.ShiftGenPanel.RPMLabel:Dock( TOP )
+						acemenupanel.CData.ShiftGenPanel.RPMLabel:SetDark( true )
+						acemenupanel.CData.ShiftGenPanel.RPMLabel:SetText( "Upshift RPM:" )
 
-					acfmenupanel.CData.ShiftGenPanel.RPM = acfmenupanel.CData.RPMPanel:Add( "DNumberWang" )
-						acfmenupanel.CData.ShiftGenPanel.RPM:HideWang()
-						acfmenupanel.CData.ShiftGenPanel.RPM:SetDrawBorder( false )
-						acfmenupanel.CData.ShiftGenPanel.RPM:Dock( BOTTOM )
-						acfmenupanel.CData.ShiftGenPanel.RPM:SetDecimals( 2 )
-						acfmenupanel.CData.ShiftGenPanel.RPM:SetMinMax( 0, 9999 )
-						acfmenupanel.CData.ShiftGenPanel.RPM:SetValue( 5000 )
+					acemenupanel.CData.ShiftGenPanel.RPM = acemenupanel.CData.RPMPanel:Add( "DNumberWang" )
+						acemenupanel.CData.ShiftGenPanel.RPM:HideWang()
+						acemenupanel.CData.ShiftGenPanel.RPM:SetDrawBorder( false )
+						acemenupanel.CData.ShiftGenPanel.RPM:Dock( BOTTOM )
+						acemenupanel.CData.ShiftGenPanel.RPM:SetDecimals( 2 )
+						acemenupanel.CData.ShiftGenPanel.RPM:SetMinMax( 0, 9999 )
+						acemenupanel.CData.ShiftGenPanel.RPM:SetValue( 5000 )
 
-			acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.ShiftGenPanel)
+			acemenupanel.CustomDisplay:AddItem(acemenupanel.CData.ShiftGenPanel)
 		end
 	end
 
-	acfmenupanel.CustomDisplay:PerformLayout()
+	acemenupanel.CustomDisplay:PerformLayout()
 	maxtorque = Table.maxtq
 end
 
-function ACF_GearsSlider(Gear, Value, ID, Desc, CVT)
+function ACE_GearsSlider(Gear, Value, ID, Desc, CVT)
 
-	if Gear and not acfmenupanel.CData[Gear] then
+	if Gear and not acemenupanel.CData[Gear] then
 
-		acfmenupanel.CData[Gear] = vgui.Create( "DNumSlider", acfmenupanel.CustomDisplay )
-			acfmenupanel.CData[Gear]:SetText( Desc or "Gear " .. Gear )
-			acfmenupanel.CData[Gear].Label:SizeToContents()
-			acfmenupanel.CData[Gear]:SetDark( true )
-			acfmenupanel.CData[Gear]:SetMin( CVT and 1 or -2 )
-			acfmenupanel.CData[Gear]:SetMax( CVT and 20000 or 2 )
-			acfmenupanel.CData[Gear]:SetDecimals( (not CVT) and 2 or 0 )
-			acfmenupanel.CData[Gear].Gear = Gear
-			acfmenupanel.CData[Gear].ID = ID
-			acfmenupanel.CData[Gear]:SetValue(Value)
-			RunConsoleCommand( "acfmenu_data" .. Gear, Value )
-			acfmenupanel.CData[Gear].OnValueChanged = function( slider, val )
-				acfmenupanel.GearboxData[slider.ID].GearTable[slider.Gear] = val
-				RunConsoleCommand( "acfmenu_data" .. Gear, val )
+		acemenupanel.CData[Gear] = vgui.Create( "DNumSlider", acemenupanel.CustomDisplay )
+			acemenupanel.CData[Gear]:SetText( Desc or "Gear " .. Gear )
+			acemenupanel.CData[Gear].Label:SizeToContents()
+			acemenupanel.CData[Gear]:SetDark( true )
+			acemenupanel.CData[Gear]:SetMin( CVT and 1 or -2 )
+			acemenupanel.CData[Gear]:SetMax( CVT and 20000 or 2 )
+			acemenupanel.CData[Gear]:SetDecimals( (not CVT) and 2 or 0 )
+			acemenupanel.CData[Gear].Gear = Gear
+			acemenupanel.CData[Gear].ID = ID
+			acemenupanel.CData[Gear]:SetValue(Value)
+			RunConsoleCommand( "acemenu_data" .. Gear, Value )
+			acemenupanel.CData[Gear].OnValueChanged = function( slider, val )
+				acemenupanel.GearboxData[slider.ID].GearTable[slider.Gear] = val
+				RunConsoleCommand( "acemenu_data" .. Gear, val )
 			end
-		acfmenupanel.CustomDisplay:AddItem( acfmenupanel.CData[Gear] )
+		acemenupanel.CustomDisplay:AddItem( acemenupanel.CData[Gear] )
 	end
 
 end
 
-function ACF_ShiftPoint(Gear, Value, ID, Desc)
+function ACE_ShiftPoint(Gear, Value, ID, Desc)
 	local Index = Gear + 10
-	if Gear and not acfmenupanel.CData[Index] then
-		acfmenupanel.CData[Index] = vgui.Create( "DPanel" )
-			acfmenupanel.CData[Index]:SetPaintBackground( false )
-			acfmenupanel.CData[Index]:SetTall( 20 )
-			acfmenupanel.CData[Index]:SizeToContentsX()
+	if Gear and not acemenupanel.CData[Index] then
+		acemenupanel.CData[Index] = vgui.Create( "DPanel" )
+			acemenupanel.CData[Index]:SetPaintBackground( false )
+			acemenupanel.CData[Index]:SetTall( 20 )
+			acemenupanel.CData[Index]:SizeToContentsX()
 
-		acfmenupanel.CData[Index].Input = acfmenupanel.CData[Index]:Add( "DNumberWang" )
-			acfmenupanel.CData[Index].Input.Gear = Gear
-			acfmenupanel.CData[Index].Input.ID = ID
-			acfmenupanel.CData[Index].Input:HideWang()
-			acfmenupanel.CData[Index].Input:SetDrawBorder( false )
-			acfmenupanel.CData[Index].Input:SetDecimals( 2 )
-			acfmenupanel.CData[Index].Input:SetMinMax( 0, 9999 )
-			acfmenupanel.CData[Index].Input:SetValue( Value )
-			acfmenupanel.CData[Index].Input:Dock( RIGHT )
-			acfmenupanel.CData[Index].Input:SetWide( 45 )
-			acfmenupanel.CData[Index].Input.OnValueChanged = function( box, value )
-				acfmenupanel.GearboxData[box.ID].ShiftTable[box.Gear] = value
-				local _, factor = acfmenupanel.CData.UnitsInput:GetSelected()
-				acfmenupanel.Serialize( acfmenupanel.GearboxData[acfmenupanel.CData.UnitsInput.ID].ShiftTable, factor )  --dot intentional
+		acemenupanel.CData[Index].Input = acemenupanel.CData[Index]:Add( "DNumberWang" )
+			acemenupanel.CData[Index].Input.Gear = Gear
+			acemenupanel.CData[Index].Input.ID = ID
+			acemenupanel.CData[Index].Input:HideWang()
+			acemenupanel.CData[Index].Input:SetDrawBorder( false )
+			acemenupanel.CData[Index].Input:SetDecimals( 2 )
+			acemenupanel.CData[Index].Input:SetMinMax( 0, 9999 )
+			acemenupanel.CData[Index].Input:SetValue( Value )
+			acemenupanel.CData[Index].Input:Dock( RIGHT )
+			acemenupanel.CData[Index].Input:SetWide( 45 )
+			acemenupanel.CData[Index].Input.OnValueChanged = function( box, value )
+				acemenupanel.GearboxData[box.ID].ShiftTable[box.Gear] = value
+				local _, factor = acemenupanel.CData.UnitsInput:GetSelected()
+				acemenupanel.Serialize( acemenupanel.GearboxData[acemenupanel.CData.UnitsInput.ID].ShiftTable, factor )  --dot intentional
 			end
-			RunConsoleCommand( "acfmenu_data9", "10,20,30,40,50,60,70" )
+			RunConsoleCommand( "acemenu_data9", "10,20,30,40,50,60,70" )
 
-		acfmenupanel.CData[Index].Label = acfmenupanel.CData[Index]:Add( "DLabel" )
-			acfmenupanel.CData[Index].Label:Dock( RIGHT )
-			acfmenupanel.CData[Index].Label:SetWide( 120 )
-			acfmenupanel.CData[Index].Label:SetDark( true )
-			acfmenupanel.CData[Index].Label:SetText( Desc )
+		acemenupanel.CData[Index].Label = acemenupanel.CData[Index]:Add( "DLabel" )
+			acemenupanel.CData[Index].Label:Dock( RIGHT )
+			acemenupanel.CData[Index].Label:SetWide( 120 )
+			acemenupanel.CData[Index].Label:SetDark( true )
+			acemenupanel.CData[Index].Label:SetText( Desc )
 
-		acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData[Index])
+		acemenupanel.CustomDisplay:AddItem(acemenupanel.CData[Index])
 	end
 end

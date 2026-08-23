@@ -83,9 +83,9 @@ function SWEP:InitBulletData()
 	self.BulletData.AmmoType = self.BulletData.Type
 	self.BulletData.FrArea = 3.1416 * (self.BulletData.Caliber / 2) ^ 2
 	self.BulletData.ProjMass = self.BulletData.FrArea * (self.BulletData.ProjLength * 7.9 / 1000)
-	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	self.BulletData.PropMass = self.BulletData.FrArea * (self.BulletData.PropLength * ACE.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	self.BulletData.FillerVol = self.BulletData.Data5
-	self.BulletData.FillerMass = self.BulletData.FillerVol * ACF.HEDensity / 1000
+	self.BulletData.FillerMass = self.BulletData.FillerVol * ACE.HEDensity / 1000
 	self.BulletData.BoomFillerMass = self.BulletData.FillerMass / 5
 	local ConeArea = 3.1416 * self.BulletData.Caliber / 2 * ((self.BulletData.Caliber / 2) ^ 2 + self.BulletData.ProjLength ^ 2) ^ 0.5
 	local ConeThick = self.BulletData.Caliber / 50
@@ -95,41 +95,41 @@ function SWEP:InitBulletData()
 	local Rad = math.rad(self.BulletData.Data6 / 2)
 	self.BulletData.HEAllocation = self.BulletData.Data14
 	self.BulletData.SlugCaliber = self.BulletData.Caliber - self.BulletData.Caliber * (math.sin(Rad) * 0.5 + math.cos(Rad) * 1.5) / 2
-	self.BulletData.SlugMV = (self.BulletData.FillerMass / 2 * (1 - self.BulletData.HEAllocation) * ACF.HEPower * math.sin(math.rad(10 + self.BulletData.Data6) / 2) / self.BulletData.SlugMass) ^ ACF.HEATMVScale
+	self.BulletData.SlugMV = (self.BulletData.FillerMass / 2 * (1 - self.BulletData.HEAllocation) * ACE.HEPower * math.sin(math.rad(10 + self.BulletData.Data6) / 2) / self.BulletData.SlugMass) ^ ACE.HEATMVScale
 	self.BulletData.SlugCaliber2 = self.BulletData.Caliber - self.BulletData.Caliber * (math.sin(Rad) * 0.5 + math.cos(Rad) * 1.5) / 2
-	self.BulletData.SlugMV2 = (self.BulletData.FillerMass / 2 * self.BulletData.HEAllocation * ACF.HEPower * math.sin(math.rad(10 + self.BulletData.Data6) / 2) / self.BulletData.SlugMass) ^ ACF.HEATMVScale
+	self.BulletData.SlugMV2 = (self.BulletData.FillerMass / 2 * self.BulletData.HEAllocation * ACE.HEPower * math.sin(math.rad(10 + self.BulletData.Data6) / 2) / self.BulletData.SlugMass) ^ ACE.HEATMVScale
 	--		print("SlugMV: " .. self.BulletData.SlugMV)
 	--		print("SlugMV2: " .. self.BulletData.SlugMV2)
 	self.BulletData.Detonated = 0
 	local SlugFrArea = 3.1416 * (self.BulletData.SlugCaliber / 2) ^ 2
 	local SlugFrArea2 = 3.1416 * (self.BulletData.SlugCaliber2 / 2) ^ 2
-	self.BulletData.SlugPenArea = SlugFrArea ^ ACF.PenAreaMod
-	self.BulletData.SlugPenArea2 = SlugFrArea ^ ACF.PenAreaMod
+	self.BulletData.SlugPenArea = SlugFrArea ^ ACE.PenAreaMod
+	self.BulletData.SlugPenArea2 = SlugFrArea ^ ACE.PenAreaMod
 	self.BulletData.SlugDragCoef = ((SlugFrArea / 10000) / self.BulletData.SlugMass)
 	self.BulletData.SlugDragCoef2 = ((SlugFrArea2 / 10000) / self.BulletData.SlugMass2)
 	self.BulletData.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	self.BulletData.SlugRicochet2 = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	self.BulletData.CasingMass = self.BulletData.ProjMass - self.BulletData.FillerMass - ConeVol * 7.9 / 1000
-	self.BulletData.Fragments = math.max(math.floor((self.BulletData.BoomFillerMass / self.BulletData.CasingMass) * ACF.HEFrag), 2)
+	self.BulletData.Fragments = math.max(math.floor((self.BulletData.BoomFillerMass / self.BulletData.CasingMass) * ACE.HEFrag), 2)
 	self.BulletData.FragMass = self.BulletData.CasingMass / self.BulletData.Fragments
 	--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 	self.BulletData.DragCoef = (self.BulletData.FrArea / 10000) / self.BulletData.ProjMass
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACF_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
-	self.BulletData.PenArea = self.BulletData.FrArea ^ ACF.PenAreaMod
+	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod
 	self.BulletData.Pos = Vector(0, 0, 0)
 	self.BulletData.LimitVel = 800
 	self.BulletData.Ricochet = 999
 	self.BulletData.Flight = Vector(0, 0, 0)
 	self.BulletData.BoomPower = self.BulletData.PropMass + self.BulletData.FillerMass
-	--		local SlugEnergy = ACF_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-	local SlugEnergy = ACF_Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
-	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACF.KEtoRHA
+	--		local SlugEnergy = ACE_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
+	local SlugEnergy = ACE_Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
+	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACE.KEtoRHA
 	--		print("SlugPen: " .. self.BulletData.MaxPen)
-	local SlugEnergy = ACF_Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
-	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea2) * ACF.KEtoRHA
+	local SlugEnergy = ACE_Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
+	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea2) * ACE.KEtoRHA
 	--		print("SlugPen2: " .. self.BulletData.MaxPen)
 	--For Fake Crate
 	self.BoomFillerMass = self.BulletData.BoomFillerMass
@@ -210,7 +210,7 @@ function SWEP:PrimaryAttack()
 			BData.Crate = BData.FakeCrate:EntIndex()
 			--self:DeleteOnRemove(BData.FakeCrate)
 
-			GenerateMissile(MDat,BData.FakeCrate,BData)
+			ACE_GenerateMissile(MDat,BData.FakeCrate,BData)
 
 		self:EmitSound(self.Primary.Sound)
 		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)

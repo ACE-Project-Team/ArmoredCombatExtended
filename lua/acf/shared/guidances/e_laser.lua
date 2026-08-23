@@ -2,18 +2,18 @@
 local ClassName = "Laser"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
 -- Cone to retain targets within.
 this.ViewCone = 30
 
-this.desc = "This guidance package reads a target-position from the launcher and guides the munition towards it."
+this.desc = "Robust guidance package which uses a laser to guide a missile towards the target position. In order to guide, the seeker must have a clear view of the target position. Cannot be jammed or flared."
 
 
 
@@ -29,7 +29,7 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
 
 end
@@ -79,7 +79,7 @@ end
 --Another Stupid Workaround. Since guidance degrees are not loaded when ammo is created
 function this:GetDisplayConfig(Type)
 
-	local Guns = ACF.Weapons.Guns
+	local Guns = ACE.Weapons.Guns
 	local GunTable = Guns[Type]
 	local ViewCone = GunTable.viewcone and (GunTable.viewcone * 2) or 0
 

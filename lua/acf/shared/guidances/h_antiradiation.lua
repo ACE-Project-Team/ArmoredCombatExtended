@@ -3,11 +3,11 @@
 local ClassName = "AntiRadiation"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 ---
 --GetGuidanceOverride
@@ -31,7 +31,7 @@ this.HasIRCCM = false
 -- Minimum distance for a target to be considered
 this.MinimumDistance = 393.7	--10m
 
-this.desc = "This guidance package detects a target-position infront of itself, and guides the munition towards it."
+this.desc = "Guidance package that will hone-in on any radar emissions. Capable of targeting Search and Track Radars, Missile Radars, or ECM.  Fire and forget. Only targets devices that are actively emitting."
 
 function this:Init()
 	self.LastSeek = CurTime() - self.SeekDelay - 0.000001
@@ -42,9 +42,9 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
-	self.HasIRCCM	= ACF_GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
+	self.HasIRCCM	= ACE.GetGunValue(missile.BulletData, "irccm") or this.HasIRCCM
 end
 
 --TODO: still a bit messy, refactor this so we can check if a flare exits the viewcone too.
@@ -57,7 +57,7 @@ function this:GetGuidance(missile)
 
 	self:CheckTarget(missile)
 
-	if not IsValid(self.Target) or not self.Target.Active or self.Target.IsJammed ~= 0 then
+	if not IsValid(self.Target) or not self.Target.Active then --If
 		return {}
 	end
 
@@ -125,44 +125,37 @@ function this:GetWhitelistedEntsInCone(missile)
 
 	local missilePos = missile:GetPos()
 	local foundAnim = {}
-
 	local ScanArray = ACE.radarEntities
+	table.Merge(ScanArray,ACE.ECMPods)
 
 	for _, scanEnt in pairs(ScanArray) do
 
 		-- skip any invalid entity
 		if not scanEnt:IsValid() then continue end
 
-
---No sir I will not ignore the flares. They "might" contain chaff
-
---		-- skip any flare from vision.
---		if scanEnt:GetClass() == "ace_flare" then continue end
-
 		local entpos = scanEnt:GetPos()
 		local difpos = entpos - missilePos
 		local dist = difpos:Length()
 
+		--Skips any non-emitting radars.
+		if not scanEnt.Active then continue end
+
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
-			local LOSdata = {}
-			LOSdata.start			= missilePos
-			LOSdata.endpos			= entpos
-			LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
-			LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
-			LOSdata.mins			= Vector(0,0,0)
-			LOSdata.maxs			= Vector(0,0,0)
-			local LOStr = util.TraceHull( LOSdata )
+		local LOSdata = {}
+		LOSdata.start			= missilePos
+		LOSdata.endpos			= entpos
+		LOSdata.collisiongroup	= COLLISION_GROUP_WORLD
+		LOSdata.filter			= function( ent ) if ( ent:GetClass() ~= "worldspawn" ) then return false end end --Hits anything world related.
+		LOSdata.mins			= Vector(0,0,0)
+		LOSdata.maxs			= Vector(0,0,0)
+		local LOStr = util.TraceHull( LOSdata )
 
-			--Trace did not hit world
-			if not LOStr.Hit then
-
-
-					table.insert(foundAnim, scanEnt)
-
-
-			end
+		--Trace did not hit world
+		if not LOStr.Hit then
+				table.insert(foundAnim, scanEnt)
+		end
 
 
 	end
@@ -192,8 +185,7 @@ function this:AcquireLock(missile)
 
 	for _, classifyent in pairs(found) do
 
-		--skip the tracking itself
-		if classifyent.IsJammed ~= 0 then continue end --Wouldn't be needed with CFRAME
+		--if classifyent.IsJammed ~= 0 then continue end --Anti-Rad missile can be used on jammed targets because they are still emitting.
 
 		local entpos = classifyent:GetPos()
 		local ang = missile:WorldToLocalAngles((entpos - missilePos):Angle())	--Used for testing if inrange
@@ -228,7 +220,7 @@ end
 --Another Stupid Workaround. Since guidance degrees are not loaded when ammo is created
 function this:GetDisplayConfig(Type)
 
-	local Guns = ACF.Weapons.Guns
+	local Guns = ACE.Weapons.Guns
 	local GunTable = Guns[Type]
 
 	local ViewCone = GunTable.viewcone and GunTable.viewcone * 2 or 0

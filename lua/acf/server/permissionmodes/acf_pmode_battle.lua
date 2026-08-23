@@ -4,8 +4,8 @@
 		All things within safezones are protected from all registered ACF damage.
 		All things in the battlefield are vulnerable to all ACF damage.
 ----]]
-if not ACF or not ACF.Permissions or not ACF.Permissions.RegisterMode then error("ACF: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!") return end
-local perms = ACF.Permissions
+if not ACE.Permissions or not ACE.Permissions.RegisterMode then error("ACE: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!") return end
+local perms = ACE.Permissions
 
 
 -- the name for this mode used in commands and identification
@@ -57,7 +57,7 @@ local function DisableNoclipPressInBattle( ply, wantsNoclipOn )
 
 	return perms.IsInSafezone(ply:GetPos()) ~= false
 end
-hook.Add( "PlayerNoClip", "ACF_DisableNoclipPressInBattle", DisableNoclipPressInBattle )
+hook.Add( "PlayerNoClip", "ACE_DisableNoclipPressInBattle", DisableNoclipPressInBattle )
 
 
 local function modethink()

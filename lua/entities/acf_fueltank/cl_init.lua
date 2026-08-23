@@ -1,13 +1,13 @@
 
 include("shared.lua")
 
-CreateClientConVar("ACF_FuelInfoWhileSeated", 0, true, false)
+CreateClientConVar("ace_fuel_info_while_seated", 0, true, false)
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 
 	local lply = LocalPlayer()
-	local hideBubble = not GetConVar("ACF_FuelInfoWhileSeated"):GetBool() and IsValid(lply) and lply:InVehicle()
+	local hideBubble = not GetConVar("ace_fuel_info_while_seated"):GetBool() and IsValid(lply) and lply:InVehicle()
 
 	self.BaseClass.DoNormalDraw(self, false, hideBubble)
 	Wire_Render(self)
@@ -23,7 +23,7 @@ do
 
 	local Wall = 0.03937 -- wall thickness in inches (1mm). Meant to be a global var
 	local SortedTanks = {}
-	local TankTable = ACF.Weapons
+	local TankTable = ACE.Weapons
 	local Tanks = TankTable.FuelTanksSize
 
 	for n in pairs(Tanks) do
@@ -33,85 +33,85 @@ do
 
 	local function CreateIdForCrate()
 
-		if not acfmenupanel.FuelPanelConfig["LegacyFuels"] then
+		if not acemenupanel.FuelPanelConfig["LegacyFuels"] then
 
-		   local X = math.Round( acfmenupanel.FuelPanelConfig["Crate_Length"], 1 )
-		   local Y = math.Round( acfmenupanel.FuelPanelConfig["Crate_Width"], 1 )
-		   local Z = math.Round( acfmenupanel.FuelPanelConfig["Crate_Height"], 1)
+		   local X = math.Round( acemenupanel.FuelPanelConfig["Crate_Length"], 1 )
+		   local Y = math.Round( acemenupanel.FuelPanelConfig["Crate_Width"], 1 )
+		   local Z = math.Round( acemenupanel.FuelPanelConfig["Crate_Height"], 1)
 
 		   local Id = X .. ":" .. Y .. ":" .. Z
 
-		   ACFFuelTankGUIUpdate( Table )
-		   acfmenupanel.FuelTankData["Id"] = Id
-		   RunConsoleCommand( "acfmenu_data1", Id )
+		   ACE_FuelTankGUIUpdate( Table )
+		   acemenupanel.FuelTankData["Id"] = Id
+		   RunConsoleCommand( "acemenu_data1", Id )
 
 		end
 
 	 end
 
-	function ACFFuelTankGUICreate( Table )
-		if not acfmenupanel.CustomDisplay then return end
+	function ACE_FuelTankGUICreate( Table )
+		if not acemenupanel.CustomDisplay then return end
 
-		local MainPanel = acfmenupanel.CustomDisplay
+		local MainPanel = acemenupanel.CustomDisplay
 
-		if not acfmenupanel.FuelTankData then
-			acfmenupanel.FuelTankData          = {}
-			acfmenupanel.FuelTankData.Id       = "10:10:10"
-			acfmenupanel.FuelTankData.IdLegacy = "Tank_4x4x2"
-			acfmenupanel.FuelTankData.FuelID   = "Petrol"
+		if not acemenupanel.FuelTankData then
+			acemenupanel.FuelTankData          = {}
+			acemenupanel.FuelTankData.Id       = "10:10:10"
+			acemenupanel.FuelTankData.IdLegacy = "Tank_4x4x2"
+			acemenupanel.FuelTankData.FuelID   = "Petrol"
 		end
 
-		if not acfmenupanel.FuelPanelConfig then
+		if not acemenupanel.FuelPanelConfig then
 
-			acfmenupanel.FuelPanelConfig = {}
-			acfmenupanel.FuelPanelConfig["ExpandedCatNew"] = true
-			acfmenupanel.FuelPanelConfig["ExpandedCatOld"] = false
-			acfmenupanel.FuelPanelConfig["LegacyFuels"]   = false
-			acfmenupanel.FuelPanelConfig["Crate_Length"]  = 10
-			acfmenupanel.FuelPanelConfig["Crate_Width"]   = 10
-			acfmenupanel.FuelPanelConfig["Crate_Height"]  = 10
-			acfmenupanel.FuelPanelConfig["Crate_Shape"] = "Box"
+			acemenupanel.FuelPanelConfig = {}
+			acemenupanel.FuelPanelConfig["ExpandedCatNew"] = true
+			acemenupanel.FuelPanelConfig["ExpandedCatOld"] = false
+			acemenupanel.FuelPanelConfig["LegacyFuels"]   = false
+			acemenupanel.FuelPanelConfig["Crate_Length"]  = 10
+			acemenupanel.FuelPanelConfig["Crate_Width"]   = 10
+			acemenupanel.FuelPanelConfig["Crate_Height"]  = 10
+			acemenupanel.FuelPanelConfig["Crate_Shape"] = "Box"
 
 		 end
 
-		acfmenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
-		acfmenupanel:CPanelText("Desc", Table.desc)
+		acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
+		acemenupanel:CPanelText("Desc", Table.desc)
 
 		----------- fuel type dropbox -----------
 		do
 
-			acfmenupanel:CPanelText("Fueltype_desc", "\nChoose a fuel type" )
+			acemenupanel:CPanelText("Fueltype_desc", "\nChoose a fuel type" )
 
 			local FuelTypeComboList = vgui.Create( "DComboBox", MainPanel )
 			FuelTypeComboList:SetSize(100, 30)
-			for Key, _ in pairs( ACF.FuelDensity ) do
+			for Key, _ in pairs( ACE.FuelDensity ) do
 				FuelTypeComboList:AddChoice( Key )
 			end
 
 			FuelTypeComboList.OnSelect = function( _, _, data )
-				RunConsoleCommand( "acfmenu_data2", data )
-				acfmenupanel.FuelTankData.FuelID = data
-				ACFFuelTankGUIUpdate( Table )
+				RunConsoleCommand( "acemenu_data2", data )
+				acemenupanel.FuelTankData.FuelID = data
+				ACE_FuelTankGUIUpdate( Table )
 			end
 
-			FuelTypeComboList:SetText(acfmenupanel.FuelTankData.FuelID)
-			RunConsoleCommand( "acfmenu_data2", acfmenupanel.FuelTankData.FuelID )
+			FuelTypeComboList:SetText(acemenupanel.FuelTankData.FuelID)
+			RunConsoleCommand( "acemenu_data2", acemenupanel.FuelTankData.FuelID )
 			MainPanel:AddItem( FuelTypeComboList )
 
-			acfmenupanel:CPanelText("Cap", "")
-			acfmenupanel:CPanelText("Mass", "")
+			acemenupanel:CPanelText("Cap", "")
+			acemenupanel:CPanelText("Mass", "")
 
 		end
 
 		local CrateNewCat = vgui.Create( "DCollapsibleCategory" )	-- Create a collapsible category
-		acfmenupanel.CustomDisplay:AddItem(CrateNewCat)
+		acemenupanel.CustomDisplay:AddItem(CrateNewCat)
 		CrateNewCat:SetLabel( "Tank Config" )						-- Set the name ( label )
 		CrateNewCat:SetPos( 25, 50 )		-- Set position
 		CrateNewCat:SetSize( 250, 100 )	-- Set size
-		CrateNewCat:SetExpanded( acfmenupanel.FuelPanelConfig["ExpandedCatNew"] )
+		CrateNewCat:SetExpanded( acemenupanel.FuelPanelConfig["ExpandedCatNew"] )
 
 		function CrateNewCat:OnToggle( bool )
-		   acfmenupanel.FuelPanelConfig["ExpandedCatNew"] = bool
+		   acemenupanel.FuelPanelConfig["ExpandedCatNew"] = bool
 		end
 
 		local CrateNewPanel = vgui.Create( "DPanelList" )
@@ -122,14 +122,14 @@ do
 		CrateNewCat:SetContents( CrateNewPanel )
 
 		local CrateOldCat = vgui.Create( "DCollapsibleCategory" )
-		acfmenupanel.CustomDisplay:AddItem(CrateOldCat)
+		acemenupanel.CustomDisplay:AddItem(CrateOldCat)
 		CrateOldCat:SetLabel( "Tank Config (legacy)" )
 		CrateOldCat:SetPos( 25, 50 )
 		CrateOldCat:SetSize( 250, 100 )
-		CrateOldCat:SetExpanded( acfmenupanel.FuelPanelConfig["ExpandedCatOld"] )
+		CrateOldCat:SetExpanded( acemenupanel.FuelPanelConfig["ExpandedCatOld"] )
 
 		function CrateOldCat:OnToggle( bool )
-		   acfmenupanel.FuelPanelConfig["ExpandedCatOld"] = bool
+		   acemenupanel.FuelPanelConfig["ExpandedCatOld"] = bool
 		end
 
 		local CrateOldPanel = vgui.Create( "DPanelList" )
@@ -143,10 +143,10 @@ do
 		--------------- NEW CONFIG ---------------
 		do
 
-			local MinCrateSize = ACF.CrateMinimumSize or 5
-			local MaxCrateSize = ACF.CrateMaximumSize
+			local MinCrateSize = ACE.CrateMinimumSize or 5
+			local MaxCrateSize = ACE.CrateMaximumSize
 
-			acfmenupanel:CPanelText("Crate_desc_new", "\nAdjust the dimensions for your tank. In inches.", nil, CrateNewPanel)
+			acemenupanel:CPanelText("Crate_desc_new", "\nAdjust the dimensions for your tank. In inches.", nil, CrateNewPanel)
 
 			-- The ComboList
 			local ShapeComboList = vgui.Create( "DComboBox" )
@@ -161,13 +161,13 @@ do
 			end
 
 			ShapeComboList.OnSelect = function( _, _, data )
-				acfmenupanel.FuelPanelConfig["Crate_Shape"] = data
-				RunConsoleCommand( "acfmenu_data3", data )
-				ACFFuelTankGUIUpdate( Table )
+				acemenupanel.FuelPanelConfig["Crate_Shape"] = data
+				RunConsoleCommand( "acemenu_data3", data )
+				ACE_FuelTankGUIUpdate( Table )
 			end
 
-			RunConsoleCommand( "acfmenu_data3", acfmenupanel.FuelPanelConfig["Crate_Shape"] )
-			ShapeComboList:SetText(acfmenupanel.FuelPanelConfig["Crate_Shape"])
+			RunConsoleCommand( "acemenu_data3", acemenupanel.FuelPanelConfig["Crate_Shape"] )
+			ShapeComboList:SetText(acemenupanel.FuelPanelConfig["Crate_Shape"])
 			CrateNewPanel:AddItem( ShapeComboList )
 
 			-- X Slider
@@ -176,11 +176,11 @@ do
 			LenghtSlider:SetDark( true )
 			LenghtSlider:SetMin( MinCrateSize )
 			LenghtSlider:SetMax( MaxCrateSize )
-			LenghtSlider:SetValue( acfmenupanel.FuelPanelConfig["Crate_Length"] or 10 )
+			LenghtSlider:SetValue( acemenupanel.FuelPanelConfig["Crate_Length"] or 10 )
 			LenghtSlider:SetDecimals( 1 )
 
 			function LenghtSlider:OnValueChanged( value )
-			acfmenupanel.FuelPanelConfig["Crate_Length"] = value
+			acemenupanel.FuelPanelConfig["Crate_Length"] = value
 			CreateIdForCrate()
 			end
 			CrateNewPanel:AddItem(LenghtSlider)
@@ -191,11 +191,11 @@ do
 			WidthSlider:SetDark( true )
 			WidthSlider:SetMin( MinCrateSize )
 			WidthSlider:SetMax( MaxCrateSize )
-			WidthSlider:SetValue( acfmenupanel.FuelPanelConfig["Crate_Width"] or 10 )
+			WidthSlider:SetValue( acemenupanel.FuelPanelConfig["Crate_Width"] or 10 )
 			WidthSlider:SetDecimals( 1 )
 
 			function WidthSlider:OnValueChanged( value )
-			acfmenupanel.FuelPanelConfig["Crate_Width"] = value
+			acemenupanel.FuelPanelConfig["Crate_Width"] = value
 			CreateIdForCrate()
 			end
 			CrateNewPanel:AddItem(WidthSlider)
@@ -206,11 +206,11 @@ do
 			HeightSlider:SetDark( true )
 			HeightSlider:SetMin( MinCrateSize )
 			HeightSlider:SetMax( MaxCrateSize )
-			HeightSlider:SetValue( acfmenupanel.FuelPanelConfig["Crate_Height"] or 10 )
+			HeightSlider:SetValue( acemenupanel.FuelPanelConfig["Crate_Height"] or 10 )
 			HeightSlider:SetDecimals( 1 )
 
 			function HeightSlider:OnValueChanged( value )
-			acfmenupanel.FuelPanelConfig["Crate_Height"] = value
+			acemenupanel.FuelPanelConfig["Crate_Height"] = value
 			CreateIdForCrate()
 			end
 			CrateNewPanel:AddItem(HeightSlider)
@@ -219,22 +219,22 @@ do
 		----------- legacy tank size dropbox -----------
 		do
 
-			acfmenupanel:CPanelText("Fuel_desc_legacy", "\nChoose a fueltank in the legacy way. Remember to enable the checkbox below to do so.", nil, CrateOldPanel)
+			acemenupanel:CPanelText("Fuel_desc_legacy", "\nChoose a fueltank in the legacy way. Remember to enable the checkbox below to do so.", nil, CrateOldPanel)
 
 			-- The checkbox
 			local LegacyCheck = vgui.Create( "DCheckBoxLabel" ) -- Create the checkbox
 			LegacyCheck:SetPos( 25, 50 )						      -- Set the position
 			LegacyCheck:SetText("Use Legacy Mode")					   -- Set the text next to the box
 			LegacyCheck:SetDark( true )
-			LegacyCheck:SetChecked( acfmenupanel.FuelPanelConfig.LegacyFuels or false )						   -- Initial value
+			LegacyCheck:SetChecked( acemenupanel.FuelPanelConfig.LegacyFuels or false )						   -- Initial value
 			LegacyCheck:SizeToContents()						      -- Make its size the same as the contents
 
 			function LegacyCheck:OnChange( val )
-				acfmenupanel.FuelPanelConfig["LegacyFuels"] = val
+				acemenupanel.FuelPanelConfig["LegacyFuels"] = val
 				if val then
-					acfmenupanel.FuelTankData.Id =  acfmenupanel.FuelTankData.IdLegacy
-					RunConsoleCommand( "acfmenu_data1", acfmenupanel.FuelTankData.Id )
-					ACFFuelTankGUIUpdate( Table )
+					acemenupanel.FuelTankData.Id =  acemenupanel.FuelTankData.IdLegacy
+					RunConsoleCommand( "acemenu_data1", acemenupanel.FuelTankData.Id )
+					ACE_FuelTankGUIUpdate( Table )
 				else
 					CreateIdForCrate()
 				end
@@ -250,108 +250,108 @@ do
 			end
 
 			FuelTankComboList.OnSelect = function( _, _, data )
-				acfmenupanel.FuelTankData.Id = data
-				acfmenupanel.FuelTankData.IdLegacy = data
-				RunConsoleCommand( "acfmenu_data1", data )
-				ACFFuelTankGUIUpdate( Table )
+				acemenupanel.FuelTankData.Id = data
+				acemenupanel.FuelTankData.IdLegacy = data
+				RunConsoleCommand( "acemenu_data1", data )
+				ACE_FuelTankGUIUpdate( Table )
 
-				if acfmenupanel.CData.DisplayModel then
+				if acemenupanel.CData.DisplayModel then
 
-					local Model = Tanks[acfmenupanel.FuelTankData.IdLegacy].model
-					acfmenupanel.CData.DisplayModel:SetModel(Model)
-					acfmenupanel:CPanelText("CrateDesc", Tanks[acfmenupanel.FuelTankData.Id].desc, nil, CrateOldPanel)
+					local Model = Tanks[acemenupanel.FuelTankData.IdLegacy].model
+					acemenupanel.CData.DisplayModel:SetModel(Model)
+					acemenupanel:CPanelText("CrateDesc", Tanks[acemenupanel.FuelTankData.Id].desc, nil, CrateOldPanel)
 
 				end
 			end
 
-			FuelTankComboList:SetText(acfmenupanel.FuelTankData.IdLegacy)
-			RunConsoleCommand( "acfmenu_data1", acfmenupanel.FuelTankData.Id )
+			FuelTankComboList:SetText(acemenupanel.FuelTankData.IdLegacy)
+			RunConsoleCommand( "acemenu_data1", acemenupanel.FuelTankData.Id )
 			CrateOldPanel:AddItem( FuelTankComboList )
 
-			acfmenupanel:CPanelText("TankName", "", nil, CrateOldPanel)
-			acfmenupanel:CPanelText("TankDesc", "", nil, CrateOldPanel)
+			acemenupanel:CPanelText("TankName", "", nil, CrateOldPanel)
+			acemenupanel:CPanelText("TankDesc", "", nil, CrateOldPanel)
 
-			acfmenupanel.CData.DisplayModel = vgui.Create( "DModelPanel", CrateOldPanel )
-			acfmenupanel.CData.DisplayModel:SetModel( Tanks[acfmenupanel.FuelTankData.IdLegacy].model )
-			acfmenupanel.CData.DisplayModel:SetCamPos( Vector( 250, 500, 200 ) )
-			acfmenupanel.CData.DisplayModel:SetLookAt( Vector( 0, 0, 0 ) )
-			acfmenupanel.CData.DisplayModel:SetFOV( 10 )
-			acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(),acfmenupanel:GetWide() / 2)
-			acfmenupanel.CData.DisplayModel.LayoutEntity = function( _, _ ) end
-			CrateOldPanel:AddItem( acfmenupanel.CData.DisplayModel )
+			acemenupanel.CData.DisplayModel = vgui.Create( "DModelPanel", CrateOldPanel )
+			acemenupanel.CData.DisplayModel:SetModel( Tanks[acemenupanel.FuelTankData.IdLegacy].model )
+			acemenupanel.CData.DisplayModel:SetCamPos( Vector( 250, 500, 200 ) )
+			acemenupanel.CData.DisplayModel:SetLookAt( Vector( 0, 0, 0 ) )
+			acemenupanel.CData.DisplayModel:SetFOV( 10 )
+			acemenupanel.CData.DisplayModel:SetSize(acemenupanel:GetWide(),acemenupanel:GetWide() / 2)
+			acemenupanel.CData.DisplayModel.LayoutEntity = function( _, _ ) end
+			CrateOldPanel:AddItem( acemenupanel.CData.DisplayModel )
 
 		end
 
 		----------- The rest below -----------
 
-		ACFFuelTankGUIUpdate( Table )
+		ACE_FuelTankGUIUpdate( Table )
 
 		MainPanel:PerformLayout()
 
 	end
 
-	function ACFFuelTankGUIUpdate( _ )
+	function ACE_FuelTankGUIUpdate( _ )
 
-		if not acfmenupanel.CustomDisplay then return end
+		if not acemenupanel.CustomDisplay then return end
 
-		if acfmenupanel.FuelPanelConfig["LegacyFuels"] then
+		if acemenupanel.FuelPanelConfig["LegacyFuels"] then
 
-			local TankID    = acfmenupanel.FuelTankData.Id
-			local FuelID    = acfmenupanel.FuelTankData.FuelID
+			local TankID    = acemenupanel.FuelTankData.Id
+			local FuelID    = acemenupanel.FuelTankData.FuelID
 			local Dims      = Tanks[TankID].dims
 
 			local Volume    = Dims.V - (Dims.S * Wall)                              -- total volume of tank (cu in), reduced by wall thickness
-			local Capacity  = Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774  -- internal volume available for fuel in liters, with magic realism number
+			local Capacity  = Volume * ACE.CuIToLiter * ACE.TankVolumeMul * 0.4774  -- internal volume available for fuel in liters, with magic realism number
 			local EmptyMass = ((Dims.S * Wall) * 16.387) * ( 7.9 / 1000 )                   -- total wall volume * cu in to cc * density of steel (kg/cc)
-			local Mass      = EmptyMass + Capacity * ACF.FuelDensity[FuelID]        -- weight of tank + weight of fuel
+			local Mass      = EmptyMass + Capacity * ACE.FuelDensity[FuelID]        -- weight of tank + weight of fuel
 
 			--fuel and tank info
 			if FuelID == "Electric" then
-				local kwh = Capacity * ACF.LiIonED
-				acfmenupanel:CPanelText("TankName", Tanks[TankID].name .. " Li-Ion Battery")
-				acfmenupanel:CPanelText("TankDesc", Tanks[TankID].desc .. "\n")
-				acfmenupanel:CPanelText("Cap", "Charge: " .. math.Round(kwh,1) .. " kW hours / " .. math.Round( kwh * 3.6,1) .. " MJ")
-				acfmenupanel:CPanelText("Mass", "Mass: " .. math.Round(Mass,1) .. " kg")
+				local kwh = Capacity * ACE.LiIonED
+				acemenupanel:CPanelText("TankName", Tanks[TankID].name .. " Li-Ion Battery")
+				acemenupanel:CPanelText("TankDesc", Tanks[TankID].desc .. "\n")
+				acemenupanel:CPanelText("Cap", "Charge: " .. math.Round(kwh,1) .. " kW hours / " .. math.Round( kwh * 3.6,1) .. " MJ")
+				acemenupanel:CPanelText("Mass", "Mass: " .. math.Round(Mass,1) .. " kg")
 			else
-				acfmenupanel:CPanelText("TankName", Tanks[TankID].name .. " fuel tank")
-				acfmenupanel:CPanelText("TankDesc", Tanks[TankID].desc .. "\n")
-				acfmenupanel:CPanelText("Cap", "Capacity: " .. math.Round(Capacity,1) .. " liters / " .. math.Round(Capacity * 0.264172,1) .. " gallons")
-				acfmenupanel:CPanelText("Mass", "Full mass: " .. math.Round(Mass,1) .. " kg, Empty mass: " .. math.Round(EmptyMass,1) .. " kg")
+				acemenupanel:CPanelText("TankName", Tanks[TankID].name .. " fuel tank")
+				acemenupanel:CPanelText("TankDesc", Tanks[TankID].desc .. "\n")
+				acemenupanel:CPanelText("Cap", "Capacity: " .. math.Round(Capacity,1) .. " liters / " .. math.Round(Capacity * 0.264172,1) .. " gallons")
+				acemenupanel:CPanelText("Mass", "Full mass: " .. math.Round(Mass,1) .. " kg, Empty mass: " .. math.Round(EmptyMass,1) .. " kg")
 			end
 
 			local text = "\n"
 			if Tanks[TankID].nolinks then
 				text = "\nThis fuel tank won\'t link to engines. It's intended to resupply fuel to other fuel tanks."
 			end
-			acfmenupanel:CPanelText("Links", text)
+			acemenupanel:CPanelText("Links", text)
 
 			--fuel tank model display
-			acfmenupanel.CData.DisplayModel:SetModel( Tanks[TankID].model )
+			acemenupanel.CData.DisplayModel:SetModel( Tanks[TankID].model )
 
 		else
 
-			local Length = acfmenupanel.FuelPanelConfig["Crate_Length"]
-			local Width = acfmenupanel.FuelPanelConfig["Crate_Width"]
-			local Height = acfmenupanel.FuelPanelConfig["Crate_Height"]
-			local Shape = acfmenupanel.FuelPanelConfig["Crate_Shape"]
+			local Length = acemenupanel.FuelPanelConfig["Crate_Length"]
+			local Width = acemenupanel.FuelPanelConfig["Crate_Width"]
+			local Height = acemenupanel.FuelPanelConfig["Crate_Height"]
+			local Shape = acemenupanel.FuelPanelConfig["Crate_Shape"]
 
 			local ModelData = ACE.ModelData[Shape]
 
 			local CrateVolume = ModelData.volumefunction( Length, Width, Height)
 			local ContentVolume = ModelData.volumefunction( Length - (Wall * 2), Width - (Wall * 2), Height - (Wall * 2))
 
-			local Capacity  = ContentVolume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774  -- internal volume available for fuel in liters, with magic realism number
+			local Capacity  = ContentVolume * ACE.CuIToLiter * ACE.TankVolumeMul * 0.4774  -- internal volume available for fuel in liters, with magic realism number
 			local EmptyMass = (CrateVolume - ContentVolume) * 16.387 * ( 7.9 / 1000 )               -- total wall volume * cu in to cc * density of steel (kg/cc)
-			local Mass      = EmptyMass + Capacity * ACF.FuelDensity[acfmenupanel.FuelTankData.FuelID]        -- weight of tank + weight of fuel
+			local Mass      = EmptyMass + Capacity * ACE.FuelDensity[acemenupanel.FuelTankData.FuelID]        -- weight of tank + weight of fuel
 
 			--fuel and tank info
-			if acfmenupanel.FuelTankData.FuelID == "Electric" then
-				local kwh = Capacity * ACF.LiIonED
-				acfmenupanel:CPanelText("Cap", "Charge: " .. math.Round(kwh,1) .. " kW hours / " .. math.Round( kwh * 3.6,1) .. " MJ")
-				acfmenupanel:CPanelText("Mass", "Mass: " .. math.Round(Mass,1) .. " kg")
+			if acemenupanel.FuelTankData.FuelID == "Electric" then
+				local kwh = Capacity * ACE.LiIonED
+				acemenupanel:CPanelText("Cap", "Charge: " .. math.Round(kwh,1) .. " kW hours / " .. math.Round( kwh * 3.6,1) .. " MJ")
+				acemenupanel:CPanelText("Mass", "Mass: " .. math.Round(Mass,1) .. " kg")
 			else
-				acfmenupanel:CPanelText("Cap", "Capacity: " .. math.Round(Capacity,1) .. " liters / " .. math.Round(Capacity * 0.264172,1) .. " gallons")
-				acfmenupanel:CPanelText("Mass", "Full mass: " .. math.Round(Mass,1) .. " kg, Empty mass: " .. math.Round(EmptyMass,1) .. " kg")
+				acemenupanel:CPanelText("Cap", "Capacity: " .. math.Round(Capacity,1) .. " liters / " .. math.Round(Capacity * 0.264172,1) .. " gallons")
+				acemenupanel:CPanelText("Mass", "Full mass: " .. math.Round(Mass,1) .. " kg, Empty mass: " .. math.Round(EmptyMass,1) .. " kg")
 			end
 
 		end

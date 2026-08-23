@@ -1,6 +1,6 @@
 
-ACFTranslation = {}
-ACFTranslation.ArmorPropertiesText = {
+ACE.Translation = {}
+ACE.Translation.ArmorPropertiesText = {
 	----------/Tool Display description--------/--
 
 	"ACE Armor Properties",--Name (1)
@@ -43,7 +43,7 @@ ACFTranslation.ArmorPropertiesText = {
 
 }
 
-ACFTranslation.CopyToolText = {
+ACE.Translation.CopyToolText = {
 	----------/Tool Display description--------/--
 
 	"ACE Copy Tool", --Tool Name (1)
@@ -60,7 +60,7 @@ ACFTranslation.CopyToolText = {
 }
 
 --[[
-ACFTranslation.SoundToolText = {
+ACE.Translation.SoundToolText = {
 	----------/Tool Display description--------/--
 
 	"ACE Sound Replacer", --Tool Name (1)
@@ -75,7 +75,7 @@ ACFTranslation.SoundToolText = {
 
 }
 
-ACFTranslation.ACFMenuTool = {
+ACE.Translation.ACEMenuTool = {
 
 	"ACE Menu", -- Tool Name (1)
 	"Armored Combat Extended", -- ACE Modification Text (2)
@@ -96,7 +96,7 @@ ACFTranslation.ACFMenuTool = {
 
 }
 
-ACFTranslation.ACFCuttingTorch = {
+ACE.Translation.ACFCuttingTorch = {
 
 	"ACE Cutting torch", --Tool Name (1)
 	"Used to clear baricades and repair vehicles.",--Description 1 (2)
@@ -105,7 +105,7 @@ ACFTranslation.ACFCuttingTorch = {
 }
 --]]
 
-ACFTranslation.GunClasses = {
+ACE.Translation.GunClasses = {
 
 	"Anti Tank rifles fire stupidly fast small bullets to penetrate light armor. Built to fire HVAP out of these. Using placeholder models ATM. Extremely accurate.", --AT rifle description (1)
 	"Autocannons have a rather high weight and bulk for the ammo they fire, but they can fire it extremely fast. Don't fire too long or your ACs will overheat.",--AC description (2)
@@ -125,7 +125,7 @@ ACFTranslation.GunClasses = {
 
 }
 
-ACFTranslation.MissileClasses = {
+ACE.Translation.MissileClasses = {
 
 	"Missiles specialized for air-to-air flight.  They have varying range, but are agile, can be radar-guided, and withstand difficult launch angles well.", --AAM (1)
 	"Artillery rockets provide massive HE delivery over a broad area, with arcing ballistic trajectories and limited guidance. Best equipped with a seeker head, fired up at an angle, then guided toward a stationary target.", --Arty (2)
@@ -138,11 +138,11 @@ ACFTranslation.MissileClasses = {
 	"Rockets which fit in racks. Usefull in rocket artillery. Slower fire-rate than FFAR but bigger 'boom'" --UAR (9)
 }
 
-ACFTranslation.FuelTanks = {
+ACE.Translation.FuelTanks = {
 	"A fuel tank containing high grade fuel." --FuelDesc
 }
 
-ACFTranslation.Radar = {
+ACE.Translation.Radar = {
 	--Directional
 	"A radar with unlimited range but a limited view cone.  Only detects launched missiles.",--DIR RadarClass (1)
 	"A lightweight directional radar with a smaller view cone.", --SMDir (2)
@@ -157,7 +157,7 @@ ACFTranslation.Radar = {
 
 }
 
-ACFTranslation.Sonar = {
+ACE.Translation.Sonar = {
 	--Hull Array
 	"Hull sonar array capable of tracking targets in water. Has both passive and active modes. Can emit sonar in all directions or a stronger directional ping at a specific bearing.\n WARNING: Range will vary on environmental conditions like shallower water or position relative to thermal layers.",--Sonar Array (1)
 	"Small sonar that you might find on frigates and patrol boats. Has limited range but is practical for smaller platforms.", --Small Sonar (2)
@@ -167,142 +167,142 @@ ACFTranslation.Sonar = {
 
 }
 
-ACFTranslation.ShellAP = {
+ACE.Translation.ShellAP = {
 	"Armour Piercing", --AmmoName (1)
 	"A shell made out of a solid piece of steel, meant to penetrate armour. Does the most damage out of the AP round types." --Desc (2)
 
 }
 
-ACFTranslation.ShellAPBC = {
+ACE.Translation.ShellAPBC = {
 	"Armour Piercing Ballistic Capped", --AmmoName (1)
 	"A shell made out of a solid piece of steel, meant to penetrate armour. Has a ballistic cap and has better drag performance than its uncapped counterpart." --Desc (2)
 
 
 }
 
-ACFTranslation.ShellAPC = {
+ACE.Translation.ShellAPC = {
 	"Armour Piercing Capped", --AmmoName (1)
 	"A shell made out of a solid piece of steel, meant to penetrate armour. Has a cap that helps it deal with sloped armor." --Desc (2)
 
 }
 
-ACFTranslation.ShellAPCBC = {
+ACE.Translation.ShellAPCBC = {
 	"Armour Piercing Capped Ballistic Capped", --AmmoName (1)
 	"A shell made out of a solid piece of steel, meant to penetrate armour. A mix of APC and APBC that deals with sloped armor and drag but has the worst damage out of the AP rounds." --Desc (2)
 
 }
 
-ACFTranslation.ShellAPHE = {
+ACE.Translation.ShellAPHE = {
 	"Armour Piercing High Explosive", --AmmoName (1)
 	"An armour piercing round with a cavity for High explosives. Less capable of defeating armour than plain Armour Piercing, but will explode after penetration." --Desc (2)
 
 }
 
-ACFTranslation.ShellAPHECBC = {
+ACE.Translation.ShellAPHECBC = {
 	"Armour Piercing High Explosive Capped Ballistic Capped", --AmmoName (1)
 	"A shell made out of a solid piece of steel, meant to penetrate armour. Has a cap that helps it deal with sloped armor." --Desc (2)
 
 }
 
-ACFTranslation.ShellAPDS = {
+ACE.Translation.ShellAPDS = {
 	"Armour Piercing Discarding Sabot", --AmmoName (1)
 	"A shell that contains a subcaliber round, dedicated to penetrating heavy armour."
 
 }
 
 
-ACFTranslation.ShellAPFSDS = {
+ACE.Translation.ShellAPFSDS = {
 	"Armour Piercing Fin-Stabilized Discarding Sabot", --AmmoName (1)
 	"A shell that contains a subcaliber round, dedicated to penetrating heavy armour. Uses fin stabilizers."
 
 }
 
-ACFTranslation.ShellFL = {
+ACE.Translation.ShellFL = {
 	"Flechette", --AmmoName (1)
 	"Flechette rounds contain several long thin steel spikes, functioning as a shotgun shell for cannons.\n\nWhile it seems like the spikes would penetrate well, they tend to tumble in flight and impact at less than ideal angles, causing only minor penetration and structural damage.\n\nThey are best used against infantry or lightly armored mobile targets such as aircraft or light tanks, since flechettes trade brute damage for a better chance to hit." --Desc (2)
 
 }
 
 
-ACFTranslation.ShellFLR = {
+ACE.Translation.ShellFLR = {
 	"Flare", --AmmoName (1)
 	"A flare designed to confuse guided munitions." --Desc (2)
 
 }
 
-ACFTranslation.ShellGLGM = {
+ACE.Translation.ShellGLGM = {
 	"Gun-Launched Anti-Tank Missile", --AmmoName (1)
 	"A missile fired from a gun. While slower than a traditional shell it makes up for that with guidance." --Desc (2)
 
 }
 
-ACFTranslation.ShellHE = {
+ACE.Translation.ShellHE = {
 	"High Explosive", --AmmoName (1)
 	"A shell filled with explosives, fragments when detonating on impact. " --Desc (2)
 
 }
 
-ACFTranslation.ShellHEAT = {
+ACE.Translation.ShellHEAT = {
 	"High Explosive Anti-Tank", --AmmoName (1)
 	"A shell with a shaped charge.  When the round detonates, the explosive energy is focused into driving a small molten metal penetrator into the victim with extreme force, though this results in reduced damage from the explosion itself.  Multiple layers of armor will dissipate the penetrator quickly." --Desc (2)
 
 }
 
-ACFTranslation.ShellHEATFS = {
+ACE.Translation.ShellHEATFS = {
 	"High Explosive Anti-Tank Fin-Stabilized", --AmmoName (1)
 	"A shell with a shaped charge.  When the round detonates, the explosive energy is focused into driving a small molten metal penetrator into the victim with extreme force, though this results in reduced damage from the explosion itself.  Multiple layers of armor will dissipate the penetrator quickly." --Desc (2)
 
 }
 
-ACFTranslation.ShellHEFS = {
+ACE.Translation.ShellHEFS = {
 	"High Explosive Fin-Stabilized", --AmmoName (1)
 	"A shell filled with explosives, fragments when detonating on impact.Uses fin stabilizers." --Desc (2)
 
 }
 
-ACFTranslation.ShellHESH = {
+ACE.Translation.ShellHESH = {
 	"High Explosive Squash Head", --AmmoName (1)
 	"A shell filled with explosives, that flattens and detonates on impact creating spall. Weaker blast than HE.\n\nThis ammo can be countered with a spall liner" --Desc (2)
 
 }
 
-ACFTranslation.HP = {
+ACE.Translation.HP = {
 	"Hollow Point", --AmmoName (1)
 	"A solid shell with a soft point, meant to flatten against armour" --Desc (2)
 
 }
 
-ACFTranslation.ShellAPCR = {
+ACE.Translation.ShellAPCR = {
 	"Armor-Piercing Composite Rigid", --AmmoName (1)
 	"A soft projectile that contains a heavy tungsten core, penetrates and does a lot more damage than APDS or APFSDS, but has horrible drag characteristics and is not meant against sloped armor." --Desc (2)
 
 }
 
-ACFTranslation.ShellRef = {
+ACE.Translation.ShellRef = {
 	"Refill", --AmmoName (1)
 	"Refills other ammo crates. Ignore the gun type since this crate can refill any weapon. Not linkeable" --Desc (2)
 
 }
 
-ACFTranslation.ShellSm = {
+ACE.Translation.ShellSm = {
 	"Smoke", --AmmoName (1)
 	"A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly." --Desc (2)
 
 }
 
-ACFTranslation.THEAT = {
+ACE.Translation.THEAT = {
 	"Tandem High Explosive Anti-Tank", --AmmoName (1)
 	"A shell with multiple shaped charges. Similar to HEAT the explosive charge accelerates a molten jet to penetrate armor, unlike typical HEAT when the jet fails to penetrate a second charge will detonate and finish the job. This makes this form of ammo exceptional against special armor types like ERA" --Desc (2)
 
 }
 
-ACFTranslation.THEATFS = {
+ACE.Translation.THEATFS = {
 	"Tandem High Explosive Anti-Tank Fin-Stabilized", --AmmoName (1)
 	"A shell with multiple shaped charges. Similar to HEAT the explosive charge accelerates a molten jet to penetrate armor, unlike typical HEAT when the jet fails to penetrate a second charge will detonate and finish the job. This makes this form of ammo exceptional against special armor types like ERA. Uses fin stabilizers." --Desc (2)
 
 }
 
-ACFTranslation.VHeatSource = {
+ACE.Translation.VHeatSource = {
 	"Virtual Heat Source", --Name (1)
 	"Allows to create a heat source to match with your contraption." --Desc (2)
 }

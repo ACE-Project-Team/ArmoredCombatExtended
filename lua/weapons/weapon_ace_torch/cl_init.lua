@@ -1,7 +1,7 @@
 --Chad provided a fix for multicore rendering.local
 include("shared.lua")
 
-killicon.Add("weapon_ace_torch", "HUD/killicons/torch", ACF.KillIconColor)
+killicon.Add("weapon_ace_torch", "HUD/killicons/torch", ACE.KillIconColor)
 
 surface.CreateFont("torchfont", {
 	size = 40,

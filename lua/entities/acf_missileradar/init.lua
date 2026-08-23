@@ -5,7 +5,7 @@ AddCSLuaFile( "shared.lua" )
 include("shared.lua")
 include("radar_types_support.lua")
 
-CreateConVar("sbox_max_acf_missileradar", 6)
+CreateConVar("sbox_max_ace_missileradar", 6)
 
 DEFINE_BASECLASS( "base_wire_entity" )
 
@@ -18,6 +18,8 @@ local RadarWireDescs = {
 	["Entities"]  = "Returns all the detected missiles into an array.",
 	["Position"]  = "Returns the current position of all the flying missiles of this radar",
 	["Velocity"]  = "Returns the velocity of all the active missiles into an array.",
+	["ID"]  = "Returns the unique ID of any tracked missile.",
+	["Owner"]  = "Returns the name of the owner of the missile.",
 
 }
 
@@ -32,6 +34,8 @@ function ENT:Initialize()
 		"Entities (" .. RadarWireDescs["Entities"] .. ") [ARRAY]",
 		"Position (" .. RadarWireDescs["Position"] .. ") [ARRAY]",
 		"Velocity (" .. RadarWireDescs["Velocity"] .. ") [ARRAY]",
+		"ID (" .. RadarWireDescs["ID"] .. ") [ARRAY]",
+		"Owner (" .. RadarWireDescs["Owner"] .. ") [ARRAY]",
 		"Heat"
 	} )
 
@@ -41,13 +45,15 @@ function ENT:Initialize()
 		Entities = {},
 		Position = {},
 		Velocity = {},
+		ID = {},
+		Owner = {},
 	}
 
 	self.ThinkDelay			= 0
 	self.StatusUpdateDelay	= 0.5
 	self.LastStatusUpdate	= CurTime()
 
-	self.NextLegalCheck		= ACF.CurTime + math.random(ACF.Legal.Min, ACF.Legal.Max) -- give any spawning issues time to iron themselves out
+	self.NextLegalCheck		= ACE.CurTime + math.random(ACE.Legal.Min, ACE.Legal.Max) -- give any spawning issues time to iron themselves out
 	self.Legal				= true
 	self.LegalIssues		= ""
 
@@ -59,7 +65,7 @@ function ENT:Initialize()
 	self.NextJamCheck		= 0
 	self.ResetJamDelay		= 0.2 --Periodically resets jamming strength to zero for the jammer to apply the highest noise available. This means the jamming won't always remain at full strength without a lot of networking.
 
-	self.PowerID = 10
+	self.PowerID = 8
 
 	self.Active				= false
 
@@ -71,7 +77,7 @@ function ENT:Initialize()
 
 	self:GetOverlayText()
 
-	self:SetActive(ACF.GetDefaultActiveInputState(self))
+	self:SetActive(ACE_GetDefaultActiveInputState(self))
 
 end
 
@@ -80,7 +86,7 @@ end
 
 function ENT:ConfigureForClass()
 
-	local behaviour = ACFM.RadarBehaviour[self.Class]
+	local behaviour = ACE.Missile.RadarBehaviour[self.Class]
 
 	if not behaviour then return end
 
@@ -93,7 +99,7 @@ end
 
 function ENT:TriggerInput( inp, value )
 	if inp == "Active" then
-		self:SetActive(ACF.GetDefaultActiveInputState(self, value))
+		self:SetActive(ACE_GetDefaultActiveInputState(self, value))
 	end
 end
 
@@ -131,11 +137,11 @@ end
 
 
 
-function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
+function ACE_MakeMissileRadar(Owner, Pos, Angle, Id)
 
-	if not Owner:CheckLimit("_acf_missileradar") then return false end
+	if not Owner:CheckLimit("_ace_missileradar") then return false end
 
-	local radar = ACF.Weapons.Radars[Id]
+	local radar = ACE.Weapons.Radars[Id]
 
 	if not radar then return false end
 
@@ -152,7 +158,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 	Radar.Id           = Id
 	Radar.Class        = radar.class
 
-	Radar.Sound        = ACFM.DefaultRadarSound
+	Radar.Sound        = ACE.Missile.DefaultRadarSound
 	Radar.DefaultSound = Radar.Sound
 	Radar.SoundPitch   = 100
 	Radar.ACEPoints		= radar.acepoints or 0.9
@@ -163,10 +169,10 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 	Radar:CPPISetOwner(Owner)
 
 	Radar:SetModelEasy(radar.model)
-	Radar:SetActive(ACF.GetDefaultActiveInputState(Radar), true)
+	Radar:SetActive(ACE_GetDefaultActiveInputState(Radar), true)
 
-	Owner:AddCount( "_acf_missileradar", Radar )
-	Owner:AddCleanup( "acfmenu", Radar )
+	Owner:AddCount( "_ace_missileradar", Radar )
+	Owner:AddCleanup( "acemenu", Radar )
 
 	Radar:SetNWString( "WireName", Radar.ACFName )
 	Radar:SetNWString( "Sound", Radar.Sound )
@@ -176,7 +182,7 @@ function MakeACF_MissileRadar(Owner, Pos, Angle, Id)
 
 end
 list.Set( "ACFCvars", "acf_missileradar", {"id"} )
-duplicator.RegisterEntityClass("acf_missileradar", MakeACF_MissileRadar, "Pos", "Angle", "Id" )
+duplicator.RegisterEntityClass("acf_missileradar", ACE_MakeMissileRadar, "Pos", "Angle", "Id" )
 
 function ENT:CreateRadar(ACFName, ConeDegs)
 
@@ -224,12 +230,12 @@ function ENT:Think()
 	local curTime = CurTime()
 	self:NextThink(curTime + self.ThinkDelay)
 
-	if ACF.CurTime > self.NextLegalCheck then
+	if ACE.CurTime > self.NextLegalCheck then
 
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
-		self.NextLegalCheck = ACF.Legal.NextCheck(self.legal)
+		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight, 2), nil, true, true)
+		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 
-		local shouldBeActive = ACF.GetDefaultActiveInputState(self)
+		local shouldBeActive = ACE_GetDefaultActiveInputState(self)
 
 		if self.Active ~= shouldBeActive then
 			self:SetActive(shouldBeActive)
@@ -242,12 +248,12 @@ function ENT:Think()
 		self.LastStatusUpdate = curTime
 	end
 
-	self.Heat = ACE.HeatFromRadar(self, self.ThinkDelay)
+	self.Heat = ACE_HeatFromRadar(self, self.ThinkDelay)
 	WireLib.TriggerOutput(self, "Heat", self.Heat)
 	self:GetOverlayText()
 
-	if self.IsJammed ~= 0 and ACF.CurTime > self.NextJamCheck then
-		self.NextJamCheck = ACF.CurTime + self.ResetJamDelay
+	if self.IsJammed ~= 0 and ACE.CurTime > self.NextJamCheck then
+		self.NextJamCheck = ACE.CurTime + self.ResetJamDelay
 
 		--Reset everything for next check
 		self.IsJammed			= 0
@@ -282,6 +288,8 @@ function ENT:ScanForMissiles()
 	local entArray = {}
 	local posArray = {}
 	local velArray = {}
+	local IDArray = {}
+	local OwnerArray = {}
 
 	local count = 0
 
@@ -306,12 +314,17 @@ function ENT:ScanForMissiles()
 
 		count = count + 1
 
+
+		local Owner = missile:CPPIGetOwner()
+
 		-- Sort the missiles by distance from the radar
-		local insertionIndex = ACE.GetBinaryInsertIndex(distArray, distanceSqr)
+		local insertionIndex = ACE_GetBinaryInsertIndex(distArray, distanceSqr)
 		tableInsert(distArray, insertionIndex, distanceSqr)
 		tableInsert(entArray, insertionIndex, missile)
 		tableInsert(posArray, insertionIndex, missile.CurPos) --Replaced with non-cached value as to not lag behind.
 		tableInsert(velArray, insertionIndex, missile.Flight * 39.37)
+		tableInsert(IDArray, insertionIndex, missile.MissileID) --Replaced with non-cached value as to not lag behind.
+		tableInsert(OwnerArray, insertionIndex, Owner:Nick())
 
 		if distanceSqr < closestSqr then
 			closest = missile.CurPos
@@ -328,12 +341,17 @@ function ENT:ScanForMissiles()
 	WireLib.TriggerOutput( self, "Entities", entArray )
 	WireLib.TriggerOutput( self, "Position", posArray )
 	WireLib.TriggerOutput( self, "Velocity", velArray )
+	WireLib.TriggerOutput( self, "ID", IDArray )
+	WireLib.TriggerOutput( self, "Owner", OwnerArray )
 
 	self.OutputData.Detected = count
 	self.OutputData.ClosestDistance = closestOutput
 	self.OutputData.Entities = entArray
 	self.OutputData.Position = posArray
 	self.OutputData.Velocity = velArray
+	self.OutputData.ID = IDArray
+	self.OutputData.Owner = OwnerArray
+
 
 	if count > (self.LastMissileCount or 0) then
 		self:EmitRadarSound()
@@ -346,7 +364,7 @@ end
 function ENT:EmitRadarSound()
 	local Effect = EffectData()
 		Effect:SetEntity( self )
-	util.Effect( "acf_radar_noise", Effect, true, true )
+	util.Effect( "ace_radar_noise", Effect, true, true )
 end
 
 function ENT:ClearOutputs()
@@ -366,6 +384,16 @@ function ENT:ClearOutputs()
 	if #self.Outputs.Velocity.Value > 0 then
 		WireLib.TriggerOutput( self, "Velocity", {} )
 		self.OutputData.Velocity = {}
+	end
+
+	if #self.Outputs.ID.Value > 0 then
+		WireLib.TriggerOutput( self, "ID", {} )
+		self.OutputData.ID = {}
+	end
+
+	if #self.Outputs.Owner.Value > 0 then
+		WireLib.TriggerOutput( self, "Owner", {} )
+		self.OutputData.Owner = {}
 	end
 
 end
@@ -403,7 +431,7 @@ function ENT:GetOverlayText()
 	end
 
 	if not self.Legal then
-		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		txt = txt .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	txt = txt .. "\nTemp: " .. math.Round(self.Heat) .. "C / " .. math.Round((self.Heat * (9 / 5)) + 32) .. "F"

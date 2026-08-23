@@ -4,8 +4,8 @@ DEFINE_BASECLASS("base_wire_entity")
 
 ENT.PrintName         = "ACF Missile Rack"
 
-local Weapons = ACF.Weapons.Guns
-local Racks = ACF.Weapons.Racks
+local Weapons = ACE.Weapons.Guns
+local Racks = ACE.Weapons.Racks
 
 local function VerifyMountData(mountpoint)
 

@@ -2,18 +2,18 @@
 local ClassName = "Straight_Running"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
 -- An entity with a Position wire-output
 this.InputSource = nil
 
-this.desc = "Gyroscopic torpedo. Guides the torpedo to the depth and direction of the targetpos or the direction fired."
+this.desc = "Gyroscopic torpedo. Programmed at the time of launch and cannot be adjusted afterward. If provided with a target position will try to match the depth of the target position and travel along the bearing. Otherwise the torpedo will travel in the direction it was launched maintaining the depth it was launched at."
 
 -- Disables guidance when true
 this.FirstGuidance = true
@@ -63,7 +63,9 @@ function this:GetGuidance(missile)
 		self.TPos = MPos + self.TPos * 500000
 		self.TPos = Vector(self.TPos.x,self.TPos.y,zHeight)
 
-		self.FirstGuidance = false
+		if missile.MissileActive then
+			self.FirstGuidance = false
+		end
 	end
 
 	local Difpos = (self.TPos-MPos)

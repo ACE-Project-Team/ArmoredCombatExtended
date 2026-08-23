@@ -2,18 +2,18 @@
 local ClassName = "Beam_Riding"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 this.Name = ClassName
 
 -- Cone to retain targets within.
 this.ViewCone = 30
 
-this.desc = "This guidance package directs the missile to keep it in line with the sight as if it were riding a beam. Results in a fast traveltime."
+this.desc = "A guidance package that guides a missile to follow a line. Typically in line with the missile launcher. Though less efficient than other guidance methods it makes up for it in price. Will either follow the facing of the launching missile or any spawned optical computer entity."
 
 this.GuidanceEntity = nil
 
@@ -29,7 +29,7 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
 
 	local GuidEnt = missile.Launcher
@@ -88,7 +88,7 @@ end
 --Another Stupid Workaround. Since guidance degrees are not loaded when ammo is created
 function this:GetDisplayConfig(Type)
 
-	local Guns = ACF.Weapons.Guns
+	local Guns = ACE.Weapons.Guns
 	local GunTable = Guns[Type]
 	local ViewCone = GunTable.viewcone and (GunTable.viewcone * 2) or 0
 

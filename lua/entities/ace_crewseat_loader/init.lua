@@ -6,10 +6,10 @@ include("shared.lua")
 local round, ceil = math.Round, math.ceil
 local clamp = math.Clamp
 
-local CrewseatTable = ACF.Weapons.Crewseats
+local CrewseatTable = ACE.Weapons.Crewseats
 
 function ENT:Initialize()
-	ACE.InitializeCrewseat(self, self.ModelType)
+	ACE_InitializeCrewseat(self, self.ModelType)
 
 	self.Stamina = 100
 	self.LinkedGun = nil
@@ -26,7 +26,7 @@ function ENT:Initialize()
 	self:UpdateWireOutputs()
 end
 
-function MakeACE_Crewseat_Loader(Owner, Pos, Angle, Id, EntityData)
+function ACE_MakeCrewseatLoader(Owner, Pos, Angle, Id, EntityData)
 	if not IsValid(Owner) then return false end
 	if not Owner:CheckLimit("_ace_crewseat") then return false end
 
@@ -61,16 +61,16 @@ function MakeACE_Crewseat_Loader(Owner, Pos, Angle, Id, EntityData)
 	ent.Id = Id
 
 	Owner:AddCount("_ace_crewseat", ent)
-	Owner:AddCleanup("acfmenu", ent)
+	Owner:AddCleanup("acemenu", ent)
 
 	return ent
 end
 
 list.Set("ACFCvars", "ace_crewseat_loader", {"id", "entitydata"})
-duplicator.RegisterEntityClass("ace_crewseat_loader", MakeACE_Crewseat_Loader, "Pos", "Angle", "Id", "ModelType")
+duplicator.RegisterEntityClass("ace_crewseat_loader", ACE_MakeCrewseatLoader, "Pos", "Angle", "Id", "ModelType")
 
 function ENT:GetPoseModifiers()
-	return ACE.GetPoseModifiers(self) or { gforce = 1, tilt = 1, stamina = 1 }
+	return ACE_GetPoseModifiers(self) or { gforce = 1, tilt = 1, stamina = 1 }
 end
 
 function ENT:DecreaseStamina()
@@ -126,9 +126,9 @@ function ENT:IncreaseStamina()
 end
 
 function ENT:Think()
-	ACE.UpdateCrewseatAnglePenalty(self)
-	ACE.UpdateGForcePenalty(self)
-	ACE.CrewseatLegalCheck(self)
+	ACE_UpdateCrewseatAnglePenalty(self)
+	ACE_UpdateGForcePenalty(self)
+	ACE_CrewseatLegalCheck(self)
 
 	if self.Legal then
 		self:IncreaseStamina()
@@ -144,7 +144,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	ACE.CrewseatOnRemove(self)
+	ACE_CrewseatOnRemove(self)
 end
 
 function ENT:UpdateWireOutputs()
@@ -161,7 +161,7 @@ function ENT:UpdateOverlayText()
 	local hp = round(self.ACF.Health / self.ACF.MaxHealth * 100)
 	local stamina = round(self.Stamina)
 	local pose = self:GetPoseModifiers()
-	local isStanding = ACE.IsStandingPose(self.ModelType)
+	local isStanding = ACE_IsStandingPose(self.ModelType)
 
 	local str = self.Name
 	str = str .. "\n\nHealth: " .. hp .. "%"
@@ -194,18 +194,18 @@ function ENT:UpdateOverlayText()
 	end
 
 	if not self.Legal then
-		str = str .. "\n\nNot legal, disabled for " .. ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+		str = str .. "\n\nNot legal, disabled for " .. ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
 	end
 
 	self:SetOverlayText(str)
 end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, _, Inflictor, _, _)
-	local HitRes = ACE.CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
+	local HitRes = ACE_CrewseatDamage(self, Entity, Energy, FrArea, Inflictor)
 
 	if HitRes.Kill or HitRes.Overkill > 1 then
-		ACE.CrewseatDeathSound(self)
-		ACF_HEKill(self, VectorRand(), 0)
+		ACE_CrewseatDeathSound(self)
+		ACE_HEKill(self, VectorRand(), 0)
 		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
 
@@ -225,8 +225,8 @@ function ENT:ApplyDupeInfo(ply, ent, info, GetEntByID)
 	local class = self:GetClass()
 	local defaultModelType = (ACE.CrewseatDefaults and ACE.CrewseatDefaults[class]) or "Sitting"
 
-	ACE.CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
-	local modelType, _, reason = ACE.CrewseatApplyDupeModel(self, info, defaultModelType, true)
-	ACE.CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
-	ACE.CrewseatDeferredModelSync(self, info)
+	ACE_CrewseatDebugLog(self, "ApplyDupeInfoStart", info, "model=" .. tostring(self:GetModel()))
+	local modelType, _, reason = ACE_CrewseatApplyDupeModel(self, info, defaultModelType, true)
+	ACE_CrewseatDebugLog(self, "ApplyDupeInfoEnd", info, "resolved=" .. tostring(modelType) .. " reason=" .. tostring(reason))
+	ACE_CrewseatDeferredModelSync(self, info)
 end

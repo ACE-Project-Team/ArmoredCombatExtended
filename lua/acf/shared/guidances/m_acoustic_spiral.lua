@@ -2,11 +2,11 @@
 local ClassName = "Acoustic_Helical"
 
 
-ACF = ACF or {}
-ACF.Guidance = ACF.Guidance or {}
+ACE = ACE or {}
+ACE.Guidance = ACE.Guidance or {}
 
-local this = ACF.Guidance[ClassName] or inherit.NewSubOf(ACF.Guidance.Wire)
-ACF.Guidance[ClassName] = this
+local this = ACE.Guidance[ClassName] or inherit.NewSubOf(ACE.Guidance.Wire)
+ACE.Guidance[ClassName] = this
 
 ---
 --GetGuidanceOverride
@@ -31,7 +31,7 @@ this.SeekDelay = 1.5 -- Re-seek drastically reduced cost so we can re-seek. Dyna
 this.MinimumDistance = 393.7	--10m
 this.MaxDistance = 150 * 39.37	--10m
 
-this.desc = "Acoustic torpedo guidance with a helical search pattern."
+this.desc = "Acoustic torpedo that will track any targets in the water within a cone. Follows a helical search pattern and will continuously search up and down to cover multiple depths. Useful for airdropped torpedoes. WARNING: Targetposition can only specify the depth to search at. This torpedo will search around the area it was first dropped."
 --Useful for airdropped torpedoes. Follows a helical pattern until it reaches its target depth. WARNING: Targetposition can only specify the depth to search at. This torpedo will search around the area it was first dropped.
 
 --Sets initial guidance info
@@ -49,11 +49,11 @@ function this:Configure(missile)
 
 	self:super().Configure(self, missile)
 
-	self.ViewCone = ACF_GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
+	self.ViewCone = ACE.GetGunValue(missile.BulletData, "viewcone") or this.ViewCone
 	self.ViewConeCos = math.cos(math.rad(self.ViewCone))
-	self.SeekCone = ACF_GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
+	self.SeekCone = ACE.GetGunValue(missile.BulletData, "seekcone") or this.SeekCone
 	self.SeekCone = self.SeekCone * 3
-	self.GCMultiplier	= ACF_GetGunValue(missile.BulletData, "groundclutterfactor") or this.GCMultiplier
+	self.GCMultiplier	= ACE.GetGunValue(missile.BulletData, "groundclutterfactor") or this.GCMultiplier
 end
 
 --TODO: still a bit messy, refactor this so we can check if a flare exits the viewcone too.
@@ -80,7 +80,9 @@ function this:GetGuidance(missile)
 			self.TarPos = (posVec - missilePos):GetNormalized()
 		end
 
-		self.FirstGuidance = false
+		if missile.MissileActive then
+			self.FirstGuidance = false
+		end
 	end
 
 	local override = self:ApplyOverride(missile)
@@ -243,7 +245,7 @@ function this:GetWhitelistedEntsInCone(missile)
 		local dist = difpos:Length()
 
 		-- skip any ent outside of minimun distance
-		if dist < self.MinimumDistance and ACF.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
+		if dist < self.MinimumDistance and ACE.CurTime < (missile.ActivationTime or math.huge) + 0.5 then continue end --Disables the minimum distance check after a missile has existed for more than a second
 
 			-- skip any ent outside of minimun distance
 			if dist > self.MaxDistance then continue end
@@ -366,7 +368,7 @@ end
 --Another Stupid Workaround. Since guidance degrees are not loaded when ammo is created
 function this:GetDisplayConfig(Type)
 
-	local Guns = ACF.Weapons.Guns
+	local Guns = ACE.Weapons.Guns
 	local GunTable = Guns[Type]
 
 	local seekCone = GunTable.seekcone and GunTable.seekcone * 2 or 0

@@ -149,7 +149,8 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
 			ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic , Bullet.Caliber , Target.ACE.Armour , Bullet.Owner , Target.ACE.Material) --Do some spalling
 
-			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
+			-- Solid shot pays part of its remaining energy for every plate it penetrates (ACE.KEPenLayerMul), like the HEAT jet rule
+			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * ACE.KEPenLayerMul * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
 
 			return "Penetrated"
 		elseif HitRes.Ricochet then

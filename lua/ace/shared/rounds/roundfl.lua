@@ -199,7 +199,8 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 
 			table.insert( Bullet["Filter"] , Target )				--"Penetrate" (Ingoring the prop for the retry trace)
 
-			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * 2000 / Bullet["ProjMass"]) ^ 0.5 * 39.37
+			-- Solid shot pays part of its remaining energy for every plate it penetrates (ACE.KEPenLayerMul), like the HEAT jet rule
+			Bullet.Flight = Bullet.Flight:GetNormalized() * (HitRes.PostPenetration.RemainingKinetic * ACE.KEPenLayerMul * 2000 / Bullet["ProjMass"]) ^ 0.5 * 39.37
 
 			return "Penetrated"
 		elseif HitRes.Ricochet then

@@ -83,7 +83,7 @@ function ACE.Activate( Entity , Recalc )
 	local massMod	= MatData.massMod
 
 	local Armour	= ACE.CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
-	local Health	= ( Area / ACE.Threshold ) * ( 1 + Ductility ) -- Setting the threshold of the prop Area gone
+	local Health	= ACE.CalcHealth( Area, Ductility, Armour ) -- Health scales with armor mass; see ACE.CalcHealth
 
 	local Percent	= 1
 

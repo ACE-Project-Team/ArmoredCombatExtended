@@ -180,6 +180,22 @@ function ACE.CalcArmor( Area, Ductility, Mass )
 
 end
 
+--- Prop health from area, ductility, and armor thickness
+--- Scaling by Armour / ACE.HealthRefmm makes health proportional to armor mass: a plate at
+--- ACE.HealthRefmm keeps the legacy area-only health, thicker plates gain durability linearly.
+--- Shared by sv_acfbase and the armor tool preview.
+---@param Area number Prop surface area in cm2
+---@param Ductility number Clamped ductility, -0.8 to 0.8
+---@param Armour number Armor thickness in mm RHA equivalent
+---@return number health Max health for the prop
+function ACE.CalcHealth( Area, Ductility, Armour )
+
+	if Area <= 0 then return 0 end -- degenerate props keep the legacy instantly-destroyed behavior
+
+	return ( Area / ACE.Threshold ) * ( 1 + Ductility ) * ( Armour / ACE.HealthRefmm )
+
+end
+
 function ACE.MuzzleVelocity( Propellant, Mass )
 
 	local PEnergy	= ACE.PBase * ((1 + Propellant) ^ ACE.PScale-1)

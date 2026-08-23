@@ -43,6 +43,7 @@ function ENT:Initialize()
 	self:SetActive(false)
 
 	self.CurrentlyJamming = 0
+	self.SafezoneBlocked = false
 	self.JamDirection = vector_origin
 	self.JamTargetPos = 0 --Used for storing and updating jam vector if there is one.
 
@@ -99,6 +100,8 @@ function ENT:Think()
 	end
 
 	self.CurrentlyJamming = 0
+	self.SafezoneBlocked = false
+
 	if self.Active and self.Legal then
 
 		if self.JamTargetPos and isvector(self.JamTargetPos) then
@@ -107,6 +110,14 @@ function ENT:Think()
 
 
 		local thisPos = self:GetPos()
+
+		--Anything sitting in a safezone can't be shot, so it doesn't get to jam either
+		if not ACE.CanEngage(thisPos) then
+			self.SafezoneBlocked = true
+			WireLib.TriggerOutput( self, "JamCount", 0 )
+			self:UpdateOverlayText()
+			return
+		end
 
 
 		local found = table.Copy(ACE.radarEntities)
@@ -123,6 +134,9 @@ function ENT:Think()
 			if scanEnt:IsValid() then
 
 				local entpos	= scanEnt:WorldSpaceCenter()
+
+				--Same goes for targets: a radar in a safezone isn't a valid one
+				if not ACE.CanEngage(entpos) then continue end
 
 				local difpos	= (entpos - thisPos)
 
@@ -180,6 +194,10 @@ function ENT:UpdateOverlayText()
 
 	if not self.Legal then
 		str = str .. "\n\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACE.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	end
+
+	if self.SafezoneBlocked then
+		str = str .. "\n\nInside a safezone, jamming disabled."
 	end
 
 	self:SetOverlayText(str)

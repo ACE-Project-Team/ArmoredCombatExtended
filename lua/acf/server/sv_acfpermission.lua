@@ -453,6 +453,18 @@ function this.IsInSafezone(pos)
 	return false
 end
 
+--- Whether something at this position is allowed to take part in combat.
+-- @param pos Vector World position.
+-- @return boolean True when combat is allowed there.
+function ACE.CanEngage(pos)
+
+	if this.Safezones and this.NotifySafezones[table.KeyFromValue(this.Modes, this.DamagePermission)] and this.IsInSafezone(pos) ~= false then
+		return false
+	end
+
+	return hook.Run("ACE_CanEngage", pos) ~= false
+end
+
 function this.RegisterMode(mode, name, desc, default, think, defaultaction, notifysafezones)
 
 	this.Modes[name] = mode

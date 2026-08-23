@@ -138,7 +138,7 @@ function ACE.Check( Entity )
 	return Entity.ACE.Type
 end
 
-function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
+function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type, ArmorMul )
 
 	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
@@ -155,7 +155,7 @@ function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	elseif Activated == "Prop" then
 
-		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
+		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type, ArmorMul)
 
 	elseif Activated == "Vehicle" then
 
@@ -186,12 +186,13 @@ end
 
 
 
-function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
+function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type, ArmorMul) --y=-5/16x + b
 
 	local HitRes			= {}
 
 	local armor			= Entity.ACE.Armour																						-- Armor
 	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
+	losArmor = losArmor * (ArmorMul or 1) -- Plates after the first resist solid shot at ACE.KELayerArmorMul; layered steel underperforms monolithic in real firing tests
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
 	local Mat			= Entity.ACE.Material or "RHA"	--very important thing
@@ -241,9 +242,9 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 end
 
 -- replaced with _ due to lack of use: Inflictor, Bone
-function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
+function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type, ArmorMul)
 
-	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type, ArmorMul)
 
 	HitRes.Kill = false
 

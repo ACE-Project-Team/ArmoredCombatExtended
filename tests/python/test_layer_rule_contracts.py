@@ -2,8 +2,13 @@
 
 Locks the load-bearing GLua contracts of the change. Round files are enumerated from
 disk and classified by their own source, so a new or missed kinetic round fails the
-suite instead of silently skipping the layer rule (the HVAP gap the first hardcoded
-list could not catch).
+suite instead of silently skipping the layer rule (the HVAP gap a hardcoded list
+could not catch).
+
+The layer rule is armor-side, matching real firing tests where layered steel
+underperforms one monolithic plate against solid shot: kinetic rounds flag
+themselves after their first penetration, and later plates resist that shot at
+ACE.KELayerArmorMul inside the damage resolution.
 """
 
 from __future__ import annotations
@@ -15,7 +20,7 @@ import unittest
 LUA = Path(__file__).resolve().parents[2] / "lua"
 ROUNDS = LUA / "ace" / "shared" / "rounds"
 
-TOLL = "RemainingKinetic * ACE.KEPenLayerMul * 2000"
+FLAG = "Bullet.KENotFirstPen = true"
 
 
 def read(path: Path) -> str:
@@ -39,13 +44,13 @@ class KineticLayerRuleContracts(unittest.TestCase):
         self.assertIn("roundhvap.lua", names)
         self.assertIn("roundheat.lua", names)
 
-    def test_every_kinetic_continuation_pays_the_layer_toll(self):
+    def test_every_kinetic_round_flags_its_first_penetration(self):
         kinetic = [(n, b) for n, b, heat in classified_rounds() if not heat]
         self.assertGreaterEqual(len(kinetic), 6)
         for name, body in kinetic:
             self.assertEqual(
-                body.count(TOLL), 1,
-                f"{name} has a kinetic continuation and must charge ACE.KEPenLayerMul exactly once",
+                body.count(FLAG), 1,
+                f"{name} has a kinetic continuation and must set KENotFirstPen exactly once",
             )
 
     def test_heat_family_keeps_its_own_layer_rule(self):
@@ -53,13 +58,24 @@ class KineticLayerRuleContracts(unittest.TestCase):
         self.assertGreaterEqual(len(heat), 5)
         for name, body in heat:
             self.assertNotIn(
-                "ACE.KEPenLayerMul", body,
-                f"{name} is HEAT-family and must keep ACE.HEATPenLayerMul, not the KE rule",
+                "KENotFirstPen", body,
+                f"{name} is HEAT-family and must keep ACE.HEATPenLayerMul, not the KE armor rule",
             )
-        self.assertTrue(
-            any("ACE.HEATPenLayerMul" in body for _, body in heat),
-            "the HEAT family must still consume ACE.HEATPenLayerMul",
-        )
+
+    def test_no_round_charges_the_withdrawn_energy_toll(self):
+        for name, body, _ in classified_rounds():
+            self.assertNotIn(
+                "ACE.KEPenLayerMul", body,
+                f"{name} charges the withdrawn energy toll, which inverted the physics",
+            )
+
+    def test_damage_chain_applies_the_armor_side_rule(self):
+        impact = read(LUA / "ace" / "server" / "sv_acfdamage.lua")
+        self.assertEqual(impact.count("Bullet.KENotFirstPen and ACE.KELayerArmorMul or 1"), 1)
+        self.assertEqual(impact.count('Bullet["Type"], ArmorMul )'), 1)  # RoundImpact actually passes it
+        base = read(LUA / "ace" / "server" / "sv_acfbase.lua")
+        self.assertEqual(base.count("losArmor = losArmor * (ArmorMul or 1)"), 1)
+        self.assertEqual(base.count("Type, ArmorMul)"), 4)  # PropDamage call in Damage, CalcDamage sig, PropDamage sig, CalcDamage call in PropDamage
 
 
 class ArmorPricingCompensationContracts(unittest.TestCase):

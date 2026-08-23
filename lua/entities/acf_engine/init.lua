@@ -81,14 +81,14 @@ do
 		["AVDS-1790-1500"]                        = "27.0-V12"
 	}
 
-	function ACE_MakeEngine(Owner, Pos, Angle, Id)
+	function ACE.MakeEngine(Owner, Pos, Angle, Id)
 
 		if not Owner:CheckLimit("_ace_misc") then return false end
 
 		local Engine = ents.Create( "acf_engine" )
 		if not IsValid( Engine ) then return false end
 
-		if not ACE_CheckEngine( Id ) then
+		if not ACE.CheckEngine( Id ) then
 			Id = BackComp[Id] or "5.7-V8"
 		end
 
@@ -165,12 +165,12 @@ do
 		Owner:AddCount("_ace_misc", Engine)
 		Owner:AddCleanup( "acemenu", Engine )
 
-		ACE_Activate( Engine, 0 )
+		ACE.Activate( Engine, 0 )
 
 		return Engine
 	end
 	list.Set( "ACFCvars", "acf_engine", {"id"} )
-	duplicator.RegisterEntityClass("acf_engine", ACE_MakeEngine, "Pos", "Angle", "Id")
+	duplicator.RegisterEntityClass("acf_engine", ACE.MakeEngine, "Pos", "Angle", "Id")
 
 end
 
@@ -244,8 +244,8 @@ function ENT:Update( ArgsTable )
 	self:SetNWString( "WireName", Lookup.name )
 	self:UpdateOverlayText()
 
-	ACE_Activate( self, 1 )
-	if ACE_PointsInputChanged then ACE_PointsInputChanged( self, "engine-updated" ) end
+	ACE.Activate( self, 1 )
+	if ACE.PointsInputChanged then ACE.PointsInputChanged( self, "engine-updated" ) end
 
 	return true, "Engine updated successfully!" .. Feedback
 end
@@ -405,7 +405,7 @@ function ENT:TriggerInput( iname, value )
 					local HasWarned = self.OTWarnings.WarnedFuel or false
 					--self.OTWarnings
 					if not HasWarned then
-						ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine requires fuel to work and that it be activated BEFORE the engine.", Color( 255, 0, 0 ))
+						ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine requires fuel to work and that it be activated BEFORE the engine.", Color( 255, 0, 0 ))
 						self.OTWarnings.WarnedFuel = true
 					end
 				end
@@ -414,13 +414,13 @@ function ENT:TriggerInput( iname, value )
 					local HasWarned = self.OTWarnings.WarnedDriver or false
 					--self.OTWarnings
 					if not HasWarned then
-						ACE_ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine is above [" .. ACE.LargeEngineThreshold .. " hp] requiring a driver to work.", Color( 255, 0, 0 ))
+						ACE.ChatMessagePly( self:CPPIGetOwner() , "[ACE] Your engine is above [" .. ACE.LargeEngineThreshold .. " hp] requiring a driver to work.", Color( 255, 0, 0 ))
 						self.OTWarnings.WarnedDriver = true
 					end
 				end
 
 			end
-			ACE_DoContraptionLegalCheck(self)
+			ACE.DoContraptionLegalCheck(self)
 		elseif (value <= 0 and self.Active) then
 			self.Active = false
 			self.FlyRPM = 0
@@ -441,53 +441,53 @@ end
 function ENT:ACF_Activate()
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Entity = self
-	Entity.ACF = Entity.ACF or {}
+	ACE.GetEntityState(Entity, true)
 
 	local Count
 	local PhysObj = Entity:GetPhysicsObject()
 	if PhysObj:GetMesh() then Count = #PhysObj:GetMesh() end
 	if PhysObj:IsValid() and Count and Count > 100 then
 
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
 		end
 
 	else
 		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+		if not Entity.ACE.Area then
+			Entity.ACE.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
 		end
 
 	end
 
-	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
+	Entity.ACE.Ductility = Entity.ACE.Ductility or 0
 
-	local Area = Entity.ACF.Area
+	local Area = Entity.ACE.Area
 	local Armour = (Entity:GetPhysicsObject():GetMass() * 1000 / Area / 0.78)
 	local Health = Area / ACE.Threshold
 
 	local Percent = 1
 
-	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
-		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
+	if Recalc and Entity.ACE.Health and Entity.ACE.MaxHealth then
+		Percent = Entity.ACE.Health / Entity.ACE.MaxHealth
 	end
 
-	Entity.ACF.Health    = Health * Percent * ACE.EngineHPMult[self.EngineType]
-	Entity.ACF.MaxHealth = Health * ACE.EngineHPMult[self.EngineType]
-	Entity.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour = Armour * ACE.ArmorMod
-	Entity.ACF.Type      = nil
-	Entity.ACF.Mass      = PhysObj:GetMass()
-	Entity.ACF.Type      = "Prop"
+	Entity.ACE.Health    = Health * Percent * ACE.EngineHPMult[self.EngineType]
+	Entity.ACE.MaxHealth = Health * ACE.EngineHPMult[self.EngineType]
+	Entity.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	Entity.ACE.MaxArmour = Armour * ACE.ArmorMod
+	Entity.ACE.Type      = nil
+	Entity.ACE.Mass      = PhysObj:GetMass()
+	Entity.ACE.Type      = "Prop"
 
-	Entity.ACF.Material	= not isstring(Entity.ACF.Material) and ACE.BackCompMat[Entity.ACF.Material] or Entity.ACF.Material or "RHA"
+	Entity.ACE.Material	= not isstring(Entity.ACE.Material) and ACE.BackCompMat[Entity.ACE.Material] or Entity.ACE.Material or "RHA"
 
 end
 
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACE.HEATMulEngine) or 1) --Heat penetrators deal bonus damage to engines
-	local HitRes = ACE_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+	local HitRes = ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 	return HitRes --This function needs to return HitRes
 end
@@ -502,8 +502,8 @@ end
 
 function ENT:Think()
 
-	if ACF.HasDefaultActiveInputState(self) and not ACE_IsDefaultActiveInputWired(self) then
-		local active = ACE_GetDefaultActiveInputState(self)
+	if ACE.HasDefaultActiveInputState(self) and not ACE.IsDefaultActiveInputWired(self) then
+		local active = ACE.GetDefaultActiveInputState(self)
 
 		if self.Active ~= active then
 			self:TriggerInput("Active", active and 1 or 0)
@@ -511,7 +511,7 @@ function ENT:Think()
 	end
 
 	if ACE.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.Weight,2), self.ModelInertia, true, true)
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:CheckRopes()
 		self:CheckFuel()
@@ -529,7 +529,7 @@ function ENT:Think()
 			-- Restore the requested state after a legality lockdown.
 			if self.LockOnActive then
 				self.LockOnActive = false
-				self:TriggerInput("Active", ACE_GetDefaultActiveInputState(self) and 1 or 0)
+				self:TriggerInput("Active", ACE.GetDefaultActiveInputState(self) and 1 or 0)
 			end
 		end
 	end
@@ -540,7 +540,7 @@ function ENT:Think()
 		self.NextUpdate = ACE.CurTime + 1
 	end
 
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 	Wire_TriggerOutput(self, "EngineHeat", self.Heat)
 
 	if ACE.CurTime > self.NextUpdate then
@@ -571,10 +571,10 @@ function ENT:CalcMassRatio()
 	local Check = nil
 
 	-- get the shit that is physically attached to the vehicle
-	local PhysEnts = ACE_GetAllPhysicalConstraints( self )
+	local PhysEnts = ACE.GetAllPhysicalConstraints( self )
 
 	-- get the wheels directly connected to the drivetrain
-	local Wheels = ACE_GetLinkedWheels(self)
+	local Wheels = ACE.GetLinkedWheels(self)
 
 	-- check if any wheels aren't in the physicalconstraint tree
 	for _,Ent in pairs( Wheels ) do
@@ -588,13 +588,13 @@ function ENT:CalcMassRatio()
 	-- if there's a wheel that's not in the engine constraint tree, use it as a start for getting physical constraints
 	if IsValid(Check) then -- sneaky bastards trying to get away with remote engines...  NOT ANYMORE
 		table.Merge(PhysEnts, Wheels) -- I mean, they'll still be remote... but they wont get free extra power from calcmass not seeing the contraption it's powering
-		ACE_GetAllPhysicalConstraints( Check, PhysEnts ) -- no need for assignment here
+		ACE.GetAllPhysicalConstraints( Check, PhysEnts ) -- no need for assignment here
 	end
 
 	-- add any parented but not constrained props you sneaky bastards
 	local AllEnts = table.Copy( PhysEnts )
 	for _, v in pairs( PhysEnts ) do
-		table.Merge( AllEnts, ACE_GetAllChildren( v ) )
+		table.Merge( AllEnts, ACE.GetAllChildren( v ) )
 	end
 
 	for _, v in pairs( AllEnts ) do
@@ -696,7 +696,7 @@ function ENT:CalcRPM()
 		self.HasFuel = false
 	end
 
-	ACE_DoContraptionLegalCheck(self)
+	ACE.DoContraptionLegalCheck(self)
 
 	if self.RequiresDriver and not (self.HasDriver or self.HasSeatDriver)  then
 		self:TriggerInput( "Active", 0 ) --shut off if no driver and requires it
@@ -709,12 +709,12 @@ function ENT:CalcRPM()
 	-- TorqueMult is a mutipler that affects the final Torque an engine can offer at its max.
 	-- PeakTorque is the final possible torque to get.
 	local DriverBoost = self.HasDriver and ACE.DriverTorqueBoost or 1 --Seat drivers dont give hp boost.
-	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACE.Health / self.ACE.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 	self.PeakTorque = self.BaseTorque * self.TorqueMult * DriverBoost
 
 	-- Calculate the current torque from flywheel RPM.
 	local perc = math.Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
-	self.Torque = self.Throttle * ACE_CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
+	self.Torque = self.Throttle * ACE.CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 
 	-- Let's accelerate the flywheel based on that torque.
 	-- Calculate drag
@@ -753,14 +753,14 @@ function ENT:CalcRPM()
 
 
 	-- Heat Temperature calculation. Below is the damage caused by rpm if damaged.
-	self.Heat = ACE_HeatFromEngine( self )
+	self.Heat = ACE.HeatFromEngine( self )
 
-	local HealthRatio = self.ACF.Health / self.ACF.MaxHealth
+	local HealthRatio = self.ACE.Health / self.ACE.MaxHealth
 	if HealthRatio < 0.995 then
 		if HealthRatio > 0.025 then
 			local PhysObj = self:GetPhysicsObject()
 			local Mass = PhysObj:GetMass()
-			HitRes = ACE_Damage(self, {
+			HitRes = ACE.Damage(self, {
 				Kinetic = (1 + math.max(Mass / 2, 20) / 2.5) * 5 * self.Throttle / 100,
 				Momentum = 0,
 				Penetration = (1 + math.max(Mass / 2, 20) / 2.5) * 5 * self.Throttle / 100
@@ -948,7 +948,7 @@ do
 
 		local Rope = nil
 		if self:CPPIGetOwner():GetInfoNum( "ace_mobility_rope_links", 1) == 1 then
-			Rope = ACE_CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
+			Rope = ACE.CreateLinkRope( OutPos, self, self.Out, Target, Target.In )
 		end
 
 		local Link = {

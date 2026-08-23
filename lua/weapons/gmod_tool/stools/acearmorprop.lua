@@ -32,11 +32,11 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 
 	Mat = Mat or "RHA"
 
-	local MatData	= ACE_GetMaterialData( Mat )
+	local MatData	= ACE.GetMaterialData( Mat )
 	local MassMod	= MatData.massMod
 
 	local mass		= Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078 * MassMod
-	local armor		= ACE_CalcArmor( Area, Ductility, mass / MassMod )
+	local armor		= ACE.CalcArmor( Area, Ductility, mass / MassMod )
 	local health		= ( Area + Area * Ductility ) / ACE.Threshold
 
 	return mass, armor, health
@@ -57,20 +57,20 @@ local function ApplySettings( _, ent, data )
 	end
 
 	if data.Ductility then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Ductility = data.Ductility / 100
+		ACE.GetEntityState(ent, true)
+		ent.ACE.Ductility = data.Ductility / 100
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
 	end
 
 	local con = ent:CFW_GetContraption()
 
 	if data.Material then
-		ent.ACF = ent.ACF or {}
-		ent.ACF.Material = data.Material
+		ACE.GetEntityState(ent, true)
+		ent.ACE.Material = data.Material
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
 	end
 
-	ACE_MarkArmorDirty(con, ent, "armor-tool")
+	ACE.MarkArmorDirty(con, ent, "armor-tool")
 
 end
 
@@ -84,7 +84,7 @@ function TOOL:LeftClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACE_Check( ent ) then return false end
+	if not ACE.Check( ent ) then return false end
 
 	local ply		= self:GetOwner()
 
@@ -92,7 +92,7 @@ function TOOL:LeftClick( trace )
 	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
 	local material  = self:GetClientInfo( "material" ) or "RHA"
 
-	local mass		= CalcArmor( ent.ACF.Area, ductility / 100, thickness , material)
+	local mass		= CalcArmor( ent.ACE.Area, ductility / 100, thickness , material)
 
 	ApplySettings( ply, ent, { Mass = mass , Ductility = ductility, Material = material} )
 
@@ -110,15 +110,15 @@ function TOOL:RightClick( trace )
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACE_Check( ent ) then return false end
+	if not ACE.Check( ent ) then return false end
 
 	local ply = self:GetOwner()
 
 	local legacyMode = "acf" .. "armorprop"
 	local prefix = self.Mode == legacyMode and legacyMode or "acearmorprop"
-	ply:ConCommand( prefix .. "_ductility " .. (ent.ACF.Ductility or 0) * 100 )
-	ply:ConCommand( prefix .. "_thickness " .. ent.ACF.MaxArmour )
-	ply:ConCommand( prefix .. "_material " .. (ent.ACF.Material or "RHA") )
+	ply:ConCommand( prefix .. "_ductility " .. (ent.ACE.Ductility or 0) * 100 )
+	ply:ConCommand( prefix .. "_thickness " .. ent.ACE.MaxArmour )
+	ply:ConCommand( prefix .. "_material " .. (ent.ACE.Material or "RHA") )
 
 	-- Clear cached target to force a fresh network update of armor values.
 	self.AimEntity = nil
@@ -146,7 +146,7 @@ function TOOL:Reload( trace )
 
 	local ply = self:GetOwner()
 	local fullReadout = ply:KeyDown(IN_SPEED)
-	local data		= ACE_CalcMassRatio(ent, true) or {}
+	local data		= ACE.CalcMassRatio(ent, true) or {}
 
 	local total		= tonumber(ent.acftotal) or 0
 	local phystotal	= tonumber(ent.acfphystotal) or 0
@@ -156,8 +156,8 @@ function TOOL:Reload( trace )
 	local power		= tonumber(data.Power) or 0
 
 	local Contraption = ent:CFW_GetContraption() or nil
-	if Contraption and ACE_EnsureContraptionPoints then
-		ACE_EnsureContraptionPoints(Contraption, ent, false)
+	if Contraption and ACE.EnsureContraptionPoints then
+		ACE.EnsureContraptionPoints(Contraption, ent, false)
 	end
 
 	local PointVal		= 0
@@ -172,7 +172,7 @@ function TOOL:Reload( trace )
 
 	if Contraption ~= nil then
 		local pointsPerType = Contraption.ACEPointsPerType or {}
-		PointVal		= safeNumber(Contraption.ACEPoints or ACE_GetEntPoints(ent))
+		PointVal		= safeNumber(Contraption.ACEPoints or ACE.GetEntPoints(ent))
 		PtsArmor = safeNumber(pointsPerType.Armor)
 		PtsEngine = safeNumber(pointsPerType.Engines)
 		PtsFirepower = safeNumber(pointsPerType.Firepower)
@@ -180,15 +180,15 @@ function TOOL:Reload( trace )
 		PtsElectronics = safeNumber(pointsPerType.Electronics)
 		ArmorInitMissing = not Contraption.ACEArmorCalculated
 
-		if ACE_GetContraptionEntities and ACE_GetPtsType then
-			for _, candidate in ipairs(ACE_GetContraptionEntities(Contraption, ent)) do
-				if IsValid(candidate) and ACE_GetPtsType(candidate:GetClass()) == "Firepower" then
+		if ACE.GetContraptionEntities and ACE.GetPtsType then
+			for _, candidate in ipairs(ACE.GetContraptionEntities(Contraption, ent)) do
+				if IsValid(candidate) and ACE.GetPtsType(candidate:GetClass()) == "Firepower" then
 					FirepowerCount = FirepowerCount + 1
 				end
 			end
 		end
 	else
-		PointVal = safeNumber(ACE_GetEntPoints(ent))
+		PointVal = safeNumber(ACE.GetEntPoints(ent))
 	end
 
 	local GeneralTb	= { data.MaterialMass or {}, data.MaterialPercent or {} }
@@ -293,31 +293,31 @@ local function getPopupPoints(ent)
 
 	local cls = ent:GetClass()
 	local con = ent:CFW_GetContraption()
-	local armorPoints = ACE_GetArmorPoints and ACE_GetArmorPoints(ent) or 0
+	local armorPoints = ACE.GetArmorPoints and ACE.GetArmorPoints(ent) or 0
 	local componentPoints = 0
 	local componentLabel
 	local lines = {}
 
 	if cls == "acf_engine" then
-		componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
+		componentPoints = ACE.GetEntPoints and ACE.GetEntPoints(ent) or 0
 		componentLabel = CostLabelByCategory.Engines
 	elseif cls == "acf_gun" or cls == "acf_rack" then
-		local conEnts = (con and ACE_GetContraptionEntities) and ACE_GetContraptionEntities(con, ent) or nil
-		local readout = ACE_GetGunFirepowerReadout and ACE_GetGunFirepowerReadout(ent, conEnts)
+		local conEnts = (con and ACE.GetContraptionEntities) and ACE.GetContraptionEntities(con, ent) or nil
+		local readout = ACE.GetGunFirepowerReadout and ACE.GetGunFirepowerReadout(ent, conEnts)
 		componentPoints = readout and readout.Points
-			or (ACE_GetGunFirepowerPointsFor and ACE_GetGunFirepowerPointsFor(ent, conEnts))
-			or (ACE_GetGunFirepowerPoints and ACE_GetGunFirepowerPoints(ent)) or 0
+			or (ACE.GetGunFirepowerPointsFor and ACE.GetGunFirepowerPointsFor(ent, conEnts))
+			or (ACE.GetGunFirepowerPoints and ACE.GetGunFirepowerPoints(ent)) or 0
 		componentLabel = CostLabelByCategory.Firepower
 
 		if readout then
-			local pricing = ACE_GetGunFirepowerPricingLine and ACE_GetGunFirepowerPricingLine(readout, true)
+			local pricing = ACE.GetGunFirepowerPricingLine and ACE.GetGunFirepowerPricingLine(readout, true)
 			if pricing then lines[#lines + 1] = pricing end
 			if readout.MinimumApplied then
 				lines[#lines + 1] = "Weapon Minimum Applied: " .. formatPoints(readout.Points)
 			end
-			local floorLine = ACE_GetRateFloorLine and ACE_GetRateFloorLine(readout, true)
+			local floorLine = ACE.GetRateFloorLine and ACE.GetRateFloorLine(readout, true)
 			if floorLine then lines[#lines + 1] = floorLine end
-			local roundLine = readout.Round and ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(readout.Round, true)
+			local roundLine = readout.Round and ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine(readout.Round, true)
 			if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 		end
 	elseif cls == "acf_ammo" then
@@ -325,7 +325,7 @@ local function getPopupPoints(ent)
 		if ACE.Points.RoundFromBullet and ACE.Points.BaseRoundCost and istable(ent.BulletData) then
 			local round = ACE.Points.RoundFromBullet(ent.BulletData)
 			if round then
-				local roundLine = ACE_GetRoundLethalityLine and ACE_GetRoundLethalityLine(round, true)
+				local roundLine = ACE.GetRoundLethalityLine and ACE.GetRoundLethalityLine(round, true)
 				lines[#lines + 1] = "Crate Inventory Points: 0"
 				if roundLine then lines[#lines + 1] = "Best Round: " .. roundLine end
 				lines[#lines + 1] = "Base Round Cost: "
@@ -334,10 +334,10 @@ local function getPopupPoints(ent)
 		end
 	else
 		local category = getPointsCategory(ent)
-		if category == "Crew" and ACE_GetCrewSeatPointCost then
-			componentPoints = ACE_GetCrewSeatPointCost(ent)
+		if category == "Crew" and ACE.GetCrewSeatPointCost then
+			componentPoints = ACE.GetCrewSeatPointCost(ent)
 		else
-			componentPoints = ACE_GetEntPoints and ACE_GetEntPoints(ent) or 0
+			componentPoints = ACE.GetEntPoints and ACE.GetEntPoints(ent) or 0
 		end
 		if componentPoints > 0 and category and category ~= "Armor" and category ~= "Ignore" then
 			componentLabel = CostLabelByCategory[category] or (category .. " Cost")
@@ -387,7 +387,7 @@ function TOOL:Think()
 	-- Primitive can expose a transient non-ACF state while it rebuilds. Do not cache that failed
 	-- observation forever: the client preview divides its zero area by zero and displays "nan".
 	if ent == self.AimEntity and self.AimEntityArmorReady then
-		local acf = ent.ACF
+		local acf = ent.ACE
 		local phys = ent:GetPhysicsObject()
 
 		if istable(acf) and IsValid(phys)
@@ -403,20 +403,20 @@ function TOOL:Think()
 		end
 	end
 
-	if ACE_Check( ent ) then
+	if ACE.Check( ent ) then
 
-		local Mat = ent.ACF.Material or "RHA"
-		local MatData = ACE_GetMaterialData( Mat )
+		local Mat = ent.ACE.Material or "RHA"
+		local MatData = ACE.GetMaterialData( Mat )
 		local AcePts, pointsLabel, pointBreakdown, componentCost = getPopupPoints(ent)
 
 		if not MatData then return end
 
-		ply:ConCommand( "acearmorprop_area " .. ent.ACF.Area )
+		ply:ConCommand( "acearmorprop_area " .. ent.ACE.Area )
 		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
-		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
-		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
-		self.Weapon:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-		self.Weapon:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+		self.Weapon:SetNWFloat( "HP", ent.ACE.Health )
+		self.Weapon:SetNWFloat( "Armour", ent.ACE.Armour )
+		self.Weapon:SetNWFloat( "MaxHP", ent.ACE.MaxHealth )
+		self.Weapon:SetNWFloat( "MaxArmour", ent.ACE.MaxArmour )
 		self.Weapon:SetNWString( "Material", MatData.sname or "RHA")
 		self.Weapon:SetNWString( "PointCostLabel", pointsLabel )
 		self.Weapon:SetNWFloat( "PointCost", AcePts )
@@ -424,12 +424,12 @@ function TOOL:Think()
 		self.Weapon:SetNWString( "PointCostBreakdown", pointBreakdown or "" )
 		self.AimEntityPhysics = ent:GetPhysicsObject()
 		self.AimEntityMass = self.AimEntityPhysics:GetMass()
-		self.AimEntityArea = ent.ACF.Area
-		self.AimEntityArmor = ent.ACF.Armour
-		self.AimEntityMaxArmor = ent.ACF.MaxArmour
-		self.AimEntityHealth = ent.ACF.Health
-		self.AimEntityMaxHealth = ent.ACF.MaxHealth
-		self.AimEntityMaterial = ent.ACF.Material
+		self.AimEntityArea = ent.ACE.Area
+		self.AimEntityArmor = ent.ACE.Armour
+		self.AimEntityMaxArmor = ent.ACE.MaxArmour
+		self.AimEntityHealth = ent.ACE.Health
+		self.AimEntityMaxHealth = ent.ACE.MaxHealth
+		self.AimEntityMaterial = ent.ACE.Material
 		self.AimEntityArmorReady = true
 
 	else
@@ -644,7 +644,7 @@ if CLIENT then
 
 			if IsValid(ToolPanel.panel) then
 
-				local MatData = ACE_GetMaterialData( value )
+				local MatData = ACE.GetMaterialData( value )
 
 				-- Fallback to RHA if the selected material is invalid.
 				if not MatData then RunConsoleCommand( "acearmorprop_material", "RHA" ) return end
@@ -810,7 +810,7 @@ if CLIENT then
 		local thickness	= GetConVar( modePrefix .. "_thickness" ):GetFloat()
 		local mat		= GetConVar( modePrefix .. "_material" ):GetString() or "RHA"
 
-		local MatData	= ACE_GetMaterialData( mat )
+		local MatData	= ACE.GetMaterialData( mat )
 
 		local mass, armor, health = CalcArmor( area, ductility / 100, thickness , mat)
 		mass = math.min( mass, 50000 )

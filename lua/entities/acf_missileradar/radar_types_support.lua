@@ -5,7 +5,7 @@ ACE.Missile.DefaultRadarSound = ACE.Missile.DefaultRadarSound or "buttons/button
 ACE.Missile.RadarBehaviour["DIR-AM"] =
 {
 	GetDetectedEnts = function(self)
-		return ACE_Missile_GetMissilesInCone(self, self:GetForward(), self.ConeDegs)
+		return ACE.Missile_GetMissilesInCone(self, self:GetForward(), self.ConeDegs)
 	end
 }
 
@@ -13,6 +13,6 @@ ACE.Missile.RadarBehaviour["DIR-AM"] =
 ACE.Missile.RadarBehaviour["OMNI-AM"] =
 {
 	GetDetectedEnts = function(self)
-		return ACE_Missile_GetMissilesInSphere(self, self.Range)
+		return ACE.Missile_GetMissilesInSphere(self, self.Range)
 	end
 }

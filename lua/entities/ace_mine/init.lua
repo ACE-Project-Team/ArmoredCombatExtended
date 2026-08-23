@@ -107,10 +107,10 @@ do
 
 		local HEWeight = self.HEWeight
 		local FragMass = self.FragMass
-		local Radius = ACE_CalculateHERadius( HEWeight )
+		local Radius = ACE.CalculateHERadius( HEWeight )
 		local ExplosionOrigin = self:LocalToWorld(Vector(0,0,5))
 
-		ACE_HE( ExplosionOrigin, Vector(0,0,1), HEWeight, FragMass, self.DamageOwner, self, self) --0.5 is standard antipersonal mine
+		ACE.HE( ExplosionOrigin, Vector(0,0,1), HEWeight, FragMass, self.DamageOwner, self, self) --0.5 is standard antipersonal mine
 
 		local Flash = EffectData()
 			Flash:SetOrigin( ExplosionOrigin )
@@ -141,20 +141,20 @@ end
 do
 
 	-- Initialize the necessary data to cache the mine counter per player.
-	function ACE_InitializePlayerMineCounter( ply )
+	function ACE.InitializePlayerMineCounter( ply )
 		ACE.MineOwners = ACE.MineOwners or {}
 		ACE.MineOwners[ply] = {}
 	end
-	hook.Add( "PlayerInitialSpawn", "ACE_InitPlayerMineCounter", ACE_InitializePlayerMineCounter )
+	hook.Add( "PlayerInitialSpawn", "ACE_InitPlayerMineCounter", ACE.InitializePlayerMineCounter )
 
 	-- We dont need mines to stay on the map if the owner leaves.
-	function ACE_DeleteDisconnectPlayerMines( ply )
+	function ACE.DeleteDisconnectPlayerMines( ply )
 		if not ACE.MineOwners[ply] then return end
 		for _, mine in ipairs(ACE.MineOwners[ply]) do
 			mine:Remove()
 		end
 	end
-	hook.Add( "PlayerDisconnected", "Playerleave", ACE_DeleteDisconnectPlayerMines )
+	hook.Add( "PlayerDisconnected", "Playerleave", ACE.DeleteDisconnectPlayerMines )
 
 end
 
@@ -183,7 +183,7 @@ do
 
 	local MineTable = ACE.MineData
 
-	function ACE_CreateMine( MineId, Pos, Angle, Owner )
+	function ACE.CreateMine( MineId, Pos, Angle, Owner )
 		if not IsValid(Owner) then return end
 
 		VerifyMineLimits(Owner)

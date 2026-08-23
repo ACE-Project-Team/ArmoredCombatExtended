@@ -26,6 +26,9 @@ do
 	do
 
 		local function ApplyOverride( ply, seat, data )
+			local aceData = data.ACE or {}
+			local camOverride = aceData.CamOverride
+			if camOverride == nil then camOverride = data.ACE_CamOverride end
 
 			timer.Simple(0.1, function()
 				if not IsValid(seat) then return end
@@ -33,12 +36,12 @@ do
 				local class = seat:GetClass()
 				if not string.StartWith(class, "prop_vehicle_") then return end
 
-				SendBoolToClient( ply, seat, data.ACE_CamOverride )
+				SendBoolToClient( ply, seat, camOverride )
 
 			end)
 
 			if SERVER then
-				local Data = { ACE_CamOverride = data.ACE_CamOverride }
+				local Data = { ACE = { CamOverride = camOverride } }
 				duplicator.StoreEntityModifier( seat , "ACECamOverride", Data )
 			end
 
@@ -63,7 +66,7 @@ do
 
 			SendBoolToClient( self:GetOwner(), seat, true )
 
-			local data = { ACE_CamOverride = true }
+			local data = { ACE = { CamOverride = true } }
 			duplicator.StoreEntityModifier( seat , "ACECamOverride", data )
 
 			return true
@@ -133,4 +136,3 @@ do
 		end
 	end
 end
-

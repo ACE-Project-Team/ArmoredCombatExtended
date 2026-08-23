@@ -48,7 +48,7 @@ do
 			{ "Fuel (" .. FueltankWireDescs["Fuel"] .. ")", "Capacity (" .. FueltankWireDescs["Capacity"] .. ")", "Leaking (" .. FueltankWireDescs["Leaking"] .. ")", "Entity" },
 			{ "NORMAL", "NORMAL", "NORMAL", "ENTITY" }
 		)
-		ACE_GetDefaultActiveInputState(self)
+		ACE.GetDefaultActiveInputState(self)
 		Wire_TriggerOutput( self, "Leaking", 0 )
 		Wire_TriggerOutput( self, "Entity", self )
 
@@ -64,34 +64,34 @@ end
 
 function ENT:ACF_Activate( Recalc )
 
-	self.ACF = self.ACF or {}
+	ACE.GetEntityState(self, true)
 
 	local PhysObj = self:GetPhysicsObject()
-	if not self.ACF.Area then
-		self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+	if not self.ACE.Area then
+		self.ACE.Area = PhysObj:GetSurfaceArea() * 6.45
 	end
-	if not self.ACF.Volume then
-		self.ACF.Volume = PhysObj:GetVolume() * 1
+	if not self.ACE.Volume then
+		self.ACE.Volume = PhysObj:GetVolume() * 1
 	end
 
-	local Armour = self.EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health = (self.ACF.Volume / ACE.Threshold) * 0.5					--Setting the threshold of the prop Area gone
+	local Armour = self.EmptyMass * 1000 / self.ACE.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
+	local Health = (self.ACE.Volume / ACE.Threshold) * 0.5					--Setting the threshold of the prop Area gone
 
 	local Percent = 1
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
+	if Recalc and self.ACE.Health and self.ACE.MaxHealth then
+		Percent = self.ACE.Health / self.ACE.MaxHealth
 	end
 
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	self.ACF.Armour    = Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = nil
-	self.ACF.Mass      = self.Mass
-	self.ACF.Density   = (PhysObj:GetMass() * 1000) / self.ACF.Volume
-	self.ACF.Type      = "Prop"
+	self.ACE.Health    = Health * Percent
+	self.ACE.MaxHealth = Health
+	self.ACE.Armour    = Armour * (0.5 + Percent / 2)
+	self.ACE.MaxArmour = Armour
+	self.ACE.Type      = nil
+	self.ACE.Mass      = self.Mass
+	self.ACE.Density   = (PhysObj:GetMass() * 1000) / self.ACE.Volume
+	self.ACE.Type      = "Prop"
 
-	self.ACF.Material	= not isstring(self.ACF.Material) and ACE.BackCompMat[self.ACF.Material] or self.ACF.Material or "RHA"
+	self.ACE.Material	= not isstring(self.ACE.Material) and ACE.BackCompMat[self.ACE.Material] or self.ACE.Material or "RHA"
 
 	--Forces an update of mass
 	self.LastMass = 1
@@ -102,7 +102,7 @@ end
 function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	--This function needs to return HitRes
 
 	local Mul = (((Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS") and ACE.HEATMulFuel) or 1) --Heat penetrators deal bonus damage to fuel
-	local HitRes = ACE_PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
+	local HitRes = ACE.PropDamage( Entity, Energy, FrArea * Mul, Angle, Inflictor ) --Calling the standard damage prop function
 
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT" or Type == "THEAT" or Type == "HEATFS" or Type == "THEATFS")
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
@@ -117,12 +117,12 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 			self.Inflictor = Inflictor
 		end
 
-		ACE_ScaledExplosion( self , true )
+		ACE.ScaledExplosion( self , true )
 
 		return HitRes
 	end
 
-	local Ratio = (HitRes.Damage / self.ACF.Health) ^ 0.75 --chance to explode from sheer damage, small shots = small chance
+	local Ratio = (HitRes.Damage / self.ACE.Health) ^ 0.75 --chance to explode from sheer damage, small shots = small chance
 	local ExplodeChance = (1-(self.Fuel / self.Capacity)) ^ 0.75 --chance to explode from fumes in tank, less fuel = more explodey
 
 	--it's gonna blow
@@ -135,14 +135,14 @@ function ENT:ACF_OnDamage( Entity, Energy, FrArea, Angle, Inflictor, _, Type )	-
 
 		timer.Simple(math.Rand(0.1, 1), function()
 			if IsValid(self) then
-				ACE_ScaledExplosion( self , true )
+				ACE.ScaledExplosion( self , true )
 			end
 		end )
 
 	else												--spray some fuel around
 		self:NextThink( CurTime() + 0.1 )
 		if self.FuelType ~= "Electric" then
-			self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
+			self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACE.Health) ^ 1.5) * 0.25
 		end
 	end
 
@@ -159,7 +159,7 @@ do
 		return ACE.Scalable.ParseScale( ScaleId, { min = ACE.CrateMinimumSize, max = ACE.CrateMaximumSize } )
 	end
 
-	function ACE_MakeFuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
+	function ACE.MakeFuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3)
 
 		if IsValid(Owner) and not Owner:CheckLimit("_ace_misc") then return false end
 
@@ -175,7 +175,7 @@ do
 			Tank:Spawn()
 
 			-- If the crate is not valid in the system, but it could be scalable.
-			if not ACE_CheckFuelTank( Data1 ) then
+			if not ACE.CheckFuelTank( Data1 ) then
 
 				-- Reminder: When the legacy fueltanks get deleted. Do the same as ammo crates.
 				local Scale = ConvertStringScale(Data1)
@@ -215,7 +215,7 @@ do
 				end
 			end
 
-			if ACE_CheckFuelTank( Data1 ) then
+			if ACE.CheckFuelTank( Data1 ) then
 
 				local TankData = TankTable[Data1]
 
@@ -251,7 +251,7 @@ do
 end
 
 list.Set( "ACFCvars", "acf_fueltank", {"id", "data1", "data2", "data3"} )
-duplicator.RegisterEntityClass("acf_fueltank", ACE_MakeFuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
+duplicator.RegisterEntityClass("acf_fueltank", ACE.MakeFuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Shape" )
 
 
 local Wall = 0.03937 --wall thickness in inches (1mm)
@@ -414,7 +414,7 @@ end
 function ENT:TriggerInput( iname, value )
 
 	if (iname == "Active") then
-		self.Active = ACE_GetDefaultActiveInputState(self, value)
+		self.Active = ACE.GetDefaultActiveInputState(self, value)
 
 		self:UpdateOverlayText()
 	elseif iname == "Refuel Duty" then
@@ -429,13 +429,13 @@ end
 
 function ENT:Think()
 
-	if not ACE_IsDefaultActiveInputWired(self) then
-		self.Active = ACE_GetDefaultActiveInputState(self)
+	if not ACE.IsDefaultActiveInputWired(self) then
+		self.Active = ACE.GetDefaultActiveInputState(self)
 	end
 
 	if ACE.CurTime > self.NextLegalCheck then
 		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass
-		self.Legal, self.LegalIssues = ACE_CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
+		self.Legal, self.LegalIssues = ACE.CheckLegal(self, self.Model, math.Round(self.EmptyMass,2), nil, true, true) -- mass-6, as mass update is granular to 5 kg
 		self.NextLegalCheck = ACE.Legal.NextCheck(self.legal)
 		self:UpdateOverlayText()
 	end

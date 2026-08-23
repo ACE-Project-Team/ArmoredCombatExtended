@@ -1,85 +1,9 @@
--- Keep a legacy view available for the intentionally unchanged E2 and
--- Starfall adapters only when the ACF addon did not create its own table.
-local ACFAddonInstalled = file.Exists("autorun/acf_loader.lua", "LUA")
-local ACECompatibilityView = not ACFAddonInstalled and (ACF == nil or rawget(ACF, "__ACECompatibilityView") == true)
-ACF = ACF or {}
-
 ACE               = ACE or {}
-local InstalledLegacyGlobals = {}
 
--- Resolve the remaining legacy function symbols through ACE. without copying
--- them into new globals. This keeps existing extensions working while callers
--- migrate to the table namespace; functions that have already been moved take
--- precedence over the fallback.
-do
-    local Meta = getmetatable(ACE) or {}
-    local PreviousIndex = Meta.__index
+include("ace/shared/sh_ace_entity_state.lua")
 
-    Meta.__index = function(Table, Key)
-        local Value
-
-        if type(PreviousIndex) == "function" then
-            Value = PreviousIndex(Table, Key)
-        elseif type(PreviousIndex) == "table" then
-            Value = PreviousIndex[Key]
-        end
-
-        if Value ~= nil then return Value end
-
-        return rawget(_G, "ACE_" .. Key)
-    end
-
-    setmetatable(ACE, Meta)
-end
-
-if ACECompatibilityView then
-    rawset(ACF, "__ACECompatibilityView", true)
-    setmetatable(ACF, {
-        __index = function(_, key)
-            return ACE[key]
-        end
-    })
-end
-
-ACE.LegacyCompatibility = ACECompatibilityView
-
--- Exposed so files that are include()'d later (e.g. sh_ace_loader.lua) can
--- install legacy globals themselves, ahead of any content they in turn load.
--- This must exist before anything that might load third-party content packs
--- still calling pre-rename ACF_ names directly.
-function ACE_InstallLegacyGlobal(name, implementation)
-    if not ACE.LegacyCompatibility then return end
-    if rawget(_G, name) == nil and implementation ~= nil then
-        rawset(_G, name, implementation)
-        InstalledLegacyGlobals[name] = implementation
-    end
-end
-
-function ACE_RunLegacyHook(Name, ...)
-    if ACE.LegacyCompatibility then
-        return hook.Run(Name, ...)
-    end
-end
-
--- ACF's loader can run later in the same autorun pass. If it does, remove the
--- temporary ACE compatibility view before ACF starts using its own namespace.
-local function RemoveCompatibilityView()
-    if not ACE.LegacyCompatibility then return end
-
-    ACE.LegacyCompatibility = false
-    rawset(ACF, "__ACECompatibilityView", nil)
-    setmetatable(ACF, nil)
-
-    for name, value in pairs(InstalledLegacyGlobals) do
-        if rawget(_G, name) == value then rawset(_G, name, nil) end
-    end
-end
-
-hook.Add("ACE_OnLoadAddon", "ACE_RemoveCompatibilityView", RemoveCompatibilityView)
-hook.Add("ACF_OnLoadAddon", "ACE_RemoveCompatibilityView", function(...)
-    RemoveCompatibilityView()
-    return hook.Run("ACE_OnLoadAddon", ...)
-end)
+ACE.CurTime       = CurTime()
+ACE.SysTime       = SysTime()
 
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
@@ -197,7 +121,7 @@ ACE.TraceFilter       = {        -- entities that cause issue with acf and shoul
     prop_vehicle_crane   = true,
     prop_dynamic         = true,
     npc_strider          = true,
-    -- sent_prop2mesh       = true,
+    sent_prop2mesh       = true,
     worldspawn           = true, --The worldspawn in infinite maps is fake. Since the IsWorld function will not do something to avoid this case, that i will put it here.
 
 }
@@ -301,15 +225,6 @@ if SERVER then
     CreateConVar("ace_meshvalue", 1)
 
     CreateConVar("ace_restrictinfo", 1)                -- 0=any, 1=owned
-    -- The unchanged Starfall adapter still reads the legacy name. Create this
-    -- default-only compatibility cvar only when ACF did not provide it.
-    if ACECompatibilityView then
-        CreateConVar("acf_restrictinfo", 1)
-        cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
-            local legacy = GetConVar("acf_restrictinfo")
-            if legacy then legacy:SetInt(new) end
-        end, "ACE_LegacyRestrictInfo")
-    end
     cvars.RemoveChangeCallback("ace_restrictinfo", "ACE_CVarChangeCallback")
     cvars.AddChangeCallback("ace_restrictinfo", function(_, _, new)
         ACE.RestrictInfo = tobool(new)
@@ -367,7 +282,7 @@ if SERVER then
     --Uses non-torqueing recoil if there are problems
     CreateConVar("ace_legacyrecoil", 0, FCVAR_ARCHIVE)
 
-    function ACE_CVarChangeCallback(CVar, _, New)
+    function ACE.CVarChangeCallback(CVar, _, New)
 
         if CVar == "ace_healthmod" then
             ACE.Threshold = 264.7 / math.max(New, 0.01)
@@ -408,23 +323,23 @@ if SERVER then
         end
     end
 
-cvars.AddChangeCallback("ace_healthmod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_armormod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_ammomod", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_spalling", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_spalling_multiplier", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_gunfire", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_debris_lifetime", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_debris_children", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_explosions_scaled_he_max", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_explosions_scaled_ents_max", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legacyrecoil", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_enginesrequirefuel", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE_CVarChangeCallback)
-cvars.AddChangeCallback("ace_enable_dp", ACE_CVarChangeCallback)
+cvars.AddChangeCallback("ace_healthmod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_armormod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_ammomod", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_spalling_multiplier", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_gunfire", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_lifetime", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_debris_children", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_he_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_explosions_scaled_ents_max", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legacyrecoil", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_enginesrequirefuel", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginesneeddriver", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largeenginethreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunsneedgunner", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_legality_largegunthreshold", ACE.CVarChangeCallback)
+cvars.AddChangeCallback("ace_enable_dp", ACE.CVarChangeCallback)
 
 -- Apply archived/server convars at startup so values persist across restarts and reconnects.
 local startupSync = {
@@ -476,52 +391,52 @@ else
     AddCSLuaFile("autorun/translation/ace_translationpacks.lua")
 end
 
-include("acf/shared/sh_ace_particles.lua")
-include("acf/shared/sh_ace_sound_loader.lua")
+include("ace/shared/sh_ace_particles.lua")
+include("ace/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
-include("acf/shared/sh_ace_functions.lua")
-include("acf/shared/sh_ace_loader.lua")
-AddCSLuaFile("acf/shared/sh_ace_scalable.lua")
-include("acf/shared/sh_ace_scalable.lua")
-include("acf/shared/sh_ace_concommands.lua")
-include("acf/shared/sh_acfm_roundinject.lua")
-include("acf/shared/compatibility/cppiCompatibility.lua")
-include("acf/shared/sh_crewseat_base.lua")
-AddCSLuaFile("acf/shared/sh_crewseat_base.lua")
-AddCSLuaFile("acf/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_ace_functions.lua")
+include("ace/shared/sh_ace_loader.lua")
+AddCSLuaFile("ace/shared/sh_ace_scalable.lua")
+include("ace/shared/sh_ace_scalable.lua")
+include("ace/shared/sh_ace_concommands.lua")
+include("ace/shared/sh_acfm_roundinject.lua")
+include("ace/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_crewseat_base.lua")
+AddCSLuaFile("ace/shared/sh_crewseat_base.lua")
+AddCSLuaFile("ace/shared/compatibility/cppiCompatibility.lua")
 
 if SERVER then
 
-    include("acf/shared/sv_ace_networking.lua")
-    include("acf/server/sv_acfbase.lua")
-    include("acf/server/sv_acfdamage.lua")
-    include("acf/server/sv_acfballistics.lua")
-    include("acf/server/sv_contraption.lua")
-    include("acf/server/sv_heat.lua")
-    include("acf/server/sv_crewseat_base.lua")
-    include("acf/server/sv_legality.lua")
-    include("acf/server/sv_acfpermission.lua")
-    include("acf/server/sv_contraptionlegality.lua")
-    include("acf/server/sv_adminsettings.lua")
-    AddCSLuaFile("acf/client/cl_acfballistics.lua")
-    AddCSLuaFile("acf/client/cl_acemenu_gui.lua")
-    AddCSLuaFile("acf/client/cl_acfrender.lua")
-    AddCSLuaFile("acf/client/cl_soundbase.lua")
+    include("ace/shared/sv_ace_networking.lua")
+    include("ace/server/sv_acfbase.lua")
+    include("ace/server/sv_acfdamage.lua")
+    include("ace/server/sv_acfballistics.lua")
+    include("ace/server/sv_contraption.lua")
+    include("ace/server/sv_heat.lua")
+    include("ace/server/sv_crewseat_base.lua")
+    include("ace/server/sv_legality.lua")
+    include("ace/server/sv_acfpermission.lua")
+    include("ace/server/sv_contraptionlegality.lua")
+    include("ace/server/sv_adminsettings.lua")
+    AddCSLuaFile("ace/client/cl_acfballistics.lua")
+    AddCSLuaFile("ace/client/cl_acemenu_gui.lua")
+    AddCSLuaFile("ace/client/cl_acfrender.lua")
+    AddCSLuaFile("ace/client/cl_soundbase.lua")
 
-    AddCSLuaFile("acf/client/cl_acemenu_missileui.lua")
+    AddCSLuaFile("ace/client/cl_acemenu_missileui.lua")
 
-    AddCSLuaFile("acf/client/cl_acfpermission.lua")
-    AddCSLuaFile("acf/client/gui/cl_acfsetpermission.lua")
+    AddCSLuaFile("ace/client/cl_acfpermission.lua")
+    AddCSLuaFile("ace/client/gui/cl_acfsetpermission.lua")
 
 
 elseif CLIENT then
 
-    include("acf/client/cl_acfballistics.lua")
-    include("acf/client/cl_acfrender.lua")
-    include("acf/client/cl_soundbase.lua")
+    include("ace/client/cl_acfballistics.lua")
+    include("ace/client/cl_acfrender.lua")
+    include("ace/client/cl_soundbase.lua")
 
-    include("acf/client/cl_acfpermission.lua")
-    include("acf/client/gui/cl_acfsetpermission.lua")
+    include("ace/client/cl_acfpermission.lua")
+    include("ace/client/gui/cl_acfsetpermission.lua")
 
     CreateClientConVar("ace_mobility_rope_links", "1", true, true)
 
@@ -532,14 +447,14 @@ end
     RoundType Loader
 ]]----------------------------------------
 
-include("acf/shared/rounds/ace_roundfunctions.lua")
+include("ace/shared/rounds/ace_roundfunctions.lua")
 
-include("acf/shared/rounds/roundap.lua")
-include("acf/shared/rounds/roundhe.lua")
-include("acf/shared/rounds/roundfl.lua")
-include("acf/shared/rounds/roundhp.lua")
-include("acf/shared/rounds/roundsmoke.lua")
-include("acf/shared/rounds/roundrefill.lua")
+include("ace/shared/rounds/roundap.lua")
+include("ace/shared/rounds/roundhe.lua")
+include("ace/shared/rounds/roundfl.lua")
+include("ace/shared/rounds/roundhp.lua")
+include("ace/shared/rounds/roundsmoke.lua")
+include("ace/shared/rounds/roundrefill.lua")
 
 
 --interwar period
@@ -549,28 +464,28 @@ include("acf/shared/rounds/roundrefill.lua")
 --A surprising amount of things were made during WW2
 if ACE.Year > 1939 then
 
-    include("acf/shared/rounds/roundhesh.lua")
-    include("acf/shared/rounds/roundheat.lua")
-    include("acf/shared/rounds/roundaphe.lua")
-    include("acf/shared/rounds/roundhvap.lua")
+    include("ace/shared/rounds/roundhesh.lua")
+    include("ace/shared/rounds/roundheat.lua")
+    include("ace/shared/rounds/roundaphe.lua")
+    include("ace/shared/rounds/roundhvap.lua")
 
 end
 --Cold war
 if ACE.Year > 1960 then
 
-    include("acf/shared/rounds/roundapds.lua")
-    include("acf/shared/rounds/roundapfsds.lua")
-    include("acf/shared/rounds/roundheatfs.lua")
-    include("acf/shared/rounds/roundhefs.lua")
-    include("acf/shared/rounds/roundflare.lua")
-    include("acf/shared/rounds/roundglgm.lua")
+    include("ace/shared/rounds/roundapds.lua")
+    include("ace/shared/rounds/roundapfsds.lua")
+    include("ace/shared/rounds/roundheatfs.lua")
+    include("ace/shared/rounds/roundhefs.lua")
+    include("ace/shared/rounds/roundflare.lua")
+    include("ace/shared/rounds/roundglgm.lua")
 
 end
 --almost finishing cold war
 if ACE.Year > 1989 then
 
-    include("acf/shared/rounds/roundtheat.lua")
-    include("acf/shared/rounds/roundtheatfs.lua")
+    include("ace/shared/rounds/roundtheat.lua")
+    include("ace/shared/rounds/roundtheatfs.lua")
 
 end
 
@@ -611,7 +526,7 @@ end )
 
 if SERVER then
 
-    function ACE_SendDPStatus()
+    function ACE.SendDPStatus()
 
         local Cvar = GetConVar("ace_enable_dp"):GetInt()
         local bool = tobool(Cvar)
@@ -622,7 +537,7 @@ if SERVER then
 
     end
 
-    function ACE_SendNotify( ply, success, msg )
+    function ACE.SendNotify( ply, success, msg )
         net.Start( "ACE_Notify" )
         net.WriteBit( success )
         net.WriteString( msg or "" )
@@ -644,8 +559,8 @@ do
     local function OnInitialSpawn( ply )
         local Table = {}
         for _, v in pairs( ents.GetAll() ) do
-            if v.ACF and v.ACF.PrHealth then
-                table.insert(Table,{ID = v:EntIndex(), Health = v.ACF.Health, v.ACF.MaxHealth})
+            if v.ACE and v.ACE.PrHealth then
+                table.insert(Table,{ID = v:EntIndex(), Health = v.ACE.Health, v.ACE.MaxHealth})
             end
         end
         if Table ~= {} then
@@ -683,40 +598,6 @@ end
 
 
 cleanup.Register( "aceexplosives" )
-
--- The deferred E2 and Starfall adapters still use the dotted ACE table API.
--- Keep that adapter surface on ACE without reintroducing ACF-owned globals.
-ACE.GetMaterialData = ACE_GetMaterialData
-ACE.CheckRound = ACE_CheckRound
-ACE.HeatFromGun = ACE_HeatFromGun
-ACE.HeatFromEngine = ACE_HeatFromEngine
-ACE.MarkArmorDirty = ACE_MarkArmorDirty
-
--- The unchanged adapters still call these legacy global entry points. Preserve
--- an independently loaded ACF implementation, otherwise route them to ACE.
---
--- Note: ACF_DefineEngine/DefineGearbox/DefineFuelTankSize are installed
--- earlier, from within sh_ace_loader.lua, before its folder-scan loop
--- include()'s third-party content packs that may call those names directly.
--- See the ACE_InstallLegacyGlobal calls there.
-if ACECompatibilityView then
-    local LegacyGlobals = {
-        ACF_CalcArmor = ACE_CalcArmor,
-        ACF_Check = ACE_Check,
-        ACF_CheckClips = ACE_CheckClips,
-        ACF_GetHitAngle = ACE_GetHitAngle,
-        ACF_GetLinkedWheels = ACE_GetLinkedWheels,
-        ACF_SendNotify = ACE_SendNotify,
-        ACF_GetPhysicalParent = ACE_GetPhysicalParent,
-        ACF_Kinetic = ACE_Kinetic,
-        ACF_MuzzleVelocity = ACE_MuzzleVelocity,
-        ACF_HE = ACE_HE
-    }
-
-    for name, implementation in pairs(LegacyGlobals) do
-        ACE_InstallLegacyGlobal(name, implementation)
-    end
-end
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")

@@ -100,7 +100,7 @@ function EFFECT:Init( data )
 			--self.HitNorm = -self.HitNorm
 			--self.DirVec = -self.DirVec
 			--[[local TEnt = SurfaceTr.Entity
-				--I guess the material is serverside only ATM? TEnt.ACF.Material doesn't return anything valid.
+				--I guess the material is serverside only ATM? TEnt.ACE.Material doesn't return anything valid.
 				--TODO: Add clienside way to get ACF Material
 				MatVal = "Metal"
 			]]--

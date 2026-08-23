@@ -115,7 +115,7 @@ function SWEP:InitBulletData()
 	--		self.BulletData.DragCoef  = 0 --Alternatively manually set it
 	self.BulletData.DragCoef = (self.BulletData.FrArea / 10000) / self.BulletData.ProjMass
 	--Don't touch below here
-	self.BulletData.MuzzleVel = ACE_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
+	self.BulletData.MuzzleVel = ACE.MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass, self.BulletData.Caliber)
 	self.BulletData.ShovePower = 0.2
 	self.BulletData.KETransfert = 0.3
 	self.BulletData.PenArea = self.BulletData.FrArea ^ ACE.PenAreaMod
@@ -125,10 +125,10 @@ function SWEP:InitBulletData()
 	self.BulletData.Flight = Vector(0, 0, 0)
 	self.BulletData.BoomPower = self.BulletData.PropMass + self.BulletData.FillerMass
 	--		local SlugEnergy = ACE_Kinetic( self.BulletData.MuzzleVel * 39.37 + self.BulletData.SlugMV * 39.37 , self.BulletData.SlugMass, 999999 )
-	local SlugEnergy = ACE_Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
+	local SlugEnergy = ACE.Kinetic(self.BulletData.SlugMV * 39.37, self.BulletData.SlugMass, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea) * ACE.KEtoRHA
 	--		print("SlugPen: " .. self.BulletData.MaxPen)
-	local SlugEnergy = ACE_Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
+	local SlugEnergy = ACE.Kinetic(self.BulletData.SlugMV2 * 39.37, self.BulletData.SlugMass2, 999999)
 	self.BulletData.MaxPen = (SlugEnergy.Penetration / self.BulletData.SlugPenArea2) * ACE.KEtoRHA
 	--		print("SlugPen2: " .. self.BulletData.MaxPen)
 	--For Fake Crate
@@ -210,7 +210,7 @@ function SWEP:PrimaryAttack()
 			BData.Crate = BData.FakeCrate:EntIndex()
 			--self:DeleteOnRemove(BData.FakeCrate)
 
-			ACE_GenerateMissile(MDat,BData.FakeCrate,BData)
+			ACE.GenerateMissile(MDat,BData.FakeCrate,BData)
 
 		self:EmitSound(self.Primary.Sound)
 		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)

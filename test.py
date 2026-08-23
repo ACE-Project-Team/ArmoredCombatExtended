@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 # Path to missile definitions
-MISSILES_DIR = "lua/acf/shared/missiles"
+MISSILES_DIR = "lua/ace/shared/missiles"
 
 # Mirrors ace_roundfunctions missile defaults
 DEFAULT_MISSILE_MINPROJ_RATIO = 0.5

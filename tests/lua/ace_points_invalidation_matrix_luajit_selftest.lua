@@ -18,8 +18,8 @@ local function isEntity(ent)
 end
 
 function include(path)
-	if path == "acf/server/sv_pointshandling.lua" then
-		dofile(root .. "/lua/acf/server/sv_pointshandling.lua")
+	if path == "ace/server/sv_pointshandling.lua" then
+		dofile(root .. "/lua/ace/server/sv_pointshandling.lua")
 	end
 end
 
@@ -91,13 +91,7 @@ function ACE.GetContraptionEntities(con)
 	return entitiesOf(con)
 end
 
-dofile(root .. "/lua/acf/server/sv_contraptionlegality.lua")
-
-setmetatable(ACE, {
-	__index = function(_, key)
-		return _G["ACE_" .. key]
-	end,
-})
+dofile(root .. "/lua/ace/server/sv_contraptionlegality.lua")
 
 local batches = {}
 local compat = {}

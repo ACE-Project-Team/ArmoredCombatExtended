@@ -25,7 +25,7 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("filter[ent] = nil", cfw)
 
     def test_bullet_filter_expires_after_one_unused_tick(self):
-        ballistics = source("lua/acf/server/sv_acfballistics.lua")
+        ballistics = source("lua/ace/server/sv_acfballistics.lua")
 
         self.assertIn("local FilterGraceTicks = 1", ballistics)
         self.assertIn("local IsLaunchEntity = Bullet.LaunchFilter[Ent]", ballistics)
@@ -51,7 +51,7 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("return BulletData.LaunchFilter", ballistics)
 
     def test_temporary_retry_filters_are_removed_by_entity(self):
-        ballistics = source("lua/acf/server/sv_acfballistics.lua")
+        ballistics = source("lua/ace/server/sv_acfballistics.lua")
 
         self.assertIn("for Index = #Bullet.Filter, 1, -1 do", ballistics)
         self.assertIn("if Bullet.Filter[Index] == Ent then", ballistics)
@@ -60,7 +60,7 @@ class SelfFirePreventionTests(unittest.TestCase):
 
     def test_gun_passes_the_live_filter_to_the_bullet_snapshot(self):
         gun = source("lua/entities/acf_gun/init.lua")
-        ballistics = source("lua/acf/server/sv_acfballistics.lua")
+        ballistics = source("lua/ace/server/sv_acfballistics.lua")
         fire = gun[gun.index("function ENT:FireShell") :]
 
         self.assertIn("local Contraption = self:CFW_GetContraption()", fire)
@@ -76,14 +76,14 @@ class SelfFirePreventionTests(unittest.TestCase):
         self.assertIn("local HasGun = false", ballistics)
         self.assertIn("if Gun and not HasGun then", ballistics)
 
-        flechette = source("lua/acf/shared/rounds/roundfl.lua")
+        flechette = source("lua/ace/shared/rounds/roundfl.lua")
         self.assertIn('FlechetteData["Filter"]', flechette)
         self.assertIn("FlechetteData.LiveFilter\t\t= BulletData.LiveFilter or BulletData.Filter", flechette)
 
         for relative in (
-            "lua/acf/shared/rounds/roundclusterap.lua",
-            "lua/acf/shared/rounds/roundclusterhe.lua",
-            "lua/acf/shared/rounds/roundclusterheat.lua",
+            "lua/ace/shared/rounds/roundclusterap.lua",
+            "lua/ace/shared/rounds/roundclusterhe.lua",
+            "lua/ace/shared/rounds/roundclusterheat.lua",
         ):
             with self.subTest(round=relative):
                 cluster = source(relative)

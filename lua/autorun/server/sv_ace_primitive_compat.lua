@@ -28,7 +28,7 @@ end
 local function CaptureSavedArmor(ent)
 	if not IsValid(ent) or ent.ACE_PrimitiveSavedArmor then return end
 
-	ent.ACE_PrimitiveSavedArmor = CopyArmorValues(ent.ACF)
+	ent.ACE_PrimitiveSavedArmor = CopyArmorValues(ACE.GetEntityState(ent))
 end
 
 local function CopyLegacyArmorSettings(modifiers)
@@ -51,8 +51,7 @@ local function RestoreSavedArmor(ent, phys)
 	local saved = CopyArmorValues(ent.ACE_PrimitiveSavedArmor)
 	if not saved then return false end
 
-	local acf = ent.ACF or {}
-	ent.ACF = acf
+	local acf = ACE.GetEntityState(ent, true)
 	acf.Area = saved.Area
 	acf.Armour = saved.Armour
 	acf.MaxArmour = saved.MaxArmour
@@ -70,8 +69,7 @@ local function RestoreLegacyArmorSettings(ent)
 	local settings = ent.ACE_PrimitiveLegacyArmorSettings
 	if not istable(settings) then return false end
 
-	local acf = ent.ACF or {}
-	ent.ACF = acf
+	local acf = ACE.GetEntityState(ent, true)
 	if settings.Material ~= nil then acf.Material = settings.Material end
 	if settings.Ductility ~= nil then acf.Ductility = math.Clamp(settings.Ductility, -80, 80) * 0.01 end
 
@@ -148,8 +146,9 @@ local function ApplyPrimitiveArmor(ent, phys)
 
 	if RestoreSavedArmor(ent, phys) then return true end
 
-	if ent.ACF then
-		ClearInvalidLiveArmorValues(ent.ACF)
+	local state = ACE.GetEntityState(ent)
+	if state then
+		ClearInvalidLiveArmorValues(state)
 	end
 
 	return false
@@ -169,8 +168,9 @@ local function FinalizePrimitiveArmor(ent)
 	local restored = ApplyPrimitiveArmor(ent, phys)
 	if not restored then restored = RestoreLegacyArmorSettings(ent) end
 
-	if not restored and ent.ACF then
-		ClearInvalidLiveArmorValues(ent.ACF)
+	if not restored then
+		local state = ACE.GetEntityState(ent)
+		if state then ClearInvalidLiveArmorValues(state) end
 	end
 
 	if not RestoreSavedArmor(ent, phys) and ACE.Activate then
@@ -188,8 +188,9 @@ local function ReconcilePrimitiveArmor(ent)
 	local phys = ent:GetPhysicsObject()
 	if not IsValid(phys) then return end
 
-	if not ApplyPrimitiveArmor(ent, phys) and not RestoreLegacyArmorSettings(ent) and ent.ACF then
-		ClearInvalidLiveArmorValues(ent.ACF)
+	if not ApplyPrimitiveArmor(ent, phys) and not RestoreLegacyArmorSettings(ent) then
+		local state = ACE.GetEntityState(ent)
+		if state then ClearInvalidLiveArmorValues(state) end
 	end
 	MarkPrimitiveArmorDirty(ent, "primitive-physics-rebuilt")
 end
@@ -212,7 +213,6 @@ hook.Add("Primitive_PreRebuildPhysics", "ACE_RememberPrimitiveCollisionGroup", f
 	ent.ACE_PrimitiveClippingHandled = nil
 end)
 
-ACE_PrimitivePropertiesApplied = ACE.PrimitivePropertiesApplied
 
 hook.Add("Primitive_PostRebuildPhysics", "ACE_PrimitiveArmorRecalc", function(ent, props)
 	if not IsValid(ent) then return end

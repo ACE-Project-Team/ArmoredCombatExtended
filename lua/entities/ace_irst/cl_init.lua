@@ -10,7 +10,7 @@ function ENT:Draw()
 	Wire_Render(self)
 end
 
-function ACE_IRSTGUICreate( Table )
+function ACE.IRSTGUICreate( Table )
 	acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
 
 	local RadarMenu = acemenupanel.CData.DisplayModel

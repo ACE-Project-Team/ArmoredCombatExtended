@@ -4,8 +4,9 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 ACE = {}
 function istable(value) return type(value) == "table" end
 function ACE.IsEnt(value) return value ~= nil end
+dofile(root .. "/lua/ace/shared/sh_ace_entity_state.lua")
 
-dofile(root .. "/lua/acf/shared/sh_ace_points_model.lua")
+dofile(root .. "/lua/ace/shared/sh_ace_points_model.lua")
 
 local empty = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 0 }
 local loaded = { Type = "APHE", maxPen = 200, FrArea = math.pi * 5 ^ 2, blastMass = 60 }
@@ -23,7 +24,7 @@ assert(ACE.Points.BaseRoundCost(loaded) > ACE.Points.BaseRoundCost(empty),
 
 local primitive = {
 	GetClass = function() return "prop_physics" end,
-	ACF = { MaxArmour = 100, MaxHealth = 100 },
+	ACE = { MaxArmour = 100, MaxHealth = 100 },
 }
 assert(ACE.Points.PropArmor(primitive) ~= nil, "ordinary prop armor must remain priced")
 primitive.ACE_PrimitivePropertiesPending = true

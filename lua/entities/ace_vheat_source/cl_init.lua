@@ -14,7 +14,7 @@ function ENT:Draw()
     Wire_Render(self)
 end
 
-function ACE_VHeatSourceGUICreate(Table)
+function ACE.VHeatSourceGUICreate(Table)
     acemenupanel:CPanelText("Name", Table.name, "DermaDefaultBold")
     acemenupanel:CPanelText("GunDesc", Table.desc)
     acemenupanel.CustomDisplay:PerformLayout()

@@ -1,9 +1,11 @@
-"""Static checks for ACE/ACF definition IDs before the runtime loader sees them."""
+"""Registry checks: prove ACE definitions are present and discoverable."""
 
 from collections import defaultdict
 from pathlib import Path
+import re
 import unittest
 
+from ace_test_support import Scenario, scenario_failure
 from lua_source import (
     code_without_comments_and_strings,
     iter_qualified_string_assignments,
@@ -57,19 +59,27 @@ def collect_definitions():
 
 
 class RegistryDefinitionTests(unittest.TestCase):
+    scenario = Scenario(
+        "ace.offline.definitions.discoverable",
+        "ACE definitions are defined and discoverable",
+    )
+
     @classmethod
     def setUpClass(cls):
         cls.definitions = collect_definitions()
 
-    def test_every_definition_family_has_source_entries(self):
+    def test_registry_has_every_expected_definition_family(self):
         for function in sorted(DEFINITION_FUNCTIONS):
             with self.subTest(function=function):
-                self.assertTrue(
-                    self.definitions[function],
-                    f"{function} has no source definitions",
-                )
+                if not self.definitions[function]:
+                    self.fail(scenario_failure(
+                        self.scenario,
+                        "load definition family",
+                        "the family has at least one source definition",
+                        f"{function} has no source definitions",
+                    ))
 
-    def test_definition_ids_are_unique_within_each_family(self):
+    def test_registry_definition_ids_are_unique(self):
         for function in sorted(DEFINITION_FUNCTIONS):
             entries = self.definitions[function]
             locations = defaultdict(list)
@@ -81,15 +91,29 @@ class RegistryDefinitionTests(unittest.TestCase):
                 if len(paths) > 1
             }
             with self.subTest(function=function):
-                self.assertEqual({}, duplicates, f"duplicate IDs: {duplicates}")
+                if duplicates:
+                    self.fail(scenario_failure(
+                        self.scenario,
+                        "load definition family",
+                        "IDs are unique within the family",
+                        f"duplicate IDs: {duplicates}",
+                        [f"family={function}"],
+                    ))
 
-    def test_definition_ids_are_not_blank(self):
+    def test_registry_definition_ids_are_not_blank(self):
         for function, entries in self.definitions.items():
             for identifier, path in entries:
                 with self.subTest(function=function, source=path):
-                    self.assertTrue(identifier.strip())
+                    if not identifier.strip():
+                        self.fail(scenario_failure(
+                            self.scenario,
+                            "load definition family",
+                            "every definition has a non-blank ID",
+                            "a blank ID was found",
+                            [f"family={function}", f"source={path.relative_to(REPO)}"],
+                        ))
 
-    def test_definition_scanner_ignores_comments_and_strings(self):
+    def test_registry_scanner_ignores_comments_and_strings(self):
         source = '''
             -- ACF_defineGun("commented", {})
             local example = "ACF_defineGun('quoted', {})"
@@ -108,7 +132,7 @@ class RegistryDefinitionTests(unittest.TestCase):
             ],
         )
 
-    def test_round_scanner_ignores_comments_and_strings(self):
+    def test_round_registry_scanner_ignores_comments_and_strings(self):
         source = '''
             -- Round.Type = "commented"
             local text = [=[ Round.Type = "quoted" ]=]
@@ -130,7 +154,7 @@ class RegistryDefinitionTests(unittest.TestCase):
             r"\s*=\s*Round",
         )
 
-    def test_round_sources_have_unique_types_and_register_themselves(self):
+    def test_round_registry_contains_unique_self_registering_types(self):
         round_types = []
         for path in sorted(ROUND_ROOT.glob("round*.lua")):
             source = path.read_text(encoding="utf-8", errors="replace")
@@ -139,17 +163,43 @@ class RegistryDefinitionTests(unittest.TestCase):
                 for value, _ in iter_qualified_string_assignments(source, "Round.Type")
             ]
             with self.subTest(source=path):
-                self.assertEqual(1, len(matches))
+                if len(matches) != 1:
+                    self.fail(scenario_failure(
+                        self.scenario,
+                        "load round definition",
+                        "each round source declares exactly one type",
+                        f"found {len(matches)} types",
+                        [f"source={path.relative_to(REPO)}"],
+                    ))
                 code = code_without_comments_and_strings(source)
-                self.assertRegex(
-                    code,
+                if not re.search(
                     r"ACE\s*\.\s*RoundTypes\s*\[\s*Round\s*\.\s*Type\s*\]"
                     r"\s*=\s*Round",
-                )
+                    code,
+                ):
+                    self.fail(scenario_failure(
+                        self.scenario,
+                        "load round definition",
+                        "the round registers itself in ACE.RoundTypes",
+                        "the registration statement was not found",
+                        [f"source={path.relative_to(REPO)}"],
+                    ))
             round_types.extend(matches)
 
-        self.assertTrue(round_types, "no round definitions were found")
-        self.assertEqual(len(round_types), len(set(round_types)))
+        if not round_types:
+            self.fail(scenario_failure(
+                self.scenario,
+                "load round definitions",
+                "at least one round definition exists",
+                "no round definitions were found",
+            ))
+        if len(round_types) != len(set(round_types)):
+            self.fail(scenario_failure(
+                self.scenario,
+                "load round definitions",
+                "round type names are unique",
+                f"duplicate round types: {round_types}",
+            ))
 
 
 if __name__ == "__main__":

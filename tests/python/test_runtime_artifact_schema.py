@@ -19,18 +19,31 @@ REQUIRED_ARTIFACT_KEYS = {
     "events",
     "errors",
 }
+ALLOWED_ARTIFACT_KEYS = REQUIRED_ARTIFACT_KEYS
 
 
 def validate_artifact(artifact: dict):
     missing = REQUIRED_ARTIFACT_KEYS - set(artifact)
     if missing:
         raise AssertionError(f"missing artifact keys: {sorted(missing)}")
+    unknown = set(artifact) - ALLOWED_ARTIFACT_KEYS
+    if unknown:
+        raise AssertionError(f"unknown artifact keys: {sorted(unknown)}")
+    for key in ("run_id", "scenario_id", "ace_commit", "branch", "started_at", "finished_at"):
+        if not isinstance(artifact[key], str) or not artifact[key].strip():
+            raise AssertionError(f"{key} must be a non-empty string")
     if artifact["schema"] != 1:
         raise AssertionError("unsupported artifact schema")
     if not isinstance(artifact["events"], list):
         raise AssertionError("events must be a list")
+    for event in artifact["events"]:
+        if not isinstance(event, dict) or not isinstance(event.get("type"), str) or not event["type"]:
+            raise AssertionError("events must contain typed objects")
     if not isinstance(artifact["errors"], list):
         raise AssertionError("errors must be a list")
+    for error in artifact["errors"]:
+        if not isinstance(error, dict) or not isinstance(error.get("type"), str) or not isinstance(error.get("message"), str):
+            raise AssertionError("errors must contain typed messages")
 
 
 class RuntimeArtifactSchemaTests(unittest.TestCase):

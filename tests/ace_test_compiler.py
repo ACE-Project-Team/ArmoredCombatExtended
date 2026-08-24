@@ -164,15 +164,21 @@ def compile_suite(source: Path, registry_path: Path, output: Path, action_regist
     for test in tests:
         for action in test["actions"]:
             action["path"] = action_registry["actions"][action["action"]].get("path", action["action"])
+    expected_cases = {
+        test["scenarioId"]: f'[{test["scenarioId"]}] {test["name"]}'
+        for test in tests
+    }
     payload = "local Suite = " + lua_value({"groupName": "ACE interpreted core validation", "fixtures": registry["fixtures"], "actions": action_registry["actions"], "tests": tests}) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        "local Runtime = include(\"ace/test_dsl_runtime.lua\")\n"
+        "ACE_GLuaTestExpectedCases = " + lua_value(expected_cases) + "\n"
+        + "local Runtime = include(\"ace/test_dsl_runtime.lua\")\n"
         + payload
         + "local cases = {}\n"
         + "for _, spec in ipairs(Suite.tests) do\n"
         + "    spec.fixturesRegistry = Suite.fixtures\n"
-        + "    cases[#cases + 1] = { name = spec.name, scenarioId = spec.scenarioId, func = function(State) Runtime.Run(State, spec, expect) end, cleanup = function(State) Runtime.Cleanup(State) end }\n"
+        + "    local caseName = \"[\" .. spec.scenarioId .. \"] \" .. spec.name\n"
+        + "    cases[#cases + 1] = { name = caseName, func = function(State) Runtime.Run(State, spec, expect) end, cleanup = function(State) Runtime.Cleanup(State) end }\n"
         + "end\n"
         + "return { groupName = Suite.groupName, cases = cases }\n",
         encoding="utf-8",

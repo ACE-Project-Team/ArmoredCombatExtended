@@ -64,7 +64,7 @@ jobs:
 
   GLuaTest:
     name: Native GMod server tests
-    needs: Lint
+    needs: [Lint, OfflineTests]
     uses: CFC-Servers/GLuaTest/.github/workflows/run_tests.yml@735e52d20c69d14c9a2a8d42f3d6428d1af0936b # main, 2026-07-17
     with:
       branch: public
@@ -72,5 +72,5 @@ jobs:
       # Use GLuaTest's published runner image; dockerbuild is only for GLuaTest image changes.
       dockerbuild: 'false'
       additional-setup: bash project/tests/prepare_gluatest_dependencies.sh
-      timeout: '5'
+      timeout: '12'
       logs-as-artifact: 'true'

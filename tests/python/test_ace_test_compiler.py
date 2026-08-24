@@ -34,6 +34,10 @@ class AceTestCompilerTests(unittest.TestCase):
             self.assertIn("spec.fixturesRegistry = Suite.fixtures", generated)
             self.assertIn("ACE interpreted core validation", generated)
             self.assertIn("valid_prop", generated)
+            self.assertIn("ACE_GLuaTestExpectedCases", generated)
+            for test in tests:
+                case_name = f'[{test["scenarioId"]}] {test["name"]}'
+                self.assertIn(case_name, generated)
 
     def test_unknown_fixture_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:

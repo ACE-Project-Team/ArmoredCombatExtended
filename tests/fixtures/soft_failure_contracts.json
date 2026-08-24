@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "classifications": {
+    "handled_rejection": "The operation rejects the malformed input without an unhandled Lua error.",
+    "fallback_applied": "A documented compatibility or fallback path produces usable state.",
+    "safe_noop": "The operation does nothing and leaves existing state intact.",
+    "state_unchanged": "Rejected input does not create a partial link or mutate the endpoint.",
+    "cleanup_complete": "Temporary entities, hooks, timers, and references are gone.",
+    "error_attributed": "The error identifies the scenario, operation, and fixture.",
+    "unexpected_error_fails": "An unclassified runtime error fails the scenario.",
+    "no_leak": "A failed operation leaves no registration or entity leak."
+  },
+  "required_row_fields": [
+    "fixture",
+    "phase",
+    "operation",
+    "expected",
+    "observed",
+    "unexpected",
+    "cleanup_complete"
+  ]
+}

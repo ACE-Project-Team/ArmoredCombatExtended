@@ -27,6 +27,7 @@ class NativeSuiteManifestTests(unittest.TestCase):
                 "invalidation_hooks.lua",
                 "registries.lua",
                 "spall_rubber.lua",
+                "soft_failure_contracts.lua",
         }
         self.assertTrue(required <= suites)
 

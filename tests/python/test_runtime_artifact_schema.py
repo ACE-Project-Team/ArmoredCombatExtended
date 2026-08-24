@@ -19,7 +19,17 @@ REQUIRED_ARTIFACT_KEYS = {
     "events",
     "errors",
 }
-ALLOWED_ARTIFACT_KEYS = REQUIRED_ARTIFACT_KEYS
+ALLOWED_ARTIFACT_KEYS = REQUIRED_ARTIFACT_KEYS | {"soft_failures"}
+
+SOFT_FAILURE_ROW_KEYS = {
+    "fixture",
+    "phase",
+    "operation",
+    "expected",
+    "observed",
+    "unexpected",
+    "cleanup_complete",
+}
 
 
 def validate_artifact(artifact: dict):
@@ -41,9 +51,21 @@ def validate_artifact(artifact: dict):
             raise AssertionError("events must contain typed objects")
     if not isinstance(artifact["errors"], list):
         raise AssertionError("errors must be a list")
+    if "soft_failures" in artifact and not isinstance(artifact["soft_failures"], list):
+        raise AssertionError("soft_failures must be a list")
     for error in artifact["errors"]:
         if not isinstance(error, dict) or not isinstance(error.get("type"), str) or not isinstance(error.get("message"), str):
             raise AssertionError("errors must contain typed messages")
+    for row in artifact.get("soft_failures", []):
+        missing = SOFT_FAILURE_ROW_KEYS - set(row)
+        if missing:
+            raise AssertionError(f"soft-failure row missing keys: {sorted(missing)}")
+        if not isinstance(row["unexpected"], bool):
+            raise AssertionError("soft-failure unexpected must be boolean")
+        if not isinstance(row["cleanup_complete"], bool):
+            raise AssertionError("soft-failure cleanup_complete must be boolean")
+        if row["unexpected"]:
+            raise AssertionError("unexpected soft-failure rows cannot validate")
 
 
 class RuntimeArtifactSchemaTests(unittest.TestCase):
@@ -83,6 +105,55 @@ class RuntimeArtifactSchemaTests(unittest.TestCase):
         }
 
         self.assertEqual(artifact, json.loads(json.dumps(artifact)))
+
+    def test_valid_soft_failure_rows_are_structured(self):
+        artifact = {
+            "schema": 1,
+            "run_id": "local-0002",
+            "scenario_id": "registry_schema_drift",
+            "ace_commit": "unknown",
+            "branch": "dev",
+            "started_at": "2026-08-24T00:00:00Z",
+            "finished_at": "2026-08-24T00:00:01Z",
+            "events": [{"type": "done"}],
+            "errors": [],
+            "soft_failures": [{
+                "fixture": "unknown-round",
+                "phase": "validate",
+                "operation": "lookup_round",
+                "expected": "handled_rejection",
+                "observed": "handled_rejection",
+                "unexpected": False,
+                "cleanup_complete": True,
+            }],
+        }
+
+        validate_artifact(artifact)
+
+    def test_unexpected_soft_failure_row_is_rejected(self):
+        artifact = {
+            "schema": 1,
+            "run_id": "local-0003",
+            "scenario_id": "error_capture_integrity",
+            "ace_commit": "unknown",
+            "branch": "dev",
+            "started_at": "2026-08-24T00:00:00Z",
+            "finished_at": "2026-08-24T00:00:01Z",
+            "events": [{"type": "done"}],
+            "errors": [],
+            "soft_failures": [{
+                "fixture": "unclassified",
+                "phase": "callback",
+                "operation": "invoke",
+                "expected": "safe_noop",
+                "observed": "lua_error",
+                "unexpected": True,
+                "cleanup_complete": False,
+            }],
+        }
+
+        with self.assertRaises(AssertionError):
+            validate_artifact(artifact)
 
 
 if __name__ == "__main__":

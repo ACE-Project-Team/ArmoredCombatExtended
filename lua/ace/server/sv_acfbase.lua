@@ -234,7 +234,8 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	--print("Penetration: " .. math.Round(maxPenetration,3) .. "mm")
 	--print("Caliber: "..math.Round(caliber,3).."mm")
 
-	if ACE.IsKineticDamageType(Type) then
+	-- ERA has its own kinetic detonation and depleted-tile rules; let its resolver see every hit.
+	if Mat ~= "ERA" and ACE.IsKineticDamageType(Type) then
 		local curve = tonumber(MatData.curve) or 1
 		local effectiveness = tonumber(MatData.effectiveness) or 1
 		local requiredPenetration = (losArmor ^ curve) * effectiveness

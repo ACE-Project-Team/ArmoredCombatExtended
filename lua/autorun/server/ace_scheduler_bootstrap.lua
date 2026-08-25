@@ -12,4 +12,5 @@ include("ace/server/sv_ace_damage_effect_scheduler.lua")
 include("ace/server/sv_ace_flare_scheduler.lua")
 include("ace/server/sv_ace_sonar_scheduler.lua")
 
-ACE.Scheduler.Enable()
+local enabled = not GetConVar or not GetConVar("ace_scheduler_enabled") or GetConVar("ace_scheduler_enabled"):GetBool()
+if enabled then ACE.Scheduler.Enable() end

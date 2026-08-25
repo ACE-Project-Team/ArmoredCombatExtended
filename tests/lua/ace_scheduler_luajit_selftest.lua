@@ -3,6 +3,8 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 CLIENT = false
 local hookHandlers = {}
+local convars = {}
+local convarCallbacks = {}
 hook = {
 	Add = function(name, identifier, callback)
 		hookHandlers[name] = hookHandlers[name] or {}
@@ -12,6 +14,22 @@ hook = {
 		if hookHandlers[name] then hookHandlers[name][identifier] = nil end
 	end,
 }
+
+cvars = {
+	AddChangeCallback = function(name, callback, identifier)
+		convarCallbacks[name] = { callback = callback, identifier = identifier }
+	end,
+	RemoveChangeCallback = function(name)
+		convarCallbacks[name] = nil
+	end,
+}
+
+function GetConVar(name) return convars[name] end
+function CreateConVar(name)
+	local convar = { value = "1", GetBool = function(self) return self.value ~= "0" end }
+	convars[name] = convar
+	return convar
+end
 
 function CurTime() return 0 end
 
@@ -144,6 +162,13 @@ scheduler = ACE.Scheduler
 assert(scheduler.Enable(), "reloaded scheduler did not enable")
 assert(scheduler.Disable(), "scheduler adapter did not disable")
 assert(not hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not removed")
+
+local switchConVar = GetConVar("ace_scheduler_enabled")
+assert(switchConVar and switchConVar:GetBool(), "scheduler switch did not default on")
+convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "1", "0")
+assert(not scheduler.Enabled, "scheduler switch did not disable")
+convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "0", "1")
+assert(scheduler.Enabled, "scheduler switch did not re-enable")
 
 reset()
 local adapterEnabled, adapterDisabled = 0, 0

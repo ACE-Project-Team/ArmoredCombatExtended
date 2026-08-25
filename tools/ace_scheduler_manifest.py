@@ -77,7 +77,7 @@ REVIEWED_ROWS = {
         (frozenset({(23, 1), (51, 1), (59, 1), (77, 1), (89, 1), (127, 1), (140, 1)}), 'migrated', 'ACE.ScalableResync'),
     ],
     'lua/ace/server/sv_ace_scheduler.lua': [
-        (frozenset({(220, 1), (326, 1)}), 'engine-bound', 'load-order/compatibility or server callback contract'),
+        (frozenset({(230, 1), (336, 1)}), 'engine-bound', 'load-order/compatibility or server callback contract'),
     ],
     'lua/ace/server/sv_ace_sonar_scheduler.lua': [
         (frozenset({(107, 1), (126, 1), (140, 1), (166, 1), (286, 1)}), 'migrated', 'ACE.SonarPingExpiry'),
@@ -342,7 +342,7 @@ REVIEWED_FILE_HASHES = {
     'lua/ace/server/sv_ace_renderqueue.lua': 'b9b4dbb94ec1d795efebcaf7f58a34a51600cecbbbae648ccf998f7d039566a0',
     'lua/ace/server/sv_ace_safezone.lua': '8c64609374b32a40da3496db25cc4fadc554e2731700c67152809b6a7003da62',
     'lua/ace/server/sv_ace_scalability_scheduler.lua': '0d61986e31d9ff6eca91507161e320d0ecb07d9b36a18c139ad7bc59509e8e54',
-    'lua/ace/server/sv_ace_scheduler.lua': '6581cf59353ac1cc6661eab93bffa3125368e34b868652990a67c99fd49c5955',
+    'lua/ace/server/sv_ace_scheduler.lua': '29f8df547b3a59c58ac86deb613a10bd314c268cb725673856644a2f6109de09',
     'lua/ace/server/sv_ace_sonar_scheduler.lua': 'f1800a31cbcc8ddd7f786f009c891eea8b9ec027c1e4098981fe8012b04d66a5',
     'lua/ace/server/sv_ace_vheat_source_scheduler.lua': '876a06816d9a1374e69c6f19b28ac4ae99a89cc8342c8c2422b4272f02815c96',
     'lua/ace/server/sv_ace_wind_sensor_scheduler.lua': '9ae7e2986c50c3f37cee071d7494a94f565b6499beb76183d5407f71c0340329',

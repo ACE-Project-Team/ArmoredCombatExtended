@@ -25,6 +25,16 @@ local Scheduler = {
 	AdapterSequence = 0,
 }
 
+local EnabledConVar = GetConVar and GetConVar("ace_scheduler_enabled")
+if not EnabledConVar and CreateConVar then
+	EnabledConVar = CreateConVar(
+		"ace_scheduler_enabled",
+		"1",
+		FCVAR_ARCHIVE,
+		"Enable ACE's shared server scheduler."
+	)
+end
+
 ACE.Scheduler = Scheduler
 ACE.SchedulerAdapterDefinitions = Scheduler.Adapters
 
@@ -338,4 +348,18 @@ function Scheduler.Disable()
 	ForEachAdapter(function(adapter) adapter.Disable() end)
 	hook.Remove("Think", "ACE_SchedulerDispatch")
 	return true
+end
+
+if cvars and cvars.AddChangeCallback then
+	if cvars.RemoveChangeCallback then
+		cvars.RemoveChangeCallback("ace_scheduler_enabled", "ACE_SchedulerEnabled")
+	end
+
+	cvars.AddChangeCallback("ace_scheduler_enabled", function(_, _, value)
+		if value == "0" then
+			Scheduler.Disable()
+		else
+			Scheduler.Enable()
+		end
+	end, "ACE_SchedulerEnabled")
 end

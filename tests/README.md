@@ -89,6 +89,10 @@ For the standard local dedicated-server install, use `--use-local-srcds`. It dis
 `%USERPROFILE%/gmodds/server`, and starts it from its own server directory. Use
 `--srcds-command` for an explicit executable or custom launch arguments.
 
+The shared scheduler is enabled by default. Set the server convar `ace_scheduler_enabled 0`
+to disable all migrated adapters for a comparison run, then set it back to `1` to re-enable them
+without restarting the server.
+
 ### Core-function checks: the ACF pattern to copy
 
 For a core function, organize one small test group around that function instead of writing

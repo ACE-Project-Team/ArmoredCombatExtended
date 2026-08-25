@@ -152,12 +152,14 @@ expectError(function() scheduler.Run(0, 1.5) end)
 expectError(function() scheduler.Run(0, math.huge) end)
 expectError(function() scheduler.Reschedule("missing", 0 / 0) end)
 
-assert(scheduler.Enable(), "scheduler adapter did not enable")
-assert(not scheduler.Enable(), "scheduler adapter enabled twice")
+assert(scheduler.Enable(), "scheduler did not enable")
+assert(not scheduler.Enable(), "scheduler enabled twice")
 assert(hookHandlers.Think and hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not registered")
-scheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
-assert(hookHandlers.Think and hookHandlers.Think.ACE_SchedulerDispatch, "reload did not restore the scheduler hook")
-assert(ACE.Scheduler.Enabled, "reloaded scheduler did not honor the enabled convar")
+local cachedScheduler = scheduler
+scheduler.Attach("reload-preserved", function() end, 10)
+local reloadedScheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
+assert(reloadedScheduler == cachedScheduler and ACE.Scheduling == cachedScheduler, "reload replaced the scheduler surface")
+assert(scheduler.GetNode("reload-preserved"), "reload discarded queued work")
 scheduler = ACE.Scheduler
 assert(scheduler.Disable(), "scheduler did not disable")
 assert(not hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not removed")

@@ -1,12 +1,7 @@
 if CLIENT then return end
 
 ACE = ACE or {}
-
-local PreviousScheduler = ACE.Scheduler
-
-if PreviousScheduler and hook and hook.Remove then
-	hook.Remove("Think", "ACE_SchedulerDispatch")
-end
+if ACE.Scheduler then return end
 
 -- Prototype only: callers own cadence and must explicitly call Reschedule.
 -- This module does not replace engine hooks, timers, physics, or lifecycle callbacks.

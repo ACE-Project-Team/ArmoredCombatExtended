@@ -22,10 +22,6 @@ function ENT:Initialize()
 
 	self:UpdateOutputs()
 	self:UpdateOverlayText()
-	if ACE.RegisterWindSensor then ACE.RegisterWindSensor(self) end
-	self:CallOnRemove("ACE_WindSensorScheduler", function()
-		if ACE.UnregisterWindSensor then ACE.UnregisterWindSensor(self) end
-	end)
 end
 
 function ACE.MakeWindSensor(Owner, Pos, Angle, Id)
@@ -108,23 +104,11 @@ function ENT:UpdateOverlayText()
 end
 
 function ENT:Think()
-	if ACE.RegisterWindSensor then ACE.RegisterWindSensor(self) end
-	if ACE.Scheduler and ACE.Scheduler.Enabled and self.ACE_WindSensorSchedulerOwned then
-		self:NextThink(CurTime() + 3600)
-		return true
-	end
-
 	local curTime = CurTime()
 
 	self:UpdateOutputs()
 	self:UpdateOverlayText()
-	if ACE.MarkWindSensorFallback then ACE.MarkWindSensorFallback(self, curTime) end
 
 	self:NextThink(curTime + self.ThinkDelay)
 	return true
-end
-
-function ENT:OnRemove()
-	if ACE.UnregisterWindSensor then ACE.UnregisterWindSensor(self) end
-	BaseClass.OnRemove(self)
 end

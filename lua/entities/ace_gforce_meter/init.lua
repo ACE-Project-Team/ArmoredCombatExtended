@@ -156,31 +156,13 @@ function ENT:UpdateOverlayText()
 	self:SetOverlayText(txt)
 end
 
---- Runs one g-force sample and either dispatches through the optional scheduler or fallback path.
--- @return boolean Keep the entity Think callback active.
 function ENT:Think()
 	local curTime = CurTime()
-	if ACE.RegisterGForceMeter then ACE.RegisterGForceMeter(self) end
-	if self.ACE_GForceMeterSchedulerOwned then
-		self:NextThink(curTime + 3600)
-		return true
-	end
 
-	if ACE.UpdateGForceMeter then
-		ACE.UpdateGForceMeter(self)
-		ACE.MarkGForceMeterFallback(self, curTime)
-	else
-		self:CalculateGForce()
-		self:UpdateOutputs()
-		self:UpdateOverlayText()
-	end
+	self:CalculateGForce()
+	self:UpdateOutputs()
+	self:UpdateOverlayText()
 
 	self:NextThink(curTime + self.ThinkDelay)
 	return true
-end
-
---- Detaches this meter from the optional scheduler before base cleanup.
-function ENT:OnRemove()
-	if ACE.UnregisterGForceMeter then ACE.UnregisterGForceMeter(self) end
-	BaseClass.OnRemove(self)
 end

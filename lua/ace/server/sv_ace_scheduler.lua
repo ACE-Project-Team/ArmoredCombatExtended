@@ -36,6 +36,8 @@ if not EnabledConVar and CreateConVar then
 end
 
 ACE.Scheduler = Scheduler
+-- Stable public scheduling surface; keep the heap implementation private to this module.
+ACE.Scheduling = Scheduler
 ACE.SchedulerAdapterDefinitions = Scheduler.Adapters
 
 for _, adapter in pairs(Scheduler.Adapters) do

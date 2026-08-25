@@ -323,33 +323,6 @@ end
 
 timer.Create( "PeriodicCleanup", 3, 0, ACE.refreshdata )
 
-local PeriodicCleanupSchedulerKey = "ACE.PeriodicCleanup"
-
-local function EnablePeriodicCleanupScheduler()
-	timer.Remove("PeriodicCleanup")
-	ACE.Scheduler.Attach(PeriodicCleanupSchedulerKey, function(_, now)
-		ACE.refreshdata()
-		ACE.Scheduler.Reschedule(PeriodicCleanupSchedulerKey, now + 3)
-	end, CurTime() + 3)
-end
-
-local function DisablePeriodicCleanupScheduler()
-	if ACE.Scheduler then ACE.Scheduler.Detach(PeriodicCleanupSchedulerKey) end
-	timer.Create("PeriodicCleanup", 3, 0, ACE.refreshdata)
-end
-
-local PeriodicCleanupAdapter = {
-	Enable = EnablePeriodicCleanupScheduler,
-	Disable = DisablePeriodicCleanupScheduler,
-}
-
-if ACE.Scheduler then
-	ACE.Scheduler.RegisterAdapter(PeriodicCleanupSchedulerKey, EnablePeriodicCleanupScheduler, DisablePeriodicCleanupScheduler)
-else
-	ACE.SchedulerAdapterDefinitions = ACE.SchedulerAdapterDefinitions or {}
-	ACE.SchedulerAdapterDefinitions[PeriodicCleanupSchedulerKey] = PeriodicCleanupAdapter
-end
-
 hook.Add("AdvDupe_FinishPasting", "ACE_refresh", function(dupeInfo)
 	local dupe = istable(dupeInfo) and dupeInfo[1]
 	local created = dupe and dupe.CreatedEntities

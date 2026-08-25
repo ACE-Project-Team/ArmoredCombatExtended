@@ -108,7 +108,7 @@ local function getMapSZs()
 
 	this.Safezones = safezones
 
-	ACE.ScheduleSafezoneVisualization(5)
+	timer.Simple( 5, function() this.visualizeSafeZones() end )
 
 	return true
 end
@@ -154,6 +154,24 @@ hook.Add("ACE_PlayerChangedZone", "ACE_TellPlyAboutSafezoneBattle", function(ply
 
 	ACE.SendMsg(ply, zone and Color(0, 255, 0) or Color(255, 0, 0), "You have entered the " .. (zone and zone .. " safezone." or "battlefield!"))
 end)
+
+local plyzones = {}
+hook.Add("Think", "ACE_DetectSZTransition", function()
+	for _, ply in pairs(player.GetAll()) do
+		local sid = ply:SteamID()
+		--local trans = false
+		local pos = ply:GetPos()
+		local oldzone = plyzones[sid]
+
+		local zone = this.IsInSafezone(pos) or nil
+		plyzones[sid] = zone
+
+		if oldzone ~= zone then
+			hook.Call("ACE_PlayerChangedZone", GAMEMODE, ply, zone, oldzone)
+		end
+	end
+end)
+
 
 concommand.Add( "ACE_AddSafeZone", function(ply, _, args)
 	local validply = IsValid(ply)
@@ -435,8 +453,6 @@ function this.IsInSafezone(pos)
 	return false
 end
 
-include("ace/server/sv_ace_safezone.lua")
-
 function this.RegisterMode(mode, name, desc, default, think, defaultaction, notifysafezones)
 
 	this.Modes[name] = mode
@@ -495,23 +511,6 @@ function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
 end
 hook.Add("ACE_BulletDamage", "ACE_DamagePermissionCore", this.CanDamage)
 
-local PermissionThinkSchedulerKey = "ACE.PermissionModeThink"
-local PermissionThinkGeneration = 0
-
-local function SchedulePermissionThink(delay)
-	local generation = PermissionThinkGeneration
-	local scheduler = ACE.Scheduler
-	if scheduler and scheduler.Enabled then
-		scheduler.Attach(PermissionThinkSchedulerKey, function()
-			if generation == PermissionThinkGeneration then this.thinkWrapper() end
-		end, CurTime() + delay)
-	else
-		timer.Simple(delay, function()
-			if generation == PermissionThinkGeneration then this.thinkWrapper() end
-		end)
-	end
-end
-
 function this.thinkWrapper()
 
 	local curmode	= table.KeyFromValue(this.Modes, this.DamagePermission)
@@ -522,32 +521,8 @@ function this.thinkWrapper()
 		nextthink = think()
 	end
 
-	SchedulePermissionThink(nextthink or 0.01)
+	timer.Simple(nextthink or 0.01, this.thinkWrapper)
 end
-
-local function EnablePermissionThinkScheduler()
-	PermissionThinkGeneration = PermissionThinkGeneration + 1
-	if ACE.Scheduler and ACE.Scheduler.Enabled then SchedulePermissionThink(0) end
-end
-
-local function DisablePermissionThinkScheduler()
-	PermissionThinkGeneration = PermissionThinkGeneration + 1
-	if ACE.Scheduler then ACE.Scheduler.Detach(PermissionThinkSchedulerKey) end
-	SchedulePermissionThink(0.01)
-end
-
-local PermissionThinkAdapter = {
-	Enable = EnablePermissionThinkScheduler,
-	Disable = DisablePermissionThinkScheduler,
-}
-
-if ACE.Scheduler then
-	ACE.Scheduler.RegisterAdapter(PermissionThinkSchedulerKey, EnablePermissionThinkScheduler, DisablePermissionThinkScheduler)
-else
-	ACE.SchedulerAdapterDefinitions = ACE.SchedulerAdapterDefinitions or {}
-	ACE.SchedulerAdapterDefinitions[PermissionThinkSchedulerKey] = PermissionThinkAdapter
-end
-
 timer.Simple(0.01, this.thinkWrapper)
 
 function this.GetDamagePermissions(ownerid)
@@ -604,6 +579,7 @@ local function onDisconnect( ply )
 		this.Player[plyid] = nil
 	end
 
+	plyzones[plyid] = nil
 end
 hook.Add( "PlayerDisconnected", "ACE_PermissionDisconnect", onDisconnect )
 

@@ -1169,7 +1169,7 @@ function ENT:MuzzleEffect()
 		Effect:SetSurfaceProp( ACE.RoundTypes[self.BulletData.Type].netid  )	--Encoding the ammo type into a table index
 	util.Effect( "ACE_MuzzleFlash", Effect, true, true )
 
-	if self.AutoSound and self.Sound ~= "" and not (ACE and ACE.ScheduleGunAutoSound and ACE.ScheduleGunAutoSound(self, 0.6)) then
+	if self.AutoSound and self.Sound ~= "" then
 		timer.Simple(0.6, function()
 			self:EmitSound(self.AutoSound, 73, math.random(84, 86))
 		end )

@@ -430,6 +430,7 @@ if SERVER then
     AddCSLuaFile("ace/client/cl_acfpermission.lua")
     AddCSLuaFile("ace/client/gui/cl_acfsetpermission.lua")
 
+
 elseif CLIENT then
 
     include("ace/client/cl_acfballistics.lua")
@@ -585,38 +586,14 @@ else
     local curveFactor = 2.5
     local reset_timer = 60
     ACE.Wind = Vector()
-    local function UpdateWind()
+    timer.Create("ACE_Wind", reset_timer, 0, function()
         local smokeDir = Vector(math.Rand(-1, 1), math.Rand(-1, 1), 0):GetNormalized()
         ACE.Wind = (math.random() ^ curveFactor) * smokeDir * GetConVar("ace_wind"):GetFloat()
         net.Start("ACE_Wind")
             net.WriteFloat(ACE.Wind.x)
             net.WriteFloat(ACE.Wind.y)
         net.Broadcast()
-    end
-
-    timer.Create("ACE_Wind", reset_timer, 0, UpdateWind)
-
-    local WindSchedulerKey = "ACE.Wind"
-    local function EnableWindScheduler()
-        timer.Remove("ACE_Wind")
-        ACE.Scheduler.Attach(WindSchedulerKey, function(_, now)
-            UpdateWind()
-            ACE.Scheduler.Reschedule(WindSchedulerKey, now + reset_timer)
-        end, CurTime() + reset_timer)
-    end
-
-    local function DisableWindScheduler()
-        if ACE.Scheduler then ACE.Scheduler.Detach(WindSchedulerKey) end
-        timer.Create("ACE_Wind", reset_timer, 0, UpdateWind)
-    end
-
-    local WindAdapter = { Enable = EnableWindScheduler, Disable = DisableWindScheduler }
-    if ACE.Scheduler then
-        ACE.Scheduler.RegisterAdapter(WindSchedulerKey, EnableWindScheduler, DisableWindScheduler)
-    else
-        ACE.SchedulerAdapterDefinitions = ACE.SchedulerAdapterDefinitions or {}
-        ACE.SchedulerAdapterDefinitions[WindSchedulerKey] = WindAdapter
-    end
+    end)
 end
 
 
@@ -626,12 +603,5 @@ cleanup.Register( "aceexplosives" )
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")
-
-if SERVER then
-    -- Re-run the opt-in scheduler bootstrap after ACE's server namespace and
-    -- permission/contraption modules are fully initialized. The autorun file
-    -- remains idempotent for load orders where it runs earlier.
-    include("autorun/server/ace_scheduler_bootstrap.lua")
-end
 
 print("[ACE | INFO]- Done!")

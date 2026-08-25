@@ -35,6 +35,7 @@ function CurTime() return 0 end
 
 dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua")
 local scheduler = ACE.Scheduler
+assert(ACE.Scheduling == scheduler, "stable scheduling surface did not bind to the scheduler")
 
 local function reset()
 	for key in pairs(scheduler.Nodes) do scheduler.Detach(key) end

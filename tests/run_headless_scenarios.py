@@ -18,7 +18,6 @@ import tempfile
 import time
 
 REPO = Path(__file__).resolve().parents[1]
-SRCDS_ENVIRONMENT_KEYS = ("SRCDS_PATH", "GMODDS_SRCDS")
 
 sys.path.insert(0, str(REPO / "tests" / "python"))
 from test_runtime_artifact_schema import validate_artifact
@@ -63,36 +62,6 @@ def write_resolved_manifest(run_dir: Path, scenarios: list[dict]) -> None:
 
 def scenarios_from_manifest(path: Path) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))["scenarios"]
-
-
-def discover_local_srcds(environ: dict[str, str] | None = None, home: Path | None = None) -> Path:
-    environment = os.environ if environ is None else environ
-    candidates: list[Path] = []
-
-    for key in SRCDS_ENVIRONMENT_KEYS:
-        value = environment.get(key)
-        if value:
-            configured = Path(value).expanduser()
-            candidates.extend(
-                (configured, configured / "srcds_win64.exe", configured / "srcds.exe")
-                if configured.is_dir()
-                else (configured,)
-            )
-
-    local_home = Path.home() if home is None else home
-    candidates.extend(
-        (
-            local_home / "gmodds" / "server" / "srcds_win64.exe",
-            local_home / "gmodds" / "server" / "srcds.exe",
-        )
-    )
-
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate.resolve()
-
-    searched = ", ".join(str(candidate) for candidate in candidates)
-    raise SystemExit(f"No local SRCDS executable found; searched: {searched}")
 
 
 def stop_process_tree(process: subprocess.Popen, force: bool = False) -> None:
@@ -160,7 +129,7 @@ def validate_console(run_dir: Path) -> None:
         raise SystemExit("Headless run console contains a Lua/runtime error")
 
 
-def run_server(command: list[str], run_dir: Path, timeout: int, server_cwd: Path | None = None) -> int:
+def run_server(command: list[str], run_dir: Path, timeout: int) -> int:
     boot = run_dir / "boot.txt"
     done = run_dir / "done.txt"
     log = run_dir / "console.log"
@@ -178,7 +147,7 @@ def run_server(command: list[str], run_dir: Path, timeout: int, server_cwd: Path
             command,
             stdout=handle,
             stderr=subprocess.STDOUT,
-            cwd=server_cwd or REPO,
+            cwd=REPO,
             env=environment,
             start_new_session=(os.name != "nt"),
         )
@@ -227,11 +196,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", default="tests/fixtures/general_use_manifest.json")
     parser.add_argument("--ci", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument(
-        "--use-local-srcds",
-        action="store_true",
-        help="discover srcds_win64.exe/srcds.exe using SRCDS_PATH, GMODDS_SRCDS, or ~/gmodds/server",
-    )
     parser.add_argument("--srcds-command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
 
@@ -242,21 +206,12 @@ def main(argv: list[str] | None = None) -> int:
         run_dir = Path(tmp)
         write_resolved_manifest(run_dir, scenarios)
 
-        server_command = args.srcds_command
-        server_cwd = None
-        if args.use_local_srcds:
-            if server_command:
-                parser.error("--use-local-srcds cannot be combined with --srcds-command")
-            executable = discover_local_srcds()
-            server_command = [str(executable), "-console", "-game", "garrysmod", "+map", "gm_construct"]
-            server_cwd = executable.parent
-
-        if args.dry_run or not server_command:
+        if args.dry_run or not args.srcds_command:
             print(f"Selected {len(scenarios)} headless scenario(s); dry-run only")
             return 0
 
         timeout = sum(scenario["timeout_seconds"] for scenario in scenarios) + 30
-        return run_server(server_command, run_dir, timeout, server_cwd)
+        return run_server(args.srcds_command, run_dir, timeout)
 
 
 if __name__ == "__main__":

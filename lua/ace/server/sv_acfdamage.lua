@@ -1680,16 +1680,14 @@ do
 
 		--util.Effect not working during MP workaround. Waiting a while fixes the issue.
 		local VisualRadius = math.min(Radius, 1000)
-		if not (ACE and ACE.ScheduleDamageDetonationEffect and ACE.ScheduleDamageDetonationEffect(AvgPos, VisualRadius, 0.001)) then
-			timer.Simple(0.001, function()
-				local Flash = EffectData()
-					Flash:SetAttachment( 1 )
-					Flash:SetOrigin( AvgPos )
-					Flash:SetNormal( -vector_up )
-					Flash:SetRadius( math.max( VisualRadius , 1 ) )
-				util.Effect( "ACE_Scaled_Detonation", Flash )
-			end )
-		end
+		timer.Simple(0.001, function()
+			local Flash = EffectData()
+				Flash:SetAttachment( 1 )
+				Flash:SetOrigin( AvgPos )
+				Flash:SetNormal( -vector_up )
+				Flash:SetRadius( math.max( VisualRadius , 1 ) )
+			util.Effect( "ACE_Scaled_Detonation", Flash )
+		end )
 
 	end
 

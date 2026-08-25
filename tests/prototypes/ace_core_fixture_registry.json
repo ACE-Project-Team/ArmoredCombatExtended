@@ -2,7 +2,7 @@
   "schema": 2,
   "status": "prototype",
   "observations": {
-    "native_entity": ["ACE"]
+    "native_entity": ["ACE", "ACE.Health", "ACE.Armour"]
   },
   "fixtures": {
     "valid_prop": {"kind": "native_entity", "class": "prop_physics", "model": "models/props_junk/wood_crate001a.mdl", "mass": 10, "ace": {"Material": "RHA", "Type": "Prop"}},
@@ -21,6 +21,7 @@
     ,"gate_target_above": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_target_zero": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 0, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_target_non_kinetic": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 10000, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"gate_prop_target": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Health": 100, "MaxArmour": 100, "MaxHealth": 100, "PrHealth": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_energy_below": {"kind": "value", "value": {"Kinetic": 600, "Momentum": 0, "Penetration": 600}}
     ,"gate_energy_above": {"kind": "value", "value": {"Kinetic": 900, "Momentum": 0, "Penetration": 900}}
     ,"gate_energy_low": {"kind": "value", "value": {"Kinetic": 1, "Momentum": 0, "Penetration": 1}}
@@ -28,10 +29,23 @@
     ,"gate_angle": {"kind": "value", "value": 0}
     ,"gate_ap_type": {"kind": "value", "value": "AP"}
     ,"gate_he_type": {"kind": "value", "value": "HE"}
+    ,"type_ap": {"kind": "value", "value": "AP"}
+    ,"type_apds": {"kind": "value", "value": "APDS"}
+    ,"type_apfsds": {"kind": "value", "value": "APFSDS"}
+    ,"type_aphe": {"kind": "value", "value": "APHE"}
+    ,"type_cap": {"kind": "value", "value": "CAP"}
+    ,"type_fl": {"kind": "value", "value": "FL"}
+    ,"type_hp": {"kind": "value", "value": "HP"}
+    ,"type_hvap": {"kind": "value", "value": "HVAP"}
+    ,"type_he": {"kind": "value", "value": "HE"}
+    ,"type_heat": {"kind": "value", "value": "HEAT"}
+    ,"type_hesh": {"kind": "value", "value": "HESH"}
+    ,"type_spall": {"kind": "value", "value": "Spall"}
     ,"health_reference_area": {"kind": "value", "value": 264.7}
     ,"health_quarter_area": {"kind": "value", "value": 66.175}
     ,"health_zero": {"kind": "value", "value": 0}
     ,"health_ductility": {"kind": "value", "value": 0}
+    ,"health_high_ductility": {"kind": "value", "value": 0.8}
     ,"health_reference_armour": {"kind": "value", "value": 10}
     ,"health_thirty_armour": {"kind": "value", "value": 300}
     ,"health_half_armour": {"kind": "value", "value": 5}

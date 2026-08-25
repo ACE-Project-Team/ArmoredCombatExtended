@@ -159,6 +159,62 @@ do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
 expect Result.KineticThresholdFailed does not exist
 cleanup automatic
 
+new Test "Kinetic and non-kinetic round families are classified consistently"
+scenario ace.native.armor.kinetic_classification
+requires native
+uses type_ap as AP
+uses type_apds as APDS
+uses type_apfsds as APFSDS
+uses type_aphe as APHE
+uses type_cap as CAP
+uses type_fl as FL
+uses type_hp as HP
+uses type_hvap as HVAP
+uses type_he as HE
+uses type_heat as HEAT
+uses type_hesh as HESH
+uses type_spall as Spall
+do ACE.IsKineticDamageType on AP as APResult
+do ACE.IsKineticDamageType on APDS as APDSResult
+do ACE.IsKineticDamageType on APFSDS as APFSDSResult
+do ACE.IsKineticDamageType on APHE as APHEResult
+do ACE.IsKineticDamageType on CAP as CAPResult
+do ACE.IsKineticDamageType on FL as FLResult
+do ACE.IsKineticDamageType on HP as HPResult
+do ACE.IsKineticDamageType on HVAP as HVAPResult
+do ACE.IsKineticDamageType on HE as HEResult
+do ACE.IsKineticDamageType on HEAT as HEATResult
+do ACE.IsKineticDamageType on HESH as HESHResult
+do ACE.IsKineticDamageType on Spall as SpallResult
+expect APResult is true
+expect APDSResult is true
+expect APFSDSResult is true
+expect APHEResult is true
+expect CAPResult is true
+expect FLResult is true
+expect HPResult is true
+expect HVAPResult is true
+expect HEResult is false
+expect HEATResult is false
+expect HESHResult is false
+expect SpallResult is false
+cleanup automatic
+
+new Test "Rejected kinetic damage does not mutate prop armor state"
+scenario ace.native.armor.prop_damage_guard
+requires native
+uses gate_prop_target as Target
+uses gate_energy_below as Energy
+uses gate_area as Area
+uses gate_angle as Angle
+uses gate_ap_type as Type
+do ACE.PropDamage on Target and Energy and Area and Angle and Target and Target and Type as Result
+expect Result.Damage is 0
+expect Result.KineticThresholdFailed is true
+expect Target.ACE.Health is 100
+expect Target.ACE.Armour is 100
+cleanup automatic
+
 new Test "Armor health keeps its reference value"
 scenario ace.native.armor.health_reference
 requires native
@@ -167,6 +223,20 @@ uses health_ductility as Ductility
 uses health_reference_armour as Armour
 do ACE.CalcHealth on Area and Ductility and Armour as Health
 expect Health is 10
+cleanup automatic
+
+new Test "Armor health includes ductility and half-thickness behavior"
+scenario ace.native.armor.health_modifiers
+requires native
+uses health_reference_area as Area
+uses health_high_ductility as Ductility
+uses health_ductility as ZeroDuctility
+uses health_reference_armour as Armour
+uses health_half_armour as HalfArmour
+do ACE.CalcHealth on Area and Ductility and Armour as DuctileHealth
+do ACE.CalcHealth on Area and ZeroDuctility and HalfArmour as HalfHealth
+expect DuctileHealth is 18
+expect HalfHealth is 5
 cleanup automatic
 
 new Test "Armor health scales with thickness"

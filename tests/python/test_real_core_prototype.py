@@ -37,7 +37,7 @@ class RealCorePrototypeTests(unittest.TestCase):
             "ACE.CheckLegal",
         ):
             self.assertIn(symbol, suite)
-        self.assertEqual(suite.count("requires native"), 20)
+        self.assertEqual(suite.count("requires native"), 23)
         for phrase in ("was reactivated", "is legal", "is not legal", "reason is", "cleanup automatic"):
             self.assertIn(phrase, suite)
 

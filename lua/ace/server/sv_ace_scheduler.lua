@@ -3,9 +3,8 @@ if CLIENT then return end
 ACE = ACE or {}
 
 local PreviousScheduler = ACE.Scheduler
-if PreviousScheduler and PreviousScheduler.Enabled and PreviousScheduler.Disable then
-	PreviousScheduler.Disable()
-elseif PreviousScheduler and PreviousScheduler.Enabled and hook and hook.Remove then
+
+if PreviousScheduler and hook and hook.Remove then
 	hook.Remove("Think", "ACE_SchedulerDispatch")
 end
 
@@ -21,8 +20,6 @@ local Scheduler = {
 	Enabled = false,
 	Measure = false,
 	LastStats = {},
-	Adapters = ACE.SchedulerAdapterDefinitions or {},
-	AdapterSequence = 0,
 }
 
 local EnabledConVar = GetConVar and GetConVar("ace_scheduler_enabled")
@@ -36,15 +33,8 @@ if not EnabledConVar and CreateConVar then
 end
 
 ACE.Scheduler = Scheduler
--- Stable public scheduling surface; keep the heap implementation private to this module.
+-- Stable public scheduling surface over the shared heap dispatcher.
 ACE.Scheduling = Scheduler
-ACE.SchedulerAdapterDefinitions = Scheduler.Adapters
-
-for _, adapter in pairs(Scheduler.Adapters) do
-	if type(adapter.Order) == "number" and adapter.Order > Scheduler.AdapterSequence then
-		Scheduler.AdapterSequence = adapter.Order
-	end
-end
 
 local function IsEarlier(left, right)
 	if left.Due ~= right.Due then return left.Due < right.Due end
@@ -147,34 +137,6 @@ local function ValidatePriority(priority)
 	end
 end
 
-local function ForEachAdapter(callback)
-	local keys = {}
-	for key in pairs(Scheduler.Adapters) do keys[#keys + 1] = key end
-	table.sort(keys, function(left, right)
-		local leftType = type(left)
-		local rightType = type(right)
-		if leftType ~= rightType then return leftType < rightType end
-		if leftType == "number" and left ~= right then
-			local leftNaN = left ~= left
-			local rightNaN = right ~= right
-			if leftNaN ~= rightNaN then return not leftNaN end
-			if not leftNaN then return left < right end
-		end
-		if leftType == "string" and left ~= right then return left < right end
-
-		local leftAdapter = Scheduler.Adapters[left]
-		local rightAdapter = Scheduler.Adapters[right]
-		local leftOrder = leftAdapter.Order or 0
-		local rightOrder = rightAdapter.Order or 0
-		if leftOrder ~= rightOrder then return leftOrder < rightOrder end
-		return tostring(left) < tostring(right)
-	end)
-
-	for index = 1, #keys do
-		callback(Scheduler.Adapters[keys[index]], keys[index])
-	end
-end
-
 function Scheduler.Attach(key, callback, due, options)
 	if key == nil then error("ACE.Scheduler key must not be nil", 2) end
 	if type(callback) ~= "function" then error("ACE.Scheduler callback must be a function", 2) end
@@ -227,23 +189,6 @@ end
 
 function Scheduler.GetNode(key)
 	return Scheduler.Nodes[key]
-end
-
-function Scheduler.RegisterAdapter(key, enable, disable)
-	if key == nil then error("ACE.Scheduler adapter key must not be nil", 2) end
-	if type(enable) ~= "function" or type(disable) ~= "function" then
-		error("ACE.Scheduler adapter callbacks must be functions", 2)
-	end
-
-	Scheduler.AdapterSequence = Scheduler.AdapterSequence + 1
-	local previous = Scheduler.Adapters[key]
-	Scheduler.Adapters[key] = {
-		Enable = enable,
-		Disable = disable,
-		Order = previous and previous.Order or Scheduler.AdapterSequence,
-	}
-	if Scheduler.Enabled then enable() end
-	return true
 end
 
 function Scheduler.GetSize()
@@ -338,7 +283,6 @@ function Scheduler.Enable()
 	hook.Add("Think", "ACE_SchedulerDispatch", function()
 		Scheduler.Run(CurTime())
 	end)
-	ForEachAdapter(function(adapter) adapter.Enable() end)
 
 	return true
 end
@@ -347,10 +291,11 @@ function Scheduler.Disable()
 	if not Scheduler.Enabled then return false end
 
 	Scheduler.Enabled = false
-	ForEachAdapter(function(adapter) adapter.Disable() end)
 	hook.Remove("Think", "ACE_SchedulerDispatch")
 	return true
 end
+
+if not EnabledConVar or EnabledConVar:GetBool() then Scheduler.Enable() end
 
 if cvars and cvars.AddChangeCallback then
 	if cvars.RemoveChangeCallback then

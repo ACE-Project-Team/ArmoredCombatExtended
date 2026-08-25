@@ -157,11 +157,10 @@ assert(scheduler.Enable(), "scheduler adapter did not enable")
 assert(not scheduler.Enable(), "scheduler adapter enabled twice")
 assert(hookHandlers.Think and hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not registered")
 scheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
-assert(not hookHandlers.Think.ACE_SchedulerDispatch, "reload left the old scheduler hook installed")
-assert(not ACE.Scheduler.Enabled, "reloaded scheduler unexpectedly enabled")
+assert(hookHandlers.Think and hookHandlers.Think.ACE_SchedulerDispatch, "reload did not restore the scheduler hook")
+assert(ACE.Scheduler.Enabled, "reloaded scheduler did not honor the enabled convar")
 scheduler = ACE.Scheduler
-assert(scheduler.Enable(), "reloaded scheduler did not enable")
-assert(scheduler.Disable(), "scheduler adapter did not disable")
+assert(scheduler.Disable(), "scheduler did not disable")
 assert(not hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not removed")
 
 local switchConVar = GetConVar("ace_scheduler_enabled")
@@ -170,41 +169,5 @@ convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "1", "0"
 assert(not scheduler.Enabled, "scheduler switch did not disable")
 convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "0", "1")
 assert(scheduler.Enabled, "scheduler switch did not re-enable")
-
-reset()
-local adapterEnabled, adapterDisabled = 0, 0
-local adapterOrder = {}
-local disableOrder = {}
-scheduler.RegisterAdapter("z-self-test", function()
-	adapterEnabled = adapterEnabled + 1
-	scheduler.Attach("z-adapter-node", function() adapterOrder[#adapterOrder + 1] = "z" end, 0)
-end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "z" end)
-scheduler.RegisterAdapter("a-self-test", function()
-	adapterEnabled = adapterEnabled + 1
-	scheduler.Attach("a-adapter-node", function() adapterOrder[#adapterOrder + 1] = "a" end, 0)
-end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "a" end)
-scheduler.RegisterAdapter(5, function()
-	adapterEnabled = adapterEnabled + 1
-	scheduler.Attach("five-adapter-node", function() adapterOrder[#adapterOrder + 1] = "5" end, 0)
-end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "5" end)
-scheduler.RegisterAdapter(10, function()
-	adapterEnabled = adapterEnabled + 1
-	scheduler.Attach("ten-adapter-node", function() adapterOrder[#adapterOrder + 1] = "10" end, 0)
-end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "10" end)
-scheduler.RegisterAdapter(2, function()
-	adapterEnabled = adapterEnabled + 1
-	scheduler.Attach("two-adapter-node", function() adapterOrder[#adapterOrder + 1] = "2" end, 0)
-end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "2" end)
-assert(scheduler.Enable() and adapterEnabled == 5, "registered adapters did not enable")
-assert(scheduler.Run(0).Ran == 5 and table.concat(adapterOrder) == "2510az", "adapter activation order was not deterministic")
-assert(scheduler.Disable() and adapterDisabled == 5 and table.concat(disableOrder) == "2510az", "adapter disable order was not deterministic")
-
-ACE.SchedulerAdapterDefinitions = {
-	["persisted-z"] = { Enable = function() end, Disable = function() end, Order = 7 },
-	["persisted-a"] = { Enable = function() end, Disable = function() end, Order = 9 },
-}
-scheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
-scheduler.RegisterAdapter("after-reload", function() end, function() end)
-assert(scheduler.Adapters["after-reload"].Order == 10, "adapter order sequence was not preserved across reload")
 
 print("ACE scheduler LuaJIT self-test: PASS")

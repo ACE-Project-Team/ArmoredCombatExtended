@@ -52,6 +52,12 @@ function ENT:ACF_Activate( _ )
 	self.ACE.Type		= "Prop"
 end
 
+--- Creates and configures a virtual heat-source entity for a player.
+-- @param Owner Player Player who owns the entity and consumes its limit.
+-- @param Pos Vector Spawn position.
+-- @param Angle Angle Spawn orientation.
+-- @param Id string Optional virtual heat-source definition ID.
+-- @return Entity|boolean Created entity, or false when creation is denied.
 function ACE.MakeVHeatSource(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_ace_vheat_source") then return false end
 
@@ -76,6 +82,7 @@ function ACE.MakeVHeatSource(Owner, Pos, Angle, Id)
 	VHeatSrcEnt:SetNWNetwork()
 	VHeatSrcEnt:SetModelEasy(VHeatSrcTable.model)
 	VHeatSrcEnt:UpdateOverlayText()
+	if ACE.RegisterVHeatSource then ACE.RegisterVHeatSource(VHeatSrcEnt) end
 
 	Owner:AddCount( "_ace_vheat_source", VHeatSrcEnt )
 	Owner:AddCleanup( "acemenu", VHeatSrcEnt )
@@ -129,15 +136,31 @@ function ENT:UpdateOverlayText()
 	self:SetOverlayText(txt)
 end
 
+--- Runs the legacy or heap-owned fixed-step virtual heat update.
 function ENT:Think()
+	if ACE.RegisterVHeatSource then ACE.RegisterVHeatSource(self) end
+	if ACE.Scheduler and ACE.Scheduler.Enabled and self.ACE_VHeatSourceSchedulerOwned then
+		self:NextThink(CurTime() + 3600)
+		return true
+	end
+
 	local curTime = CurTime()
+	if ACE.UpdateVHeatSource then
+		ACE.UpdateVHeatSource(self)
+	else
+		local rateTemperature = self.Active and self.HeatingRate or self.CoolingRate
+		self.Heat = math.Clamp(self.Heat + rateTemperature * self.ThinkDelay, ACE.AmbientTemp, self.MaxTemperature)
+		WireLib.TriggerOutput(self, "Heat", self.Heat)
+		self:UpdateOverlayText()
+	end
+	if ACE.MarkVHeatSourceFallback then ACE.MarkVHeatSourceFallback(self, curTime) end
 	self:NextThink(curTime + self.ThinkDelay)
 
-	local rateTemperature = self.Active and self.HeatingRate or self.CoolingRate
-	self.Heat = math.Clamp(self.Heat + rateTemperature * self.ThinkDelay, ACE.AmbientTemp, self.MaxTemperature)
-
-	WireLib.TriggerOutput(self, "Heat", self.Heat)
-	self:UpdateOverlayText()
-
 	return true --Needed for think delay override
+end
+
+--- Detaches this virtual heat source from scheduler ownership before removal.
+function ENT:OnRemove()
+	if ACE.UnregisterVHeatSource then ACE.UnregisterVHeatSource(self) end
+	BaseClass.OnRemove(self)
 end

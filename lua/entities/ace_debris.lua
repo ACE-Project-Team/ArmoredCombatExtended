@@ -26,10 +26,13 @@ function ENT:Initialize()
 	end
 
 	if ACE.DebrisLifeTime > 0 then
-		timer.Simple(ACE.DebrisLifeTime, function()
-			if IsValid(self) then
-				self:Remove()
-			end
+		if not (ACE.ScheduleEntityRemoval and ACE.ScheduleEntityRemoval(self, ACE.DebrisLifeTime, "Debris")) then
+			timer.Simple(ACE.DebrisLifeTime, function()
+				if IsValid(self) then self:Remove() end
+			end)
+		end
+		self:CallOnRemove("ACE_DebrisSchedulerRemove", function(ent)
+			if ACE.UnregisterEntityRemoval then ACE.UnregisterEntityRemoval(ent) end
 		end)
 	end
 end

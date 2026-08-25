@@ -96,6 +96,8 @@ do
 		end
 	end
 
+	ACE.NetworkScalableScale = NetworkNewScale
+
 	function ENT:ACE_SetScale( ScaleData )
 
 		local MeshData 		= ScaleData.Mesh
@@ -136,22 +138,17 @@ do
 				NetworkNewScale( Ent, ScaleData.Scale, ply )
 			end
 		else
+			if ACE.ScheduleScalableResync and ACE.ScheduleScalableResync(ply) then return end
 
-			--TODO: Do a dedicated scalable table to avoid unnecessary loops
-			-- Key the resync timer per requesting player. A random 1-100 id could
-			-- collide between two players (or a re-request), silently overwriting
-			-- one player's in-progress resync. UserID is unique per session.
+			-- Legacy fallback when the opt-in scheduler is unavailable.
 			local Id = "ACE_ScaleRequest_" .. (IsValid(ply) and ply:UserID() or math.random(1, 1000000))
 			local scalable_ents = ACE.ScalableEnts
-
 			timer.Create(Id, 0, math.max(#scalable_ents, 1), function()
-
-				local RepLeft = timer.RepsLeft( Id ) + 1
-				local ent = scalable_ents[ RepLeft ]
-
-				if IsValid( ent ) then
+				local RepLeft = timer.RepsLeft(Id) + 1
+				local ent = scalable_ents[RepLeft]
+				if IsValid(ent) then
 					local ScaleData = ent.ScaleData
-					NetworkNewScale( scalable_ents[ RepLeft ], ScaleData.Scale, ply )
+					NetworkNewScale(scalable_ents[RepLeft], ScaleData.Scale, ply)
 				end
 			end)
 		end

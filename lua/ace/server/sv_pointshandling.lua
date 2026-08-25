@@ -2,8 +2,19 @@
 ACE = ACE or {}
 
 include("ace/shared/sh_ace_functions.lua")
+if SERVER and not ACE.Scheduler then include("ace/server/sv_ace_scheduler.lua") end
 
 local IsEnt = ACE.IsEnt
+local PointFlushSchedulerKey = "ACE.PointFlush"
+
+local function SchedulePointFlush()
+	local scheduler = ACE.Scheduler
+	if scheduler and scheduler.Enabled then
+		scheduler.Attach(PointFlushSchedulerKey, function()
+			ACE.FlushQueuedPointChanges()
+		end, CurTime())
+	end
+end
 
 ACE.PointEntityLedger = ACE.PointEntityLedger or setmetatable({}, { __mode = "k" })
 ACE.PendingPointEntityChanges = ACE.PendingPointEntityChanges or {}
@@ -91,6 +102,7 @@ function ACE.QueuePointEntityChange(ent, owner)
 
 	local old = ACE.PointEntityLedger[ent]
 	if old then MarkQueuedContraption(old.Owner) end
+	SchedulePointFlush()
 end
 
 -- Queue a full scan only when a caller cannot identify the changed entity.
@@ -98,10 +110,14 @@ function ACE.QueueContraptionPointRebuild(con)
 	if not IsLiveContraption(con) then return end
 
 	ACE.PendingPointRebuilds[con] = true
+	SchedulePointFlush()
 end
 
 function ACE.QueueContraptionPointWarning(con)
-	if IsLiveContraption(con) then ACE.PendingPointWarnings[con] = true end
+	if IsLiveContraption(con) then
+		ACE.PendingPointWarnings[con] = true
+		SchedulePointFlush()
+	end
 end
 
 function ACE.HasQueuedPointChanges(con)
@@ -173,6 +189,10 @@ end
 -- Apply the point stack once per tick. This is deliberately separate from public
 -- invalidation events: listeners still see every mutation, while scans and warnings coalesce.
 function ACE.FlushQueuedPointChanges()
+	if ACE.Scheduler and ACE.Scheduler.Enabled then
+		ACE.Scheduler.Detach(PointFlushSchedulerKey)
+	end
+
 	local changes = ACE.PendingPointEntityChanges
 	local rebuilds = ACE.PendingPointRebuilds
 	local warnings = ACE.PendingPointWarnings
@@ -430,4 +450,17 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 	end
 end
 
+local function EnablePointFlushScheduler()
+	hook.Remove("Think", "ACE_FlushQueuedPointChanges")
+	SchedulePointFlush()
+end
+
+local function DisablePointFlushScheduler()
+	if ACE.Scheduler then ACE.Scheduler.Detach(PointFlushSchedulerKey) end
+	hook.Add("Think", "ACE_FlushQueuedPointChanges", ACE.FlushQueuedPointChanges)
+end
+
 hook.Add("Think", "ACE_FlushQueuedPointChanges", ACE.FlushQueuedPointChanges)
+if ACE.Scheduler then
+	ACE.Scheduler.RegisterAdapter(PointFlushSchedulerKey, EnablePointFlushScheduler, DisablePointFlushScheduler)
+end

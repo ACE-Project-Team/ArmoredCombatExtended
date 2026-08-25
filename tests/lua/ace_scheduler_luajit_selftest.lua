@@ -1,0 +1,184 @@
+local root = assert(arg[1], "usage: ace_scheduler_luajit_selftest.lua <ACE repo>")
+root = root:gsub("\\\\", "/"):gsub("/$", "")
+
+CLIENT = false
+local hookHandlers = {}
+hook = {
+	Add = function(name, identifier, callback)
+		hookHandlers[name] = hookHandlers[name] or {}
+		hookHandlers[name][identifier] = callback
+	end,
+	Remove = function(name, identifier)
+		if hookHandlers[name] then hookHandlers[name][identifier] = nil end
+	end,
+}
+
+function CurTime() return 0 end
+
+dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua")
+local scheduler = ACE.Scheduler
+
+local function reset()
+	for key in pairs(scheduler.Nodes) do scheduler.Detach(key) end
+	scheduler.Heap = {}
+	scheduler.Sequence = 0
+	scheduler.Running = false
+	scheduler.Enabled = false
+	scheduler.LastStats = {}
+	scheduler.Adapters = {}
+end
+
+local function expectError(callback)
+	local ok = pcall(callback)
+	assert(not ok, "expected an error")
+end
+
+reset()
+local order = {}
+scheduler.Attach("a", function() order[#order + 1] = "a" end, 10)
+scheduler.Attach("b", function() order[#order + 1] = "b" end, 10)
+scheduler.Attach("c", function() order[#order + 1] = "c" end, 10)
+local stats = scheduler.Run(10)
+assert(table.concat(order) == "abc", "equal due times must preserve FIFO order")
+assert(stats.Due == 3 and stats.Ran == 3 and scheduler.GetSize() == 0 and next(scheduler.Nodes) == nil, "basic dispatch stats mismatch")
+
+reset()
+local priorityOrder = {}
+scheduler.Attach("normal", function() priorityOrder[#priorityOrder + 1] = "normal" end, 10)
+scheduler.Attach("late", function() priorityOrder[#priorityOrder + 1] = "late" end, 10, { priority = 10 })
+scheduler.Attach("early", function() priorityOrder[#priorityOrder + 1] = "early" end, 10, { priority = -10 })
+scheduler.Attach("same-priority", function() priorityOrder[#priorityOrder + 1] = "same" end, 10, { priority = -10 })
+assert(scheduler.Run(10).Ran == 4 and table.concat(priorityOrder) == "earlysamenormallate", "priority ordering did not preserve priority then FIFO")
+
+reset()
+local rescheduled = 0
+scheduler.Attach("move", function()
+	rescheduled = rescheduled + 1
+	if rescheduled == 1 then scheduler.Reschedule("move", 30) end
+end, 20)
+scheduler.Attach("early", function() order[#order + 1] = "early" end, 30)
+scheduler.Reschedule("early", 5)
+assert(scheduler.Run(10).Ran == 1, "rescheduled heap node ran at the wrong time")
+assert(rescheduled == 0, "future callback ran too early")
+assert(scheduler.Run(20).Ran == 1 and rescheduled == 1, "callback did not run")
+assert(scheduler.Run(30).Ran == 1 and rescheduled == 2, "explicit reschedule did not run")
+
+reset()
+local snapshotDue
+scheduler.Attach("reschedule-other", function()
+	scheduler.Reschedule("other", 10)
+end, 0)
+scheduler.Attach("other", function(_, _, due) snapshotDue = due end, 0)
+local crossStats = scheduler.Run(0)
+assert(crossStats.Ran == 1 and crossStats.Skipped == 1 and snapshotDue == nil, "rescheduled callback ran in the same snapshot")
+assert(scheduler.GetSize() == 1, "cross-node reschedule was lost")
+assert(scheduler.Run(10).Ran == 1 and snapshotDue == 10, "rescheduled callback did not run at its new due time")
+scheduler.Detach("other")
+
+reset()
+local snapshotCount = 0
+scheduler.Attach("first", function()
+	snapshotCount = snapshotCount + 1
+	scheduler.Detach("second")
+	scheduler.Attach("new", function() snapshotCount = snapshotCount + 10 end, 0)
+end, 0)
+scheduler.Attach("second", function() snapshotCount = snapshotCount + 100 end, 0)
+assert(scheduler.Run(0).Ran == 1 and snapshotCount == 1, "new due work ran in the same snapshot")
+assert(scheduler.Run(0).Ran == 1 and snapshotCount == 11, "deferred work did not run on the next pass")
+
+reset()
+local limitedOrder = {}
+for _, key in ipairs({ "first", "second", "third" }) do
+	scheduler.Attach(key, function() limitedOrder[#limitedOrder + 1] = key end, 0)
+end
+local limitedStats = scheduler.Run(0, 2)
+assert(limitedStats.Due == 2 and limitedStats.Ran == 2, "callback budget did not limit the current snapshot")
+assert(scheduler.GetSize() == 1 and table.concat(limitedOrder) == "firstsecond", "limited dispatch changed FIFO behavior")
+assert(scheduler.Run(0).Ran == 1 and table.concat(limitedOrder) == "firstsecondthird", "budgeted work was lost or duplicated")
+
+reset()
+local replaced = 0
+scheduler.Attach("same", function() replaced = replaced + 1 end, 5)
+scheduler.Attach("same", function() replaced = replaced + 10 end, 5)
+assert(scheduler.Run(5).Ran == 1 and replaced == 10, "reattach left a stale node")
+
+reset()
+local failures = 0
+scheduler.Attach("drop", function() error("expected callback failure") end, 0)
+local errorStats = scheduler.Run(0)
+assert(errorStats.Errors == 1 and scheduler.GetNode("drop") == nil, "failed callback was not isolated")
+scheduler.Attach("retry", function()
+	failures = failures + 1
+	if failures == 1 then
+		scheduler.Reschedule("retry", 1)
+		error("expected retry")
+	end
+end, 0, { retryOnError = true })
+assert(scheduler.Run(0).Errors == 1 and scheduler.GetSize() == 1, "retry policy did not preserve rescheduled work")
+assert(scheduler.Run(1).Ran == 1 and failures == 2, "retry policy did not retry")
+
+reset()
+local replacementRan = 0
+scheduler.Attach("replace-on-error", function()
+	scheduler.Attach("replace-on-error", function() replacementRan = replacementRan + 1 end, 1)
+	error("expected replacement failure")
+end, 0)
+assert(scheduler.Run(0).Errors == 1 and scheduler.GetSize() == 1, "callback failure detached its replacement")
+assert(scheduler.Run(1).Ran == 1 and replacementRan == 1, "replacement did not survive callback failure")
+
+reset()
+expectError(function() scheduler.Attach("bad", function() end, math.huge) end)
+expectError(function() scheduler.Attach("bad-priority", function() end, 0, { priority = 1.5 }) end)
+expectError(function() scheduler.Run(0, 0) end)
+expectError(function() scheduler.Run(0, 1.5) end)
+expectError(function() scheduler.Run(0, math.huge) end)
+expectError(function() scheduler.Reschedule("missing", 0 / 0) end)
+
+assert(scheduler.Enable(), "scheduler adapter did not enable")
+assert(not scheduler.Enable(), "scheduler adapter enabled twice")
+assert(hookHandlers.Think and hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not registered")
+scheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
+assert(not hookHandlers.Think.ACE_SchedulerDispatch, "reload left the old scheduler hook installed")
+assert(not ACE.Scheduler.Enabled, "reloaded scheduler unexpectedly enabled")
+scheduler = ACE.Scheduler
+assert(scheduler.Enable(), "reloaded scheduler did not enable")
+assert(scheduler.Disable(), "scheduler adapter did not disable")
+assert(not hookHandlers.Think.ACE_SchedulerDispatch, "scheduler hook was not removed")
+
+reset()
+local adapterEnabled, adapterDisabled = 0, 0
+local adapterOrder = {}
+local disableOrder = {}
+scheduler.RegisterAdapter("z-self-test", function()
+	adapterEnabled = adapterEnabled + 1
+	scheduler.Attach("z-adapter-node", function() adapterOrder[#adapterOrder + 1] = "z" end, 0)
+end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "z" end)
+scheduler.RegisterAdapter("a-self-test", function()
+	adapterEnabled = adapterEnabled + 1
+	scheduler.Attach("a-adapter-node", function() adapterOrder[#adapterOrder + 1] = "a" end, 0)
+end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "a" end)
+scheduler.RegisterAdapter(5, function()
+	adapterEnabled = adapterEnabled + 1
+	scheduler.Attach("five-adapter-node", function() adapterOrder[#adapterOrder + 1] = "5" end, 0)
+end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "5" end)
+scheduler.RegisterAdapter(10, function()
+	adapterEnabled = adapterEnabled + 1
+	scheduler.Attach("ten-adapter-node", function() adapterOrder[#adapterOrder + 1] = "10" end, 0)
+end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "10" end)
+scheduler.RegisterAdapter(2, function()
+	adapterEnabled = adapterEnabled + 1
+	scheduler.Attach("two-adapter-node", function() adapterOrder[#adapterOrder + 1] = "2" end, 0)
+end, function() adapterDisabled = adapterDisabled + 1; disableOrder[#disableOrder + 1] = "2" end)
+assert(scheduler.Enable() and adapterEnabled == 5, "registered adapters did not enable")
+assert(scheduler.Run(0).Ran == 5 and table.concat(adapterOrder) == "2510az", "adapter activation order was not deterministic")
+assert(scheduler.Disable() and adapterDisabled == 5 and table.concat(disableOrder) == "2510az", "adapter disable order was not deterministic")
+
+ACE.SchedulerAdapterDefinitions = {
+	["persisted-z"] = { Enable = function() end, Disable = function() end, Order = 7 },
+	["persisted-a"] = { Enable = function() end, Disable = function() end, Order = 9 },
+}
+scheduler = dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua") or ACE.Scheduler
+scheduler.RegisterAdapter("after-reload", function() end, function() end)
+assert(scheduler.Adapters["after-reload"].Order == 10, "adapter order sequence was not preserved across reload")
+
+print("ACE scheduler LuaJIT self-test: PASS")

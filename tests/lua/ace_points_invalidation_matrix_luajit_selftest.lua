@@ -25,6 +25,7 @@ end
 
 function IsValid(ent) return isEntity(ent) end
 function ACE.IsEnt(ent) return isEntity(ent) end
+function CurTime() return 100 end
 function isnumber(value) return type(value) == "number" end
 function ACE.GetContraptionFromEntity(ent) return ent.con end
 function ACE.GetWeaponAnchorContraption(ent) return ent.anchor end
@@ -446,6 +447,36 @@ end, { linkedCon }, { Armor = true, Ammo = true, Firepower = true, ReadyRack = t
 })
 assert(linkedCon.ACEPoints == 0 and not linkedCon.ACEPointLedger[linkedGun],
 	"orphan weapon kept points after losing its final anchor")
+
+-- Exercise the same linked-crate invalidation through the opt-in scheduler boundary.
+local scheduledLinkedCon = newContraption("scheduled-linked-weapon")
+local scheduledLinkedGun = newEntity(scheduledLinkedCon, "acf_gun", { firepowerPoints = 5 })
+local scheduledLinkedAmmo = newEntity(scheduledLinkedCon, "acf_ammo", { Master = { scheduledLinkedGun } })
+scheduledLinkedCon.ents[scheduledLinkedGun] = true
+hookHandlers["cfw.contraption.entityAdded"].ACE_AddPoints(scheduledLinkedCon, scheduledLinkedGun)
+hookHandlers.Think.ACE_FlushQueuedPointChanges()
+assert(scheduledLinkedCon.ACEPoints == 5, "scheduled linked fixture did not establish its initial ledger")
+
+local scheduledFlush
+ACE.Scheduler = {
+	Enabled = true,
+	Attach = function(key, callback, due)
+		assert(key == "ACE.PointFlush", "linked scheduler used an unexpected key")
+		scheduledFlush = { callback = callback, due = due }
+	end,
+	Detach = function(key)
+		assert(key == "ACE.PointFlush", "linked scheduler detached an unexpected key")
+		scheduledFlush = nil
+	end,
+}
+scheduledLinkedGun.firepowerPoints = 11
+ACE.NotifyCrateWeapons(scheduledLinkedAmmo, "scheduled-linked-crate")
+assert(scheduledFlush and scheduledFlush.due == CurTime(),
+	"linked crate invalidation did not attach a due-now scheduler callback")
+assert(scheduledLinkedCon.ACEPoints == 5, "linked crate invalidation rebuilt before scheduled dispatch")
+scheduledFlush.callback("ACE.PointFlush", CurTime(), scheduledFlush.due)
+assert(scheduledLinkedCon.ACEPoints == 11,
+	"scheduled linked crate invalidation did not reprice the dependent weapon")
 
 local deleted = newContraption("deleted")
 deleted._removed = true

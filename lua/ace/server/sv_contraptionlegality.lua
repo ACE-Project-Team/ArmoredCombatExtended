@@ -2,6 +2,7 @@ ACE = ACE or {}
 
 include("ace/shared/sh_ace_functions.lua")
 include("ace/server/sv_pointshandling.lua")
+include("ace/server/sv_ace_legalcheck.lua")
 
 
 local IsEnt = ACE.IsEnt
@@ -73,9 +74,7 @@ function ACE.DoContraptionLegalCheck(checkEnt)
 	if not checkEnt.CanLegalCheck then return end
 
 	checkEnt.CanLegalCheck = false
-	timer.Simple(3, function()
-		if IsEnt(checkEnt) then checkEnt.CanLegalCheck = true end
-	end)
+	ACE.ScheduleLegalCheckReset(checkEnt, 3)
 
 	local con = checkEnt:CFW_GetContraption() or {}
 	if table.IsEmpty(con) then return end

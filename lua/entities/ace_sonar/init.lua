@@ -551,25 +551,29 @@ function ENT:activeSonar()
 
 			local Ratio = math.max(1 - (Dist / self.MaximumDistance * EnvironmentalFactor),0.4)
 
-			timer.Simple( TravelTime, function()
-				if not IsValid(Base) then return end
-				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(255, 0, 183), true)
-				Base:EmitSound(ActiveSound, 130, ActivePitch, 1 * Ratio, CHAN_WEAPON )
-			end)
+			if not (ACE.ScheduleSonarTravelSound and ACE.ScheduleSonarTravelSound(Base, TravelTime, SelfPos, BasePos, ActiveSound, ActivePitch, Ratio, 130, CHAN_WEAPON, Color(255, 0, 183), TravelTime)) then
+				timer.Simple( TravelTime, function()
+					if not IsValid(Base) then return end
+					debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(255, 0, 183), true)
+					Base:EmitSound(ActiveSound, 130, ActivePitch, 1 * Ratio, CHAN_WEAPON )
+				end)
+			end
 
 			Contraption.SonarPings = Contraption.SonarPings or {}
 			Contraption.SonarPings[MyID] = Contraption.SonarPings[MyID] or {}
 			Contraption.SonarPings[MyID].Angle = ACE.SonarCalculateAngle(BasePos, SelfPos)
 			Contraption.SonarPings[MyID].Time = CacheTime
 
-			timer.Simple( 6, function() --Longer than cachetime. Should always clear unless something else resets the time.
-				if not IsValid(Contraption:GetACEBaseplate()) then return end
-				--PrintTable(Contraption.SonarPings or {})
-				if ACE.CurTime > Contraption.SonarPings[MyID].Time then
-					Contraption.SonarPings[MyID] = nil
-					--table.remove(Contraption.SonarPings,MyID)
-				end
-			end)
+			if not (ACE.ScheduleSonarPingExpiry and ACE.ScheduleSonarPingExpiry(Contraption, MyID, 6)) then
+				timer.Simple( 6, function() --Longer than cachetime. Should always clear unless something else resets the time.
+					if not IsValid(Contraption:GetACEBaseplate()) then return end
+					--PrintTable(Contraption.SonarPings or {})
+					if ACE.CurTime > Contraption.SonarPings[MyID].Time then
+						Contraption.SonarPings[MyID] = nil
+						--table.remove(Contraption.SonarPings,MyID)
+					end
+				end)
+			end
 
 			--table.remove(self.SonarPositions,ID)
 
@@ -579,11 +583,13 @@ function ENT:activeSonar()
 
 			local Ratio = math.max(1 - (2 * Dist / self.MaximumDistance * RecievingEnvironmentalFactor),0.4)
 
-			timer.Simple( TravelTime * 2, function()
-				debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(43, 0, 255), true)
-				if not IsValid(self) then return end
-				self:EmitSound(ActiveSound, 100, ActivePitch * 1, 1 * Ratio, CHAN_AUTO )
-			end)
+			if not (ACE.ScheduleSonarTravelSound and ACE.ScheduleSonarTravelSound(self, TravelTime * 2, SelfPos, BasePos, ActiveSound, ActivePitch * 1, 1 * Ratio, 100, CHAN_AUTO, Color(43, 0, 255), TravelTime)) then
+				timer.Simple( TravelTime * 2, function()
+					debugoverlay.Line(SelfPos, BasePos, TravelTime, Color(43, 0, 255), true)
+					if not IsValid(self) then return end
+					self:EmitSound(ActiveSound, 100, ActivePitch * 1, 1 * Ratio, CHAN_AUTO )
+				end)
+			end
 
 			timer.Simple( TravelTime * 2 + self.PulseDuration * 0.5, function() --Needs to process the sonar pulse
 

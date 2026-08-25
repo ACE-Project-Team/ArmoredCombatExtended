@@ -1,0 +1,43 @@
+{
+  "provenance_note": "Historical controlled native run from scheduler development; the originating development commit was not retained when this PR history was squashed.",
+  "elapsed_ms": 20598.979,
+  "errors": [],
+  "ok": true,
+  "phases": {
+    "disabled": {
+      "heap": 0,
+      "timer": true
+    },
+    "fallback": {
+      "heap": 0,
+      "timers": true
+    },
+    "fallback_after_due": {
+      "ping_present": false,
+      "records": 0
+    },
+    "heap": {
+      "heap": 1,
+      "records": 1,
+      "timers": false
+    },
+    "heap_after_due": {
+      "heap": 0,
+      "ping_present": false,
+      "records": 0
+    },
+    "invalid_base": {
+      "heap": 0,
+      "records": 0
+    },
+    "reenabled": {
+      "heap": 1,
+      "timer": false
+    }
+  },
+  "post_cleanup_heap": 0,
+  "post_cleanup_records": 0,
+  "post_cleanup_valid_entities": 0,
+  "schema": 1,
+  "started_at": 11.5449501
+}

@@ -9,6 +9,9 @@ on:
       - '!lua/entities/gmod_wire_expression2/**'
       - '.glualint.json'
       - 'tests/**'
+      - 'tools/ace_scheduler_manifest.py'
+      - 'docs/ace_scheduler_surface_manifest.md'
+      - 'tests/python/test_scheduler_manifest.py'
       - '.github/workflows/glualint.yml'
   pull_request:
     paths:
@@ -16,6 +19,9 @@ on:
       - '!lua/entities/gmod_wire_expression2/**'
       - '.glualint.json'
       - 'tests/**'
+      - 'tools/ace_scheduler_manifest.py'
+      - 'docs/ace_scheduler_surface_manifest.md'
+      - 'tests/python/test_scheduler_manifest.py'
       - '.github/workflows/glualint.yml'
 
 permissions:
@@ -40,7 +46,6 @@ jobs:
 
       - name: Compile maintainer-facing ACE tests
         run: python tests/ace_test_compiler.py
-
       - name: Emit static safety warnings
         run: python tests/run_static_safety.py --report static_safety_report.json
 

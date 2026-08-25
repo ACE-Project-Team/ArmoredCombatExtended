@@ -959,9 +959,11 @@ function ENT:Think()
 								local MiniWeight = HEWeight * 0.2
 								ACE.HE( self.BulletData.Pos , vector_origin , MiniWeight , MiniWeight , self.Inflictor , self, self, 0.5 )
 								local radius = math.Clamp(self.BulletData.RoundVolume ^ 0.4 * 0.8, 0.8, 10)
-								timer.Simple(0.001, function()
-									SpawnMiniHEFlash(self, self.BulletData.Pos, radius)
-								end)
+								if not (ACE and ACE.ScheduleAmmoCookoffFlash and ACE.ScheduleAmmoCookoffFlash(self, 0.001, radius)) then
+									timer.Simple(0.001, function()
+										SpawnMiniHEFlash(self, self.BulletData.Pos, radius)
+									end)
+								end
 							end
 						end
 

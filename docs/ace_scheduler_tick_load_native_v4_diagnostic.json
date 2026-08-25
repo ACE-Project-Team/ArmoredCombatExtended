@@ -1,0 +1,14 @@
+{
+  "ace_commit": "b4101d42c69a2cf2e89526c3e846bb899d02d96a",
+  "errors": [],
+  "ok": true,
+  "schema": 1,
+  "scope": "controlled Tick-hook fault-boundary evidence; high-load phases are usable for this headless 66 Hz setup, but idle and 1000-callback phases are not promoted because empty-server cadence is anomalous",
+  "target_tick_ms": 15.151515151515152,
+  "phases": [
+    {"size": 0, "warmup_ticks": 10, "measured_ticks": 59, "tick_interval_ms_median": 0.08900000000267028, "tick_interval_ms_max": 98.0281000000005, "scheduler_work_ms_median": 0, "scheduler_work_ms_max": 0, "dispatch_ms_median": 0, "dispatch_ms_max": 0},
+    {"size": 1000, "warmup_ticks": 10, "measured_ticks": 9, "tick_interval_ms_median": 15.057300000002272, "tick_interval_ms_max": 16.164100000004566, "scheduler_work_ms_median": 2.601499999997259, "scheduler_work_ms_max": 3.4786999999951718, "dispatch_ms_median": 0.19619999999775928, "dispatch_ms_max": 0.2534999999994625},
+    {"size": 5000, "warmup_ticks": 10, "measured_ticks": 59, "tick_interval_ms_median": 14.54700000000031, "tick_interval_ms_max": 37.70910000000072, "scheduler_work_ms_median": 11.227899999994406, "scheduler_work_ms_max": 37.44909999999635, "dispatch_ms_median": 1.3423999999986336, "dispatch_ms_max": 2.398399999997025},
+    {"size": 10000, "warmup_ticks": 10, "measured_ticks": 59, "tick_interval_ms_median": 21.363800000003152, "tick_interval_ms_max": 59.4916000000012, "scheduler_work_ms_median": 21.161799999994457, "scheduler_work_ms_max": 59.27810000000022, "dispatch_ms_median": 2.550500000005229, "dispatch_ms_max": 4.612600000001521}
+  ]
+}

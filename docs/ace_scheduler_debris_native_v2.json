@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "ace_commit": "07a176e410e6542469c5f5ee523a7891c669ce0e",
+  "raw_probe_output": {
+    "after_disable_heap_size": 0,
+    "canceled_heap_size": 0,
+    "canceled_node_present": false,
+    "canceled_record_present": false,
+    "disabled_heap_size": 0,
+    "disabled_index": 205,
+    "elapsed_ms": 18948.1045,
+    "entities": {
+      "canceled": {"delay_ms": 0.08130000000150517, "removed": true, "removed_at": 30.2037537, "request": {"due": 2.680606136918068, "heap_present": true, "key": "ACE.EntityRemoval.Debris.5", "timer_present": false}, "request_key": "ACE.EntityRemoval.Debris.5", "scheduler_enabled_at_spawn": true, "spawned_at": 30.2036724},
+      "disabled_fallback": {"delay_ms": 121.76859999999934, "removed": true, "removed_at": 30.0972808, "request": {"due": 2.4533334028720857, "heap_present": false, "key": "ACE.EntityRemoval.Debris.4", "timer_present": true}, "scheduler_enabled_at_spawn": false, "spawned_at": 29.9755122},
+      "fallback": {"delay_ms": 59.08589999999947, "removed": true, "removed_at": 29.7636344, "request": {"due": 2.120000059604645, "heap_present": false, "key": "ACE.EntityRemoval.Debris.1", "timer_present": true}, "scheduler_enabled_at_spawn": false, "spawned_at": 29.7045485},
+      "scheduled_first": {"delay_ms": 121.18730000000255, "removed": true, "removed_at": 30.0211864, "request": {"due": 2.3775758248567582, "heap_present": true, "key": "ACE.EntityRemoval.Debris.2", "timer_present": false}, "scheduler_enabled_at_spawn": true, "spawned_at": 29.8999991},
+      "scheduled_second": {"delay_ms": 121.03839999999977, "removed": true, "removed_at": 30.02121, "request": {"due": 2.3775758248567582, "heap_present": true, "key": "ACE.EntityRemoval.Debris.3", "timer_present": false}, "scheduler_enabled_at_spawn": true, "spawned_at": 29.9001716}
+    },
+    "errors": [],
+    "ok": true,
+    "post_cleanup_heap_size": 0,
+    "post_cleanup_valid_entities": 0,
+    "scheduled_first_index": 203,
+    "scheduled_second_index": 204,
+    "schema": 1,
+    "started_at": 11.6189507
+  },
+  "analysis": {
+    "probe_source": "docs/ace_scheduler_debris_native_v2_probe.lua",
+    "configured_lifetime_s": 0.12,
+    "path_contract": "fallback requests had scheduler_enabled_at_spawn=false, heap_present=false, timer_present=true; enabled requests had scheduler_enabled_at_spawn=true, heap_present=true, timer_present=false",
+    "cancellation_contract": "external Entity:Remove() followed by a 50 ms settling check removed both the scheduler record and heap node",
+    "cleanup_contract": "post-cleanup heap size and valid tracked entities were both zero",
+    "observed_lifetime_ms": {"fallback": 59.0859, "heap_first": 121.1873, "heap_second": 121.0384, "disabled_fallback": 121.7686},
+    "scope": "real-entity heap-versus-timer path selection, disable/re-enable lifecycle, deferred cancellation, and post-cleanup quiescence; lag/load cost not measured"
+  }
+}

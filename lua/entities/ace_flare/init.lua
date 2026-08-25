@@ -31,25 +31,32 @@ function ENT:Initialize()
 		phys:Wake()
 	end
 
-	timer.Simple(self.Life, function()
-		if IsValid(self) then
-			self:Remove()
-		end
+	if not (ACE.ScheduleEntityRemoval and ACE.ScheduleEntityRemoval(self, self.Life, "Flare")) then
+		timer.Simple(self.Life, function()
+			if IsValid(self) then self:Remove() end
+		end)
+	end
+	self:CallOnRemove("ACE_FlareSchedulerRemove", function(ent)
+		if ACE.UnregisterEntityRemoval then ACE.UnregisterEntityRemoval(ent) end
 	end)
 
 	self:SetRenderMode( RENDERMODE_TRANSCOLOR )
 
 
 	ACE.CMTable[self] = true
+	if ACE.RegisterFlareThink then ACE.RegisterFlareThink(self) end
 
 	self:CallOnRemove( "ACEFlareRemove", function(ent)
 		ACE.CMTable[ent] = nil
+		if ACE.UnregisterFlareThink then ACE.UnregisterFlareThink(ent) end
 	end )
 
 	table.insert( ACE.contraptionEnts, self )
 end
 
 function ENT:Think()
+	local scheduled = ACE.FlareThink and ACE.FlareThink(self)
+	if scheduled ~= nil then return scheduled end
 
 	if self:WaterLevel() == 3 then
 		self.Thermal = 0

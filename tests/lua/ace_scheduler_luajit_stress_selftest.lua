@@ -30,7 +30,7 @@ local function assertHeap()
 		if parent >= 1 then assert(not earlier(node, scheduler.Heap[parent]), "heap order invariant failed") end
 		assert(scheduler.Nodes[node.Key] == node, "heap node lost its key mapping")
 	end
-	for key, node in pairs(scheduler.Nodes) do
+	for _, node in pairs(scheduler.Nodes) do
 		assert(node.Active and node.Index > 0, "active node is not attached")
 		assert(scheduler.Heap[node.Index] == node, "node index does not point back to node")
 	end

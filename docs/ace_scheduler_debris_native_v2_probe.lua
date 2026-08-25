@@ -10,7 +10,6 @@ local function fail(message) result.errors[#result.errors + 1] = message end
 local scheduler
 local phase = 0
 local beginRequested = false
-local started
 local pollTimer = "ACE_DebrisRuntimeProbePoll"
 local tracked = {}
 
@@ -90,9 +89,8 @@ local function begin()
 	ACE.DebrisLifeTime = 0.12
 	print("[ACE Debris runtime probe] begin")
 
-	local fallback = makeEntity("fallback")
+	makeEntity("fallback")
 	phase = 1
-	started = SysTime()
 
 	timer.Create("ACE_DebrisRuntimeProbeEnable", 0.25, 1, function()
 		if not result.entities.fallback.removed then fail("fallback removal did not complete before enable") end
@@ -102,7 +100,6 @@ local function begin()
 		result.scheduled_first_index = first:EntIndex()
 		result.scheduled_second_index = second:EntIndex()
 		phase = 2
-		started = SysTime()
 	end)
 
 	timer.Create("ACE_DebrisRuntimeProbeDisable", 0.33, 1, function()
@@ -113,7 +110,6 @@ local function begin()
 		local disabled = makeEntity("disabled_fallback")
 		result.disabled_index = disabled:EntIndex()
 		phase = 3
-		started = SysTime()
 	end)
 
 	timer.Create("ACE_DebrisRuntimeProbeCancel", 0.55, 1, function()
@@ -124,7 +120,6 @@ local function begin()
 		result.entities.canceled.request_key = result.entities.canceled.request and result.entities.canceled.request.key
 		canceled:Remove()
 		phase = 4
-		started = SysTime()
 		timer.Simple(0.05, function()
 			result.canceled_heap_size = entityRemovalSize()
 			result.canceled_record_present = ACE.EntityRemovalSchedulerState.Records[canceled] ~= nil

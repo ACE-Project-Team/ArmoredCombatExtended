@@ -30,7 +30,7 @@ GAMEMODE = {}
 
 local fakePlayer = {
 	zone = false,
-	SteamID = function(self) return "STEAM_0:1:SAFEZONE" end,
+	SteamID = function() return "STEAM_0:1:SAFEZONE" end,
 	GetPos = function(self) return { zone = self.zone } end,
 }
 player = { GetAll = function() return { fakePlayer } end }

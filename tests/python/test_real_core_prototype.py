@@ -19,7 +19,7 @@ class RealCorePrototypeTests(unittest.TestCase):
         self.assertEqual(self.registry["status"], "prototype")
         self.assertGreaterEqual(len(self.registry["fixtures"]), 10)
         for fixture in self.registry["fixtures"].values():
-            self.assertIn(fixture["kind"], {"native_entity", "native_player", "native_vehicle"})
+            self.assertIn(fixture["kind"], {"native_entity", "native_player", "native_vehicle", "value"})
 
     def test_suite_fixture_names_resolve(self):
         names = []
@@ -37,7 +37,7 @@ class RealCorePrototypeTests(unittest.TestCase):
             "ACE.CheckLegal",
         ):
             self.assertIn(symbol, suite)
-        self.assertEqual(suite.count("requires native"), 12)
+        self.assertEqual(suite.count("requires native"), 20)
         for phrase in ("was reactivated", "is legal", "is not legal", "reason is", "cleanup automatic"):
             self.assertIn(phrase, suite)
 

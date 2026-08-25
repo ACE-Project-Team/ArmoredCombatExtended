@@ -17,5 +17,24 @@
     "non_solid_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "solid": false},
     "clipped_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "clipData": [{"type": "visual"}]},
     "uninitialized_prop": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "uninitialized": true}
+    ,"gate_target_below": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"gate_target_above": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"gate_target_zero": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 0, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"gate_target_non_kinetic": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 10000, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"gate_energy_below": {"kind": "value", "value": {"Kinetic": 600, "Momentum": 0, "Penetration": 600}}
+    ,"gate_energy_above": {"kind": "value", "value": {"Kinetic": 900, "Momentum": 0, "Penetration": 900}}
+    ,"gate_energy_low": {"kind": "value", "value": {"Kinetic": 1, "Momentum": 0, "Penetration": 1}}
+    ,"gate_area": {"kind": "value", "value": 3}
+    ,"gate_angle": {"kind": "value", "value": 0}
+    ,"gate_ap_type": {"kind": "value", "value": "AP"}
+    ,"gate_he_type": {"kind": "value", "value": "HE"}
+    ,"health_reference_area": {"kind": "value", "value": 264.7}
+    ,"health_quarter_area": {"kind": "value", "value": 66.175}
+    ,"health_zero": {"kind": "value", "value": 0}
+    ,"health_ductility": {"kind": "value", "value": 0}
+    ,"health_reference_armour": {"kind": "value", "value": 10}
+    ,"health_thirty_armour": {"kind": "value", "value": 300}
+    ,"health_half_armour": {"kind": "value", "value": 5}
+    ,"health_quarter_armour": {"kind": "value", "value": 10}
   }
 }

@@ -29,6 +29,7 @@ end
 local function fixture(State, Name, Definitions)
 	local Definition = Definitions and Definitions[Name]
 	if not Definition or Definition.invalid then return nil end
+	if Definition.kind == "value" then return Definition.value end
 
 	local Ent
 	local SpawnClass = Definition.spawnClass or Definition.class or "prop_physics"

@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from run_headless_scenarios import stop_process_tree, validate_console, validate_run_artifacts
+from run_headless_scenarios import discover_local_srcds, stop_process_tree, validate_console, validate_run_artifacts
 
 
 class HeadlessScenarioRunnerTests(unittest.TestCase):
@@ -81,6 +81,25 @@ class HeadlessScenarioRunnerTests(unittest.TestCase):
         finally:
             if process.poll() is None:
                 process.kill()
+
+    def test_local_srcds_discovery_prefers_configured_path_and_supports_both_binaries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            configured = root / "configured"
+            configured.mkdir()
+            executable = configured / "srcds_win64.exe"
+            executable.write_bytes(b"test")
+            discovered = discover_local_srcds({"SRCDS_PATH": str(configured)}, root / "empty-home")
+            self.assertEqual(discovered, executable.resolve())
+
+    def test_local_srcds_discovery_uses_generic_gmodds_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            executable = home / "gmodds" / "server" / "srcds.exe"
+            executable.parent.mkdir(parents=True)
+            executable.write_bytes(b"test")
+            discovered = discover_local_srcds({}, home)
+            self.assertEqual(discovered, executable.resolve())
 
 
 if __name__ == "__main__":

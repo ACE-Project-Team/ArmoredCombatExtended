@@ -84,6 +84,11 @@ adapter must write `boot.txt` when it starts and `done.txt` when the selected sc
 runner then fails on a missing sentinel or timeout. CI uses `--dry-run` until a scenario adapter is
 available.
 
+For the standard local dedicated-server install, use `--use-local-srcds`. It discovers
+`srcds_win64.exe` or `srcds.exe` from `SRCDS_PATH`, `GMODDS_SRCDS`, or
+`%USERPROFILE%/gmodds/server`, and starts it from its own server directory. Use
+`--srcds-command` for an explicit executable or custom launch arguments.
+
 ### Core-function checks: the ACF pattern to copy
 
 For a core function, organize one small test group around that function instead of writing

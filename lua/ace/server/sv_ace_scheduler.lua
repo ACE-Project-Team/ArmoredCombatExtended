@@ -276,7 +276,12 @@ function Scheduler.Enable()
 
 	Scheduler.Enabled = true
 	hook.Add("Think", "ACE_SchedulerDispatch", function()
-		Scheduler.Run(CurTime())
+		local stats = Scheduler.Run(CurTime())
+		if stats.Errors > 0 and ErrorNoHalt then
+			for _, message in ipairs(stats.ErrorMessages) do
+				ErrorNoHalt("[ACE.Scheduler] " .. message .. "\n")
+			end
+		end
 	end)
 
 	return true

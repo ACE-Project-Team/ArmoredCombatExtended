@@ -32,6 +32,8 @@ function CreateConVar(name)
 end
 
 function CurTime() return 0 end
+local reportedErrors = {}
+function ErrorNoHalt(message) reportedErrors[#reportedErrors + 1] = message end
 
 dofile(root .. "/lua/ace/server/sv_ace_scheduler.lua")
 local scheduler = ACE.Scheduler
@@ -170,5 +172,10 @@ convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "1", "0"
 assert(not scheduler.Enabled, "scheduler switch did not disable")
 convarCallbacks.ace_scheduler_enabled.callback("ace_scheduler_enabled", "0", "1")
 assert(scheduler.Enabled, "scheduler switch did not re-enable")
+
+reset()
+scheduler.Attach("reported-error", function() error("expected hook failure") end, 0)
+hookHandlers.Think.ACE_SchedulerDispatch()
+assert(#reportedErrors == 1 and reportedErrors[1]:find("expected hook failure", 1, true), "hook callback failure was not reported")
 
 print("ACE scheduler LuaJIT self-test: PASS")

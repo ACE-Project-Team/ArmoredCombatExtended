@@ -44,7 +44,6 @@ local function reset()
 	scheduler.Running = false
 	scheduler.Enabled = false
 	scheduler.LastStats = {}
-	scheduler.Adapters = {}
 end
 
 local function expectError(callback)

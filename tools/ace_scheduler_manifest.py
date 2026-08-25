@@ -240,8 +240,8 @@ REVIEWED_ROWS = {
         (frozenset({(110, 1), (113, 1), (123, 1)}), 'migrated', 'ACE.WindSensorThink'),
     ],
     'lua/entities/acf_ammo/init.lua': [
-        (frozenset({(786, 1), (837, 1), (870, 1), (876, 1), (882, 1), (933, 1), (992, 1)}), 'blocked', 'physics/fuse/entity-state contract'),
-        (frozenset({(963, 1)}), 'migrated', 'ACE.AmmoCookoffFlash'),
+        (frozenset({(793, 1), (844, 1), (877, 1), (883, 1), (889, 1), (940, 1), (995, 1)}), 'blocked', 'physics/fuse/entity-state contract'),
+        (frozenset({(54, 1)}), 'migrated', 'ACE.AmmoCookoffFlash'),
     ],
     'lua/entities/acf_engine/init.lua': [
         (frozenset({(503, 1), (561, 1), (1132, 1)}), 'blocked', 'physics/fuse/entity-state contract'),
@@ -260,7 +260,7 @@ REVIEWED_ROWS = {
     ],
     'lua/entities/acf_gun/init.lua': [
         (frozenset({(327, 1), (540, 1), (601, 1), (745, 1), (846, 1), (1035, 1)}), 'blocked', 'physics/fuse/entity-state contract'),
-        (frozenset({(1174, 1)}), 'migrated', 'ACE.GunAutoSound'),
+        (frozenset({(1173, 1)}), 'migrated', 'ACE.GunAutoSound'),
     ],
     'lua/entities/acf_missile_to_rack/init.lua': [
         (frozenset({(20, 1)}), 'engine-bound', 'entity Think/lifecycle/Wire ordering contract'),
@@ -392,13 +392,13 @@ REVIEWED_FILE_HASHES = {
     'lua/entities/ace_trackingradar/init.lua': 'f323cd2ad699595cb06ddf47f9ac6dffcd7250cc0f8442a2c82212ece9b99793',
     'lua/entities/ace_vheat_source/init.lua': 'ec7adc4248401d376862f85ebc321aba768a0ba4e007e2efe8461445214b3b1d',
     'lua/entities/ace_wind_sensor/init.lua': '901a984aa9c2a1a9acb50b2380b2a8a470772e69361293e4fc688c6e2fdf3381',
-    'lua/entities/acf_ammo/init.lua': 'ab0927d5c8556c300b0e73455092d073355731356d910bb1786e20d7bd87ef73',
+    'lua/entities/acf_ammo/init.lua': '8d8ea26a9f35056a26e96f23eaadee5dcc3e98d5a1b6bf5aff35d668d5231789',
     'lua/entities/acf_engine/init.lua': 'daeec1fa1abbbc98d695a324f1f133d8b0827327692ef2952847f9b8a54b4cc6',
     'lua/entities/acf_explosive/init.lua': '9f86d5cc86c3909bf06ece5008484587b62a52ec1b400583886e8713a9217f76',
     'lua/entities/acf_fueltank/init.lua': 'baba9265b0925442d1b1a62d19aa31245fd811ff7bafd8635a8720ff3444dcf4',
     'lua/entities/acf_gearbox/init.lua': '721a370741d06fed24378d91b8d7c8c5ae8d0172d5369991c0e44b925779e2a5',
     'lua/entities/acf_gun/cl_init.lua': 'a462012ed01491cf10db921f52f771492aaf735cb4ce06568d198728732a9d73',
-    'lua/entities/acf_gun/init.lua': 'a1a7bbe1623f208d3ba68a51e801cafde1e9fa0c2756eb6f902be7a170dfe3d8',
+    'lua/entities/acf_gun/init.lua': '4fd994a392591bf39028f98cab0590e2f0d6f554817fb17c684b7aee05db0e37',
     'lua/entities/acf_missile_to_rack/init.lua': 'fd6914126bf9a0ca65ce359d04898cde18cb519d95bfe4c49fbfbe6e58db6f8c',
     'lua/entities/acf_missileradar/init.lua': '1f8a4264665c204deda429470c59e74f222b331f0e9c5a55734a4d7ea3e87bf5',
     'lua/entities/acf_opticalcomputer/init.lua': 'ac39509d2a6a9d49b5c2653e64f3ac36c6e62b93d3aeb0e6d03e6bbd76ecaa84',
@@ -541,8 +541,8 @@ EXPECTED_MIGRATED_PRIMITIVES = {
     ('lua/entities/ace_wind_sensor/init.lua', 110, 1): 'function ENT:Think(',
     ('lua/entities/ace_wind_sensor/init.lua', 113, 1): 'NextThink(',
     ('lua/entities/ace_wind_sensor/init.lua', 123, 1): 'NextThink(',
-    ('lua/entities/acf_ammo/init.lua', 963, 1): 'timer.Simple',
-    ('lua/entities/acf_gun/init.lua', 1174, 1): 'timer.Simple',
+    ('lua/entities/acf_ammo/init.lua', 54, 1): 'timer.Simple',
+    ('lua/entities/acf_gun/init.lua', 1173, 1): 'timer.Simple',
 }
 
 

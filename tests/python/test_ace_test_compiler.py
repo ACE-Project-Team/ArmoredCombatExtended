@@ -19,14 +19,14 @@ class AceTestCompilerTests(unittest.TestCase):
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         actions = json.loads(ACTIONS.read_text(encoding="utf-8"))
         tests = parse(SOURCE, registry, actions)
-        self.assertEqual(len(tests), 23)
+        self.assertEqual(len(tests), 24)
         self.assertTrue(all("native" in test["requires"] for test in tests))
         self.assertTrue(all(test["cleanup"] for test in tests))
-        self.assertEqual(len({test["scenarioId"] for test in tests}), 23)
+        self.assertEqual(len({test["scenarioId"] for test in tests}), 24)
 
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "generated.lua"
-            self.assertEqual(compile_suite(SOURCE, REGISTRY, output, ACTIONS), 23)
+            self.assertEqual(compile_suite(SOURCE, REGISTRY, output, ACTIONS), 24)
             generated = output.read_text(encoding="utf-8")
             self.assertIn('include("ace/test_dsl_runtime.lua")', generated)
             self.assertIn("ACE.CheckLegal", generated)

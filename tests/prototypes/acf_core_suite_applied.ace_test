@@ -215,6 +215,18 @@ expect Target.ACE.Health is 100
 expect Target.ACE.Armour is 100
 cleanup automatic
 
+new Test "Legacy numeric ERA uses its specialized resolver"
+scenario ace.native.armor.numeric_era
+requires native
+uses gate_target_era_numeric as Target
+uses gate_energy_below as Energy
+uses gate_area as Area
+uses gate_angle as Angle
+uses gate_ap_type as Type
+do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
+expect Result.KineticThresholdFailed does not exist
+cleanup automatic
+
 new Test "Armor health keeps its reference value"
 scenario ace.native.armor.health_reference
 requires native

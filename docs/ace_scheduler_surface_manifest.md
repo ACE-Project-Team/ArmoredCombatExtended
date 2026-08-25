@@ -10,9 +10,9 @@ Run:
 python tools/ace_scheduler_manifest.py --strict
 ```
 
-The current inventory contains 239 scheduling rows:
+The current inventory contains 240 scheduling rows:
 
-- 99 migrated through the opt-in ACE heap;
+- 98 migrated through the opt-in ACE heap;
 - 87 engine-bound because timing or ownership belongs to GMod, physics, lifecycle, or presentation;
 - 55 blocked pending a dedicated behavior contract;
 - 0 pending dispositions.

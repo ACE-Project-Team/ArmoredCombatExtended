@@ -109,58 +109,37 @@ expect Prop.ACE exists
 expect Prop.ACE has armor and health
 cleanup automatic
 
-new Test "Kinetic damage below the plate threshold is stopped"
-scenario ace.native.armor.kinetic_below_threshold
+new Test "Armor gate handles boundaries and specialized materials"
+scenario ace.native.armor.gate_boundaries
 requires native
-uses gate_target_below as Target
-uses gate_energy_below as Energy
+uses gate_target_below as BelowTarget
+uses gate_target_above as AboveTarget
+uses gate_target_zero as ZeroTarget
+uses gate_target_non_kinetic as NonKineticTarget
+uses gate_target_era_numeric as EraTarget
+uses gate_energy_below as BelowEnergy
+uses gate_energy_above as AboveEnergy
+uses gate_energy_low as LowEnergy
 uses gate_area as Area
 uses gate_angle as Angle
-uses gate_ap_type as Type
-do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
-expect Result.Damage is 0
-expect Result.KineticThresholdFailed is true
+uses gate_ap_type as AP
+uses gate_he_type as HE
+do ACE.CalcDamage on BelowTarget and BelowEnergy and Area and Angle and AP as BelowResult
+do ACE.CalcDamage on AboveTarget and AboveEnergy and Area and Angle and AP as AboveResult
+do ACE.CalcDamage on ZeroTarget and LowEnergy and Area and Angle and AP as ZeroResult
+do ACE.CalcDamage on NonKineticTarget and LowEnergy and Area and Angle and HE as NonKineticResult
+do ACE.CalcDamage on EraTarget and BelowEnergy and Area and Angle and AP as EraResult
+expect BelowResult.Damage is 0
+expect BelowResult.KineticThresholdFailed is true
+expect AboveResult.Damage is greater than 0
+expect AboveResult.KineticThresholdFailed does not exist
+expect ZeroResult.KineticThresholdFailed does not exist
+expect NonKineticResult.KineticThresholdFailed does not exist
+expect EraResult.KineticThresholdFailed does not exist
 cleanup automatic
 
-new Test "Kinetic damage above the plate threshold reaches the resolver"
-scenario ace.native.armor.kinetic_above_threshold
-requires native
-uses gate_target_above as Target
-uses gate_energy_above as Energy
-uses gate_area as Area
-uses gate_angle as Angle
-uses gate_ap_type as Type
-do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
-expect Result.Damage is greater than 0
-expect Result.KineticThresholdFailed does not exist
-cleanup automatic
-
-new Test "Degenerate armor keeps the legacy resolver path"
-scenario ace.native.armor.zero_armor
-requires native
-uses gate_target_zero as Target
-uses gate_energy_low as Energy
-uses gate_area as Area
-uses gate_angle as Angle
-uses gate_ap_type as Type
-do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
-expect Result.KineticThresholdFailed does not exist
-cleanup automatic
-
-new Test "Non-kinetic damage bypasses the kinetic gate"
-scenario ace.native.armor.non_kinetic_bypass
-requires native
-uses gate_target_non_kinetic as Target
-uses gate_energy_low as Energy
-uses gate_area as Area
-uses gate_angle as Angle
-uses gate_he_type as Type
-do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
-expect Result.KineticThresholdFailed does not exist
-cleanup automatic
-
-new Test "Kinetic and non-kinetic round families are classified consistently"
-scenario ace.native.armor.kinetic_classification
+new Test "Armor gate classifies rounds and protects prop mutation"
+scenario ace.native.armor.gate_classification_and_mutation
 requires native
 uses type_ap as AP
 uses type_apds as APDS
@@ -174,6 +153,10 @@ uses type_he as HE
 uses type_heat as HEAT
 uses type_hesh as HESH
 uses type_spall as Spall
+uses gate_prop_target as Target
+uses gate_energy_below as Energy
+uses gate_area as Area
+uses gate_angle as Angle
 do ACE.IsKineticDamageType on AP as APResult
 do ACE.IsKineticDamageType on APDS as APDSResult
 do ACE.IsKineticDamageType on APFSDS as APFSDSResult
@@ -186,6 +169,7 @@ do ACE.IsKineticDamageType on HE as HEResult
 do ACE.IsKineticDamageType on HEAT as HEATResult
 do ACE.IsKineticDamageType on HESH as HESHResult
 do ACE.IsKineticDamageType on Spall as SpallResult
+do ACE.PropDamage on Target and Energy and Area and Angle and Target and Target and AP as DamageResult
 expect APResult is true
 expect APDSResult is true
 expect APFSDSResult is true
@@ -198,89 +182,34 @@ expect HEResult is false
 expect HEATResult is false
 expect HESHResult is false
 expect SpallResult is false
-cleanup automatic
-
-new Test "Rejected kinetic damage does not mutate prop armor state"
-scenario ace.native.armor.prop_damage_guard
-requires native
-uses gate_prop_target as Target
-uses gate_energy_below as Energy
-uses gate_area as Area
-uses gate_angle as Angle
-uses gate_ap_type as Type
-do ACE.PropDamage on Target and Energy and Area and Angle and Target and Target and Type as Result
-expect Result.Damage is 0
-expect Result.KineticThresholdFailed is true
+expect DamageResult.Damage is 0
+expect DamageResult.KineticThresholdFailed is true
 expect Target.ACE.Health is 100
 expect Target.ACE.Armour is 100
 cleanup automatic
 
-new Test "Legacy numeric ERA uses its specialized resolver"
-scenario ace.native.armor.numeric_era
-requires native
-uses gate_target_era_numeric as Target
-uses gate_energy_below as Energy
-uses gate_area as Area
-uses gate_angle as Angle
-uses gate_ap_type as Type
-do ACE.CalcDamage on Target and Energy and Area and Angle and Type as Result
-expect Result.KineticThresholdFailed does not exist
-cleanup automatic
-
-new Test "Armor health keeps its reference value"
-scenario ace.native.armor.health_reference
+new Test "Armor health preserves reference and modifier behavior"
+scenario ace.native.armor.health_contracts
 requires native
 uses health_reference_area as Area
-uses health_ductility as Ductility
-uses health_reference_armour as Armour
-do ACE.CalcHealth on Area and Ductility and Armour as Health
-expect Health is 10
-cleanup automatic
-
-new Test "Armor health includes ductility and half-thickness behavior"
-scenario ace.native.armor.health_modifiers
-requires native
-uses health_reference_area as Area
-uses health_high_ductility as Ductility
-uses health_ductility as ZeroDuctility
-uses health_reference_armour as Armour
-uses health_half_armour as HalfArmour
-do ACE.CalcHealth on Area and Ductility and Armour as DuctileHealth
-do ACE.CalcHealth on Area and ZeroDuctility and HalfArmour as HalfHealth
-expect DuctileHealth is 18
-expect HalfHealth is 5
-cleanup automatic
-
-new Test "Armor health scales with thickness"
-scenario ace.native.armor.health_thickness
-requires native
-uses health_reference_area as Area
-uses health_ductility as Ductility
-uses health_thirty_armour as Armour
-do ACE.CalcHealth on Area and Ductility and Armour as Health
-expect Health is 300
-cleanup automatic
-
-new Test "Zero-area armor health is zero"
-scenario ace.native.armor.health_zero_area
-requires native
-uses health_zero as Area
-uses health_ductility as Ductility
-uses health_reference_armour as Armour
-do ACE.CalcHealth on Area and Ductility and Armour as Health
-expect Health is 0
-cleanup automatic
-
-new Test "Splitting a plate preserves total health"
-scenario ace.native.armor.health_split
-requires native
-uses health_reference_area as WholeArea
 uses health_quarter_area as QuarterArea
+uses health_zero as ZeroArea
 uses health_ductility as Ductility
+uses health_high_ductility as HighDuctility
 uses health_reference_armour as Armour
+uses health_thirty_armour as ThickArmour
+uses health_half_armour as HalfArmour
 uses health_quarter_armour as QuarterArmour
-do ACE.CalcHealth on WholeArea and Ductility and Armour as WholeHealth
+do ACE.CalcHealth on Area and Ductility and Armour as ReferenceHealth
+do ACE.CalcHealth on Area and HighDuctility and Armour as DuctileHealth
+do ACE.CalcHealth on Area and Ductility and ThickArmour as ThickHealth
+do ACE.CalcHealth on Area and Ductility and HalfArmour as HalfHealth
+do ACE.CalcHealth on ZeroArea and Ductility and Armour as ZeroHealth
 do ACE.CalcHealth on QuarterArea and Ductility and QuarterArmour as QuarterHealth
-expect WholeHealth is 10
+expect ReferenceHealth is 10
+expect DuctileHealth is 18
+expect ThickHealth is 300
+expect HalfHealth is 5
+expect ZeroHealth is 0
 expect QuarterHealth is 2.5
 cleanup automatic

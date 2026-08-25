@@ -138,7 +138,7 @@ function ACE.Check( Entity )
 	return Entity.ACE.Type
 end
 
-function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type, ArmorMul )
+function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
 
 	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
@@ -155,7 +155,7 @@ function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	elseif Activated == "Prop" then
 
-		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type, ArmorMul)
+		hitRes = ACE.PropDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone , Type)
 
 	elseif Activated == "Vehicle" then
 
@@ -186,13 +186,12 @@ end
 
 
 
-function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type, ArmorMul) --y=-5/16x + b
+function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 
 	local HitRes			= {}
 
 	local armor			= Entity.ACE.Armour																						-- Armor
 	local losArmor		= armor / math.abs( math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor )									-- LOS Armor
-	losArmor = losArmor * (ArmorMul or 1) -- Plates after the first resist solid shot at ACE.KELayerArmorMul; layered steel underperforms monolithic in real firing tests
 	local losArmorHealth = armor ^ 1.1 * (3 + math.min(1 / math.abs(math.cos(math.rad(Angle)) ^ ACE.SlopeEffectFactor), 2.8) * 0.5)	-- Bc people had to abuse armor angling, FML
 
 	local Mat			= Entity.ACE.Material or "RHA"	--very important thing
@@ -235,6 +234,24 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type, ArmorMul) --y=
 	--print("Penetration: " .. math.Round(maxPenetration,3) .. "mm")
 	--print("Caliber: "..math.Round(caliber,3).."mm")
 
+	if ACE.IsKineticDamageType(Type) then
+		local curve = tonumber(MatData.curve) or 1
+		local effectiveness = tonumber(MatData.effectiveness) or 1
+		local requiredPenetration = (losArmor ^ curve) * effectiveness
+		local energyRatio = maxPenetration / requiredPenetration
+		local threshold = tonumber(ACE.KineticDamageThreshold) or 0.65
+		if threshold ~= threshold or threshold < 0 or threshold > 1 then threshold = 0.65 end
+
+		local validRequirement = isnumber(requiredPenetration) and requiredPenetration == requiredPenetration
+			and requiredPenetration ~= math.huge and requiredPenetration ~= -math.huge and requiredPenetration > 0
+		local validRatio = isnumber(energyRatio) and energyRatio == energyRatio
+			and energyRatio ~= math.huge and energyRatio ~= -math.huge
+
+		if validRequirement and validRatio and energyRatio < threshold then
+			return { Damage = 0, Overkill = 0, Loss = 1, KineticThresholdFailed = true }
+		end
+	end
+
 	local armorResolution = MatData["ArmorResolution"]
 	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
 
@@ -242,9 +259,13 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type, ArmorMul) --y=
 end
 
 -- replaced with _ due to lack of use: Inflictor, Bone
-function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type, ArmorMul)
+function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
-	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type, ArmorMul)
+	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	if HitRes.KineticThresholdFailed then
+		HitRes.Kill = false
+		return HitRes
+	end
 
 	HitRes.Kill = false
 
@@ -283,6 +304,11 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	}
 
 	local HitRes = ACE.CalcDamage( Target , Energy , FrArea , Angle  , Type)
+	if HitRes.KineticThresholdFailed then
+		HitRes.Kill = false
+		return HitRes
+	end
+
 	local Driver = Entity:GetDriver()
 	local validd = Driver:IsValid()
 	local canDamageDriver = validd and canDamagePlayer(Driver, Inflictor)

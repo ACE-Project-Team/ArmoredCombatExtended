@@ -238,6 +238,21 @@ function ACE.CalcPenetration(Energy, PenArea, PenMul)
 	return math.max(Pen, 0)
 end
 
+ACE.KineticDamageTypes = ACE.KineticDamageTypes or {
+	AP = true,
+	APDS = true,
+	APFSDS = true,
+	APHE = true,
+	CAP = true,
+	FL = true,
+	HP = true,
+	HVAP = true,
+}
+
+function ACE.IsKineticDamageType(Type)
+	return ACE.KineticDamageTypes[Type] == true
+end
+
 do
 
 	--Convert old numeric IDs to the new string IDs

@@ -37,7 +37,7 @@ return {
 			end,
 		},
 		{
-			name = "later plates in a stack resist solid shot less, never more",
+			name = "blocks kinetic damage below the plate energy threshold",
 			func = function()
 				local plate = {
 					ClassName = "prop_physics",
@@ -46,22 +46,53 @@ return {
 				}
 				local energy = { Kinetic = 900, Momentum = 0, Penetration = 900 }
 				local frArea = 3
-
 				local maxPen = ACE.CalcPenetration(energy, frArea)
-				plate.ACE.Armour = maxPen / (ACE.KELayerArmorMul + (1 - ACE.KELayerArmorMul) / 2)
+				plate.ACE.Armour = maxPen / (ACE.KineticDamageThreshold - 0.05)
 
-				local originalRandom = math.random
-				math.random = function() return 0.5 end
-				local okFresh, fresh = pcall(ACE.CalcDamage, plate, energy, frArea, 0, "AP")
-				local okLater, later = pcall(ACE.CalcDamage, plate, energy, frArea, 0, "AP", ACE.KELayerArmorMul)
-				math.random = originalRandom
-				if not okFresh then error(fresh, 0) end
-				if not okLater then error(later, 0) end
+				local result = ACE.CalcDamage(plate, energy, frArea, 0, "AP")
+				expect(result.KineticThresholdFailed).to.equal(true)
+				expect(result.Damage).to.equal(0)
+			end,
+		},
+		{
+			name = "allows kinetic damage at the plate energy threshold",
+			func = function()
+				local plate = {
+					ClassName = "prop_physics",
+					ACE = { Ductility = 0, Material = "RHA" },
+					GetClass = function(self) return self.ClassName end,
+				}
+				local energy = { Kinetic = 900, Momentum = 0, Penetration = 900 }
+				local frArea = 3
+				local maxPen = ACE.CalcPenetration(energy, frArea)
+				plate.ACE.Armour = maxPen / 0.7
 
-				-- The same shot bounces off this plate when it is the first one hit, and
-				-- penetrates it when it is a later plate in a stack (reduced effectiveness).
-				expect(fresh.Overkill).to.equal(0)
-				expect(later.Overkill > 0).to.equal(true)
+				local result = ACE.CalcDamage(plate, energy, frArea, 0, "AP")
+				expect(result.KineticThresholdFailed).to.equal(nil)
+			end,
+		},
+		{
+			name = "does not gate zero-thickness armor",
+			func = function()
+				local plate = {
+					ClassName = "prop_physics",
+					ACE = { Armour = 0, Ductility = 0, Material = "RHA" },
+					GetClass = function(self) return self.ClassName end,
+				}
+				local result = ACE.CalcDamage(plate, { Kinetic = 900, Momentum = 0, Penetration = 900 }, 3, 0, "AP")
+				expect(result.KineticThresholdFailed).to.equal(nil)
+			end,
+		},
+		{
+			name = "does not gate non-kinetic armor damage",
+			func = function()
+				local plate = {
+					ClassName = "prop_physics",
+					ACE = { Armour = 10000, Ductility = 0, Material = "RHA" },
+					GetClass = function(self) return self.ClassName end,
+				}
+				local result = ACE.CalcDamage(plate, { Kinetic = 1, Momentum = 0, Penetration = 1 }, 3, 0, "HE")
+				expect(result.KineticThresholdFailed).to.equal(nil)
 			end,
 		},
 	},

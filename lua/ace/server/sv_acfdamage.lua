@@ -909,9 +909,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	Bullet.Ricochets = Bullet.Ricochets or 0
 
 	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
-	-- Plates after the first resist solid shot at reduced effectiveness; the flag is set by kinetic rounds on penetration
-	local ArmorMul	= Bullet.KENotFirstPen and ACE.KELayerArmorMul or 1
-	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"], ArmorMul )
+	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false

@@ -99,7 +99,7 @@ ACE.HEATMulAmmo       = 30                        -- HEAT slug damage multiplier
 ACE.HEATMulFuel       = 4                        -- needs less multiplier, much less health than ammo
 ACE.HEATMulEngine     = 20                        -- likewise
 ACE.HEATPenLayerMul   = 0.95                    -- HEAT base energy multiplier
-ACE.KELayerArmorMul   = 0.6                     -- Effectiveness of armor plates after the first one solid shot has penetrated. From the measured 17.7-25.8% monolithic ballistic-limit advantage over a double layer (~15-20% loss vs the slab): equal-layer stack limit = t + mul x t, so a ~20% loss gives mul = 1 - 2 x 0.20 = 0.6. Applied to every plate after the first, extrapolating the two-layer data per interface
+ACE.KineticDamageThreshold = 0.65              -- Minimum fraction of plate-defeat energy that can deal kinetic armor damage
 ACE.HealthRefmm       = 10                      -- armor thickness (mm RHA equivalent) where prop health matches the legacy area-only value. Health now scales with armor mass so thick plates can no longer be chewed down by sustained autocannon fire
 ACE.HEATAirGapFactor  = 0.15                        --% velocity loss for every meter traveled. 0.2x means HEAT loses 20% of its energy every 2m traveled. 1m is about typical for the sideskirt spaced armor of most tanks.
 ACE.HEATBoomConvert   = 1 / 3                    -- percentage of filler that creates HE damage at detonation

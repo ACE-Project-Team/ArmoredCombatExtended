@@ -11,3 +11,5 @@ include("ace/server/sv_ace_ammo_cookoff_scheduler.lua")
 include("ace/server/sv_ace_damage_effect_scheduler.lua")
 include("ace/server/sv_ace_flare_scheduler.lua")
 include("ace/server/sv_ace_sonar_scheduler.lua")
+
+ACE.Scheduler.Enable()

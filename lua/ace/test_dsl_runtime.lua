@@ -172,38 +172,47 @@ local function action(State, Spec)
 end
 
 local function expectCase(State, Spec, Expect)
-	for _, Check in ipairs(Spec.expects) do
+	for Index, Check in ipairs(Spec.expects) do
 		local Subject = Check.subject
 		local Value
-		if Check.operator == "was reactivated" or Check.operator == "was activated" then
-			Value = (State.Activations[State.Bindings[Subject]] or 0) > 0
-		elseif Check.operator == "has armor and health" then
-			local ACEState = pathValue(State, Subject)
-			Value = ACEState and ACEState.Armour ~= nil and ACEState.Health ~= nil
-		elseif Check.operator == "reason is" then
-			Value = State.Values[Subject].reason
-		else
-			Value = pathValue(State, Subject)
-		end
+		local Ok, AssertionError = pcall(function()
+			if Check.operator == "was reactivated" or Check.operator == "was activated" then
+				Value = (State.Activations[State.Bindings[Subject]] or 0) > 0
+			elseif Check.operator == "has armor and health" then
+				local ACEState = pathValue(State, Subject)
+				Value = ACEState and ACEState.Armour ~= nil and ACEState.Health ~= nil
+			elseif Check.operator == "reason is" then
+				Value = State.Values[Subject].reason
+			else
+				Value = pathValue(State, Subject)
+			end
 
-		if Check.operator == "exists" then
-			Expect(Value).to.exist()
-		elseif Check.operator == "does not exist" then
-			Expect(Value).notTo.exist()
-		elseif Check.operator == "is greater than" then
-			Expect(Value).to.beGreaterThan(pathValue(State, Check.value))
-		elseif Check.operator == "is less than" then
-			Expect(Value).to.beLessThan(pathValue(State, Check.value))
-		elseif Check.operator == "was reactivated" or Check.operator == "was activated" or Check.operator == "has armor and health" then
-			Expect(Value).to.beTrue()
-		elseif Check.operator == "is legal" then
-			Expect(Value.legal).to.beTrue()
-		elseif Check.operator == "is not legal" then
-			Expect(Value.legal).to.beFalse()
-		elseif Check.operator == "reason is" then
-			Expect(Value).to.equal(literal(Check.value))
-		else
-			Expect(Value).to.equal(literal(Check.value))
+			if Check.operator == "exists" then
+				Expect(Value).to.exist()
+			elseif Check.operator == "does not exist" then
+				Expect(Value).notTo.exist()
+			elseif Check.operator == "is greater than" then
+				Expect(Value).to.beGreaterThan(pathValue(State, Check.value))
+			elseif Check.operator == "is less than" then
+				Expect(Value).to.beLessThan(pathValue(State, Check.value))
+			elseif Check.operator == "was reactivated" or Check.operator == "was activated" or Check.operator == "has armor and health" then
+				Expect(Value).to.beTrue()
+			elseif Check.operator == "is legal" then
+				Expect(Value.legal).to.beTrue()
+			elseif Check.operator == "is not legal" then
+				Expect(Value.legal).to.beFalse()
+			else
+				Expect(Value).to.equal(literal(Check.value))
+			end
+		end)
+
+		if not Ok then
+			local Expected = Check.value ~= nil and Check.value ~= "" and " " .. tostring(Check.value) or ""
+			error(string.format(
+				"ACE DSL scenario %s expectation %d failed: expect %s %s%s (actual %s): %s",
+				tostring(Spec.scenarioId), Index, Subject, Check.operator, Expected,
+				tostring(Value), tostring(AssertionError)
+			))
 		end
 	end
 end

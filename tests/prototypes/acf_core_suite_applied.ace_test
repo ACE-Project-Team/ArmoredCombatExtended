@@ -206,10 +206,10 @@ do ACE.CalcHealth on Area and Ductility and ThickArmour as ThickHealth
 do ACE.CalcHealth on Area and Ductility and HalfArmour as HalfHealth
 do ACE.CalcHealth on ZeroArea and Ductility and Armour as ZeroHealth
 do ACE.CalcHealth on QuarterArea and Ductility and QuarterArmour as QuarterHealth
-expect ReferenceHealth is 10
-expect DuctileHealth is 18
-expect ThickHealth is 300
-expect HalfHealth is 5
+expect ReferenceHealth is 1
+expect DuctileHealth is 1.8
+expect ThickHealth is 30
+expect HalfHealth is 0.5
 expect ZeroHealth is 0
-expect QuarterHealth is 2.5
+expect QuarterHealth is 0.25
 cleanup automatic

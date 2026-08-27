@@ -483,10 +483,6 @@ if CLIENT then
 		local effMm = ACE.Points.EffectiveMm(armor, effKE, effCHEM)
 		local hp = tonumber(health) or 0
 
-		-- Health now scales with armor mass (ACE.CalcHealth). Undo that factor here so the
-		-- preview matches live pricing, which stays on the pre-change value for now.
-		if armor > 0 then hp = hp * ACE.HealthRefmm / armor end
-
 		if effMm <= 0 or hp <= 0 then return 0 end
 
 		return ACE.Points.ArmorProp(effMm, hp)

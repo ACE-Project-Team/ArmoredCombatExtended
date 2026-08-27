@@ -407,10 +407,5 @@ function ACE.Points.PropArmor(ent)
 	if armourMm <= 0 or hp <= 0 then return nil end
 
 	local ke, chem = materialEff(acf.Material or ent.ACE_Material)
-
-	-- Health now scales with armor mass (ACE.CalcHealth). Undo that factor here so armor
-	-- pricing keeps its pre-change value until the points overhaul reprices armor deliberately.
-	hp = hp * ACE.HealthRefmm * (ACE.ArmorMod or 1) / armourMm
-
 	return ACE.Points.EffectiveMm(armourMm, ke, chem), hp
 end

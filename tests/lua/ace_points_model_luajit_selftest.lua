@@ -2,8 +2,6 @@ local root = assert(arg[1], "usage: ace_points_model_luajit_selftest.lua <ACE re
 root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 ACE = {}
-ACE.HealthRefmm = 10 -- pricing compensation input (acf_globals.lua)
-ACE.ArmorMod = 1
 function istable(value) return type(value) == "table" end
 function ACE.IsEnt(value) return value ~= nil end
 dofile(root .. "/lua/ace/shared/sh_ace_entity_state.lua")
@@ -28,15 +26,8 @@ local primitive = {
 	GetClass = function() return "prop_physics" end,
 	ACE = { MaxArmour = 100, MaxHealth = 100 },
 }
-assert(ACE.Points.PropArmor(primitive) ~= nil, "ordinary prop armor must remain priced")
-local _, pricedHp = ACE.Points.PropArmor(primitive)
-assert(pricedHp == 100 * ACE.HealthRefmm * ACE.ArmorMod / 100,
-	"pricing must undo the mass-scaled health factor exactly")
-ACE.ArmorMod = 2
-local _, pricedHpMod = ACE.Points.PropArmor(primitive)
-assert(pricedHpMod == 100 * ACE.HealthRefmm * ACE.ArmorMod / 100,
-	"the compensation must scale with ACE.ArmorMod, not against it")
-ACE.ArmorMod = 1
+local pricedMm, pricedHp = ACE.Points.PropArmor(primitive)
+assert(pricedMm and pricedHp == 100, "ordinary prop armor must retain its normal health")
 primitive.ACE_PrimitivePropertiesPending = true
 assert(ACE.Points.PropArmor(primitive) == nil,
 	"Primitive armor must stay out of pricing while its properties are pending")

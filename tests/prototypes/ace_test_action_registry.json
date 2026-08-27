@@ -3,6 +3,10 @@
   "actions": {
     "ACE.Check": {"kind": "global", "path": "ACE.Check"},
     "ACE.Activate": {"kind": "global", "path": "ACE.Activate"},
-    "ACE.CheckLegal": {"kind": "global", "path": "ACE.CheckLegal", "returns": ["legal", "reason"]}
+    "ACE.CheckLegal": {"kind": "global", "path": "ACE.CheckLegal", "returns": ["legal", "reason"]},
+    "ACE.CalcDamage": {"kind": "global", "path": "ACE.CalcDamage", "returns": ["Damage", "KineticThresholdFailed"]},
+    "ACE.CalcHealth": {"kind": "global", "path": "ACE.CalcHealth"},
+    "ACE.IsKineticDamageType": {"kind": "global", "path": "ACE.IsKineticDamageType"},
+    "ACE.PropDamage": {"kind": "global", "path": "ACE.PropDamage", "returns": ["Damage", "KineticThresholdFailed"]}
   }
 }

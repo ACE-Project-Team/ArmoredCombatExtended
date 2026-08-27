@@ -83,7 +83,7 @@ function ACE.Activate( Entity , Recalc )
 	local massMod	= MatData.massMod
 
 	local Armour	= ACE.CalcArmor( Area, Ductility, Entity:GetPhysicsObject():GetMass() / massMod ) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
-	local Health	= ( Area / ACE.Threshold ) * ( 1 + Ductility ) -- Setting the threshold of the prop Area gone
+	local Health	= ACE.CalcHealth( Area, Ductility, Armour ) -- Health scales with armor mass; see ACE.CalcHealth
 
 	local Percent	= 1
 
@@ -234,6 +234,25 @@ function ACE.CalcDamage( Entity , Energy , FrArea , Angle , Type) --y=-5/16x + b
 	--print("Penetration: " .. math.Round(maxPenetration,3) .. "mm")
 	--print("Caliber: "..math.Round(caliber,3).."mm")
 
+	-- ERA has its own kinetic detonation and depleted-tile rules; let its resolver see every hit.
+	if MatData.id ~= "ERA" and ACE.IsKineticDamageType(Type) then
+		local curve = tonumber(MatData.curve) or 1
+		local effectiveness = tonumber(MatData.effectiveness) or 1
+		local requiredPenetration = (losArmor ^ curve) * effectiveness
+		local energyRatio = maxPenetration / requiredPenetration
+		local threshold = tonumber(ACE.KineticDamageThreshold) or 0.65
+		if threshold ~= threshold or threshold < 0 or threshold > 1 then threshold = 0.65 end
+
+		local validRequirement = isnumber(requiredPenetration) and requiredPenetration == requiredPenetration
+			and requiredPenetration ~= math.huge and requiredPenetration ~= -math.huge and requiredPenetration > 0
+		local validRatio = isnumber(energyRatio) and energyRatio == energyRatio
+			and energyRatio ~= math.huge and energyRatio ~= -math.huge
+
+		if validRequirement and validRatio and energyRatio < threshold then
+			return { Damage = 0, Overkill = 0, Loss = 1, KineticThresholdFailed = true }
+		end
+	end
+
 	local armorResolution = MatData["ArmorResolution"]
 	HitRes = armorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, caliber, damageMult, Type)
 
@@ -244,6 +263,10 @@ end
 function ACE.PropDamage( Entity , Energy , FrArea , Angle , _, _, Type)
 
 	local HitRes = ACE.CalcDamage( Entity , Energy , FrArea , Angle  , Type)
+	if HitRes.KineticThresholdFailed then
+		HitRes.Kill = false
+		return HitRes
+	end
 
 	HitRes.Kill = false
 
@@ -282,6 +305,11 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	}
 
 	local HitRes = ACE.CalcDamage( Target , Energy , FrArea , Angle  , Type)
+	if HitRes.KineticThresholdFailed then
+		HitRes.Kill = false
+		return HitRes
+	end
+
 	local Driver = Entity:GetDriver()
 	local validd = Driver:IsValid()
 	local canDamageDriver = validd and canDamagePlayer(Driver, Inflictor)

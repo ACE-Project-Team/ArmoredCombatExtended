@@ -15,7 +15,6 @@ local RadarWireDescs = {
 
 	--Outputs
 	["Detected"]  = "Returns the amount of missiles that this radar is currently detecting.",
-	["Entities"]  = "Returns all the detected missiles into an array.",
 	["Position"]  = "Returns the current position of all the flying missiles of this radar",
 	["Velocity"]  = "Returns the velocity of all the active missiles into an array.",
 	["ID"]  = "Returns the unique ID of any tracked missile.",
@@ -31,7 +30,6 @@ function ENT:Initialize()
 	self.Outputs			= WireLib.CreateOutputs( self, {
 		"Detected (" .. RadarWireDescs["Detected"] .. ")",
 		"ClosestDistance",
-		"Entities (" .. RadarWireDescs["Entities"] .. ") [ARRAY]",
 		"Position (" .. RadarWireDescs["Position"] .. ") [ARRAY]",
 		"Velocity (" .. RadarWireDescs["Velocity"] .. ") [ARRAY]",
 		"ID (" .. RadarWireDescs["ID"] .. ") [ARRAY]",
@@ -42,7 +40,6 @@ function ENT:Initialize()
 	self.OutputData = {
 		Detected = 0,
 		ClosestDistance = 0,
-		Entities = {},
 		Position = {},
 		Velocity = {},
 		ID = {},
@@ -285,7 +282,6 @@ function ENT:ScanForMissiles()
 
 	local missiles = self:GetDetectedEnts() or {}
 	local distArray = {}
-	local entArray = {}
 	local posArray = {}
 	local velArray = {}
 	local IDArray = {}
@@ -320,7 +316,6 @@ function ENT:ScanForMissiles()
 		-- Sort the missiles by distance from the radar
 		local insertionIndex = ACE.GetBinaryInsertIndex(distArray, distanceSqr)
 		tableInsert(distArray, insertionIndex, distanceSqr)
-		tableInsert(entArray, insertionIndex, missile)
 		tableInsert(posArray, insertionIndex, missile.CurPos) --Replaced with non-cached value as to not lag behind.
 		tableInsert(velArray, insertionIndex, missile.Flight * 39.37)
 		tableInsert(IDArray, insertionIndex, missile.MissileID) --Replaced with non-cached value as to not lag behind.
@@ -338,7 +333,6 @@ function ENT:ScanForMissiles()
 
 	WireLib.TriggerOutput( self, "Detected", count )
 	WireLib.TriggerOutput( self, "ClosestDistance", closestOutput )
-	WireLib.TriggerOutput( self, "Entities", entArray )
 	WireLib.TriggerOutput( self, "Position", posArray )
 	WireLib.TriggerOutput( self, "Velocity", velArray )
 	WireLib.TriggerOutput( self, "ID", IDArray )
@@ -346,7 +340,6 @@ function ENT:ScanForMissiles()
 
 	self.OutputData.Detected = count
 	self.OutputData.ClosestDistance = closestOutput
-	self.OutputData.Entities = entArray
 	self.OutputData.Position = posArray
 	self.OutputData.Velocity = velArray
 	self.OutputData.ID = IDArray
@@ -368,11 +361,6 @@ function ENT:EmitRadarSound()
 end
 
 function ENT:ClearOutputs()
-
-	if #self.Outputs.Entities.Value > 0 then
-		WireLib.TriggerOutput( self, "Entities", {} )
-		self.OutputData.Entities = {}
-	end
 
 	if #self.Outputs.Position.Value > 0 then
 		WireLib.TriggerOutput( self, "Position", {} )

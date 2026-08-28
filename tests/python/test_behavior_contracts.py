@@ -76,6 +76,34 @@ class EntityPipelineContractTests(unittest.TestCase):
                 with self.subTest(pattern=pattern):
                     self.assertIn(pattern, text)
 
+    def test_rack_firepower_readout_explains_the_additive_round_cost(self):
+        functions = source("ace/shared/sh_ace_functions.lua")
+        self.assertIn("local isRack = class == \"acf_rack\"", functions)
+        self.assertIn(
+            "local flooredRawPoints = flooredRate * roundScore * firepowerScale + baseRoundCostPoints",
+            functions,
+        )
+        self.assertIn(
+            "Rack delivery: %s pts + %s base-round pts = %s pts",
+            functions,
+        )
+        self.assertIn(
+            "%.1f rpm / 60; %s delivery pts + %s base-round pts",
+            functions,
+        )
+        self.assertIn(
+            "FinalScore = ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost)",
+            functions,
+        )
+        for field in (
+            "Points = points",
+            "DeliveryPoints = points - baseRoundCostPoints",
+            "BaseRoundCostPoints = baseRoundCostPoints",
+            "IsRack = isRack",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, functions)
+
     def test_firing_contract_keeps_input_dispatch_and_bullet_creation(self):
         base = source("ace/server/sv_acfbase.lua")
         ballistics = source("ace/server/sv_acfballistics.lua")

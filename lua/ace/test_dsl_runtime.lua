@@ -3,6 +3,28 @@
 -- assertions, and cleanup underneath the maintainer-facing DSL.
 
 local Runtime = {}
+local FullModFixtures
+local FullModArtifactHookInstalled
+
+local function fullModFixture(State)
+	if not FullModArtifactHookInstalled and hook and hook.Add then
+		FullModArtifactHookInstalled = true
+		hook.Add("GLuaTest_Finished", "ACE_FullModFixtureArtifact", function(_, results)
+			local Coverage = ACE_FullModFixtureCoverage
+			if not Coverage then return end
+			local failures = 0
+			for _, result in pairs(results or {}) do
+				if result.success == false then failures = failures + 1 end
+			end
+			Coverage.finished = true
+			Coverage.failures = failures
+			file.Write("ace_full_mod_fixture.json", util.TableToJSON(Coverage, true))
+		end)
+	end
+
+	FullModFixtures = FullModFixtures or include("ace/test_fixtures.lua")
+	return FullModFixtures.FullMod(State)
+end
 
 local function overrideMethod(State, Ent, Name, Callback)
 	local Meta = FindMetaTable("Entity")
@@ -94,6 +116,148 @@ local function fixture(State, Name, Definitions)
 	return Ent
 end
 
+local function pointsForceDispatchContract(State, Owner)
+	if not (IsValid(Owner) and Owner.CFW_GetContraption and ACE.QueueContraptionPointRebuild
+		and ACE.EnsureContraptionPoints) then
+		return false
+	end
+
+	local Contraption = Owner:CFW_GetContraption()
+	if not Contraption and CFW and CFW.createContraption and FullModFixtures then
+		Contraption = FullModFixtures.Contraption(State, function()
+			local NewContraption = CFW.createContraption()
+			NewContraption:Add(Owner)
+			return NewContraption
+		end)
+	end
+	if not Contraption then return false end
+
+	local Count = 0
+	local RebuildCount = 0
+	local HookName = "ACE_DSL_PointsForce_" .. tostring(Owner:EntIndex())
+	local OriginalRebuild = ACE.RebuildContraptionPoints
+	hook.Add("ACE_OnContraptionPointsRecalculated", HookName, function(Con)
+		if Con == Contraption then Count = Count + 1 end
+	end)
+	ACE.RebuildContraptionPoints = function(...)
+		RebuildCount = RebuildCount + 1
+		return OriginalRebuild(...)
+	end
+
+	ACE.QueueContraptionPointRebuild(Contraption)
+	local Queued = ACE.PendingPointRebuilds and ACE.PendingPointRebuilds[Contraption] == true
+	local Ok, Error = pcall(ACE.EnsureContraptionPoints, Contraption, nil, true)
+	ACE.RebuildContraptionPoints = OriginalRebuild
+	hook.Remove("ACE_OnContraptionPointsRecalculated", HookName)
+	if not Ok then error(Error, 0) end
+
+	return Queued and Count == 1 and RebuildCount == 1
+end
+
+local function gameplayContract(State, Owner)
+	local Result = {}
+	local Area = ACE.Threshold * 4.46 / 0.2
+	local CurrentHealth = ACE.CalcHealth(Area, -0.8, 175)
+	local LegacyHealth = (Area / ACE.Threshold) * 0.2
+	Result.armor_health = math.abs(CurrentHealth - LegacyHealth) < 0.001
+
+	local Engine, FuelTank
+	local EngineOK, EngineValue = pcall(ACE.MakeEngine, Owner, Vector(-64, 0, 64), Angle(0, 0, 0), "0.8L-I2")
+	if EngineOK and IsValid(EngineValue) then
+		Engine = track(State, EngineValue)
+	end
+	local FuelOK, FuelValue = pcall(ACE.MakeFuelTank, Owner, Vector(-96, 0, 64), Angle(0, 0, 0),
+		"Tank_4x4x2", "Tank_4x4x2", "Diesel", "Box")
+	if FuelOK and IsValid(FuelValue) then
+		FuelTank = track(State, FuelValue)
+	end
+	if IsValid(Engine) and IsValid(FuelTank) then
+		FuelTank:TriggerInput("Active", 1)
+		local Linked = Engine:Link(FuelTank)
+		local Activated, ActivationError = pcall(Engine.TriggerInput, Engine, "Active", 1)
+		Result.engine_operation = Linked == true and Activated and Engine.Active == true
+	else
+		Result.engine_operation = false
+	end
+
+	local Ammo, Rack
+	local AmmoOK, AmmoValue = pcall(ACE.MakeAmmo, Owner, Vector(32, 0, 64), Angle(0, 0, 0),
+		"125:25:25", "BGM-71E ASM", "HEAT", 10, 15, 10, 60, "Wire", "Contact")
+	if AmmoOK and IsValid(AmmoValue) then
+		Ammo = track(State, AmmoValue)
+	end
+	local RackOK, RackValue = pcall(ACE.MakeRack, Owner, Vector(0, 0, 64), Angle(0, 0, 0), "1x BGM-71E")
+	if RackOK and IsValid(RackValue) then
+		Rack = track(State, RackValue)
+	end
+	if IsValid(Ammo) and IsValid(Rack) then
+		local Linked = Rack:Link(Ammo)
+		local Copied = pcall(Rack.PreEntityCopy, Rack)
+		local Mods = Rack.EntityMods or {}
+		Result.rack_link_persistence = Copied and Mods.ACFAmmoLink and Mods.ACFAmmoLink.entities
+			and not Mods.ACEAmmoLink
+		local Loaded = Rack:AddMissile()
+		Result.missile_reload = Linked == true and Loaded == true
+			and IsValid(Rack.Missiles[1] and Rack.Missiles[1][1])
+			and Rack.Missiles[1][2] == true
+	else
+		Result.rack_link_persistence = false
+		Result.missile_reload = false
+	end
+
+	local ChatOK = pcall(ACE.ChatMessageGlobal, "[ACE DSL] chat contract", Color(255, 255, 255))
+	Result.chat_surface = ChatOK and util.NetworkStringToID("ACE_ColorChatMessage") > 0
+		and file.Exists("ace/client/cl_acemenu_gui.lua", "LUA")
+	local LegacyGlobals = {
+		{ name = "ACF_GetPhysicalParent", target = "GetPhysicalParent" },
+		{ name = "ACF_Kinetic", target = "Kinetic" },
+		{ name = "ACF_MuzzleVelocity", target = "MuzzleVelocity" },
+		{ name = "ACF_HE", target = "HE" },
+		{ name = "ACE_CalculateHERadius", target = "CalculateHERadius" },
+		{ name = "ACE_InfraredHeatFromProp", target = "InfraredHeatFromProp" },
+		{ name = "ACE_SendNotification", target = "SendNotification" },
+		{ name = "ACE_DefineMine", target = "DefineMine" },
+		{ name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" }
+	}
+	local LegacyGlobalsReady = true
+	for _, Legacy in ipairs(LegacyGlobals) do
+		LegacyGlobalsReady = LegacyGlobalsReady and type(_G[Legacy.name]) == "function"
+			and type(ACE[Legacy.target]) == "function"
+	end
+	Result.weapons_plus_compat = LegacyGlobalsReady and type(ACF) == "table"
+		and ACF.PDensity == ACE.PDensity
+		and type(ACF_MuzzleVelocity) == "function"
+		and type(ACF_Kinetic) == "function"
+
+	local Vehicles = list.GetForEdit("Vehicles")
+	local Pod = Vehicles.ACE_pod
+	local PilotSeat = Vehicles.ACE_pilotseat
+	Result.camera_surface = Vehicles.acf_pod == Pod and Vehicles.acf_pilotseat == PilotSeat
+		and Pod and Pod.KeyValues and tostring(Pod.KeyValues.limitview) == "0"
+		and PilotSeat and PilotSeat.KeyValues and tostring(PilotSeat.KeyValues.limitview) == "0"
+	Result.points_force_dispatch = pointsForceDispatchContract(State, Owner)
+	return Result
+end
+
+local function damageHookContract(State, Target)
+	local Result = { canonical = 0, legacy = 0 }
+	local HookName = "ACE_DSL_DamageHook_" .. tostring(Target:EntIndex())
+	local LegacyName = HookName .. "_Legacy"
+	hook.Add("ACE_OnDamage", HookName, function()
+		Result.canonical = Result.canonical + 1
+	end)
+	hook.Add("ACEOnDamage", LegacyName, function()
+		Result.legacy = Result.legacy + 1
+	end)
+
+	local Ok, Error = pcall(ACE.Damage, Target,
+		{ Kinetic = 1000, Momentum = 0, Penetration = 1000 }, 3, 0, nil, nil, nil, "AP")
+	hook.Remove("ACE_OnDamage", HookName)
+	hook.Remove("ACEOnDamage", LegacyName)
+	if not Ok then error(Error, 0) end
+	return Result
+end
+
 local function literal(Value)
 	if Value == "true" then return true end
 	if Value == "false" then return false end
@@ -138,6 +302,12 @@ local function action(State, Spec)
 	local Function
 	if Spec.action == "ACE.CheckLegal" then
 		Function = ACE.CheckLegal
+	elseif Spec.action == "ACE.GameplayContract" then
+		return gameplayContract(State, Args[1])
+	elseif Spec.action == "ACE.DamageHookContract" then
+		return damageHookContract(State, Args[1])
+	elseif Spec.action == "ACE.FullModFixture" then
+		return fullModFixture(State)
 	else
 		Function = resolveGlobal(Spec.path or Spec.action)
 		if not isfunction(Function) then error("unknown registered action path: " .. (Spec.path or Spec.action), 0) end
@@ -218,7 +388,17 @@ local function expectCase(State, Spec, Expect)
 end
 
 function Runtime.Run(State, Spec, Expect)
+	if type(include) == "function" then
+		FullModFixtures = FullModFixtures or include("ace/test_fixtures.lua")
+		for _, Item in ipairs(Spec.actions or {}) do
+			if Item.path == "ACE.GameplayContract" or Item.path == "ACE.FullModFixture" then
+				FullModFixtures.EnsureHeadlessOwnership(State)
+				break
+			end
+		end
+	end
 	State.Entities = {}
+	State.Contraptions = {}
 	State.MethodOverrides = {}
 	State.MethodOriginals = {}
 	State.MethodInstalled = {}
@@ -254,8 +434,8 @@ function Runtime.Cleanup(State)
 	for Name, Original in pairs(State.MethodOriginals or {}) do
 		Meta[Name] = Original
 	end
-	local Remaining = {}
 	local CleanupError
+	local Remaining = {}
 	for Index = #(State.Entities or {}), 1, -1 do
 		local Ent = State.Entities[Index]
 		if IsValid(Ent) then
@@ -267,6 +447,15 @@ function Runtime.Cleanup(State)
 		end
 	end
 	State.Entities = Remaining
+	for Index = #(State.Contraptions or {}), 1, -1 do
+		local Contraption = State.Contraptions[Index]
+		if Contraption and Contraption.Remove and not Contraption._removed then
+			local Ok, Error = pcall(Contraption.Remove, Contraption)
+			if not Ok then CleanupError = CleanupError or Error end
+		end
+	end
+	State.Contraptions = {}
+	if FullModFixtures then FullModFixtures.RestoreHeadlessOwnership(State) end
 	if CleanupError then error("ACE DSL cleanup failed: " .. tostring(CleanupError), 0) end
 end
 

@@ -244,10 +244,11 @@ function ACE.Points.RackRate(reloadTime, maxMissile)
 	return min(1.0 / max(rt, 0.5), mm / RACK_WINDOW)
 end
 
-function ACE.Points.RackCostFromRate(rate, bestScore)
+function ACE.Points.RackCostFromRate(rate, bestScore, baseRoundCost)
 	local pricedRate = max(tonumber(rate) or 0, 1.0 / RACK_WINDOW)
-	return max(Model.kGun * pricedRate
-		* (tonumber(bestScore) or 0), RACK_FLAT) * Model.Scale
+	local deliveryCost = max(Model.kGun * pricedRate
+		* (tonumber(bestScore) or 0), RACK_FLAT)
+	return (deliveryCost + max(tonumber(baseRoundCost) or 0, 0)) * Model.Scale
 end
 
 -- Public so readouts can tell a player when the priced-rate floor changed their bill, instead
@@ -257,8 +258,8 @@ function ACE.Points.RateFloor()
 end
 
 -- Tube count caps sustained rack rate over the engagement window.
-function ACE.Points.RackCost(reloadTime, maxMissile, bestScore)
-	return ACE.Points.RackCostFromRate(ACE.Points.RackRate(reloadTime, maxMissile), bestScore)
+function ACE.Points.RackCost(reloadTime, maxMissile, bestScore, baseRoundCost)
+	return ACE.Points.RackCostFromRate(ACE.Points.RackRate(reloadTime, maxMissile), bestScore, baseRoundCost)
 end
 
 -- Mounted charges use one tube-window without the rack hardware floor. Stored ammo remains free.

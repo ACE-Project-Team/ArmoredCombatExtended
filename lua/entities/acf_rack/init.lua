@@ -258,7 +258,7 @@ function ENT:TriggerInput( iname , value )
 		else
 			self.GuidanceActive = false
 
-			if self.MissileEntity:IsValid() then
+			if IsValid(self.MissileEntity) then
 
 				self.MissileEntity.GuidanceActive = false
 
@@ -333,7 +333,7 @@ function ENT:Think()
 		self.RackStatus = "Empty"
 	elseif not self.Ready then
 		self.RackStatus = "Loading"
-		if CT > self.NextFire and self.MissileEntity:IsValid() then
+		if CT > self.NextFire and IsValid(self.MissileEntity) then
 			self.Ready = true
 			self.RackStatus = "Ready"
 			Wire_TriggerOutput(self, "Ready", 1)
@@ -365,7 +365,7 @@ function ENT:Think()
 
 	if self.GuidanceActive then
 
-		if self.MissileEntity:IsValid() then
+		if IsValid(self.MissileEntity) then
 			if self.TargPos and not self.MissileEntity.TargetAcquired then --and not self.MissileEntity.TargetAcquired
 				self.MissileEntity.TargetPos = self.TargPos
 				--self.MissileEntity.TargetAcquired = false
@@ -556,6 +556,18 @@ end
 
 --Technically a MUCH more efficient way to do this would be to cache the data every time the ammocrate gets swapped instead of redoing it every reload.
 function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramaters are initialized. Also sets launcher properties by the most recent missile.
+	if not MissileSlot then
+		for index = 1, self.MaxMissile do
+			local slot = self.Missiles[index]
+			if not slot or not slot[2] then
+				MissileSlot = index
+				break
+			end
+		end
+	end
+
+	if not MissileSlot then return false end
+	self.Missiles[MissileSlot] = self.Missiles[MissileSlot] or { NULL, false }
 
 	local Crate = self:FindNextCrate(true)
 	if not IsValid(Crate) then return false end
@@ -645,7 +657,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	local fuse	= BulletData.Data8
 
 	if guidance then
-		guidance = ACE.Missile_CreateConfigurable(guidance, GuidanceTable, bdata, "guidance")
+		guidance = ACE.Missile_CreateConfigurable(guidance, GuidanceTable, BulletData, "guidance")
 		--if guidance then missile:SetGuidance(guidance) end
 		if guidance then
 			missile.Guidance = guidance
@@ -656,7 +668,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	--print(GuidanceTable.guidance)
 
 	if fuse then
-		fuse = ACE.Missile_CreateConfigurable(fuse, FuseTable, bdata, "fuses")
+		fuse = ACE.Missile_CreateConfigurable(fuse, FuseTable, BulletData, "fuses")
 		if fuse then
 			missile.Fuse = fuse
 			fuse:Configure(missile, missile.Guidance or missile:SetGuidance(GuidanceTable.Dumb()))
@@ -833,8 +845,8 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 	local pointSources = { self }
 	self._ACEPointsSuppress = true
 
-	if Ent.EntityMods and Ent.EntityMods.ACEAmmoLink and Ent.EntityMods.ACEAmmoLink.entities then
-		local AmmoLink = Ent.EntityMods.ACEAmmoLink
+	if Ent.EntityMods and Ent.EntityMods.ACFAmmoLink and Ent.EntityMods.ACFAmmoLink.entities then
+		local AmmoLink = Ent.EntityMods.ACFAmmoLink
 		if AmmoLink.entities and next(AmmoLink.entities) then
 			for _,AmmoID in pairs(AmmoLink.entities) do
 				local Ammo = CreatedEntities[ AmmoID ]
@@ -844,7 +856,7 @@ function ENT:PostEntityPaste( Player, Ent, CreatedEntities )
 				end
 			end
 		end
-		Ent.EntityMods.ACEAmmoLink = nil
+		Ent.EntityMods.ACFAmmoLink = nil
 	end
 
 	self._ACEPointsSuppress = nil

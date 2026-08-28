@@ -32,4 +32,26 @@ primitive.ACE_PrimitivePropertiesPending = true
 assert(ACE.Points.PropArmor(primitive) == nil,
 	"Primitive armor must stay out of pricing while its properties are pending")
 
+local rackRate = ACE.Points.RackRate(2, 1)
+local rackScore = ACE.Points.RoundScore(loaded)
+local rackBaseCost = ACE.Points.BaseRoundCost(loaded)
+local rackPricedRate = math.max(rackRate, 1 / 30)
+local rackWithoutRound = math.max(ACE.PointsModel.kGun * rackPricedRate * rackScore, 100)
+local rackWithRound = ACE.Points.RackCostFromRate(rackRate, rackScore, rackBaseCost)
+local rackExpected = (rackWithoutRound + rackBaseCost) * ACE.PointsModel.Scale
+assert(math.abs(rackWithRound - rackExpected) < 1e-9,
+	"rack firepower must add the selected round's base cost exactly once")
+assert(math.abs(rackWithoutRound * ACE.PointsModel.Scale
+	+ rackBaseCost * ACE.PointsModel.Scale - rackWithRound) < 1e-9,
+	"rack delivery and base-round points must sum to the billed total")
+assert(math.abs(ACE.Points.RackCostFromRate(rackRate, rackScore)
+	- rackWithoutRound * ACE.PointsModel.Scale) < 1e-9,
+	"rack pricing without the optional base cost must preserve the old result")
+assert(math.abs(ACE.Points.RackCost(2, 1, rackScore)
+	- rackWithoutRound * ACE.PointsModel.Scale) < 1e-9,
+	"rack wrapper without the optional base cost must preserve the old result")
+local rackFloor = ACE.Points.RackCostFromRate(0, 0, rackBaseCost)
+assert(math.abs(rackFloor - (100 + rackBaseCost) * ACE.PointsModel.Scale) < 1e-9,
+	"rack flat floor must apply before the base-round addition")
+
 print("ACE points model LuaJIT self-test: PASS")

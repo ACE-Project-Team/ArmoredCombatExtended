@@ -1,5 +1,5 @@
 -- Shared native fixture prototype for ACE GLuaTest groups.
--- Keep real GMod/CFW setup here; individual tests should only name the fixture they need.
+-- The mounted implementation lives in lua/ace/test_fixtures.lua so the DSL runtime can load it.
 local Fixtures = {}
 
 function Fixtures.Entity(State, className, configure)
@@ -16,7 +16,6 @@ function Fixtures.Entity(State, className, configure)
 end
 
 function Fixtures.Contraption(State, create)
-	-- CFW construction is supplied by the native suite, not guessed here.
 	local contraption = create()
 	assert(contraption, "contraption fixture did not return a contraption")
 

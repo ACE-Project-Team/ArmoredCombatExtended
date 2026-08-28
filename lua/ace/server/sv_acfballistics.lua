@@ -1041,7 +1041,7 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 	local fuse	= MissileData.FuseName
 
 	if guidance then
-		guidance = ACE.Missile_CreateConfigurable(guidance, ACE.Guidance, bdata, "guidance")
+		guidance = ACE.Missile_CreateConfigurable(guidance, ACE.Guidance, BData, "guidance")
 		--if guidance then missile:SetGuidance(guidance) end
 		if guidance then
 			missile.Guidance = guidance
@@ -1052,7 +1052,7 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 	--print(GuidanceTable.guidance)
 
 	if fuse then
-		fuse = ACE.Missile_CreateConfigurable(fuse, ACE.Fuse, bdata, "fuses")
+		fuse = ACE.Missile_CreateConfigurable(fuse, ACE.Fuse, BData, "fuses")
 		if fuse then
 			missile.Fuse = fuse
 			fuse:Configure(missile, missile.Guidance or missile:SetGuidance(ACE.Guidance.Dumb()))

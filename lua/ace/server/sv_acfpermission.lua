@@ -16,9 +16,11 @@ this.ModeDescs = {}
 this.ModeThinks = {}
 this.NotifySafezones = {}
 
---TODO: convar this
+-- Persisted data uses the ACE namespace; legacy ACF files are converted on first read.
 local mapSZDir = "ace/safezones/"
 local mapDPMDir = "ace/permissions/"
+local legacyMapSZDir = "acf/safezones/"
+local legacyMapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
 
 
@@ -98,8 +100,18 @@ end
 local function getMapSZs()
 	local mapname = getMapFilename()
 	local mapSZFile = file.Read(mapname, "DATA") or ""
-
 	local safezones = util.JSONToTable(mapSZFile)
+	if not file.Exists(mapname, "DATA") then
+		local legacyMapSZFile = file.Read(legacyMapSZDir .. string.match(mapname, "[^/]+$"), "DATA")
+		if legacyMapSZFile then
+			local legacySafezones = util.JSONToTable(legacyMapSZFile)
+			if validateSZs(legacySafezones) then
+				file.CreateDir(mapSZDir)
+				file.Write(mapname, legacyMapSZFile)
+				safezones = legacySafezones
+			end
+		end
+	end
 
 	if not validateSZs(safezones) then
 		-- TODO: generate default safezones around spawnpoints.
@@ -125,7 +137,15 @@ end
 
 local function LoadMapDPM()
 	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
-	return file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
+	local path = mapDPMDir .. mapname .. ".txt"
+	local mode = file.Read(path, "DATA")
+	if mode == nil then
+		mode = file.Read(legacyMapDPMDir .. mapname .. ".txt", "DATA")
+		if mode ~= nil and this.Modes[mode] then
+			file.Write(path, mode)
+		end
+	end
+	return mode
 end
 
 function this.visualizeSafeZones()

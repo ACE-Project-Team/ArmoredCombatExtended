@@ -8,12 +8,16 @@ local function exists(path)
 end
 
 assert(not exists("/lua/autorun/ace_legacy_tools.lua"), "legacy tool bridge remains")
-assert(not exists("/lua/autorun/ace_legacy_vehicles.lua"), "legacy vehicle bridge remains")
 assert(not exists("/lua/autorun/ace_legacy_convars.lua"), "legacy convar bridge remains")
 
+local vehicles = assert(io.open(root .. "/lua/autorun/ace_legacy_vehicles.lua", "r")):read("*a")
+assert(vehicles:find('key == "acf_pod"', 1, true), "legacy pod vehicle alias is missing")
+assert(vehicles:find('key == "acf_pilotseat"', 1, true), "legacy pilot seat alias is missing")
+
 local globals = assert(io.open(root .. "/lua/autorun/acf_globals.lua", "r")):read("*a")
-assert(not globals:find("LegacyCompatibility", 1, true), "global legacy compatibility remains")
-assert(not globals:find("__ACECompatibilityView", 1, true), "ACF compatibility metatable remains")
+assert(globals:find("__ACECompatibilityView", 1, true), "ACF compatibility metatable is missing")
+assert(globals:find("ACF_MuzzleVelocity", 1, true), "legacy ACF calculation bridge is missing")
+assert(globals:find("ACF_Kinetic", 1, true), "legacy ACF kinetic bridge is missing")
 assert(not globals:find("rawget(_G, \"ACE_\"", 1, true), "ACE metatable fallback remains")
 
-print("ACE namespace compatibility-removal LuaJIT self-test: PASS")
+print("ACE namespace compatibility self-test: PASS")

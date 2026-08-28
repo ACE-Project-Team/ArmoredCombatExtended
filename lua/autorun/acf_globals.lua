@@ -1,5 +1,6 @@
 ACE               = ACE or {}
 
+if SERVER then AddCSLuaFile("ace/shared/sh_ace_entity_state.lua") end
 include("ace/shared/sh_ace_entity_state.lua")
 
 ACE.CurTime       = CurTime()
@@ -603,5 +604,60 @@ cleanup.Register( "aceexplosives" )
 
 AddCSLuaFile("autorun/acf_missile/folder.lua")
 include("autorun/acf_missile/folder.lua")
+
+-- Keep legacy calculation symbols available to external ACE weapon packs such
+-- as Weapons+, but only when ACE owns the ACF namespace. Never mask a real ACF
+-- installation or copy values, so the view follows live ACE configuration.
+if not file.Exists("autorun/acf_loader.lua", "LUA")
+and (ACF == nil or rawget(ACF, "__ACECompatibilityView")) then
+    ACF = ACF or {}
+
+    if not rawget(ACF, "__ACECompatibilityView") then
+        local Meta = getmetatable(ACF) or {}
+        local PreviousIndex = Meta.__index
+
+        Meta.__index = function(Table, Key)
+            if type(PreviousIndex) == "function" then
+                local Value = PreviousIndex(Table, Key)
+                if Value ~= nil then return Value end
+            elseif type(PreviousIndex) == "table" and PreviousIndex[Key] ~= nil then
+                return PreviousIndex[Key]
+            end
+
+            return ACE[Key]
+        end
+
+        setmetatable(ACF, Meta)
+        rawset(ACF, "__ACECompatibilityView", true)
+    end
+
+    local LegacyGlobals = {
+        { name = "ACF_GetPhysicalParent", target = "GetPhysicalParent" },
+        { name = "ACF_Kinetic", target = "Kinetic" },
+        { name = "ACF_MuzzleVelocity", target = "MuzzleVelocity" },
+        { name = "ACF_HE", target = "HE" },
+        { name = "ACE_CalculateHERadius", target = "CalculateHERadius" },
+        { name = "ACE_InfraredHeatFromProp", target = "InfraredHeatFromProp" },
+        { name = "ACE_SendNotification", target = "SendNotification" },
+        { name = "ACE_DefineMine", target = "DefineMine" },
+        { name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" }
+    }
+
+    local function LegacyForwarder(Target)
+        return function(...)
+            local Implementation = ACE[Target]
+            if type(Implementation) ~= "function" then
+                error("ACE legacy compatibility target is unavailable: " .. Target, 2)
+            end
+            return Implementation(...)
+        end
+    end
+
+    for _, Legacy in ipairs(LegacyGlobals) do
+        if rawget(_G, Legacy.name) == nil then
+            rawset(_G, Legacy.name, LegacyForwarder(Legacy.target))
+        end
+    end
+end
 
 print("[ACE | INFO]- Done!")

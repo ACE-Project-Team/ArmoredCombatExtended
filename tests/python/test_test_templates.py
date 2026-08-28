@@ -30,6 +30,27 @@ class TestTemplateContracts(unittest.TestCase):
         self.assertIn("entity:Remove()", source)
         self.assertIn("contraption:Remove()", source)
 
+    def test_full_mod_fixture_is_registry_driven_and_artifact_backed(self):
+        source = (REPO / "lua" / "ace" / "test_dsl_runtime.lua").read_text(encoding="utf-8")
+        mounted_fixture = (REPO / "lua" / "ace" / "test_fixtures.lua").read_text(encoding="utf-8")
+        fixture = (REPO / "tests" / "templates" / "native_fixtures.lua").read_text(
+            encoding="utf-8"
+        )
+
+        for marker in (
+            "Fixtures.EntityClasses()",
+            "Fixtures.SpawnAll(State)",
+            "Fixtures.RegisteredDupeClasses()",
+            "ACE.FullModFixture",
+            "ace_full_mod_fixture.json",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, source + mounted_fixture + fixture)
+
+        for marker in ("scripted_ents.GetStored", "duplicator.FindEntityClass", "Fixtures.Cleanup"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, mounted_fixture + fixture)
+
     def test_snapshot_guidance_rejects_incidental_full_table_snapshots(self):
         source = (REPO / "tests" / "README.md").read_text(encoding="utf-8")
 

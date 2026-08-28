@@ -160,7 +160,10 @@ function EFFECT:Think()
 	if self.Alive and Bullet and self.CreateTime > ACE.CurTime-30 then
 
 		--We require this so the tracer is not spawned in middle of the gun (when initially fired)
-		if self.hasTracer and IsValid(Bullet.Tracer) and Bullet.Counter < 4 then Bullet.Counter = Bullet.Counter + 1 end
+		if self.hasTracer and IsValid(Bullet.Tracer) then
+			Bullet.Counter = (Bullet.Counter or 0) + 1
+			if Bullet.Counter > 4 then Bullet.Counter = 4 end
+		end
 
 		return true
 	end

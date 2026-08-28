@@ -7,15 +7,18 @@ LUA = REPO / "lua"
 
 
 class LegacyExtensionCompatibilityTests(unittest.TestCase):
-    def test_global_compatibility_bridges_are_removed(self):
-        for name in ("ace_legacy_tools.lua", "ace_legacy_vehicles.lua", "ace_legacy_convars.lua"):
+    def test_external_weapon_compatibility_bridge_is_guarded(self):
+        for name in ("ace_legacy_tools.lua", "ace_legacy_convars.lua"):
             with self.subTest(name=name):
                 self.assertFalse((LUA / "autorun" / name).exists())
 
         source = (LUA / "autorun" / "acf_globals.lua").read_text(encoding="utf-8")
-        self.assertNotIn("LegacyCompatibility", source)
-        self.assertNotIn("InstallLegacyGlobal", source)
-        self.assertNotIn("__ACECompatibilityView", source)
+        self.assertIn("__ACECompatibilityView", source)
+        for name in (
+            "ACF_GetPhysicalParent", "ACF_Kinetic", "ACF_MuzzleVelocity", "ACF_HE",
+        ):
+            with self.subTest(name=name):
+                self.assertIn(name, source)
 
     def test_canonical_hook_events_are_used(self):
         sources = "\n".join(
@@ -29,10 +32,11 @@ class LegacyExtensionCompatibilityTests(unittest.TestCase):
         ):
             self.assertIn(event, sources)
 
-    def test_ace_table_does_not_install_a_metatable_fallback(self):
+    def test_ace_table_installs_only_the_guarded_acf_fallback(self):
         source = (LUA / "autorun" / "acf_globals.lua").read_text(encoding="utf-8")
         self.assertNotIn('rawget(_G, "ACE_"', source)
-        self.assertNotIn("setmetatable(ACF", source)
+        self.assertIn("setmetatable(ACF", source)
+        self.assertIn('file.Exists("autorun/acf_loader.lua", "LUA")', source)
 
 
 if __name__ == "__main__":

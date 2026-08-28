@@ -22,6 +22,7 @@
     ,"gate_target_zero": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 0, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_target_non_kinetic": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 10000, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_prop_target": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Health": 100, "MaxArmour": 100, "MaxHealth": 100, "PrHealth": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
+    ,"damage_hook_target": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Health": 100, "MaxArmour": 100, "MaxHealth": 100, "PrHealth": 100, "Ductility": 0, "Material": "RHA", "Type": "Prop"}}
     ,"gate_target_era_numeric": {"kind": "native_entity", "class": "prop_physics", "mass": 10, "ace": {"Armour": 100, "Health": 100, "MaxArmour": 100, "MaxHealth": 100, "Ductility": 0, "Material": 4, "Type": "Prop"}}
     ,"gate_energy_below": {"kind": "value", "value": {"Kinetic": 600, "Momentum": 0, "Penetration": 600}}
     ,"gate_energy_above": {"kind": "value", "value": {"Kinetic": 900, "Momentum": 0, "Penetration": 900}}

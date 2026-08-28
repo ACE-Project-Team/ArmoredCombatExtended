@@ -153,7 +153,7 @@ greaterThan("stronger armor costs more", function(State)
 end, State.WeakerCost)
 
 lessThan("a slower rack costs less", function(State)
-    return ACE.Points.RackCost(State.SlowerReload, State.Tubes, State.Score)
+	return ACE.Points.RackCost(State.SlowerReload, State.Tubes, State.Score, State.BaseRoundCost)
 end, State.FasterCost)
 
 changesWhen("changing guidance changes the score", function(State)

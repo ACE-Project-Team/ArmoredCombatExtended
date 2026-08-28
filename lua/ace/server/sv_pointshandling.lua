@@ -176,6 +176,7 @@ function ACE.FlushQueuedPointChanges()
 	local changes = ACE.PendingPointEntityChanges
 	local rebuilds = ACE.PendingPointRebuilds
 	local warnings = ACE.PendingPointWarnings
+	local rebuilt
 	ACE.PendingPointEntityChanges = {}
 	ACE.PendingPointRebuilds = setmetatable({}, { __mode = "k" })
 	ACE.PendingPointWarnings = setmetatable({}, { __mode = "k" })
@@ -219,7 +220,9 @@ function ACE.FlushQueuedPointChanges()
 
 	for con in pairs(rebuilds) do
 		if IsLiveContraption(con) then
+			rebuilt = rebuilt or setmetatable({}, { __mode = "k" })
 			ACE.RebuildContraptionPoints(con, nil, true, true)
+			rebuilt[con] = true
 			states[con] = nil
 		end
 	end
@@ -235,6 +238,8 @@ function ACE.FlushQueuedPointChanges()
 			con._ACEWarningChecking = nil
 		end
 	end
+
+	return rebuilt
 end
 
 -- Public point lifecycle hooks:
@@ -404,7 +409,10 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 
 	con._ACEPointsEnsuring = true
 	if ACE.EnsurePointsState then ACE.EnsurePointsState(con) end
-	ACE.FlushQueuedPointChanges()
+	local flushedRebuilds = ACE.FlushQueuedPointChanges()
+	-- A forced read must not repeat a rebuild that the queue just applied. The flush
+	-- already used the same full rebuild contract and emitted its recalculation event.
+	if flushedRebuilds and flushedRebuilds[con] and not baseEnt then force = false end
 
 	local cacheStale = ACE.EnsureCacheVersion and ACE.EnsureCacheVersion(con) or false
 	local needsInit = not con.ACEArmorCalculated
@@ -430,4 +438,6 @@ function ACE.EnsureContraptionPoints(con, baseEnt, force)
 	end
 end
 
-hook.Add("Think", "ACE_FlushQueuedPointChanges", ACE.FlushQueuedPointChanges)
+hook.Add("Think", "ACE_FlushQueuedPointChanges", function()
+	ACE.FlushQueuedPointChanges()
+end)

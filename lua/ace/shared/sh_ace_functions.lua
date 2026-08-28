@@ -180,9 +180,9 @@ function ACE.CalcArmor( Area, Ductility, Mass )
 
 end
 
---- Prop health from area, ductility, and armor thickness
---- Scaling by Armour / ACE.HealthRefmm makes health proportional to armor mass: a plate at
---- ACE.HealthRefmm keeps the legacy area-only health, thicker plates gain durability linearly.
+--- Prop health from area and ductility.
+--- Armour remains an accepted argument for dupe/API compatibility, but armor thickness is
+--- already represented by penetration and must not multiply prop hit points.
 --- Shared by sv_acfbase and the armor tool preview.
 ---@param Area number Prop surface area in cm2
 ---@param Ductility number Clamped ductility, -0.8 to 0.8
@@ -192,7 +192,7 @@ function ACE.CalcHealth( Area, Ductility, Armour )
 
 	if Area <= 0 then return 0 end -- degenerate props keep the legacy instantly-destroyed behavior
 
-	return ( Area / ACE.Threshold ) * ( 1 + Ductility ) * ( Armour / ACE.HealthRefmm )
+	return ( Area / ACE.Threshold ) * ( 1 + Ductility )
 
 end
 
@@ -1214,7 +1214,7 @@ end
 	return best
 	end
 
--- Resolve the complete rack configuration with the highest final rate x round score.
+-- Resolve the complete rack configuration with the highest final rack price.
 local function resolveRackPricingCandidate(rack)
 	if not ACE.IsEnt(rack) then return end
 
@@ -1225,12 +1225,14 @@ local function resolveRackPricingCandidate(rack)
 			if round then
 				local reload = ACE.GetRackConfiguredReloadTime(rack, crate.BulletData)
 				local rate = ACE.Points.RackRate(reload, rack.MaxMissile)
+				local baseRoundCost = ACE.Points.BaseRoundCost(round)
 				local roundScore = ACE.Points.RoundScore(round)
 				local candidate = {
 					Round = round,
 					Rate = rate,
 					RoundScore = roundScore,
-					FinalScore = rate * roundScore,
+					BaseRoundCost = baseRoundCost,
+					FinalScore = ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost),
 					SourceIndex = crate:EntIndex(),
 				}
 
@@ -1251,6 +1253,7 @@ local function resolveWeaponPricingInputs(ent)
 	local candidate = class == "acf_gun"
 		and resolveGunPricingCandidate(ent)
 		or resolveRackPricingCandidate(ent)
+	local isRack = class == "acf_rack"
 	local round = candidate and candidate.Round
 	local rate = candidate and candidate.Rate or 0
 	local threat = round and ACE.Points.Gate(ACE.Points.GatePen(round)) or 0
@@ -1258,15 +1261,20 @@ local function resolveWeaponPricingInputs(ent)
 	local roundScore = threat * baseRoundCost
 	local points = class == "acf_gun"
 		and ACE.Points.GunCost(rate, baseRoundCost, threat)
-		or ACE.Points.RackCostFromRate(rate, roundScore)
+		or ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost)
 	local model = ACE.PointsModel or {}
 	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
+	-- RawPoints is the unfloored delivery multiplication. Rack totals add the selected round
+	-- separately through BaseRoundCostPoints, while DeliveryPoints is the actually floored term.
 	local rawPoints = rate * roundScore * firepowerScale
+	local baseRoundCostPoints = isRack
+		and baseRoundCost * (tonumber(model.Scale) or 0)
+		or 0
 	local rateFloor = ACE.Points.RateFloor and ACE.Points.RateFloor() or 0
 	-- Compare against the FLOORED rate's raw product, not the true rate's -- otherwise every
 	-- floor-affected weapon falsely reads as having hit the flat weapon minimum instead.
 	local flooredRate = (rateFloor > 0) and math.max(rate, rateFloor) or rate
-	local flooredRawPoints = flooredRate * roundScore * firepowerScale
+	local flooredRawPoints = flooredRate * roundScore * firepowerScale + baseRoundCostPoints
 	local minimumApplied = points > flooredRawPoints + 0.01
 
 	return {
@@ -1276,6 +1284,9 @@ local function resolveWeaponPricingInputs(ent)
 		BaseRoundCost = baseRoundCost,
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
+		BaseRoundCostPoints = baseRoundCostPoints,
+		DeliveryPoints = points - baseRoundCostPoints,
+		IsRack = isRack,
 		MinimumApplied = minimumApplied,
 		-- Distinct from MinimumApplied: this is the delivery-rate floor, not the flat weapon
 		-- minimum, and can engage on builds pricing well above the flat floor. Mutually
@@ -1305,12 +1316,26 @@ function ACE.GetGunFirepowerPricingLine(readout, menuFormat)
 	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
 
 	if not menuFormat then
+		if readout.IsRack then
+			return string.format("Rack delivery: %s pts + %s base-round pts = %s pts",
+				string.Comma(math.Round(readout.DeliveryPoints)),
+				string.Comma(math.Round(readout.BaseRoundCostPoints)),
+				string.Comma(math.Round(readout.Points)))
+		end
+
 		return string.format("%.3f/s x %.1f%% threat x %s base x %.4f scale = %s pts",
 			readout.Rate,
 			readout.Threat * 100,
 			string.Comma(math.Round(readout.BaseRoundCost)),
 			readout.FirepowerScale,
 			string.Comma(math.Round(readout.RawPoints)))
+	end
+
+	if readout.IsRack then
+		return string.format("%.1f rpm / 60; %s delivery pts + %s base-round pts",
+			readout.Rate * 60,
+			string.Comma(math.Round(readout.DeliveryPoints)),
+			string.Comma(math.Round(readout.BaseRoundCostPoints)))
 	end
 
 	return string.format("%.1f rpm / 60 x %.1f%% threat x %.1f base x %.1f scale",

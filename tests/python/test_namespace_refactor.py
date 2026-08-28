@@ -560,9 +560,8 @@ class NamespaceRefactorTests(unittest.TestCase):
             r"(?m)^\s*ACF\.[A-Za-z_][A-Za-z0-9_]*\s*=\s*(?!ACF\[)"
         )
         self.assertNotRegex(source, r"ACF\s*\[\s*key\s*\]\s*=\s*ACE\[")
-        self.assertNotIn("__ACECompatibilityView", raw_source)
-        self.assertNotIn("ACECompatibilityView", raw_source)
-        self.assertNotIn("setmetatable(ACF", raw_source)
+        self.assertIn("__ACECompatibilityView", raw_source)
+        self.assertIn("setmetatable(ACF", raw_source)
 
     def test_deferred_adapters_keep_their_dotted_ace_api(self):
         globals_source = (LUA_ROOT / "autorun" / "acf_globals.lua").read_text(

@@ -12,6 +12,38 @@ expect EntityType is "Prop"
 expect Prop.ACE exists
 cleanup automatic
 
+new Test "Damage dispatches each public damage hook once"
+scenario ace.native.damage.hook_dispatch_once
+requires native
+uses damage_hook_target as Target
+do ACE.DamageHookContract on Target as Hooks
+expect Hooks.canonical is 1
+expect Hooks.legacy is 1
+cleanup automatic
+
+new Test "Reported gameplay surfaces remain usable"
+scenario ace.native.gameplay.surface_contract
+requires native
+uses valid_prop as Owner
+do ACE.GameplayContract on Owner as Gameplay
+expect Gameplay.armor_health is true
+expect Gameplay.engine_operation is true
+expect Gameplay.rack_link_persistence is true
+expect Gameplay.missile_reload is true
+expect Gameplay.chat_surface is true
+expect Gameplay.weapons_plus_compat is true
+expect Gameplay.camera_surface is true
+expect Gameplay.points_force_dispatch is true
+cleanup automatic
+
+new Test "The reusable fixture exercises the full mounted ACE surface"
+scenario ace.native.full_mod.fixture
+requires native
+uses valid_prop as Owner
+do ACE.FullModFixture on Owner as FullMod
+expect FullMod.ok is true
+cleanup automatic
+
 new Test "An invalid entity is refused without activation"
 scenario ace.native.core.invalid_entity
 requires native
@@ -208,8 +240,8 @@ do ACE.CalcHealth on ZeroArea and Ductility and Armour as ZeroHealth
 do ACE.CalcHealth on QuarterArea and Ductility and QuarterArmour as QuarterHealth
 expect ReferenceHealth is 1
 expect DuctileHealth is 1.8
-expect ThickHealth is 30
-expect HalfHealth is 0.5
+expect ThickHealth is 1
+expect HalfHealth is 1
 expect ZeroHealth is 0
 expect QuarterHealth is 0.25
 cleanup automatic

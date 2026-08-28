@@ -267,15 +267,16 @@ hook.Add("EntityRemoved", "ACE_EntRemoval", function(Ent)
 	elseif Eclass == "ace_mine" then
 
 		local Owner = Ent.DamageOwner
+		local OwnedMines = ACE.MineOwners and ACE.MineOwners[Owner] or {}
 
-		for i, mine in ipairs(ACE.MineOwners[Owner]) do
+		for i, mine in ipairs(OwnedMines) do
 			if IsValid(mine) and mine == Ent then
-				table.remove(ACE.MineOwners[Owner], i)
-				--print("Mine registered count to player " .. Owner:Nick() .. ": " .. #ACE.MineOwners[Owner] )
+				table.remove(OwnedMines, i)
+				--print("Mine registered count to player " .. Owner:Nick() .. ": " .. #OwnedMines )
 			end
 		end
 
-		for i, mine in ipairs(ACE.Mines) do
+		for i, mine in ipairs(ACE.Mines or {}) do
 			if IsValid(mine) and mine == Ent then
 				table.remove(ACE.Mines, i)
 				--print("Mine registered count: " .. #ACE.Mines )

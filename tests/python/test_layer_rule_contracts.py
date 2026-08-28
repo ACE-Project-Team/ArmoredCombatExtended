@@ -1,4 +1,4 @@
-"""Structural checks for the armor-health pricing compatibility boundary."""
+"""Structural checks for the area/ductility armor-health contract."""
 
 from pathlib import Path
 import unittest
@@ -12,13 +12,18 @@ def read(path: Path) -> str:
 
 
 class ArmorPricingContracts(unittest.TestCase):
-    def test_points_model_undoes_mass_scaled_health(self):
+    def test_points_model_prices_live_health_without_mass_multiplier_compensation(self):
         body = read(LUA / "ace" / "shared" / "sh_ace_points_model.lua")
-        self.assertEqual(body.count("hp = hp * ACE.HealthRefmm * (ACE.ArmorMod or 1) / armourMm"), 1)
+        self.assertNotIn("ACE.HealthRefmm", body)
 
-    def test_tool_preview_undoes_mass_scaled_health(self):
+    def test_tool_preview_uses_the_live_area_health_contract(self):
         body = read(LUA / "weapons" / "gmod_tool" / "stools" / "acearmorprop.lua")
-        self.assertEqual(body.count("hp = hp * ACE.HealthRefmm / armor"), 1)
+        self.assertNotIn("ACE.HealthRefmm", body)
+
+    def test_calc_health_does_not_scale_with_thickness(self):
+        body = read(LUA / "ace" / "shared" / "sh_ace_functions.lua")
+        self.assertIn("return ( Area / ACE.Threshold ) * ( 1 + Ductility )", body)
+        self.assertNotIn("Armour / ACE.HealthRefmm", body)
 
 
 if __name__ == "__main__":

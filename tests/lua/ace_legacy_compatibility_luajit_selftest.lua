@@ -11,8 +11,8 @@ assert(not exists("/lua/autorun/ace_legacy_tools.lua"), "legacy tool bridge rema
 assert(not exists("/lua/autorun/ace_legacy_convars.lua"), "legacy convar bridge remains")
 
 local vehicles = assert(io.open(root .. "/lua/autorun/ace_legacy_vehicles.lua", "r")):read("*a")
-assert(vehicles:find('key == "acf_pod"', 1, true), "legacy pod vehicle alias is missing")
-assert(vehicles:find('key == "acf_pilotseat"', 1, true), "legacy pilot seat alias is missing")
+assert(vehicles:find([[key == "acf_pod"]], 1, true), "legacy pod vehicle alias is missing")
+assert(vehicles:find([[key == "acf_pilotseat"]], 1, true), "legacy pilot seat alias is missing")
 
 local globals = assert(io.open(root .. "/lua/autorun/acf_globals.lua", "r")):read("*a")
 assert(globals:find("__ACECompatibilityView", 1, true), "ACF compatibility metatable is missing")

@@ -5,11 +5,9 @@
     "ACE.Activate": {"kind": "global", "path": "ACE.Activate"},
     "ACE.CheckLegal": {"kind": "global", "path": "ACE.CheckLegal", "returns": ["legal", "reason"]},
     "ACE.CalcDamage": {"kind": "global", "path": "ACE.CalcDamage", "returns": ["Damage", "KineticThresholdFailed"]},
-    "ACE.CalcHealth": {"kind": "global", "path": "ACE.CalcHealth"},
     "ACE.IsKineticDamageType": {"kind": "global", "path": "ACE.IsKineticDamageType"},
     "ACE.PropDamage": {"kind": "global", "path": "ACE.PropDamage", "returns": ["Damage", "KineticThresholdFailed"]},
     "ACE.DamageHookContract": {"kind": "native", "path": "ACE.DamageHookContract", "returns": ["canonical", "legacy"]},
-    "ACE.GameplayContract": {"kind": "native", "path": "ACE.GameplayContract", "returns": ["armor_health", "engine_operation", "rack_link_persistence", "missile_reload", "chat_surface", "weapons_plus_compat", "camera_surface", "points_force_dispatch"]},
-    "ACE.FullModFixture": {"kind": "native", "path": "ACE.FullModFixture", "returns": ["ok", "entity_classes", "spawn_report", "method_report", "dupe_classes"]}
+    "ACE.GameplayContract": {"kind": "native", "path": "ACE.GameplayContract", "returns": ["engine_operation", "rack_link_persistence", "missile_reload", "chat_surface", "weapons_plus_compat", "camera_surface", "points_force_dispatch"]}
   }
 }

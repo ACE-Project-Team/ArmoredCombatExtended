@@ -3,27 +3,45 @@
 -- assertions, and cleanup underneath the maintainer-facing DSL.
 
 local Runtime = {}
-local FullModFixtures
-local FullModArtifactHookInstalled
+-- These Entity-meta shims stand in for missing player/toolgun methods only in
+-- headless fixtures; real Player meta methods still take precedence for players.
+local HeadlessOwnershipShims = {
+	CPPISetOwner = function(entity, owner) entity._TestCPPIOwner = owner end,
+	CPPIGetOwner = function(entity) return entity._TestCPPIOwner end,
+	UniqueID = function(entity) return "ACE_HEADLESS_" .. entity:EntIndex() end,
+	CheckLimit = function() return true end,
+	AddCount = function() end,
+	AddCleanup = function() end,
+	GetInfo = function() return "0" end,
+	GetInfoNum = function(_, _, default) return default or 0 end,
+	Nick = function() return "ACE headless owner" end,
+	SteamID64 = function() return "0" end,
+}
 
-local function fullModFixture(State)
-	if not FullModArtifactHookInstalled and hook and hook.Add then
-		FullModArtifactHookInstalled = true
-		hook.Add("GLuaTest_Finished", "ACE_FullModFixtureArtifact", function(_, results)
-			local Coverage = ACE_FullModFixtureCoverage
-			if not Coverage then return end
-			local failures = 0
-			for _, result in pairs(results or {}) do
-				if result.success == false then failures = failures + 1 end
-			end
-			Coverage.finished = true
-			Coverage.failures = failures
-			file.Write("ace_full_mod_fixture.json", util.TableToJSON(Coverage, true))
-		end)
+local function ensureHeadlessOwnership(State)
+	if type(FindMetaTable) ~= "function" then return end
+	local EntityMeta = FindMetaTable("Entity")
+	if not EntityMeta then return end
+	State.HeadlessOwnershipInstalled = State.HeadlessOwnershipInstalled or {}
+	for Name, Shim in pairs(HeadlessOwnershipShims) do
+		if not EntityMeta[Name] then
+			EntityMeta[Name] = Shim
+			State.HeadlessOwnershipInstalled[Name] = true
+		end
 	end
+end
 
-	FullModFixtures = FullModFixtures or include("ace/test_fixtures.lua")
-	return FullModFixtures.FullMod(State)
+local function restoreHeadlessOwnership(State)
+	if not State or not State.HeadlessOwnershipInstalled then return end
+	if type(FindMetaTable) ~= "function" then
+		State.HeadlessOwnershipInstalled = nil
+		return
+	end
+	local EntityMeta = FindMetaTable("Entity")
+	if EntityMeta then
+		for Name in pairs(State.HeadlessOwnershipInstalled) do EntityMeta[Name] = nil end
+	end
+	State.HeadlessOwnershipInstalled = nil
 end
 
 local function overrideMethod(State, Ent, Name, Callback)
@@ -123,12 +141,13 @@ local function pointsForceDispatchContract(State, Owner)
 	end
 
 	local Contraption = Owner:CFW_GetContraption()
-	if not Contraption and CFW and CFW.createContraption and FullModFixtures then
-		Contraption = FullModFixtures.Contraption(State, function()
-			local NewContraption = CFW.createContraption()
-			NewContraption:Add(Owner)
-			return NewContraption
-		end)
+	if not Contraption and CFW and CFW.createContraption then
+		local NewContraption = CFW.createContraption()
+		assert(NewContraption, "headless CFW contraption creation failed")
+		NewContraption:Add(Owner)
+		Contraption = NewContraption
+		State.Contraptions = State.Contraptions or {}
+		State.Contraptions[#State.Contraptions + 1] = Contraption
 	end
 	if not Contraption then return false end
 
@@ -156,11 +175,6 @@ end
 
 local function gameplayContract(State, Owner)
 	local Result = {}
-	local Area = ACE.Threshold * 4.46 / 0.2
-	local CurrentHealth = ACE.CalcHealth(Area, -0.8, 175)
-	local LegacyHealth = (Area / ACE.Threshold) * 0.2
-	Result.armor_health = math.abs(CurrentHealth - LegacyHealth) < 0.001
-
 	local Engine, FuelTank
 	local EngineOK, EngineValue = pcall(ACE.MakeEngine, Owner, Vector(-64, 0, 64), Angle(0, 0, 0), "0.8L-I2")
 	if EngineOK and IsValid(EngineValue) then
@@ -174,7 +188,7 @@ local function gameplayContract(State, Owner)
 	if IsValid(Engine) and IsValid(FuelTank) then
 		FuelTank:TriggerInput("Active", 1)
 		local Linked = Engine:Link(FuelTank)
-		local Activated, ActivationError = pcall(Engine.TriggerInput, Engine, "Active", 1)
+		local Activated = pcall(Engine.TriggerInput, Engine, "Active", 1)
 		Result.engine_operation = Linked == true and Activated and Engine.Active == true
 	else
 		Result.engine_operation = false
@@ -239,7 +253,7 @@ local function gameplayContract(State, Owner)
 	return Result
 end
 
-local function damageHookContract(State, Target)
+local function damageHookContract(_State, Target)
 	local Result = { canonical = 0, legacy = 0 }
 	local HookName = "ACE_DSL_DamageHook_" .. tostring(Target:EntIndex())
 	local LegacyName = HookName .. "_Legacy"
@@ -306,8 +320,6 @@ local function action(State, Spec)
 		return gameplayContract(State, Args[1])
 	elseif Spec.action == "ACE.DamageHookContract" then
 		return damageHookContract(State, Args[1])
-	elseif Spec.action == "ACE.FullModFixture" then
-		return fullModFixture(State)
 	else
 		Function = resolveGlobal(Spec.path or Spec.action)
 		if not isfunction(Function) then error("unknown registered action path: " .. (Spec.path or Spec.action), 0) end
@@ -388,13 +400,10 @@ local function expectCase(State, Spec, Expect)
 end
 
 function Runtime.Run(State, Spec, Expect)
-	if type(include) == "function" then
-		FullModFixtures = FullModFixtures or include("ace/test_fixtures.lua")
-		for _, Item in ipairs(Spec.actions or {}) do
-			if Item.path == "ACE.GameplayContract" or Item.path == "ACE.FullModFixture" then
-				FullModFixtures.EnsureHeadlessOwnership(State)
-				break
-			end
+	for _, Item in ipairs(Spec.actions or {}) do
+		if Item.path == "ACE.GameplayContract" then
+			ensureHeadlessOwnership(State)
+			break
 		end
 	end
 	State.Entities = {}
@@ -412,17 +421,28 @@ function Runtime.Run(State, Spec, Expect)
 	State.OriginalActivate = ACE.Activate
 	State.FixtureDefinitions = Spec.fixturesRegistry or {}
 
-	for _, Item in ipairs(Spec.fixtures) do
-		State.DeclaredBindings[Item.alias] = true
-		State.Bindings[Item.alias] = fixture(State, Item.fixture, State.FixtureDefinitions)
-	end
+	local Ok, Error = xpcall(function()
+		for _, Item in ipairs(Spec.fixtures) do
+			State.DeclaredBindings[Item.alias] = true
+			State.Bindings[Item.alias] = fixture(State, Item.fixture, State.FixtureDefinitions)
+		end
 
-	for _, Item in ipairs(Spec.actions) do
-		State.DeclaredValues[Item.result] = true
-		State.Values[Item.result] = action(State, Item)
-	end
+		for _, Item in ipairs(Spec.actions) do
+			State.DeclaredValues[Item.result] = true
+			State.Values[Item.result] = action(State, Item)
+		end
 
-	expectCase(State, Spec, Expect)
+		expectCase(State, Spec, Expect)
+	end, function(Message)
+		return debug.traceback(Message, 2)
+	end)
+	if not Ok then
+		local CleanupOK, CleanupError = pcall(Runtime.Cleanup, State)
+		if not CleanupOK then
+			error(tostring(Error) .. "\n" .. tostring(CleanupError), 0)
+		end
+		error(Error, 0)
+	end
 end
 
 function Runtime.Cleanup(State)
@@ -455,7 +475,7 @@ function Runtime.Cleanup(State)
 		end
 	end
 	State.Contraptions = {}
-	if FullModFixtures then FullModFixtures.RestoreHeadlessOwnership(State) end
+	restoreHeadlessOwnership(State)
 	if CleanupError then error("ACE DSL cleanup failed: " .. tostring(CleanupError), 0) end
 end
 

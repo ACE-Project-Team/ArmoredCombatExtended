@@ -186,9 +186,10 @@ end
 --- Shared by sv_acfbase and the armor tool preview.
 ---@param Area number Prop surface area in cm2
 ---@param Ductility number Clamped ductility, -0.8 to 0.8
----@param Armour number Armor thickness in mm RHA equivalent
+---@param _Armour number Armor thickness in mm RHA equivalent
 ---@return number health Max health for the prop
-function ACE.CalcHealth( Area, Ductility, Armour )
+function ACE.CalcHealth( Area, Ductility, _Armour )
+	-- _Armour is intentionally ignored; retain the argument for dupe/API compatibility.
 
 	if Area <= 0 then return 0 end -- degenerate props keep the legacy instantly-destroyed behavior
 

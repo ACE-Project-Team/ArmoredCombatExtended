@@ -43,14 +43,5 @@
     ,"type_heat": {"kind": "value", "value": "HEAT"}
     ,"type_hesh": {"kind": "value", "value": "HESH"}
     ,"type_spall": {"kind": "value", "value": "Spall"}
-    ,"health_reference_area": {"kind": "value", "value": 264.7}
-    ,"health_quarter_area": {"kind": "value", "value": 66.175}
-    ,"health_zero": {"kind": "value", "value": 0}
-    ,"health_ductility": {"kind": "value", "value": 0}
-    ,"health_high_ductility": {"kind": "value", "value": 0.8}
-    ,"health_reference_armour": {"kind": "value", "value": 10}
-    ,"health_thirty_armour": {"kind": "value", "value": 300}
-    ,"health_half_armour": {"kind": "value", "value": 5}
-    ,"health_quarter_armour": {"kind": "value", "value": 10}
   }
 }

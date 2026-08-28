@@ -290,7 +290,7 @@ function SWEP:DoSPClientEffects()
 	local MainSound = self.Primary.Sound
 	local sounds = ACE.GSounds.GunFire[MainSound]
 
-	if next(sounds) then
+	if istable(sounds) and next(sounds) then
 		self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 	else
 		self:EmitSound(MainSound)
@@ -327,13 +327,13 @@ function SWEP:PrimaryAttack()
 		else
 			--Client is called here. So lets go as usual.
 			local sounds = ACE.GSounds.GunFire[self.Primary.Sound]
-			if next(sounds) then
+			if istable(sounds) and next(sounds) then
 				if SERVER then
 					ACE.NetworkMPEffects(owner, self, self.BulletData.PropMass)
 				else
 					self:EmitSound(sounds.main.Package[math.random(#sounds.main.Package)])
 				end
-			elseif not next(sounds) and CLIENT then
+			elseif CLIENT then
 				self:EmitSound(self.Primary.Sound)
 			end
 

@@ -231,7 +231,8 @@ local function gameplayContract(State, Owner)
 		{ name = "ACE_InfraredHeatFromProp", target = "InfraredHeatFromProp" },
 		{ name = "ACE_SendNotification", target = "SendNotification" },
 		{ name = "ACE_DefineMine", target = "DefineMine" },
-		{ name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" }
+		{ name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" },
+		{ name = "GenerateMissile", target = "GenerateMissile" }
 	}
 	local LegacyGlobalsReady = true
 	for _, Legacy in ipairs(LegacyGlobals) do

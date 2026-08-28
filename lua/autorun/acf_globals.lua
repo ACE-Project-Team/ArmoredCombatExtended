@@ -640,7 +640,8 @@ and (ACF == nil or rawget(ACF, "__ACECompatibilityView")) then
         { name = "ACE_InfraredHeatFromProp", target = "InfraredHeatFromProp" },
         { name = "ACE_SendNotification", target = "SendNotification" },
         { name = "ACE_DefineMine", target = "DefineMine" },
-        { name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" }
+        { name = "ACE_DefineGunFireSound", target = "DefineGunFireSound" },
+        { name = "GenerateMissile", target = "GenerateMissile" }
     }
 
     local function LegacyForwarder(Target)

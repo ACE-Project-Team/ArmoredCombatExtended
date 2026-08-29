@@ -221,6 +221,13 @@ end
 --Engine definition
 function ACE.DefineEngine( id, data )
 	if (data.year or 0) < ACE.Year then
+		local Sound = data.sound
+		if isstring(Sound) and string.sub(Sound, 1, 12) == "acf_engines/"
+		and not file.Exists("sound/" .. Sound, "GAME") then
+			local Alternate = "acf_extra/" .. string.sub(Sound, 13)
+			if file.Exists("sound/" .. Alternate, "GAME") then data.sound = Alternate end
+		end
+
 		local engineData = ACE.CalcEnginePerformanceData(data.torquecurve or ACE.GenericTorqueCurves[data.enginetype], data.torque, data.idlerpm, data.limitrpm)
 
 		data.peaktqrpm    = engineData.peakTqRPM
@@ -393,7 +400,7 @@ end
 --
 do
 
-	local Gpath = "ace/shared/"
+	local Paths = { "ace/shared/" }
 	local folders = {
 		"armor",
 		"guns",
@@ -414,14 +421,23 @@ do
 		"explosives"
 	}
 
-	for _, folder in ipairs(folders) do
+	-- ACE master and ACF both discover extension definitions in lua/acf/shared.
+	-- Keep ACE's namespaced definitions canonical, then load that legacy path
+	-- only while ACE owns the compatibility ACF namespace.
+	if ACF and rawget(ACF, "__ACECompatibilityView") then
+		Paths[#Paths + 1] = "acf/shared/"
+	end
 
-		local folderData = file.Find( Gpath .. folder .. "/*.lua", "LUA" )
-		for _, v in pairs( folderData ) do
-			AddCSLuaFile( "ace/shared/" .. folder .. "/" .. v )
-			include( "ace/shared/" .. folder .. "/" .. v )
+	for _, Gpath in ipairs(Paths) do
+		for _, folder in ipairs(folders) do
+
+			local folderData = file.Find( Gpath .. folder .. "/*.lua", "LUA" )
+			for _, v in pairs( folderData ) do
+				AddCSLuaFile( Gpath .. folder .. "/" .. v )
+				include( Gpath .. folder .. "/" .. v )
+			end
+
 		end
-
 	end
 
 end

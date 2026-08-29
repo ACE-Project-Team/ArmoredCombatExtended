@@ -181,16 +181,13 @@ function ACE.CalcArmor( Area, Ductility, Mass )
 end
 
 --- Prop health from area and ductility.
---- Armour remains an accepted argument for dupe/API compatibility, but armor thickness is
---- already represented by penetration and must not multiply prop hit points.
+--- Armor thickness is already represented by penetration and must not multiply prop hit points.
+--- Legacy callers may still pass a third argument; Lua ignores extra arguments.
 --- Shared by sv_acfbase and the armor tool preview.
 ---@param Area number Prop surface area in cm2
 ---@param Ductility number Clamped ductility, -0.8 to 0.8
----@param _Armour number Armor thickness in mm RHA equivalent
 ---@return number health Max health for the prop
-function ACE.CalcHealth( Area, Ductility, _Armour )
-	-- _Armour is intentionally ignored; retain the argument for dupe/API compatibility.
-
+function ACE.CalcHealth( Area, Ductility )
 	if Area <= 0 then return 0 end -- degenerate props keep the legacy instantly-destroyed behavior
 
 	return ( Area / ACE.Threshold ) * ( 1 + Ductility )

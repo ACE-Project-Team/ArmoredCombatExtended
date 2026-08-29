@@ -227,6 +227,9 @@ local function gameplayContract(State, Owner)
 		{ name = "ACF_Kinetic", target = "Kinetic" },
 		{ name = "ACF_MuzzleVelocity", target = "MuzzleVelocity" },
 		{ name = "ACF_HE", target = "HE" },
+		{ name = "ACF_DefineEngine", target = "DefineEngine" },
+		{ name = "ACF_DefineGearbox", target = "DefineGearbox" },
+		{ name = "ACF_DefineFuelTankSize", target = "DefineFuelTankSize" },
 		{ name = "ACE_CalculateHERadius", target = "CalculateHERadius" },
 		{ name = "ACE_InfraredHeatFromProp", target = "InfraredHeatFromProp" },
 		{ name = "ACE_SendNotification", target = "SendNotification" },
@@ -243,6 +246,21 @@ local function gameplayContract(State, Owner)
 		and ACF.PDensity == ACE.PDensity
 		and type(ACF_MuzzleVelocity) == "function"
 		and type(ACF_Kinetic) == "function"
+
+	local HasACFExtra = file.Exists("acf/shared/engines/v10hvy.lua", "LUA")
+	if HasACFExtra then
+		local ExtraEngine = ACE.Weapons.Engines["20.3-V10HVY"]
+		local ExtraGearbox = ACE.Weapons.Gearboxes["4Gear-L-T"]
+		local ExtraBattery = ACE.Weapons.FuelTanksSize["Battery_1x1x2"]
+		local SpawnOK, Spawned = pcall(ACE.MakeEngine, Owner, Vector(-128, 0, 64), Angle(), "20.3-V10HVY")
+		if SpawnOK and IsValid(Spawned) then track(State, Spawned) end
+		Result.acf_extra_compat = ExtraEngine and ExtraGearbox and ExtraBattery
+			and util.IsValidModel(ExtraEngine.model)
+			and file.Exists("sound/" .. ExtraEngine.sound, "GAME")
+			and SpawnOK and IsValid(Spawned)
+	else
+		Result.acf_extra_compat = true
+	end
 
 	local Vehicles = list.GetForEdit("Vehicles")
 	local Pod = Vehicles.ACE_pod

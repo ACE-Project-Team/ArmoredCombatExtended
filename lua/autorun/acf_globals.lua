@@ -383,6 +383,31 @@ elseif CLIENT then
 
 end
 
+-- ACF extensions are discovered while ACE's shared loader is running, before
+-- the complete legacy bridge below is installed. Give those files the same
+-- live ACF-to-ACE view that master exposed at that point in startup.
+if not file.Exists("autorun/acf_loader.lua", "LUA")
+and (ACF == nil or rawget(ACF, "__ACECompatibilityView")) then
+    ACF = ACF or {}
+
+    if not rawget(ACF, "__ACECompatibilityView") then
+        setmetatable(ACF, { __index = ACE })
+        rawset(ACF, "__ACECompatibilityView", true)
+    end
+
+    local function InstallRegistration(Name, Target)
+        if rawget(_G, Name) ~= nil then return end
+
+        rawset(_G, Name, function(...) return ACE[Target](...) end)
+    end
+
+    InstallRegistration("ACF_DefineEngine", "DefineEngine")
+    InstallRegistration("ACF_DefineGearbox", "DefineGearbox")
+    InstallRegistration("ACF_DefineFuelTankSize", "DefineFuelTankSize")
+    InstallRegistration("ACE_DefineMine", "DefineMine")
+    InstallRegistration("ACE_DefineGunFireSound", "DefineGunFireSound")
+end
+
 
 if ACE.AllowCSLua > 0 then
     AddCSLuaFile("autorun/translation/ace_translationpacks.lua")

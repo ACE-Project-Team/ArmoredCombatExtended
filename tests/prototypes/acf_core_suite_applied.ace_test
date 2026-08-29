@@ -31,6 +31,7 @@ expect Gameplay.rack_link_persistence is true
 expect Gameplay.missile_reload is true
 expect Gameplay.chat_surface is true
 expect Gameplay.weapons_plus_compat is true
+expect Gameplay.acf_extra_compat is true
 expect Gameplay.camera_surface is true
 expect Gameplay.points_force_dispatch is true
 cleanup automatic

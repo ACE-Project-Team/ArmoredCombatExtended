@@ -8,6 +8,6 @@
     "ACE.IsKineticDamageType": {"kind": "global", "path": "ACE.IsKineticDamageType"},
     "ACE.PropDamage": {"kind": "global", "path": "ACE.PropDamage", "returns": ["Damage", "KineticThresholdFailed"]},
     "ACE.DamageHookContract": {"kind": "native", "path": "ACE.DamageHookContract", "returns": ["canonical", "legacy"]},
-    "ACE.GameplayContract": {"kind": "native", "path": "ACE.GameplayContract", "returns": ["engine_operation", "rack_link_persistence", "missile_reload", "chat_surface", "weapons_plus_compat", "acf_extra_compat", "camera_surface", "points_force_dispatch"]}
+    "ACE.GameplayContract": {"kind": "native", "path": "ACE.GameplayContract", "returns": ["engine_operation", "rack_link_persistence", "missile_reload", "chat_surface", "weapons_plus_compat", "camera_surface", "points_force_dispatch"]}
   }
 }

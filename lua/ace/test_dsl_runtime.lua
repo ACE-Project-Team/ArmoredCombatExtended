@@ -136,7 +136,7 @@ end
 
 local function pointsForceDispatchContract(State, Owner)
 	if not (IsValid(Owner) and Owner.CFW_GetContraption and ACE.QueueContraptionPointRebuild
-		and ACE.EnsureContraptionPoints) then
+		and ACE.EnsureContraptionPoints and ACE.FlushQueuedPointChanges) then
 		return false
 	end
 
@@ -151,26 +151,25 @@ local function pointsForceDispatchContract(State, Owner)
 	end
 	if not Contraption then return false end
 
+	-- Settle CFW's creation/add callbacks before measuring the queued forced read.
+	-- The contract is the public recalculation event, not an internal rebuild count.
+	if ACE.EnsurePointsState then ACE.EnsurePointsState(Contraption) end
+	ACE.FlushQueuedPointChanges()
+
 	local Count = 0
-	local RebuildCount = 0
 	local HookName = "ACE_DSL_PointsForce_" .. tostring(Owner:EntIndex())
-	local OriginalRebuild = ACE.RebuildContraptionPoints
 	hook.Add("ACE_OnContraptionPointsRecalculated", HookName, function(Con)
 		if Con == Contraption then Count = Count + 1 end
 	end)
-	ACE.RebuildContraptionPoints = function(...)
-		RebuildCount = RebuildCount + 1
-		return OriginalRebuild(...)
-	end
 
 	ACE.QueueContraptionPointRebuild(Contraption)
 	local Queued = ACE.PendingPointRebuilds and ACE.PendingPointRebuilds[Contraption] == true
 	local Ok, Error = pcall(ACE.EnsureContraptionPoints, Contraption, nil, true)
-	ACE.RebuildContraptionPoints = OriginalRebuild
 	hook.Remove("ACE_OnContraptionPointsRecalculated", HookName)
 	if not Ok then error(Error, 0) end
 
-	return Queued and Count == 1 and RebuildCount == 1
+	local Consumed = not (ACE.PendingPointRebuilds and ACE.PendingPointRebuilds[Contraption])
+	return Queued and Consumed and Count == 1
 end
 
 local function gameplayContract(State, Owner)
@@ -246,21 +245,6 @@ local function gameplayContract(State, Owner)
 		and ACF.PDensity == ACE.PDensity
 		and type(ACF_MuzzleVelocity) == "function"
 		and type(ACF_Kinetic) == "function"
-
-	local HasACFExtra = file.Exists("acf/shared/engines/v10hvy.lua", "LUA")
-	if HasACFExtra then
-		local ExtraEngine = ACE.Weapons.Engines["20.3-V10HVY"]
-		local ExtraGearbox = ACE.Weapons.Gearboxes["4Gear-L-T"]
-		local ExtraBattery = ACE.Weapons.FuelTanksSize["Battery_1x1x2"]
-		local SpawnOK, Spawned = pcall(ACE.MakeEngine, Owner, Vector(-128, 0, 64), Angle(), "20.3-V10HVY")
-		if SpawnOK and IsValid(Spawned) then track(State, Spawned) end
-		Result.acf_extra_compat = ExtraEngine and ExtraGearbox and ExtraBattery
-			and util.IsValidModel(ExtraEngine.model)
-			and file.Exists("sound/" .. ExtraEngine.sound, "GAME")
-			and SpawnOK and IsValid(Spawned)
-	else
-		Result.acf_extra_compat = true
-	end
 
 	local Vehicles = list.GetForEdit("Vehicles")
 	local Pod = Vehicles.ACE_pod

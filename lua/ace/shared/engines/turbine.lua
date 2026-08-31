@@ -253,10 +253,10 @@ ACE.DefineEngine( "AGT 1500 Large Turbine", {
 	weight = 2500,
 	torque = 6780,
 	torquecurve = {1, 0.82, 0.65, 0.529},
-	flywheelmass = 10.5,
-	idlerpm = 300,
+	flywheelmass = 20,
+	idlerpm = 830,
 	limitrpm = 3000,
 	iselec = true,
 	pitch = 130,
-	flywheeloverride = 5300,
+	flywheeloverride = 2500,
 } )

@@ -213,16 +213,16 @@ do
 
 	--- Returns latest version of ACF
 	-- @server
-	-- @return number Version number
+	-- @return string Short SHA of latest version
 	function acf_library.getVersion()
-		return ACE.CurrentVersion
+		return tostring(ACE.CurrentVersion or "")
 	end
 
 	--- Returns server version of acf
 	-- @server
-	-- @return number Version number
+	-- @return string Short SHA of current version
 	function acf_library.getCurrentVersion()
-		return ACE.Version
+		return tostring(ACE.Version or "")
 	end
 
 	--- Returns velocity loss for every meter traveled. 0.2x means HEAT loses 20% of its energy every 2m traveled. 1m is about typical for the sideskirt spaced armor of most tanks.

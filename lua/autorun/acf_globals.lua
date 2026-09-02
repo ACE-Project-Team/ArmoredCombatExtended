@@ -9,8 +9,8 @@ ACE.SysTime       = SysTime()
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
 ACE.AmmoBlacklist = {}
-ACE.Version = "dev"        -- will be replaced by CI with short SHA, e.g. "abc1234" or "abc1234-dev"
-ACE.Branch = "master"      -- "master" or "dev" - replaced by CI for canary
+ACE.Version = "dev"        -- replaced by git detection (sh_ace_versioning.lua CheckLocalVersion) or CI with short SHA, e.g. "abc1234" or "abc1234-dev"
+ACE.Branch = "master"      -- auto-detected via .git/HEAD (sh_ace_versioning.lua), fallback "master"
 ACE.CurrentVersion = 0    -- remote SHA, set by ACE.UpdateChecking
 
 ACE.Year = 2023            -- Current Year

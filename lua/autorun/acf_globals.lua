@@ -9,8 +9,9 @@ ACE.SysTime       = SysTime()
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
 ACE.AmmoBlacklist = {}
-ACE.Version = 502        -- ACE current version
-ACE.CurrentVersion = 0    -- just defining a variable, do not change
+ACE.Version = "dev"        -- will be replaced by CI with short SHA, e.g. "abc1234" or "abc1234-dev"
+ACE.Branch = "master"      -- "master" or "dev" - replaced by CI for canary
+ACE.CurrentVersion = 0    -- remote SHA, set by ACE.UpdateChecking
 
 ACE.Year = 2023            -- Current Year
 
@@ -422,6 +423,10 @@ end
 include("ace/shared/sh_ace_particles.lua")
 include("ace/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
+AddCSLuaFile("ace/shared/sh_ace_logging.lua")
+include("ace/shared/sh_ace_logging.lua")
+AddCSLuaFile("ace/shared/sh_ace_versioning.lua")
+include("ace/shared/sh_ace_versioning.lua")
 include("ace/shared/sh_ace_functions.lua")
 include("ace/shared/sh_ace_loader.lua")
 AddCSLuaFile("ace/shared/sh_ace_scalable.lua")

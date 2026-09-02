@@ -369,50 +369,7 @@ do
 
 end
 
---Checks if theres new versions for ACE
-function ACE.UpdateChecking( )
-	http.Fetch("https://raw.githubusercontent.com/ACE-Project-Team/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
-
-		--maybe not the best way to get git but well......
-		local str = tostring("String:" .. contents)
-		local _, versionEnd = string.find( str, "ACE.Version =" )
-
-		if not versionEnd then
-			_, versionEnd = string.find( str, "ACF.Version =" )
-		end
-
-		if not versionEnd then
-			print( "[ACE | ERROR]- Unable to find the latest version! Failed to parse GitHub response." )
-			return
-		end
-
-		local rev = tonumber( string.sub( str, versionEnd + 2, versionEnd + 4 ) ) or 0
-
-		if rev and ACE.Version == rev  and rev ~= 0 then
-
-			print("[ACE | INFO]- You have the latest version! Current version: " .. rev)
-
-		elseif rev and ACE.Version > rev and rev ~= 0 then
-
-			print("[ACE | INFO]- You have an experimental version! Your version: " .. ACE.Version .. ". Main version: " .. rev)
-		elseif rev == 0 then
-
-			print("[ACE | ERROR]- Unable to find the latest version! Failed to connect to GitHub.")
-
-		else
-
-			print("[ACE | INFO]- A new version of ACE is available! Your version: " .. ACE.Version .. ". New version: " .. rev)
-			if CLIENT then chat.AddText( Color( 255, 0, 0 ), "A newer version of ACE is available!" ) end
-
-		end
-		ACE.CurrentVersion = rev
-
-	end, function()
-		print("[ACE | ERROR]- Unable to find the latest version! No internet available.")
-
-		ACE.CurrentVersion = 0
-	end)
-end
+-- ACE.UpdateChecking moved to sh_ace_versioning.lua (SHA-based, dev vs master)
 
 
 --Creates & updates ACE dupes.
@@ -517,9 +474,7 @@ do
 	end
 end
 
-timer.Simple(1, function()
-	ACE.UpdateChecking()
-end )
+-- timer ACE.UpdateChecking moved to sh_ace_versioning.lua
 
 
 do

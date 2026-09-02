@@ -417,15 +417,34 @@ function PANEL:Init( )
 	do
 
 	--[[==================================================
-					Contact & Support folder
+					About folder
 	]]--==================================================
 
-	local Contact =  TreePanel:AddNode( "Contact Us" , "icon16/feed.png" ) --Options folder
+	local Contact =  TreePanel:AddNode( "About" , "icon16/information.png" ) --Options folder
 	Contact.mytable = {}
 
 	Contact.mytable.guicreate = (function( _, Table ) ACE.ContactGUICreate( Table ) end or nil)
 
 	function Contact:DoClick()
+		acemenupanel:UpdateDisplay(self.mytable)
+	end
+
+	end
+
+	do
+
+	--[[==================================================
+					Changelog folder
+	]]--==================================================
+
+	local Changelog =  TreePanel:AddNode( "Changelog" , "icon16/newspaper.png" )
+	Changelog.mytable = {}
+
+	Changelog.mytable.guicreate = (function( _, Table ) ACE.ChangelogGUICreate( Table ) end or nil)
+	Changelog.mytable.guiupdate = (function( _, Table ) ACE.ChangelogGUIUpdate( Table ) end or nil)
+	ACE.ChangelogMenuTable = Changelog.mytable
+
+	function Changelog:DoClick()
 		acemenupanel:UpdateDisplay(self.mytable)
 	end
 
@@ -544,22 +563,24 @@ function ACE.HomeGUICreate()
 	if not acemenupanel.CustomDisplay then return end
 
 	local versionstring
+	local cur = ACE.CurrentVersion
+	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
+	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
 
-	if ACE.CurrentVersion and ACE.CurrentVersion > 0 then
-	if ACE.Version >= ACE.CurrentVersion then
-		versionstring = "Up To Date"
-		color = Color(0,225,0,255)
+	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
+		if localSha == remoteSha or localSha == "dev" then
+			versionstring = "Up To Date"
+			color = Color(0,225,0,255)
+		else
+			versionstring = "Out Of Date"
+			color = Color(225,0,0,255)
+		end
 	else
-		versionstring = "Out Of Date"
+		versionstring = "No internet Connection available!"
 		color = Color(225,0,0,255)
-
-	end
-	else
-	versionstring = "No internet Connection available!"
-	color = Color(225,0,0,255)
 	end
 
-	local versiontext = "GitHub Version: " .. ACE.CurrentVersion .. "\nCurrent Version: " .. ACE.Version
+	local versiontext = "GitHub Version: " .. tostring(ACE.CurrentVersion) .. "\nCurrent Version: " .. tostring(ACE.Version)
 
 	acemenupanel["CData"]["VersionInit"] = vgui.Create( "DLabel" )
 	acemenupanel["CData"]["VersionInit"]:SetText(versiontext)
@@ -576,57 +597,159 @@ function ACE.HomeGUICreate()
 	acemenupanel["CData"]["VersionText"]:SizeToContents()
 
 	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["VersionText"] )
-	-- end version
-
-	acemenupanel:CPanelText("Header", "Changelog")  --changelog screen
-
---[[=========================
-	Changelog table maker
-]]--=========================
-
-	if acemenupanel.Changelog then
-	acemenupanel["CData"]["Changelist"] = vgui.Create( "DTree" )
-
-	for i = 0, table.maxn(acemenupanel.Changelog) - 100 do
-
-		local k = table.maxn(acemenupanel.Changelog) - i
-
-		local Node = acemenupanel["CData"]["Changelist"]:AddNode( "Rev " .. k )
-			Node.mytable = {}
-			Node.mytable["rev"] = k
-				function Node:DoClick()
-
-				acemenupanel:UpdateAttribs( Node.mytable )
-
-			end
-		Node.Icon:SetImage( "icon16/newspaper.png" )
-
-	end
-
-	acemenupanel.CData.Changelist:SetSize( acemenupanel.CustomDisplay:GetWide(), 60 )
-
-	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["Changelist"] )
-
-	acemenupanel.CustomDisplay:PerformLayout()
-
-	acemenupanel:UpdateAttribs( {rev = table.maxn(acemenupanel.Changelog)} )
-	end
+	-- end version (changelog moved to separate Changelog menu)
 
 end
 
 --[[=========================
-	ACE information folder content updater
+	Changelog folder content
+]]--=========================
+--- Changelog folder content (version + blogs + GitHub commits)
+function ACE.ChangelogGUICreate()
+
+	if not acemenupanel.CustomDisplay then return end
+
+	-- 1. Version + up-to-date (same as Home)
+	local cur = ACE.CurrentVersion
+	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
+	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
+	local versionstring, color
+	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
+		if localSha == remoteSha or localSha == "dev" then
+			versionstring = "Up To Date"
+			color = Color(0, 225, 0, 255)
+		else
+			versionstring = "Out Of Date"
+			color = Color(225, 0, 0, 255)
+		end
+	else
+		versionstring = "No internet Connection available!"
+		color = Color(225, 0, 0, 255)
+	end
+	local versiontext = "GitHub Version: " .. tostring(ACE.CurrentVersion) .. "\nCurrent Version: " .. tostring(ACE.Version) .. " (" .. (ACE.Branch or "master") .. ")"
+	acemenupanel["CData"]["ChangelogVersionInit"] = vgui.Create("DLabel")
+	acemenupanel["CData"]["ChangelogVersionInit"]:SetText(versiontext)
+	acemenupanel["CData"]["ChangelogVersionInit"]:SetDark(true)
+	acemenupanel["CData"]["ChangelogVersionInit"]:SizeToContents()
+	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogVersionInit"])
+
+	acemenupanel["CData"]["ChangelogVersionText"] = vgui.Create("DLabel")
+	acemenupanel["CData"]["ChangelogVersionText"]:SetFont("Trebuchet18")
+	acemenupanel["CData"]["ChangelogVersionText"]:SetText("ACE Is " .. versionstring .. "!\n")
+	acemenupanel["CData"]["ChangelogVersionText"]:SetDark(true)
+	acemenupanel["CData"]["ChangelogVersionText"]:SetColor(color)
+	acemenupanel["CData"]["ChangelogVersionText"]:SizeToContents()
+	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogVersionText"])
+
+	-- 2. 3 recent blog posts - disabled until website exposes GET /api/public/blog
+	-- See https://acegmod.com/wiki/using-the-ace-website-api-and-mcp-servers
+	--[[ Disabled until endpoint exists:
+	acemenupanel:CPanelText("BlogHeader", "Recent Blog Posts")
+	if acemenupanel.BlogPosts and #acemenupanel.BlogPosts > 0 then
+		for i = 1, math.min(3, #acemenupanel.BlogPosts) do
+			local post = acemenupanel.BlogPosts[i]
+			local title = post.title or post.slug or "Post " .. i
+			local url = post.url or ("https://acegmod.com/blog/" .. (post.slug or ""))
+			local btn = vgui.Create("DButton")
+			btn:SetText(title)
+			btn:SetTall(28)
+			btn.DoClick = function() gui.OpenURL(url) end
+			acemenupanel.CustomDisplay:AddItem(btn)
+		end
+	elseif acemenupanel.BlogPosts and #acemenupanel.BlogPosts == 0 then
+		acemenupanel:CPanelText("BlogEmpty", "Failed to fetch blog posts")
+	else
+		acemenupanel:CPanelText("BlogLoading", "Loading blog posts from acegmod.com...")
+		ACE.FetchBlogPosts(function(posts)
+			if IsValid(acemenupanel) and acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable.guicreate == ACE.ChangelogGUICreate then
+				acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
+			end
+		end)
+	end
+	--]]
+
+	-- 3. Changelog from commits
+	acemenupanel:CPanelText("ChangelogHeader", "Changelog (GitHub commits)")
+
+	if not acemenupanel.Changelog or #acemenupanel.Changelog == 0 then
+		acemenupanel:CPanelText("Loading", "Loading changelog from GitHub...")
+		ACE.FetchChangelog(nil, function()
+			if IsValid(acemenupanel) and acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable == ACE.ChangelogMenuTable then
+				acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
+			end
+		end)
+		return
+	end
+
+	acemenupanel["CData"]["Changelist"] = vgui.Create("DTree")
+
+	for i, entry in ipairs(acemenupanel.Changelog) do
+		local title = string.sub(entry.message:gsub("\n.*", ""), 1, 64)
+		if title == "" then title = entry.sha end
+		local Node = acemenupanel["CData"]["Changelist"]:AddNode(title)
+		Node.mytable = {}
+		Node.mytable["rev"] = i
+		Node.mytable["idx"] = i
+		function Node:DoClick()
+			acemenupanel:UpdateAttribs(Node.mytable)
+		end
+		Node.Icon:SetImage("icon16/newspaper.png")
+	end
+
+	acemenupanel.CData.Changelist:SetSize(acemenupanel.CustomDisplay:GetWide(), 200)
+	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["Changelist"])
+	acemenupanel.CustomDisplay:PerformLayout()
+	acemenupanel:UpdateAttribs({rev = 1, idx = 1})
+
+end
+
+--- Updates the changelog detail view.
+-- @param Table table Selected entry {rev, idx}.
+function ACE.ChangelogGUIUpdate(Table)
+	local idx = Table["idx"] or Table["rev"] or 1
+	local entry = acemenupanel.Changelog and acemenupanel.Changelog[idx]
+	if not entry then return end
+	local firstLine = entry.message:match("^[^\n]*") or entry.sha
+	local rest = entry.message:match("\n(.*)") or ""
+	-- Name + SHA/date
+	acemenupanel:CPanelText("ChangelogName", firstLine, "DermaDefaultBold")
+	acemenupanel:CPanelText("ChangelogMeta", entry.sha .. "  " .. (entry.date and string.sub(entry.date, 1, 10) or ""))
+	if rest ~= "" then
+		acemenupanel:CPanelText("ChangelogDescLabel", "Description:", "DermaDefaultBold")
+		acemenupanel:CPanelText("ChangelogDesc", rest)
+	else
+		acemenupanel:CPanelText("ChangelogDescLabel", "Description:", "DermaDefaultBold")
+		acemenupanel:CPanelText("ChangelogDesc", "(no additional details)")
+	end
+	-- GitHub button
+	if entry.url and entry.url ~= "" then
+		if not acemenupanel["CData"]["ChangelogLink"] or not IsValid(acemenupanel["CData"]["ChangelogLink"]) then
+			acemenupanel["CData"]["ChangelogLink"] = vgui.Create("DButton")
+			acemenupanel["CData"]["ChangelogLink"]:SetText("Open on GitHub")
+			acemenupanel["CData"]["ChangelogLink"]:SetTall(28)
+			acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogLink"])
+		end
+		acemenupanel["CData"]["ChangelogLink"].DoClick = function() gui.OpenURL(entry.url) end
+		acemenupanel["CData"]["ChangelogLink"]:SetVisible(true)
+	else
+		if acemenupanel["CData"]["ChangelogLink"] then acemenupanel["CData"]["ChangelogLink"]:SetVisible(false) end
+	end
+	acemenupanel.CustomDisplay:PerformLayout()
+end
+
+--[[=========================
+	ACE information folder content updater (version only, changelog moved)
 ]]--=========================
 function ACE.HomeGUIUpdate( Table )
 
-	acemenupanel:CPanelText("Changelog", acemenupanel.Changelog[Table["rev"]])
-	acemenupanel.CustomDisplay:PerformLayout()
-
 	local color
 	local versionstring
+	local cur = ACE.CurrentVersion
+	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
+	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
 
-	if ACE.CurrentVersion > 0 then
-		if ACE.Version >= ACE.CurrentVersion then
+	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
+		if localSha == remoteSha or localSha == "dev" then
 			versionstring = "Up To Date"
 			color = Color(0,225,0,255)
 		else
@@ -640,7 +763,7 @@ function ACE.HomeGUIUpdate( Table )
 
 	local txt
 
-	if ACE.CurrentVersion > 0 then
+	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
 		txt = "ACE Is " .. versionstring .. "!\n\n"
 	else
 		txt = versionstring
@@ -654,27 +777,53 @@ function ACE.HomeGUIUpdate( Table )
 end
 
 --[[=========================
-	Changelog.txt
+	Changelog - GitHub commits (replaces changelog.txt)
 ]]--=========================
 
-function ACE.ChangelogHTTPCallBack(contents)
-	local Temp = string.Explode( "*", contents )
+--- Fetches recent commit changelog from GitHub.
+-- @param branch string|nil Branch to fetch, defaults to ACE.Branch or "master"/"dev".
+-- @param onDone function|nil Callback with changelog table.
+function ACE.FetchChangelog(branch, onDone)
+	branch = branch or ACE.Branch or "master"
+	if isstring(ACE.Version) and ACE.Version:find("-dev") then branch = "dev" end
+	if branch == "canary" then branch = "dev" end
+	local url = "https://api.github.com/repos/ACE-Project-Team/ArmoredCombatExtended/commits?sha=" .. branch .. "&per_page=50"
 
-	acemenupanel.Changelog = {}  --changelog table
-	for _,String in pairs(Temp) do
-		acemenupanel.Changelog[tonumber(string.sub(String,2,4))] = string.Trim(string.sub(String, 5))
-	end
-
-	table.SortByKey(acemenupanel.Changelog,true)
-
-	local Table = {}
-	Table.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
-	Table.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
-	acemenupanel:UpdateDisplay( Table )
-
+	http.Fetch(url, function(body, _, _, code)
+		if code ~= 200 then
+			ACE.LogWarn("Changelog fetch failed, GitHub API " .. tostring(code))
+			if onDone then onDone({}) end
+			return
+		end
+		local data = util.JSONToTable(body)
+		if not data then
+			ACE.LogWarn("Changelog fetch failed to parse JSON")
+			if onDone then onDone({}) end
+			return
+		end
+		local out = {}
+		for i, c in ipairs(data) do
+			out[i] = {
+				sha = string.sub(c.sha or "", 1, 7),
+				message = c.commit and c.commit.message or "",
+				date = c.commit and c.commit.author and c.commit.author.date or "",
+				url = c.html_url or ""
+			}
+		end
+		acemenupanel.Changelog = out
+		if onDone then onDone(out) end
+		-- refresh Changelog panel if currently open
+		if acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable == ACE.ChangelogMenuTable then
+			acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
+		end
+	end, function()
+		ACE.LogWarn("Changelog fetch no internet")
+		if onDone then onDone({}) end
+	end)
 end
 
-http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACE.ChangelogHTTPCallBack, function() end)
+-- initial fetch (lazy, no auto UpdateDisplay of Home)
+timer.Simple(2, function() ACE.FetchChangelog(nil, function() end) end)
 
 --[[=========================
 	Clientside folder content
@@ -984,47 +1133,115 @@ function ACE.SVGUICreate()	--Serverside folder content
 end
 
 --[[=========================
-	Contact folder content
+	About folder content
 ]]--=========================
 function ACE.ContactGUICreate()
 
 	acemenupanel["CData"]["Contact"] = vgui.Create( "DLabel" )
 	acemenupanel["CData"]["Contact"]:SetPos( 0, 0 )
 	acemenupanel["CData"]["Contact"]:SetColor( Color(10,10,10) )
-	acemenupanel["CData"]["Contact"]:SetText("Contact Us")
+	acemenupanel["CData"]["Contact"]:SetText("About")
 	acemenupanel["CData"]["Contact"]:SetFont("Trebuchet24")
 	acemenupanel["CData"]["Contact"]:SizeToContents()
 	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["Contact"] )
 
+	-- Circular ACE logo (stencil method, option 1)
+	local logoMat = Material("ace/ace_logo.png")
+	local Logo = vgui.Create("DPanel")
+	Logo:SetSize(128, 128)
+	Logo:SetPaintBackground(false)
+	Logo:Dock(TOP)
+	Logo:DockMargin(0, 5, 0, 5)
+	function Logo:Paint(w, h)
+		local r = math.min(w, h) / 2
+		local cx, cy = w / 2, h / 2
+		render.ClearStencil()
+		render.SetStencilEnable(true)
+		render.SetStencilWriteMask(255)
+		render.SetStencilTestMask(255)
+		render.SetStencilReferenceValue(1)
+		render.SetStencilCompareFunction(STENCIL_NEVER)
+		render.SetStencilFailOperation(STENCIL_REPLACE)
+		render.SetStencilZFailOperation(STENCIL_REPLACE)
+		render.SetStencilPassOperation(STENCIL_KEEP)
+		draw.NoTexture()
+		surface.SetDrawColor(0, 0, 0, 255)
+		local poly = {}
+		for i = 0, 360, 10 do
+			local rad = math.rad(i)
+			poly[#poly + 1] = { x = cx + math.cos(rad) * r, y = cy + math.sin(rad) * r }
+		end
+		surface.DrawPoly(poly)
+		render.SetStencilCompareFunction(STENCIL_EQUAL)
+		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilZFailOperation(STENCIL_KEEP)
+		render.SetStencilPassOperation(STENCIL_KEEP)
+		surface.SetMaterial(logoMat)
+		surface.SetDrawColor(255, 255, 255, 255)
+		surface.DrawTexturedRect(cx - r, cy - r, r * 2, r * 2)
+		render.SetStencilEnable(false)
+	end
+	acemenupanel.CustomDisplay:AddItem(Logo)
+
 	acemenupanel:CPanelText("desc1","If you want to contribute to ACE by providing us feedback, report bugs or tell us suggestions about new stuff to be added, our discord is a good place.")
 	acemenupanel:CPanelText("desc2","Don't forget to check out our wiki, contains valuable information about how to use this addon. It's on WIP, but expect more content in future.")
+	-- Fix extra left indent from DPanelList/DLabel (you saw 3-5 tabs)
+	if acemenupanel["CData"]["desc1_text"] then acemenupanel["CData"]["desc1_text"]:SetTextInset(0, 0) end
+	if acemenupanel["CData"]["desc2_text"] then acemenupanel["CData"]["desc2_text"]:SetTextInset(0, 0) end
 
-	local Discord = vgui.Create("DButton")
-	Discord:SetText( "Join our Discord!" )
-	Discord:SetPos(0,0)
-	Discord:SetSize(250,30)
-	Discord.DoClick = function()
-	gui.OpenURL("https://discord.gg/Y8aEYU6")
+	-- Enable scrolling when About overflows (fixes extra slider on multi-expand)
+	acemenupanel.CustomDisplay:EnableVerticalScrollbar(true)
+	local function refreshAboutLayout()
+		timer.Simple(0.15, function()
+			if not IsValid(acemenupanel) or not IsValid(acemenupanel.CustomDisplay) then return end
+			acemenupanel.CustomDisplay:PerformLayout()
+			acemenupanel:PerformLayout()
+		end)
 	end
-	acemenupanel.CustomDisplay:AddItem( Discord )
 
-	local Wiki = vgui.Create("DButton")
-	Wiki:SetText( "Open Wiki" )
-	Wiki:SetPos(0,0)
-	Wiki:SetSize(250,30)
-	Wiki.DoClick = function()
-	gui.OpenURL("https://github.com/ACE-Project-Team/ArmoredCombatExtended/wiki")
+	local function addAboutButton(parent, text, url)
+		local btn = vgui.Create("DButton", parent)
+		btn:SetText(text)
+		btn:Dock(TOP)
+		btn:DockMargin(5, 5, 5, 0)
+		btn:SetTall(28)
+		btn.DoClick = function() gui.OpenURL(url) end
+		return btn
 	end
-	acemenupanel.CustomDisplay:AddItem( Wiki )
 
-	local Guide = vgui.Create("DButton")
-	Guide:SetText( "ACE guidelines" )
-	Guide:SetPos(0,0)
-	Guide:SetSize(250,30)
-	Guide.DoClick = function()
-	gui.OpenURL("https://docs.google.com/document/d/1yaHq4Lfjad4KKa0Jg9s-5lCpPVjV7FE4HXoGaKpi4Fs/edit")
-	end
-	acemenupanel.CustomDisplay:AddItem( Guide )
+	local learn = vgui.Create("DCollapsibleCategory")
+	learn:SetLabel("Learn")
+	learn:SetExpanded(true)
+	addAboutButton(learn, "Open Wiki & Docs", "https://acegmod.com/wiki")
+	addAboutButton(learn, "Learn About ACE", "https://acegmod.com/about")
+	learn.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(learn)
+
+	local play = vgui.Create("DCollapsibleCategory")
+	play:SetLabel("Play")
+	play:SetExpanded(false)
+	addAboutButton(play, "Official Collection (Steam)", "https://steamcommunity.com/sharedfiles/filedetails/?id=3282568819")
+	addAboutButton(play, "Servers to Play On", "https://acegmod.com/servers")
+	play.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(play)
+
+	local create = vgui.Create("DCollapsibleCategory")
+	create:SetLabel("Create & Share")
+	create:SetExpanded(false)
+	addAboutButton(create, "Addons for ACE (Projects)", "https://acegmod.com/projects")
+	addAboutButton(create, "Public Dupes (Stuff Street)", "https://acegmod.com/stuff-street")
+	addAboutButton(create, "Content Creation Guide (Branding)", "https://acegmod.com/branding")
+	create.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(create)
+
+	local community = vgui.Create("DCollapsibleCategory")
+	community:SetLabel("Community & Support")
+	community:SetExpanded(false)
+	addAboutButton(community, "Join our Discord!", "https://discord.gg/Y8aEYU6")
+	addAboutButton(community, "Give Feedback / Report Bug", "https://github.com/ACE-Project-Team/ArmoredCombatExtended/issues/new/choose")
+	addAboutButton(community, "Support Developers", "https://acegmod.com/funding")
+	community.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(community)
 
 end
 

@@ -3,6 +3,7 @@ root = root:gsub("\\\\", "/"):gsub("/$", "")
 
 ACE = {}
 function istable(value) return type(value) == "table" end
+function isstring(value) return type(value) == "string" end
 function ACE.IsEnt(value) return value ~= nil end
 dofile(root .. "/lua/ace/shared/sh_ace_entity_state.lua")
 
@@ -29,7 +30,14 @@ assert(ACE.Points.BaseRoundCost({ PropLength = -80, ProjLength = -60 }) == 1,
 
 -- Conversion must use the clamped shell dimensions without evaluating damage or caliber.
 ACE.ResolveAmmoType = function(_, bullet) return bullet.Type or bullet.RoundType end
-ACE.IsGLATGMAmmoType = function() return false end
+local sourceFile = assert(io.open(root .. "/lua/ace/shared/sh_ace_functions.lua", "r"))
+local ammoSource = sourceFile:read("*a")
+sourceFile:close()
+for _, name in ipairs({ "GetAmmoGunClass", "IsGLATGMAmmoType", "IsAmmoMissileType", "GetConfigurableName" }) do
+	assert(loadstring(assert(ammoSource:match("(function ACE%." .. name .. "%b().-\nend)"))))()
+end
+ACE.Classes = { GunClass = { ATGM = { type = "missile" }, C = { type = "Gun" } } }
+ACE.Weapons = { Guns = { missile = { gunclass = "ATGM" }, cannon = { gunclass = "C" } } }
 local converted = ACE.Points.RoundFromBullet({ Type = "HE", ProjLength = 60, PropLength = 80,
 	Caliber = 14, SlugCaliber = 0.1, maxPen = 0 })
 assert(converted.ProjLength == 60 and converted.PropLength == 80 and converted.Caliber == nil)
@@ -51,10 +59,35 @@ local function near(actual, expected, message)
 	assert(math.abs(actual - expected) <= 1e-9 * math.max(1, math.abs(expected)), message)
 end
 
+do
+	local bullet = { Id = "missile", Type = "HE", ProjLength = 30, PropLength = 3, Data7 = "Laser" }
+	local missile = ACE.Points.RoundFromBullet(bullet)
+	near(ACE.Points.BaseRoundCost(missile, true), 63, "missiles double projectile length, not propellant")
+	near(bullet.ProjLength, 30, "pricing must not mutate real round dimensions")
+	near(missile.ProjLength, 30, "pricing readouts retain the configured projectile length")
+	for _, guidance in ipairs({ "Dumb", "Laser", "Radar" }) do
+		missile.guidance = guidance
+		near(ACE.Points.BaseRoundCost(missile, true), 63, "unguided and guided missiles share the length rule")
+	end
+	bullet.Id = "cannon"
+	near(ACE.Points.BaseRoundCost(ACE.Points.RoundFromBullet(bullet), true), 33, "gun shells retain total length pricing")
+	bullet.Id, bullet.Type = "missile", "GLATGM"
+	near(ACE.Points.BaseRoundCost(ACE.Points.RoundFromBullet(bullet), true), 33 * 1.75,
+		"gun-launched guided rounds retain their existing length rule")
+	bullet.Id, bullet.Type, bullet.GunClass = nil, "HE", "ATGM"
+	near(ACE.Points.BaseRoundCost(ACE.Points.RoundFromBullet(bullet), true), 63,
+		"explicit ammo classes must resolve without a definition ID")
+	local atCap, ready = ACE.Points.RackCostFromRate(4 / 30, 63, 63, 4, 1)
+	local slower, sameReady = ACE.Points.RackCostFromRate(1 / 30, 63, 63, 4, 1)
+	near(sameReady, ready, "rack cadence must not change the ready payload charge")
+	near((slower - ready) / (atCap - ready), (1 / 4) ^ 0.25,
+		"racks and guns must share the quarter-power cadence curve")
+end
+
 near(ACE.Points.FireRateMul(5 / 60), 1, "five rpm is the reference cadence")
-near(ACE.Points.FireRateMul(160 / 60), 2, "thirty-two times the RPM must double the rate premium")
+near(ACE.Points.FireRateMul(80 / 60), 2, "sixteen times the RPM must double the rate premium")
 local referenceGun = ACE.Points.GunCost(5 / 60, 140)
-near(ACE.Points.GunCost(160 / 60, 140), 2 * referenceGun,
+near(ACE.Points.GunCost(80 / 60, 140), 2 * referenceGun,
 	"the billing path must apply the mild rate premium")
 assert(ACE.Points.GunCost(10 / 60, 140) > referenceGun, "increasing RPM must still cost more")
 near(ACE.Points.GunCost(1 / 300, 140), ACE.Points.GunCost(1 / 30, 140),
@@ -270,6 +303,18 @@ for _, name in ipairs({ "Beam_Riding", "GPS", "Unknown" }) do
 	near(ACE.Points.RackGuidanceMul({ guidance = name }), ACE.Points.GuidanceMul({ guidance = name }),
 		"guidance outside the agreed tiers retains its relative factor")
 end
+ACE.Points.RoundFromBullet = convertRound
+ACE.GetRackConfiguredReloadTime = function() return 2 end
+local longWarhead = { Id = "missile", Type = "HE", ProjLength = 30, PropLength = 3, Data7 = "Laser" }
+local longMotor = { Id = "missile", Type = "HE", ProjLength = 10, PropLength = 30, Data7 = "Laser" }
+rack.MaxMissile, rack.AmmoLink = 1, { ammo(longMotor, 1, 10), ammo(longWarhead, 1, 11) }
+local missileReadout = ACE.GetGunFirepowerReadout(rack)
+near(missileReadout.Round.ProjLength, 30, "candidate selection must rank the new missile length price")
+near(missileReadout.Points, 6 * 63 * 0.65 * 1.1, "actual missile billing must apply the length premium once")
+near(missileReadout.BaseRoundCostPoints, missileReadout.Points * 0.6,
+	"the ready charge and delivery must both include the missile premium")
+near(missileReadout.BaseRoundCost, 63, "readout and billing must share the priced length")
+near(longWarhead.ProjLength, 30, "billing must leave the linked crate dimensions unchanged")
 ACE.GetRackConfiguredReloadTime = rackReload
 ACE.Points.RoundFromBullet, ACE.GetGunConfiguredRps = convertRound, configuredRate
 assert(loadstring(assert(shared:match("(function ACE.GetSurvivabilityIndex%b().-\nend)"))))()

@@ -42,7 +42,8 @@ local RACK_WINDOW = 30.0
 -- 40% delivery value plus 60% ready payload; guidance multiplies the total.
 local RACK_REFERENCE_RPS = 5.0 / 60.0
 local RACK_READY_SHARE = 1.0 - 1.0 / (RACK_WINDOW * RACK_REFERENCE_RPS)
-local FIRE_RATE_EXP = 0.2 -- thirty-two times the cadence doubles its price multiplier
+local FIRE_RATE_EXP = 0.25 -- sixteen times the cadence doubles its price multiplier
+local MISSILE_LENGTH_MUL = 2.0
 local EXP_MM = 1.4                -- armor thickness exponent (intensive term -- untouched)
 -- Armor HP exponent. LINEAR/extensive on purpose: N props of the same total HP price
 -- identically to 1 prop, so splitting armor into fragments is points-neutral. A sub-linear
@@ -103,12 +104,13 @@ function ACE.Points.GuidanceMul(round)
 	return 1.0
 end
 
---- Computes total shell length times the assigned warhead premium.
--- @param round table Converted round, with ProjLength and PropLength in centimeters.
+--- Computes priced shell length times the assigned warhead premium.
+-- Missile projectile length carries a premium; propellant length is unchanged.
+-- @param round table Converted round, with ProjLength/PropLength in centimeters and optional IsMissile flag.
 -- @param unguided boolean Omit guidance when the weapon applies it to its final price.
 -- @return number Intrinsic round value; inventory is not billed.
 function ACE.Points.BaseRoundCost(round, unguided)
-	local length = max(tonumber(round.ProjLength) or 0, 0)
+	local length = max(tonumber(round.ProjLength) or 0, 0) * (round.IsMissile and MISSILE_LENGTH_MUL or 1)
 	local propellant = max(tonumber(round.PropLength) or 0, 0)
 	local guidance = unguided and 1.0 or ACE.Points.GuidanceMul(round)
 	return max((length + propellant) * ACE.Points.WarheadMul(round) * guidance, ROUND_COST_FLOOR)
@@ -147,7 +149,7 @@ end
 
 --- Returns the mild cadence premium relative to a five-rpm weapon.
 -- @param rate number Configured rounds per second.
--- @return number Fifth-root rate multiplier, before the delivery-rate floor.
+-- @return number Fourth-root rate multiplier, before the delivery-rate floor.
 function ACE.Points.FireRateMul(rate)
 	return (max(tonumber(rate) or 0, 0) / RACK_REFERENCE_RPS) ^ FIRE_RATE_EXP
 end
@@ -327,7 +329,9 @@ function ACE.Points.MaterialArmor(armourMm, mat)
 	return effMm, effMm / (armourMm * eff[3])
 end
 
--- Build the plain pricing round from a gun/crate/rack BulletData table. nil if not a table.
+--- Builds static pricing inputs without changing the configured ammunition.
+-- @param bdata table Gun/crate/rack BulletData.
+-- @return table Plain pricing round, or nil for invalid bullet data.
 function ACE.Points.RoundFromBullet(bdata)
 	if not istable(bdata) then return nil end
 
@@ -335,6 +339,7 @@ function ACE.Points.RoundFromBullet(bdata)
 		Type        = ACE.ResolveAmmoType(nil, bdata),   -- bdata branch: bdata.Type or bdata.RoundType
 		ProjLength = tonumber(bdata.ProjLength) or 0,
 		PropLength = tonumber(bdata.PropLength) or 0,
+		IsMissile = ACE.IsAmmoMissileType(bdata) and not ACE.IsGLATGMAmmoType(bdata.Type),
 	}
 
 	-- Guidance folds the old per-missile pricing premium into baseRoundCost. Candidates:

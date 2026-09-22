@@ -417,10 +417,10 @@ function PANEL:Init( )
 	do
 
 	--[[==================================================
-					Contact & Support folder
+					About folder
 	]]--==================================================
 
-	local Contact =  TreePanel:AddNode( "Contact Us" , "icon16/feed.png" ) --Options folder
+	local Contact =  TreePanel:AddNode( "About" , "icon16/information.png" ) --Options folder
 	Contact.mytable = {}
 
 	Contact.mytable.guicreate = (function( _, Table ) ACE.ContactGUICreate( Table ) end or nil)
@@ -984,47 +984,115 @@ function ACE.SVGUICreate()	--Serverside folder content
 end
 
 --[[=========================
-	Contact folder content
+	About folder content
 ]]--=========================
 function ACE.ContactGUICreate()
 
 	acemenupanel["CData"]["Contact"] = vgui.Create( "DLabel" )
 	acemenupanel["CData"]["Contact"]:SetPos( 0, 0 )
 	acemenupanel["CData"]["Contact"]:SetColor( Color(10,10,10) )
-	acemenupanel["CData"]["Contact"]:SetText("Contact Us")
+	acemenupanel["CData"]["Contact"]:SetText("About")
 	acemenupanel["CData"]["Contact"]:SetFont("Trebuchet24")
 	acemenupanel["CData"]["Contact"]:SizeToContents()
 	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["Contact"] )
 
+	-- Stencil a circle, then draw the logo through it so it comes out round
+	local logoMat = Material("ace/ace_logo.png")
+	local Logo = vgui.Create("DPanel")
+	Logo:SetSize(128, 128)
+	Logo:SetPaintBackground(false)
+	Logo:Dock(TOP)
+	Logo:DockMargin(0, 5, 0, 5)
+	function Logo:Paint(w, h)
+		local r = math.min(w, h) / 2
+		local cx, cy = w / 2, h / 2
+		render.ClearStencil()
+		render.SetStencilEnable(true)
+		render.SetStencilWriteMask(255)
+		render.SetStencilTestMask(255)
+		render.SetStencilReferenceValue(1)
+		render.SetStencilCompareFunction(STENCIL_NEVER)
+		render.SetStencilFailOperation(STENCIL_REPLACE)
+		render.SetStencilZFailOperation(STENCIL_REPLACE)
+		render.SetStencilPassOperation(STENCIL_KEEP)
+		draw.NoTexture()
+		surface.SetDrawColor(0, 0, 0, 255)
+		local poly = {}
+		for i = 0, 360, 10 do
+			local rad = math.rad(i)
+			poly[#poly + 1] = { x = cx + math.cos(rad) * r, y = cy + math.sin(rad) * r }
+		end
+		surface.DrawPoly(poly)
+		render.SetStencilCompareFunction(STENCIL_EQUAL)
+		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilZFailOperation(STENCIL_KEEP)
+		render.SetStencilPassOperation(STENCIL_KEEP)
+		surface.SetMaterial(logoMat)
+		surface.SetDrawColor(255, 255, 255, 255)
+		surface.DrawTexturedRect(cx - r, cy - r, r * 2, r * 2)
+		render.SetStencilEnable(false)
+	end
+	acemenupanel.CustomDisplay:AddItem(Logo)
+
 	acemenupanel:CPanelText("desc1","If you want to contribute to ACE by providing us feedback, report bugs or tell us suggestions about new stuff to be added, our discord is a good place.")
 	acemenupanel:CPanelText("desc2","Don't forget to check out our wiki, contains valuable information about how to use this addon. It's on WIP, but expect more content in future.")
+	-- Line the descriptions up with the rest of the panel
+	if acemenupanel["CData"]["desc1_text"] then acemenupanel["CData"]["desc1_text"]:SetTextInset(0, 0) end
+	if acemenupanel["CData"]["desc2_text"] then acemenupanel["CData"]["desc2_text"]:SetTextInset(0, 0) end
 
-	local Discord = vgui.Create("DButton")
-	Discord:SetText( "Join our Discord!" )
-	Discord:SetPos(0,0)
-	Discord:SetSize(250,30)
-	Discord.DoClick = function()
-	gui.OpenURL("https://discord.gg/Y8aEYU6")
+	-- Expanded categories can run past the bottom, so let the panel scroll
+	acemenupanel.CustomDisplay:EnableVerticalScrollbar(true)
+	local function refreshAboutLayout()
+		timer.Simple(0.15, function()
+			if not IsValid(acemenupanel) or not IsValid(acemenupanel.CustomDisplay) then return end
+			acemenupanel.CustomDisplay:PerformLayout()
+			acemenupanel:PerformLayout()
+		end)
 	end
-	acemenupanel.CustomDisplay:AddItem( Discord )
 
-	local Wiki = vgui.Create("DButton")
-	Wiki:SetText( "Open Wiki" )
-	Wiki:SetPos(0,0)
-	Wiki:SetSize(250,30)
-	Wiki.DoClick = function()
-	gui.OpenURL("https://github.com/ACE-Project-Team/ArmoredCombatExtended/wiki")
+	local function addAboutButton(parent, text, url)
+		local btn = vgui.Create("DButton", parent)
+		btn:SetText(text)
+		btn:Dock(TOP)
+		btn:DockMargin(5, 5, 5, 0)
+		btn:SetTall(28)
+		btn.DoClick = function() gui.OpenURL(url) end
+		return btn
 	end
-	acemenupanel.CustomDisplay:AddItem( Wiki )
 
-	local Guide = vgui.Create("DButton")
-	Guide:SetText( "ACE guidelines" )
-	Guide:SetPos(0,0)
-	Guide:SetSize(250,30)
-	Guide.DoClick = function()
-	gui.OpenURL("https://docs.google.com/document/d/1yaHq4Lfjad4KKa0Jg9s-5lCpPVjV7FE4HXoGaKpi4Fs/edit")
-	end
-	acemenupanel.CustomDisplay:AddItem( Guide )
+	local learn = vgui.Create("DCollapsibleCategory")
+	learn:SetLabel("Learn")
+	learn:SetExpanded(true)
+	addAboutButton(learn, "Open Wiki & Docs", "https://acegmod.com/wiki")
+	addAboutButton(learn, "Learn About ACE", "https://acegmod.com/about")
+	learn.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(learn)
+
+	local play = vgui.Create("DCollapsibleCategory")
+	play:SetLabel("Play")
+	play:SetExpanded(false)
+	addAboutButton(play, "Official Collection (Steam)", "https://steamcommunity.com/sharedfiles/filedetails/?id=3282568819")
+	addAboutButton(play, "Servers to Play On", "https://acegmod.com/servers")
+	play.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(play)
+
+	local create = vgui.Create("DCollapsibleCategory")
+	create:SetLabel("Create & Share")
+	create:SetExpanded(false)
+	addAboutButton(create, "Addons for ACE (Projects)", "https://acegmod.com/projects")
+	addAboutButton(create, "Public Dupes (Stuff Street)", "https://acegmod.com/stuff-street")
+	addAboutButton(create, "Content Creation Guide (Branding)", "https://acegmod.com/branding")
+	create.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(create)
+
+	local community = vgui.Create("DCollapsibleCategory")
+	community:SetLabel("Community & Support")
+	community:SetExpanded(false)
+	addAboutButton(community, "Join our Discord!", "https://discord.gg/Y8aEYU6")
+	addAboutButton(community, "Give Feedback / Report Bug", "https://github.com/ACE-Project-Team/ArmoredCombatExtended/issues/new/choose")
+	addAboutButton(community, "Support Developers", "https://acegmod.com/funding")
+	community.OnToggle = refreshAboutLayout
+	acemenupanel.CustomDisplay:AddItem(community)
 
 end
 

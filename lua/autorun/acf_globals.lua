@@ -9,9 +9,8 @@ ACE.SysTime       = SysTime()
 ACE.AmmoTypes = {}
 ACE.MenuFunc = {}
 ACE.AmmoBlacklist = {}
-ACE.Version = "dev"        -- replaced by git detection (sh_ace_versioning.lua CheckLocalVersion) with short SHA, e.g. def4567
-ACE.Branch = "master"      -- auto-detected via .git/HEAD (sh_ace_versioning.lua), fallback "master"
-ACE.CurrentVersion = 0    -- remote SHA, set by ACE.UpdateChecking
+ACE.Version = 502        -- ACE current version
+ACE.CurrentVersion = 0    -- just defining a variable, do not change
 
 ACE.Year = 2023            -- Current Year
 
@@ -425,8 +424,6 @@ include("ace/shared/sh_ace_sound_loader.lua")
 include("autorun/acf_missile/folder.lua")
 AddCSLuaFile("ace/shared/sh_ace_logging.lua")
 include("ace/shared/sh_ace_logging.lua")
-AddCSLuaFile("ace/shared/sh_ace_versioning.lua")
-include("ace/shared/sh_ace_versioning.lua")
 include("ace/shared/sh_ace_functions.lua")
 include("ace/shared/sh_ace_loader.lua")
 AddCSLuaFile("ace/shared/sh_ace_scalable.lua")

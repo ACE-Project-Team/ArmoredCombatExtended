@@ -1,0 +1,731 @@
+r100
+--For an extended version history, please visit the github changelog.  https://github.com/RedDeadlyCreeper/ArmoredCombatExtended/commits/master
+
+*r101
+-Removed mags from smaller mgs
+-Retained Vanilla weapons
+-Removed mags from 20 and 30 AC
+-Added 25mm MG
+-added 40mm SGL
+-added 40mm MSL
+-Added 50mm Mortar
+-Added 280mm Mortar
+-Added 240mm HW
+-Added 290mm HW
+-Added SBCs
+-reduced SL reload time
+-tweaked RACs
+-Redid HMGs
+-Undid a lot of nerfs
+-New placeholder sounds?
+
+*r102
+-Added Gaghr AeroBine
+
+*r103
+-Added composite Armor
+-Added HESH
+
+*r104
+-Reworked armor mechanics
+-Nerfed effectiveness of rubber vs standard ammo
+-Merged objectively better weapons with their vanilla counterparts
+
+*r105
+-Added Ammotweak
+-Added Ferv's HP Ammo fix, Thank you Ferv.
+
+*r106
+-Added Nothing's e2 functions
+-Added Textolite Armor.
+-Bugfixes.
+-Oh hey a changelog.
+-Added non fragmenting high explosive
+-Made standard HE fragmentation
+
+*r107
+-Merged ACF missiles with ACE
+-Added Infrared guidance which has a shorter range but wider seek cone than radar
+-Divided missiles between radar and infrared guidance
+-Adjusted ACF Missiles group names and sorting to make more sense
+-Buffed AntiTank rifle accuracy
+-Buffed armor health
+-Restricted ammo to its propper guns
+-Added ECMs which counter radar guided missiles but not infrared
+-More bugfixing
+-Buffed aim 120s speed but nerfed agility
+
+*r108
+-Tweaked most of the ACF Missiles making ATGMs and ASMs less spammable.
+-Missile Payloads have also been significantly buffed and made closer to their RL values
+-Decreased armor of almost all missiles across the board
+-Made ERA work differently vs KE and HEAT
+-More bugfixing
+-Rebalanced the burn time and thrust of SAMs
+-Added a few more sounds
+-Ammocrates now instantly detonate
+
+*r109
+-Made Fuse input now show on incompatable guns
+-Tweaked random fuse noise for larger guns
+-Updated to include new additions to ACF
+-Re-Added fragmentation from penetration to both HEAT and KE ammo
+-Made cast heavier but more resiliant
+-Gave textolite its real life armor properties
+-Added Tandem HEAT
+-Added Slug penetrator rounds and renamed the APDS to LRP rounds
+-Added Armor piercing Capped Shell
+-Added normalization mechanic used by APC and LRP rounds
+-Reduced ammocrate HE explosion power
+-Made HEAT less effected by layers
+-Various bugfixes
+
+*r110
+-Made missile startermotors provide a boost
+-Made missiles aim higher in flight to better counter gravity
+-Reworked Missile pen
+-Added Experimental Engine Heat FCN
+-Moar bugfixes
+
+*r111
+-Removed High Explosive Pure
+-Added new armor piercing
+-Buffed damage of armor piercing rounds
+
+*r112
+-Buffed most of the kinetic shells
+-Improved missile gravity compensation
+-New ATGM Rocket motor effect
+-Increased range of many ATGMs
+-Increased HEAT Jet drag coefficient
+-RACs can now fire HE (Ban the minmaxers)
+-Buff various cannons
+-HESH Rework
+-Textolite damage resistance nerf
+-Fragmentation rework
+-Reworked ammo detonation:
+-35% KE and frag detonation, 75% HE detonation, 90% Heat Detonation
+-Diesel explodes
+-Added basic SWEPs using CSS models
+-Damaged engines cease up
+-Fixed ammoboxes not detonating when completely destroyed
+-HE Iterates over multiple explosions
+
+*r113
+-Reduced horizontal recoil of SWEPs
+-Introduced Ferv's amazing balance patch
+-Reworked ammobox explosions again
+-Added ability to restrict tech to an era
+-Added config to disable new guns, armor, and ammo
+-added limit for high caliber guns and cfg for what qualifies
+-added limit for rapid firing guns like RACs and MGs
+-Added many of Ferv's reworks
+-Refills have infinite ammo but larger crates fill faster
+-Increased Recoil
+-Added Ferv's HEAT Crush mechanics
+
+*r114
+-Removed HEAT Crush mechanics
+-reduced recoil of cannons
+-removed magazine of RACs
+-added cannon HEAT system
+-Cannons start to get damaged at 150 Celcius
+-Cannons will fire their powder at 160 Celcius
+-Removed SWEP angular recoil
+-Doubled SWEP Accuracy
+-Added pistols, a shotgun, and the m249 SAW
+-Added APHE Fuses
+-Improved flight charecteristics of missiles
+-Fixed many Tandem HEAT related bugs
+-Removed HESH from missiles
+-Nerfed AT-4s
+-Nerfed ERA performance against KE to 5x instead of 10x
+-ERA now performs against KE rounds according to the ratio of its health
+-Improved the performance of spalling
+-Various other polishing, bugfixing, and quality of life changes
+
+*r115
+-Reduced splash radius of at-4
+-Added Crew Seats for driver, gunner, and loader
+-Gunner: Increase accuracy by 50%
+-Loader: Increase reload by 25%, 2 loaders per gun max
+-Driver: Increase HP by 25%
+-The Loaders can only be linked if you have a gunner
+-Signficicantly reduced cannon weight
+-Fixed cannon shell models
+-Added shell ammoboxes
+-Removed speed buff of pistols and SMGs
+-Removed Rifled Mortars
+-Added various Fin-Stabilized Rounds
+-Nerfed smoothbore accuracy, use FS rounds
+-Improved recognition of HEAT and THEAT for certain entities and armors
+-Made SWEPS spawn with 8 magazines of ammo
+-Added Starfall patches by DaDamRival
+-Fixed missile velocity inheritance from parent
+-Added Overheating warning to various cannons
+-Removed ability to spawn missile radars from the entity menu
+-Significantly buffed ammo capacity of ammo boxes
+
+*r116
+-Removed Ammo proppelant ignition due to heat in guns.
+-Remove 170SBC from the cannon folder
+-Reduce weight of 406HW to 50 tons
+-Halved ammo explosion power, should reduce crashes due to ammo explosions.
+-Nerf AT-4 Speed to 200 m/s
+-Nerf AT-4 Proto to 120 m/s
+-Changed tandem At-4 pen to 60mm 1st, 400 second
+-Increased Cast Spalling
+-Increased Spall Count
+
+*r117
+-Made Engines and gearboxes directly parentable
+-Made non parentable guns able to be weld parented
+
+*r118
+-Reduce AP ammorack chance but increase HE chance (Halved AP Det chance, HE and HEAT remain same.)
+-Increase cannon spread across the board (Especially decreased smoothbore accuracy without FS rounds)
+-Make crewseat range based off caliber (100mm is 1x, 400mm gets 4x range)
+-Increase weight of ceramic (1.67x as heavy)
+-Reduce explosion power of refills
+-Reduced walkspeed of shotgun from 1.5x to 1.0x, Made shotgun have 6 shots instead of 8, Shotguns shoot 9 bullets instead of 5 now.
+-Slight nerf to AP damage.
+-Added SWEP fire delay after deploying. By default this is 1 second after pulling a SWEP out. For launchers this is 4 seconds.
+-Increase FFAR rocket max size and firerate
+-Re-add flare tracers
+-470mm pen AT-4
+-Increase max ROF boost from shorter ammunition
+-Flare launcher has 30 flares and double the reload time (Need to fix flare effect)
+-Increased HESH spall count
+-Fix SWEP Tracers
+-Added XM25, A handheld grenade launcher with rangefinding airburst grenades.
+-Fixed a bug where accuracy falloff would effect the first round after a long wait.
+-Added M3 Shotgun, it fires less projectiles that travel faster and pierce more armor. Less spammable
+-Add Swep Crosshair and scopes.
+-Increased Random Recoil based off of inaccuracy accumumation
+-nerf strela turn rate
+-Add Scout Rifle, A fast firing sniper rifle that fires tracerless bullets
+-Add AWP Sniper Rifle, A harder hitting sniper rifle that is more accurate
+-Fixed Tandem HEAT?
+-Increase Bomb Power
+-slightly made layers more effective vs HEAT 3x vs 5x
+-Buff Spaced Armor
+-made all engines parentable
+
+*r119
+-Fixed HESH Mechanics
+-Redid normalization code slightly
+-Made HEAT jets slower
+-Fixed Refill invalid ammo on cookoff
+-Fixed minimum ammo link distance bug
+
+*r120
+-Added support for translation packs, these are installed clientside and translate the most of the ACF menu content for the players.
+-Removed broken ECM jammers
+-Made armor of players lower
+-Reduced accuracy of AWP
+
+*r121
+-Fixed Normalization
+-Fixed RW61 not spawning
+-Twisted + Kemgus menu changes
+-Made more materials normalize differently
+-Reduced weight of aluminum(0.34 to 0.221)
+-Halved refill speed of all refills to encourage large refills
+-Increase base HEAT pen
+-Added AT, AP, bounding mine, and grenade SWEPs
+-Reduced size penalty for FS shells
+-Added armor thickness curves for each armor
+-Added HE bonus damage to ceramic
+-Updated Armor Analyzer to include new armor curves(check ACE files)
+-Invalid Ammo no longer bricks the server when shot
+-Increased anti tank missile velocity
+-Reworked HESH spalling penetration
+-Added firerate limiter to cannons
+-Buffed ROF of most MGs
+-Throttle effects engine ceasing damage
+-Added APHECBC shells, APHE that normalizes
+
+*r121
+-Missile Radar parenting fix
+-Added ECM, a new system that can be used to jam the new radar entities
+-Reworked all missile guidance to utilize the new radar and IR systems
+-Added an IRST tracker that uses heat to get the direction of an entitiy
+-Added Tracking Radar which outputs tracking information of an entity and with realistic shortcomings of real radar.
+-Nerfed the capacity of ammo by 0.25x and increased crate explosion power by 5x to compensate
+-Significantly reduced the air resistence of shells
+-A destroyed seat will now kill the driver
+-Jumping with a swep causes the a 2 second fire penalty to occur
+-Sprintmul lowered for sweps, also sprinting now doubles inaccuracy
+-The AT-4 now spawns with more ammo
+-Sweps now compensate for lag
+-SWEPS dont fire in godmode
+-fixed GLATGM Lolpen display displaying wrong penetration
+-Added translations for APHE and APHECBC
+-RAC HE, AKA the end of the world
+-Up to 2x Overdrive gearing for gearboxes
+-Gun ROF Limiter clamped to a max of a 10 second reload.
+-HESH penetration display
+-Way more HEAT fragments and AP fragments
+-Added 2 types of RWR to detect enemy radar
+-Increased weight of debris override weight
+
+*r122
+-Decreased contraption profiler lag by distributing the load over multiple seconds
+-Changed ammovolume to 0.75x what it was before the original ammo change
+-Decreased airborn penalty for sweps from 2 seconds to 1 second
+-Reduced IRST cone to 90 degrees
+-A few other bugfixes
+
+*r123
+-Heavily optimized contraption profiler
+-ATGMs now have boosted agility on launch
+-Reduced insane agility on ATGMs
+-Added DAGR FFAR and added IR seeker for AGM-114
+-Increased spalling damage and made it travel a minimum distance
+-Doubled ammo detonation chance
+-Fixed missile launcher legal weight rounding error
+-Decreased swep jump penalty from 1s to 0.25s
+-Significantly increased the drag of shotguns
+-Gave AWP explosive ammo and reduced velocity
+-Made Engines, Gearboxes, Ammo, and Fuel to require propper gate parenting(Trace Bypass exploit)
+-Increased contraption profiler check delay from 10-20s to 20-40s, made dupefinished cause a check
+
+*r124
+-Jumping no longer allows rapidfire SWEP cheese
+-Ammo now simulates propper shell volume. Its about 1:1 IRL size
+-Adjusted all missiles(Again)
+-Fixed Radar
+-Fixed IR
+-fixed contraption profiler
+-Added a few more of Kemgus' engines
+-Added a ton of new pistols, SMGs, and a few ARs
+-Rebalanced P90, AWP, TMP, and many other SWEPS
+-Added ERA effect
+-Refills now hold infinite ammo and weigh different weights
+-Reverted a few HE changes that made HE bug more likely
+-Update Armor Analyzer
+-Added Kemgus' 9 speed transmissions
+
+*r125
+-Fixed guncaliber error leading to increased pen
+-Removed HRACs and buffed RACs
+-Small caliber weapons cannot use HE(30mm and below excluding the 30mm AC and 30mm short HMG)
+-Fixed a shell caliber issue that caused shells to have a lower pen area
+-Buffed ROF of many below 37mm guns to compensate for the lack of HE
+-Massively buffed semiautos
+-Added 2 piece ammo with 30% penalty, applies automatically
+-Invalid ammocrates should no longer spam the console with errors
+-Buffed short cannon accuracy
+-Fixed an armor bug that caused composite not to spall propperly
+-Angled ceramic takes more damage
+-Decreased HE push force
+-Fixed a few bugs with radar clutter
+-Made radar missiles less prone to ground clutter
+
+*r126
+-Fixed normalization. FINALLY
+-Mines no detonate on the world
+-Mines now place at surface angles
+-Fixed IR Heat system
+-Added new missile particle effects
+-Fixed a bug where ammo could bypass damage perms
+-Added new explosion effects
+-Nerfed MG ROF
+
+*r127
+-Reworked bullet tracebacks reducing AP glitching
+-Removed other forms of HE from cannons
+-Rebalanced gun and engine heat system
+-Nerfed APCR
+-Made HE damage more reliable
+-Buffed penetration of AT-4T
+-Updated armor analyzer to better reflect armor values
+-Missiles will now swap targets on the fly
+-Fixed flares
+-Slightly adjusted HESH mechanics
+
+*r128
+-Rebalanced gearboxes
+-Rebalanced MG Penetration
+-Missile bug workaround(T/HEAT for missiles is still buggy, but there is no more weird ricochets and HE works fine) Once we fix it, it would be on the branch
+-Some rebalancing of sweps(Greande got more weight, so it doesn't act as a ball)
+-Slight optimisation of code(Cleared some unused code and cleared some trash in it)
+-Fixed some errors when joining to server
+-Fixed error when detonating missile by detonate input
+-removed HE restrictions on 20mm caliber guns or lower
+
+*r129
+-Fixed github version display. Now you can see the latest version of ACE.
+-Removed superior armor from racks. they are easy to destroy now.
+-Disabled debris being created by gate parent destroyed. Reason of why we had 2 debris variants from 1 prop .
+-New overlay for missiles. Easy to read and simple.
+-Minor bug and error fixes.
+-Missile/bomb bug fixed.  FINALLY
+-Restored battle mode. Now it should appear on ACF permission mode.
+-Restricted APFSDS to be used on smoothbores only. Same as APDS that is unable to be fired from smoothbore now.
+-Ricochet probability display on ammo stats.
+-rebalanced damage of rounds (AP, APC, APBC, APCBC)
+-Code optimization.
+-Small FX improvements for HEAT bombs/missiles.
+-Restricted radar for particular missiles.
+
+*r130
+-Destroying the parent will make debris from most of their children correctly.
+-Cutting torch will detonate ERA if damaged enough.
+-Added javelin as tank weapon. A multi purpose missile able to blow tanks and take down aircraft. Extremely agile but with long reload (balance reasons)
+-Improved ACE menu. Featuring an nice format and configs for both server and client.
+-A wiki! WIP yet although you can visit it via menu.
+-HEAT range table got workaround.
+-ACF2 smoothbores and HRACs will turn into ACE smoothbores and RACs respectively during pastings. Still you will need put a new ammo.
+-cluster fuse got workaround.
+-Fixed bug where antimissile guidance knew position of non-active missiles. 
+-Infrared guidance should follow any target that is moving and at least has 1 constraint (temporal until heat rework).
+-Re-added radar guidance to 9m311 when it had not to be removed.
+-World penetration is back.
+-Working Fuse time from ammo on smoke launchers.
+-cleaning some of debris code and making it more stable.
+-fixed bullets passing through visclip corners.
+-nerfed APCR/HVAP effectiveness vs slope armor.
+-Disabled ammo cap from menu temporally.
+
+*r131
+-Ammo capacity fix & some additions
+-Readjusted tracehull diameter, that should be equal to diameter of model bullet.
+-moving betty cockpit sound files to acf extras folder
+-Ricochet stats rework once again
+-Added more health for crewseats.
+-tracer volume usage readjusted.
+-bullet wont lose its tracer if ricochets/penetrates, etc. 
+-ACF2 smoothbores will be fully converted to ACE smoothbores (+ammo). Same for HRACs (converted to RACs + ammo)
+-Excluded large calibers being damaged by heat.
+-reduced ammo & fuel detonation blast.
+-rebalanced most of missiles (speed, agility, range, etc), tell us via discord if something should be changed yet.
+
+*r132
+-Completely new contraptionscan.
+-made ace files easy to export ( for an acf3 transition in near future ). 
+-optimized infrared & radar guidances. 
+-infrared will target heat emitter ents now ( engines, guns, etc)
+-improved heat. Not radiators yet
+-ecm, tracking radar and irst will work inmediately once spawned via spawnmenu
+-rebalanced cast and ceramic health reduced
+-fixed "nil" material 
+-fixed ace sound replacer error
+-increased smoothbore accuracy 
+-added APHE for MGs
+-added ROF for almost every gun 
+-updated ace armor analyzer
+
+*r133
+-Improved Explosion effects. Restored/improved dynamic dust according to terrain. Added water splashes for underwater explosions.
+-Done some changes to ERA.
+-Changed/improved most of sounds for pen, rico & explosions. Special thanks for Arend.
+-Spall totally reworked. Improved HESH mechanics, stacked props are not a barrier.
+-Added Delectros's smoothbore cannons. Glory
+-buffed rubber resiliance vs kinetic rounds. For Shaped rounds was buffed too but slightly.
+-buffed HEFS & T/HEATFS speed greatly.
+-radar will not track flares anymore.
+-Restricted certain material types for ace ents.
+-Changed some values for Electric stuff.
+-A LOT of bugfixes & optimizations, specially for the effects.
+
+*r134
+-Added Sound Extension like system. New Explosion sounds, distant gunfire, cracks, etc. Thanks to Arend
+-Added ear ringing effect if you stay close to an explosion.
+-Added new convars for serverside.
+-Added new effects when bullets hit the ground or objects.
+-Reworked client/server settings. Server interface disabled for dedicated servers atm.
+-Reworked effects once again. Smoke duration reduced and water splashes more reliable now.
+-Rebalanced gearboxes once again. Yeah
+-Restored smoke shells for cannons.
+-Added APHE/HE to RACs.
+-Fixed a lot of effects again. No more static bullets.
+-Fixed exploit where you could disable effects completely.
+-Gearbox loop workaround. No more crashes related to this.
+-ACE entities will not spawn underground.
+-Deleted a lot of unused stuff.
+-Tracer fixes. They had several problems that were fixed.
+-Avoided that cluster bomb detonates when another bomb is detected in front of it.
+-ACE_grenade will not go to saturn this time (crazy physic issue solved)
+-Added another electric rebalance.
+-Fixed null entity from sound tool if you despawn the vehicle quickly.
+-Disabled flare burn out sound.
+
+*r135
+-Added new torque curves. In collaboration with Twisted, Cheezus and freedom
+-Reworked armor system. Features new armor selection providing more information about the chosen material. Also no more numbers when looking using armor tool
+-Redone R armor tool to be more modern than old one. Provides material composition of a contraption. Future additions are expected.
+-rebalanced AAM missiles. They will have same cone but different agility. AIM120 not insta turn anymore.
+-improved HE when applying damage.
+-Anti-missile guidance is a thing now.
+-GLATGM is interceptable via radar and destroyable
+-tracking radar is in ace menu. Added overlay
+-Added multi-sound per gun system. Allowing more realistic fire sounds. Experimental
+-HE push and recoil will be more consistent with parented weight. 
+-Alot of new changes, among new overlays and new info displayed. Quality of life moment
+-another electric engines rebalance. Removed induction engines (replaced by closest counterparts)
+-more optimizations done to code
+
+*r136
+-Fixed nan armor caused to props by nearest HE detonations
+-Added check for CameraPos if available. It should avoid the issue with being nil
+-Added check to see if the matdata is valid, if not, deal as RHA instead.
+
+*r137
+-Added track delay input for the missile rack/pods. Allowing to delay the track guidance movements.
+-Added total fuel engine output. Outputs total linked fuel to the engine
+-Added OverHeat gun output. Tells if its overheated or not
+-Added IRST to ace menu. Overlays included
+-Added legality checks for rack, antimissile radar, tracking radar and irst.
+-Fixed rack/pod weird positions when that was parented. Based on ACF3 Offset concept
+-Converted all acf_other sound files to mp3. Courtesy of Cheezus
+-Armor analyzer will appear in your advdupe2. No more digging into folders
+-Fixed dust effect being as big as the map if it was created by a 406mm shell or similar
+-Spalling will ignore viscliped areas
+-Nerfed ERA health significantly in general
+-Buffed rubber slightly vs HEAT
+-Rebalanced bomb flight characteristics
+-Increased accuracy for spg-9
+-Many bug fixes to many aspects
+-Removed "Oh fiddlesticks" sound
+-Removed DAGR FFAR and added guidance to closest counterpart. Backwards done.
+-Removed gate parent requirement from legality checks
+
+*r138
+-Added a workaround for ace entities hitting the 3rd camera when seated
+-Fixed ataka not guiding properly
+-Fixed error caused when the irst detects flares in front
+-Updated armor analyzer. Courtesy of KemGus
+-Corrected some grammar mistakes on some missiles
+
+*r139
+- Major ERA changes. The bricks will be deadly for props around of it with possibility to chain reactions.
+- Scaled explosions are now adjustable via menu. Allowing proper chain reactions.
+- Improved ammo gun selection menu.
+- Improved dupe loader. Can load different dupes.
+- Little change to fueltank naming
+- updated crack sounds for autocannons/small cal - courtesy of Arend
+- Updated logo
+- Included HEAT(FS), HEFS & HESH to be able to use fusetime
+- Added 85mm caliber for cannons and shortcannons. Ported from ACF2
+- Added Gas pump model for fueltanks. Re-supply only
+- added acfDragCoef() e2 function - courtesy of cheezus
+- added Aversion's seats. StandPos Edited slightly
+- corrected kornet id
+- Fixed minmass random report
+- Fixed theat bypassing armor. 
+- many minor bugs to several things
+- Removed Slug and LRP variants. merged into one apfsds/apds with no normalization
+
+*r140
+- Initial fix for Starfall library. Some bugs will exist, but basic functions are working. Please report any problems in the ACE discord or on Github.
+
+*r141
+- Added more extended lighting during combat (muzzleflashes, explosions, glatgm, flares). Can be enabled via client.
+- Implemented first stage of water effects into ACE: Missiles cannot ignite their motors underwater. glatgms will detonate in contact with the water.
+- Flares will be killed in contact with water. No needed to confuse missiles underwater.
+- Added a new tool to override vanilla 3rd person seat, meant to ignore any object from colliding with the view. Can be duped.
+- Any invalid ammocrate will be returned into AP.
+- kornet missile should look as it is now.
+- Fixed ghost cracks being heard by AT missiles and non existant bullets. Its possible to hear this last one in some cases yet.
+- Fixed bullet fuse calculation. Now more precise. Thanks twisted
+- Fixed choppy engine sound. Thanks Cheezus
+- Flares can ignite players and npcs.
+- Limited ERA HE accumulation.
+- 9M311 sam missile will use laser guidance only.
+- Removed loader count on overlay for weapons that cannot have them.
+- Removed 3rd cam global override. Broke some addons, use the new tool instead.
+- Polished some stuff.
+
+*r142
+- Reworked ACE SWEPs. Added spray patterns, proper recoil and added lighting rendering and sound extension support. Huge thanks to cheezus & RDC by the changes
+- Removed T/HEAT ammo from flare launcher.
+
+*r143
+- Fixed typo on bulletdata.filter not working properly
+
+*r144
+- Fix weapon heat value lowering at different speeds on different servers -cheezus
+
+*r145
+- Fixed HEAT and its variants not penetrating as it should
+
+*r146
+- Weapon spread now uses proper math
+- Grenades go where you're actually aiming
+- Grenades don't spawn until the throwing animation plays
+- No more grenade spam
+- Death while playing grenade throw animation spawns a grenade at your death position
+- Recoil on some automatic weapons tweaked
+- Grenades and mines now spawn with far less ammo
+
+*r147
+- Attempt to fix: https://trello.com/c/it39Qwwk - cheezus
+
+*r148
+- Added fuze Plunging. Recreates the TOW-2B special capacity.
+- Done NADMOD optional. No longer needed for clients. However, DP will be disabled without that.
+- Added angle effectiveness into ERA
+- Added a bunch of new balances to missiles. Improved arty flights.
+- Added new SWEPs: flare gun and smoke grenade. Courtesy of Cheezus
+- Added ACF3's traceline workaround. You should not have issues with traces anymore.
+- Added New armor analyzer. Its under WIP but feel free to make suggestions. This one will eventually surpass the old one.
+- Added acfPropArmorData() function (E2/SF) Courtesy of Cheezus
+- Fixed some exploits with ammo and collision group. Thanks ally by the report and cheezus by actually making it.
+- Fixed several typos on code naming. Courtesy of KemGus
+- Improved ghosting time. Now Missiles should be less likely to self hit your own vehicle if moving.
+- Removed old ghosting time convar. Useless at this point.
+
+*r149
+- Avoided serverside function being called on client realm when executing acf_enable_dp
+
+*r150
+- Updated the new armor analyzer. Added many new features.
+- Fixed rounding values for RPMfunction in general.
+
+*r151
+- Reworked traces. Now bullets should hit the proper player hitbox. Courtesy of Cheezus
+- Fixed APHE/CBC fuse. Not really precise but works now.
+- Fixed sounds playing twice on SWEPs when watching another player shooting
+
+*r152
+- Added COLLISION_GROUP_VEHICLE as valid collision group for legality checks
+
+*r153
+- Fix ACF_CheckClips not respecting primitives.
+- Added more primitive classes to the contraption entity finder.
+
+*r154
+- Added scalable ammo crates. credits for acf3 by the concept.
+- Improved ammo config. Courtesy of KemGus
+- Added new sweps: stinger, javelin & slam. Thanks RDC and cheezus.
+- Added better sounds for the howitzer. Courtesy of HoloLight
+- Improved radio fuze. Now it works with more guidances.
+- Fixed many issues caused by invalid stuff to several entities (specially with acf3 entities)
+- Missiles dimensions cannot be changed anymore.
+- users cannot damage anything if they disabled their own perms.
+- changed how ammo dims are calculated. Fixes issues where 2 crates with identical dims should have the same cap when it was not.
+- Fixed several errors with missiles/bombs being bigger/smaller than they appear.
+- Improved gun recoil stabilization. Courtesy of kerbalcadet
+- godmoded ppl are not affected by tinnitus anymore.
+- ace update should fail properly now, if theres no internet available. Courtesy of cheezus.
+
+*r155
+- Allowed even smaller crates.
+- Fixed SPG-9 pod still having the wrong caliber.
+- Brought back old legacy crate cursed dimensions.
+- Added disclaimer regarding legacy crates.
+- Minor restruct and bugfixes. Courtesy of kemgus.
+- Removed javelin/stinger sweps.
+
+*r156
+- BGM71 should fly better now
+- added break sounds for gearbox connections
+
+*r157
+- Added new e2/SF functions: ent:acfRadarData(), ent:acfSetROFLimit() & ent:acfFuelRemaining() Courtesy of cheezus
+- Fixed mines/grenade not doing damage.
+- Potential fix for ropes not acting rigid once relinked.
+- Updated the wiesel
+
+*r158
+- Improved ACE Sound Replacer Tool.
+- Added button to invert final drive during the gear config.
+- Optimized flying bullets. Fixed some bugs related to it.
+- Fixed some bugs/errors with scalable ents.
+
+*r159
+- ACE dupes are optional now. You can remove them if you dont need them.
+- Added a button to restore the removed dupes if you want the dupes back.
+- Added Type 90 tank into dupes. Credits goes to Doitsu
+- Tweaked the ACE Sound Replacer Tool a bit more.
+- Fixed an issue related to sbox limit with racks.
+
+*r160
+- Added a God-based permission mode. Godded players require damage perms to do damage, ungodded ones dont need it. Courtesy of cheezus
+- Added InfMap partial support. Effects and particles are still broken.
+- Debris will keep the momentum of the destroyed props.
+- Fixed GBU-10 not having the bodygroups being loaded properly. Thank you PsychoDog
+- ACE notifications are done via new functions. Courtesy of cheezus
+- HESH code has proper penetration functions
+- Fixed some small bugs
+
+*r161
+- added pitch support to guns, racks & radars.
+- IRSTs now have Cone input.
+- Missile rack custom sounds works on dedicated servers. See workaround for details.
+- Safezones added on god based permission mode. By cheezus
+- Improved how penetration decals are created. Now double side decals are done.
+- Added sound extension basic support to missile racks & radars. Please send your feedback about the noise distance
+- Removed "You don't own that entity" message from all the ACE entities
+- Fixed a problem related to shells bypassing props under certain conditions.
+- Fixed some small issues
+
+*r162
+- Reverted a change that caused problems with traces.
+- Default sound level adjusted to 100%. by Cheezus
+
+*r163
+- Added scalable fueltanks. Included several shapes for any engineering issues.
+- Added Mine limit per user. New mines will remove the old one if passed.
+- Added legality checks to crewseats. Added penalties by angle.
+- Added new kornet launcher tubes (2x and 4x kornet tubes). Thanks GolemMan.
+- Added APFSDS to autoloaders.
+- Added GPS guidance. Included into several strike dedicated ordnances. By RDC.
+- Added Wind. Affects smoke. By KemGus.
+- Improved crewseats with nice features. Loaders have stamina and only one will provide the max rof
+- increased all autoloaders mag size to 12.
+- Rebalanced IRST. By RDC.
+- Rebalanced Spalling. By RDC.
+- Rebalanced several armor materials. Nerfed rubber and added extra parameters to damage. Coutersy of RDC.
+- Reduced plunging fuze penetration.
+- Re-added SWEP launchers. This time they take flares into account. Courtesy of RDC
+- Added new e2 functions.
+- Improved SA accuracy.
+- Fixed missile positioning on racks.
+- Fixed cases with scalable ents reseting its size by fullupdates/lag.
+- Alot of bug fixes
+- Removed IR from several ASM and ATGM. By RDC.
+- Removed old armor analyzer.
+
+*r164
+- Added Acceleration and Jerk to swep missile code
+- Increased energy and agility of stinger
+- Increased track cone of javelin
+- Fixed IRST giving lua errors.
+
+*r165
+- Added flare noise. Supported by the sound volume system.
+- Fixed textolite spamming alot of errors if impacted by heat shells.
+- Fixed IRST angle return. Now its provided in a local angle relative to itself.
+- Updated armor analyzer
+
+*r166
+- Fixed case where bullets could potentially pass through your armor under specific cases.
+- Temporally disabled smalls bullet to be able to pass through of fences. See gitlogs for more details.
+- Attempt to fix random issues regarding to effects (lua errors)
+
+*r167
+- Added ITPSV Tank into the ACE dupes folder. Thanks Chiyo.
+- fixed tracking radar giving errors
+- attempt to fix cases with rack giving errors if fired under some scenarios.
+- attempt to fix cases with debris returning errors under specific cases.
+- some unspecific changes regarding to code struct.
+
+*r168
+- Added cv90. Thanks doitsu
+- Updated type 90. by doitsu.
+- fixed acflinks SF functions returning broken entity objects. by cheezus
+- fixed swep reload animation being broken on singleplayer.
+- removed 'Sendlua' from swep code. by cheezus.
+
+*r169
+- Damaged prop textures should appear smoothly now.
+- Added super tiny extra duration to flares light, to reduce epileptic light intermittence.
+- Fixed typo on dynamic lights causing errors in some cases.
+- Fixed typo on debris not deleting the destroyed props properly.
+- Fixed typo on water effects not being displayed as should.
+
+*r170
+- Fix armor analyzer
+- Multi link support for ACE Menu tool

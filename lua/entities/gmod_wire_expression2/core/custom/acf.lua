@@ -341,16 +341,16 @@ do
 		return this.Heat or 0
 	end
 
-	-- Returns the latest ACE version (short SHA)
+	-- Returns the latest ACE version
 	[nodiscard]
-	e2function string acfVersion()
-		return tostring(ACE.CurrentVersion or "")
+	e2function number acfVersion()
+		return ACE.CurrentVersion
 	end
 
-	-- Returns the current ACE version (short SHA)
+	-- Returns the current ACE version
 	[nodiscard]
-	e2function string acfCurVersion()
-		return tostring(ACE.Version or "")
+	e2function number acfCurVersion()
+		return ACE.Version
 	end
 
 	-- Returns the current air gap factor (air effectiveness against HEAT)

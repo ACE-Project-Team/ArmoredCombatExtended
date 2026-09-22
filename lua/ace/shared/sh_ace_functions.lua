@@ -369,7 +369,50 @@ do
 
 end
 
--- ACE.UpdateChecking moved to sh_ace_versioning.lua (SHA-based, dev vs master)
+--Checks if theres new versions for ACE
+function ACE.UpdateChecking( )
+	http.Fetch("https://raw.githubusercontent.com/ACE-Project-Team/ArmoredCombatExtended/master/lua/autorun/acf_globals.lua",function(contents)
+
+		--maybe not the best way to get git but well......
+		local str = tostring("String:" .. contents)
+		local _, versionEnd = string.find( str, "ACE.Version =" )
+
+		if not versionEnd then
+			_, versionEnd = string.find( str, "ACF.Version =" )
+		end
+
+		if not versionEnd then
+			print( "[ACE | ERROR]- Unable to find the latest version! Failed to parse GitHub response." )
+			return
+		end
+
+		local rev = tonumber( string.sub( str, versionEnd + 2, versionEnd + 4 ) ) or 0
+
+		if rev and ACE.Version == rev  and rev ~= 0 then
+
+			print("[ACE | INFO]- You have the latest version! Current version: " .. rev)
+
+		elseif rev and ACE.Version > rev and rev ~= 0 then
+
+			print("[ACE | INFO]- You have an experimental version! Your version: " .. ACE.Version .. ". Main version: " .. rev)
+		elseif rev == 0 then
+
+			print("[ACE | ERROR]- Unable to find the latest version! Failed to connect to GitHub.")
+
+		else
+
+			print("[ACE | INFO]- A new version of ACE is available! Your version: " .. ACE.Version .. ". New version: " .. rev)
+			if CLIENT then chat.AddText( Color( 255, 0, 0 ), "A newer version of ACE is available!" ) end
+
+		end
+		ACE.CurrentVersion = rev
+
+	end, function()
+		print("[ACE | ERROR]- Unable to find the latest version! No internet available.")
+
+		ACE.CurrentVersion = 0
+	end)
+end
 
 
 --Creates & updates ACE dupes.
@@ -474,7 +517,9 @@ do
 	end
 end
 
--- timer ACE.UpdateChecking moved to sh_ace_versioning.lua
+timer.Simple(1, function()
+	ACE.UpdateChecking()
+end )
 
 
 do
@@ -896,13 +941,16 @@ function ACE.GetPtsType(className)
 	return ACE.ClassToType[className] or "Ignore"
 end
 
+--- Prices a prop's static protection and relative armor mass efficiency.
+-- @param ent Entity Armor prop.
+-- @return number Scaled armor points.
 function ACE.GetSurvivabilityIndex(ent)
 	if not ACE.IsEnt(ent) then return 0 end
 
-	local effMm, maxHealth = ACE.Points.PropArmor(ent)
+	local effMm, maxHealth, massEfficiency = ACE.Points.PropArmor(ent)
 	if not effMm or not maxHealth then return 0 end
 
-	return math.max(ACE.Points.ArmorProp(effMm, maxHealth), 0)
+	return math.max(ACE.Points.ArmorProp(effMm, maxHealth, massEfficiency), 0)
 end
 
 function ACE.GetArmorPoints(ent)
@@ -1138,34 +1186,30 @@ function ACE.GetRackConfiguredReloadTime(rack, bdata)
 	return reload > 0 and reload or 1
 	end
 
--- Resolve the complete linked gun configuration with the highest final rate x round score.
+-- Select by final gun price so each round retains its own configured cadence.
 local function resolveGunPricingCandidate(gun)
 	if not ACE.IsEnt(gun) then return end
 
 	local best
-	local function consider(bdata, crate)
-		local round = ACE.Points.RoundFromBullet(bdata)
-		if not round then return end
-
-		local rate = ACE.Points.GunSustainedRps(gun, bdata, crate)
-		local roundScore = ACE.Points.RoundScore(round)
-		local candidate = {
-			Round = round,
-			Rate = rate,
-			RoundScore = roundScore,
-			FinalScore = rate * roundScore,
-			SourceIndex = ACE.IsEnt(crate) and crate:EntIndex() or math.huge,
-		}
-
-		if ACE.Points.IsBetterCandidate(candidate, best) then best = candidate end
-	end
-
 	for _, crate in pairs(gun.AmmoLink or {}) do
-		if ACE.IsEnt(crate) and istable(crate.BulletData) then consider(crate.BulletData, crate) end
-end
-
-	return best
+		if ACE.IsEnt(crate) and istable(crate.BulletData) then
+			local round = ACE.Points.RoundFromBullet(crate.BulletData)
+			if round then
+				local rate = ACE.Points.GunSustainedRps(gun, crate.BulletData, crate)
+				local score = ACE.Points.BaseRoundCost(round)
+				local candidate = {
+					Round = round,
+					Rate = rate,
+					RoundScore = score,
+					FinalScore = ACE.Points.GunCost(rate, score),
+					SourceIndex = crate:EntIndex(),
+				}
+				if ACE.Points.IsBetterCandidate(candidate, best) then best = candidate end
+			end
+		end
 	end
+	return best
+end
 
 -- Resolve the complete rack configuration with the highest final rack price.
 local function resolveRackPricingCandidate(rack)
@@ -1178,14 +1222,15 @@ local function resolveRackPricingCandidate(rack)
 			if round then
 				local reload = ACE.GetRackConfiguredReloadTime(rack, crate.BulletData)
 				local rate = ACE.Points.RackRate(reload, rack.MaxMissile)
-				local baseRoundCost = ACE.Points.BaseRoundCost(round)
-				local roundScore = ACE.Points.RoundScore(round)
+				local baseRoundCost = ACE.Points.BaseRoundCost(round, true)
+				local roundScore = baseRoundCost
+				local guidance = ACE.Points.RackGuidanceMul(round)
 				local candidate = {
 					Round = round,
 					Rate = rate,
 					RoundScore = roundScore,
 					BaseRoundCost = baseRoundCost,
-					FinalScore = ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost),
+					FinalScore = ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost, rack.MaxMissile, guidance),
 					SourceIndex = crate:EntIndex(),
 				}
 
@@ -1203,43 +1248,47 @@ local function resolveWeaponPricingInputs(ent)
 	local class = ent:GetClass()
 	if class ~= "acf_gun" and class ~= "acf_rack" then return end
 
-	local candidate = class == "acf_gun"
-		and resolveGunPricingCandidate(ent)
-		or resolveRackPricingCandidate(ent)
 	local isRack = class == "acf_rack"
+	local candidate
+	if isRack then
+		candidate = resolveRackPricingCandidate(ent)
+	else
+		candidate = resolveGunPricingCandidate(ent)
+	end
 	local round = candidate and candidate.Round
 	local rate = candidate and candidate.Rate or 0
-	local threat = round and ACE.Points.Gate(ACE.Points.GatePen(round)) or 0
-	local baseRoundCost = round and ACE.Points.BaseRoundCost(round) or 0
-	local roundScore = threat * baseRoundCost
-	local points = class == "acf_gun"
-		and ACE.Points.GunCost(rate, baseRoundCost, threat)
-		or ACE.Points.RackCostFromRate(rate, roundScore, baseRoundCost)
+	local baseRoundCost = round and ACE.Points.BaseRoundCost(round, isRack) or 0
+	local roundScore = baseRoundCost
+	local guidance = isRack and ACE.Points.RackGuidanceMul(round) or 1
+	local points, baseRoundCostPoints, rackRawPoints
+	if isRack then
+		points, baseRoundCostPoints, rackRawPoints = ACE.Points.RackCostFromRate(
+			rate, roundScore, baseRoundCost, ent.MaxMissile, guidance)
+	else
+		points, baseRoundCostPoints = ACE.Points.GunCost(rate, baseRoundCost), 0
+	end
 	local model = ACE.PointsModel or {}
-	local firepowerScale = (tonumber(model.kGun) or 0) * (tonumber(model.Scale) or 0)
-	-- RawPoints is the unfloored delivery multiplication. Rack totals add the selected round
-	-- separately through BaseRoundCostPoints, while DeliveryPoints is the actually floored term.
-	local rawPoints = rate * roundScore * firepowerScale
-	local baseRoundCostPoints = isRack
-		and baseRoundCost * (tonumber(model.Scale) or 0)
-		or 0
+	local firepowerScale = (tonumber(isRack and model.kRack or model.kGun) or 0) * (tonumber(model.Scale) or 0)
+	-- BaseRoundCostPoints includes every ready tube; DeliveryPoints is the floored delivery term.
+	local rawPoints = rackRawPoints or ACE.Points.FireRateMul(rate) * roundScore * firepowerScale
 	local rateFloor = ACE.Points.RateFloor and ACE.Points.RateFloor() or 0
 	-- Compare against the FLOORED rate's raw product, not the true rate's -- otherwise every
 	-- floor-affected weapon falsely reads as having hit the flat weapon minimum instead.
 	local flooredRate = (rateFloor > 0) and math.max(rate, rateFloor) or rate
-	local flooredRawPoints = flooredRate * roundScore * firepowerScale + baseRoundCostPoints
+	local flooredRawPoints = rackRawPoints or ACE.Points.FireRateMul(flooredRate) * roundScore * firepowerScale
 	local minimumApplied = points > flooredRawPoints + 0.01
 
 	return {
 		Points = points,
 		Rate = rate,
-		Threat = threat,
+		RateMultiplier = not isRack and ACE.Points.FireRateMul(rate) or nil,
 		BaseRoundCost = baseRoundCost,
 		FirepowerScale = firepowerScale,
 		RawPoints = rawPoints,
 		BaseRoundCostPoints = baseRoundCostPoints,
 		DeliveryPoints = points - baseRoundCostPoints,
 		IsRack = isRack,
+		GuidanceMultiplier = guidance,
 		MinimumApplied = minimumApplied,
 		-- Distinct from MinimumApplied: this is the delivery-rate floor, not the flat weapon
 		-- minimum, and can engage on builds pricing well above the flat floor. Mutually
@@ -1264,36 +1313,40 @@ function ACE.GetGunFirepowerReadout(ent, _)
 	return resolveWeaponPricingInputs(ent)
 end
 
+--- Formats the most expensive linked weapon configuration.
+-- @param readout table Weapon pricing inputs.
+-- @param menuFormat boolean Use the compact menu format.
+-- @return string Pricing explanation, or nil for an invalid readout.
 function ACE.GetGunFirepowerPricingLine(readout, menuFormat)
 	if not istable(readout) then return end
-	if not readout.Rate or not readout.Threat or not readout.BaseRoundCost then return end
+	if not readout.Rate or not readout.BaseRoundCost then return end
 
 	if not menuFormat then
 		if readout.IsRack then
-			return string.format("Rack delivery: %s pts + %s base-round pts = %s pts",
+			return string.format("Rack delivery: %s pts + %s ready-missile pts = %s pts (includes %.2fx guidance)",
 				string.Comma(math.Round(readout.DeliveryPoints)),
 				string.Comma(math.Round(readout.BaseRoundCostPoints)),
-				string.Comma(math.Round(readout.Points)))
+				string.Comma(math.Round(readout.Points)), readout.GuidanceMultiplier or 1)
 		end
 
-		return string.format("%.3f/s x %.1f%% threat x %s base x %.4f scale = %s pts",
+		return string.format("%.3f/s (%.2fx rate) x %s base x %.4f scale = %s pts",
 			readout.Rate,
-			readout.Threat * 100,
+			readout.RateMultiplier,
 			string.Comma(math.Round(readout.BaseRoundCost)),
 			readout.FirepowerScale,
 			string.Comma(math.Round(readout.RawPoints)))
 	end
 
 	if readout.IsRack then
-		return string.format("%.1f rpm / 60; %s delivery pts + %s base-round pts",
+		return string.format("%.1f rpm / 60; %s delivery pts + %s ready-missile pts (includes %.2fx guidance)",
 			readout.Rate * 60,
 			string.Comma(math.Round(readout.DeliveryPoints)),
-			string.Comma(math.Round(readout.BaseRoundCostPoints)))
+			string.Comma(math.Round(readout.BaseRoundCostPoints)), readout.GuidanceMultiplier or 1)
 	end
 
-	return string.format("%.1f rpm / 60 x %.1f%% threat x %.1f base x %.1f scale",
+	return string.format("%.1f rpm (%.2fx rate) x %.1f base x %.1f scale",
 		readout.Rate * 60,
-		readout.Threat * 100,
+		readout.RateMultiplier,
 		readout.BaseRoundCost,
 		readout.FirepowerScale)
 end
@@ -1313,35 +1366,18 @@ function ACE.GetRateFloorLine(readout, menuFormat)
 		(readout.Rate or 0) * 60)
 end
 
--- Formats the lethality factors used by the points model.
-function ACE.GetRoundLethalityLine(round, menuFormat)
+--- Formats the dimensions and warhead multiplier used by the points model.
+-- @param round table Converted round configuration.
+-- @param _ boolean Reserved compact-format argument.
+-- @param unguided boolean Omit guidance when it is shown on the rack's total-price line.
+-- @return string Shell length and warhead pricing explanation.
+function ACE.GetRoundLethalityLine(round, _, unguided)
 	if not istable(round) then return nil end
 
-	local base, hole, blast = ACE.Points.PostPenParts(round)
-	local dmg = base + hole + blast
-	if dmg <= 0 then return string.format("%s utility round", round.Type or "Unspecified") end
-
-	local rawPen = tonumber(round.maxPen) or 0
-	local pen = ACE.Points.LethalityPen(round)
-	local penLabel = (pen > rawPen + 0.5) and "mm HE-equiv" or "mm pen"
-
-	local line
-	if menuFormat then
-		line = string.format("%s %.1f%s x %.1f dmg",
-			round.Type or "Round", pen, penLabel, dmg)
-	else
-		line = string.format("%s %d%s x %.2f dmg (%d + %.2f hole + %.2f blast)",
-			round.Type or "Round", math.Round(pen), penLabel, dmg, base, hole, blast)
-	end
-
-	local guid = ACE.Points.GuidanceMul(round)
-	if guid ~= 1.0 then
-		line = line .. string.format(" x %.1f guidance", guid)
-	end
-	local intrinsicValue = ACE.Points.IntrinsicValueMul(round)
-	if intrinsicValue ~= 1.0 then
-		line = line .. string.format(" x %.1f HE utility", intrinsicValue)
-	end
+	local line = string.format("%s (%.1f cm projectile + %.1f cm propellant) x %.2f warhead",
+		round.Type or "Round", round.ProjLength or 0, round.PropLength or 0, ACE.Points.WarheadMul(round))
+	local guid = unguided and 1.0 or ACE.Points.GuidanceMul(round)
+	if guid ~= 1.0 then line = line .. string.format(" x %.1f guidance", guid) end
 
 	return line
 end

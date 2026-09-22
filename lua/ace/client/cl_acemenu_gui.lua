@@ -431,25 +431,6 @@ function PANEL:Init( )
 
 	end
 
-	do
-
-	--[[==================================================
-					Changelog folder
-	]]--==================================================
-
-	local Changelog =  TreePanel:AddNode( "Changelog" , "icon16/newspaper.png" )
-	Changelog.mytable = {}
-
-	Changelog.mytable.guicreate = (function( _, Table ) ACE.ChangelogGUICreate( Table ) end or nil)
-	Changelog.mytable.guiupdate = (function( _, Table ) ACE.ChangelogGUIUpdate( Table ) end or nil)
-	ACE.ChangelogMenuTable = Changelog.mytable
-
-	function Changelog:DoClick()
-		acemenupanel:UpdateDisplay(self.mytable)
-	end
-
-	end
-
 	self.WeaponSelect = TreePanel
 
 end
@@ -563,24 +544,22 @@ function ACE.HomeGUICreate()
 	if not acemenupanel.CustomDisplay then return end
 
 	local versionstring
-	local cur = ACE.CurrentVersion
-	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
-	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
 
-	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
-		if localSha == remoteSha or localSha == "dev" then
-			versionstring = "Up To Date"
-			color = Color(0,225,0,255)
-		else
-			versionstring = "Out Of Date"
-			color = Color(225,0,0,255)
-		end
+	if ACE.CurrentVersion and ACE.CurrentVersion > 0 then
+	if ACE.Version >= ACE.CurrentVersion then
+		versionstring = "Up To Date"
+		color = Color(0,225,0,255)
 	else
-		versionstring = "No internet Connection available!"
+		versionstring = "Out Of Date"
 		color = Color(225,0,0,255)
+
+	end
+	else
+	versionstring = "No internet Connection available!"
+	color = Color(225,0,0,255)
 	end
 
-	local versiontext = "GitHub Version: " .. tostring(ACE.CurrentVersion) .. "\nCurrent Version: " .. tostring(ACE.Version)
+	local versiontext = "GitHub Version: " .. ACE.CurrentVersion .. "\nCurrent Version: " .. ACE.Version
 
 	acemenupanel["CData"]["VersionInit"] = vgui.Create( "DLabel" )
 	acemenupanel["CData"]["VersionInit"]:SetText(versiontext)
@@ -597,159 +576,57 @@ function ACE.HomeGUICreate()
 	acemenupanel["CData"]["VersionText"]:SizeToContents()
 
 	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["VersionText"] )
-	-- end version (changelog moved to separate Changelog menu)
+	-- end version
 
-end
+	acemenupanel:CPanelText("Header", "Changelog")  --changelog screen
 
 --[[=========================
-	Changelog folder content
+	Changelog table maker
 ]]--=========================
---- Changelog folder content (version + blogs + GitHub commits)
-function ACE.ChangelogGUICreate()
 
-	if not acemenupanel.CustomDisplay then return end
+	if acemenupanel.Changelog then
+	acemenupanel["CData"]["Changelist"] = vgui.Create( "DTree" )
 
-	-- 1. Version + up-to-date (same as Home)
-	local cur = ACE.CurrentVersion
-	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
-	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
-	local versionstring, color
-	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
-		if localSha == remoteSha or localSha == "dev" then
-			versionstring = "Up To Date"
-			color = Color(0, 225, 0, 255)
-		else
-			versionstring = "Out Of Date"
-			color = Color(225, 0, 0, 255)
-		end
-	else
-		versionstring = "No internet Connection available!"
-		color = Color(225, 0, 0, 255)
-	end
-	local versiontext = "GitHub Version: " .. tostring(ACE.CurrentVersion) .. "\nCurrent Version: " .. tostring(ACE.Version) .. " (" .. (ACE.Branch or "master") .. ")"
-	acemenupanel["CData"]["ChangelogVersionInit"] = vgui.Create("DLabel")
-	acemenupanel["CData"]["ChangelogVersionInit"]:SetText(versiontext)
-	acemenupanel["CData"]["ChangelogVersionInit"]:SetDark(true)
-	acemenupanel["CData"]["ChangelogVersionInit"]:SizeToContents()
-	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogVersionInit"])
+	for i = 0, table.maxn(acemenupanel.Changelog) - 100 do
 
-	acemenupanel["CData"]["ChangelogVersionText"] = vgui.Create("DLabel")
-	acemenupanel["CData"]["ChangelogVersionText"]:SetFont("Trebuchet18")
-	acemenupanel["CData"]["ChangelogVersionText"]:SetText("ACE Is " .. versionstring .. "!\n")
-	acemenupanel["CData"]["ChangelogVersionText"]:SetDark(true)
-	acemenupanel["CData"]["ChangelogVersionText"]:SetColor(color)
-	acemenupanel["CData"]["ChangelogVersionText"]:SizeToContents()
-	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogVersionText"])
+		local k = table.maxn(acemenupanel.Changelog) - i
 
-	-- 2. 3 recent blog posts - disabled until website exposes GET /api/public/blog
-	-- See https://acegmod.com/wiki/using-the-ace-website-api-and-mcp-servers
-	--[[ Disabled until endpoint exists:
-	acemenupanel:CPanelText("BlogHeader", "Recent Blog Posts")
-	if acemenupanel.BlogPosts and #acemenupanel.BlogPosts > 0 then
-		for i = 1, math.min(3, #acemenupanel.BlogPosts) do
-			local post = acemenupanel.BlogPosts[i]
-			local title = post.title or post.slug or "Post " .. i
-			local url = post.url or ("https://acegmod.com/blog/" .. (post.slug or ""))
-			local btn = vgui.Create("DButton")
-			btn:SetText(title)
-			btn:SetTall(28)
-			btn.DoClick = function() gui.OpenURL(url) end
-			acemenupanel.CustomDisplay:AddItem(btn)
-		end
-	elseif acemenupanel.BlogPosts and #acemenupanel.BlogPosts == 0 then
-		acemenupanel:CPanelText("BlogEmpty", "Failed to fetch blog posts")
-	else
-		acemenupanel:CPanelText("BlogLoading", "Loading blog posts from acegmod.com...")
-		ACE.FetchBlogPosts(function(posts)
-			if IsValid(acemenupanel) and acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable.guicreate == ACE.ChangelogGUICreate then
-				acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
+		local Node = acemenupanel["CData"]["Changelist"]:AddNode( "Rev " .. k )
+			Node.mytable = {}
+			Node.mytable["rev"] = k
+				function Node:DoClick()
+
+				acemenupanel:UpdateAttribs( Node.mytable )
+
 			end
-		end)
-	end
-	--]]
+		Node.Icon:SetImage( "icon16/newspaper.png" )
 
-	-- 3. Changelog from commits
-	acemenupanel:CPanelText("ChangelogHeader", "Changelog (GitHub commits)")
-
-	if not acemenupanel.Changelog or #acemenupanel.Changelog == 0 then
-		acemenupanel:CPanelText("Loading", "Loading changelog from GitHub...")
-		ACE.FetchChangelog(nil, function()
-			if IsValid(acemenupanel) and acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable == ACE.ChangelogMenuTable then
-				acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
-			end
-		end)
-		return
 	end
 
-	acemenupanel["CData"]["Changelist"] = vgui.Create("DTree")
+	acemenupanel.CData.Changelist:SetSize( acemenupanel.CustomDisplay:GetWide(), 60 )
 
-	for i, entry in ipairs(acemenupanel.Changelog) do
-		local title = string.sub(entry.message:gsub("\n.*", ""), 1, 64)
-		if title == "" then title = entry.sha end
-		local Node = acemenupanel["CData"]["Changelist"]:AddNode(title)
-		Node.mytable = {}
-		Node.mytable["rev"] = i
-		Node.mytable["idx"] = i
-		function Node:DoClick()
-			acemenupanel:UpdateAttribs(Node.mytable)
-		end
-		Node.Icon:SetImage("icon16/newspaper.png")
-	end
+	acemenupanel.CustomDisplay:AddItem( acemenupanel["CData"]["Changelist"] )
 
-	acemenupanel.CData.Changelist:SetSize(acemenupanel.CustomDisplay:GetWide(), 200)
-	acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["Changelist"])
 	acemenupanel.CustomDisplay:PerformLayout()
-	acemenupanel:UpdateAttribs({rev = 1, idx = 1})
 
-end
+	acemenupanel:UpdateAttribs( {rev = table.maxn(acemenupanel.Changelog)} )
+	end
 
---- Updates the changelog detail view.
--- @param Table table Selected entry {rev, idx}.
-function ACE.ChangelogGUIUpdate(Table)
-	local idx = Table["idx"] or Table["rev"] or 1
-	local entry = acemenupanel.Changelog and acemenupanel.Changelog[idx]
-	if not entry then return end
-	local firstLine = entry.message:match("^[^\n]*") or entry.sha
-	local rest = entry.message:match("\n(.*)") or ""
-	-- Name + SHA/date
-	acemenupanel:CPanelText("ChangelogName", firstLine, "DermaDefaultBold")
-	acemenupanel:CPanelText("ChangelogMeta", entry.sha .. "  " .. (entry.date and string.sub(entry.date, 1, 10) or ""))
-	if rest ~= "" then
-		acemenupanel:CPanelText("ChangelogDescLabel", "Description:", "DermaDefaultBold")
-		acemenupanel:CPanelText("ChangelogDesc", rest)
-	else
-		acemenupanel:CPanelText("ChangelogDescLabel", "Description:", "DermaDefaultBold")
-		acemenupanel:CPanelText("ChangelogDesc", "(no additional details)")
-	end
-	-- GitHub button
-	if entry.url and entry.url ~= "" then
-		if not acemenupanel["CData"]["ChangelogLink"] or not IsValid(acemenupanel["CData"]["ChangelogLink"]) then
-			acemenupanel["CData"]["ChangelogLink"] = vgui.Create("DButton")
-			acemenupanel["CData"]["ChangelogLink"]:SetText("Open on GitHub")
-			acemenupanel["CData"]["ChangelogLink"]:SetTall(28)
-			acemenupanel.CustomDisplay:AddItem(acemenupanel["CData"]["ChangelogLink"])
-		end
-		acemenupanel["CData"]["ChangelogLink"].DoClick = function() gui.OpenURL(entry.url) end
-		acemenupanel["CData"]["ChangelogLink"]:SetVisible(true)
-	else
-		if acemenupanel["CData"]["ChangelogLink"] then acemenupanel["CData"]["ChangelogLink"]:SetVisible(false) end
-	end
-	acemenupanel.CustomDisplay:PerformLayout()
 end
 
 --[[=========================
-	ACE information folder content updater (version only, changelog moved)
+	ACE information folder content updater
 ]]--=========================
 function ACE.HomeGUIUpdate( Table )
 
+	acemenupanel:CPanelText("Changelog", acemenupanel.Changelog[Table["rev"]])
+	acemenupanel.CustomDisplay:PerformLayout()
+
 	local color
 	local versionstring
-	local cur = ACE.CurrentVersion
-	local localSha = isstring(ACE.Version) and string.sub(ACE.Version, 1, 7) or tostring(ACE.Version)
-	local remoteSha = isstring(cur) and string.sub(cur, 1, 7) or tostring(cur or "")
 
-	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
-		if localSha == remoteSha or localSha == "dev" then
+	if ACE.CurrentVersion > 0 then
+		if ACE.Version >= ACE.CurrentVersion then
 			versionstring = "Up To Date"
 			color = Color(0,225,0,255)
 		else
@@ -763,7 +640,7 @@ function ACE.HomeGUIUpdate( Table )
 
 	local txt
 
-	if cur and cur ~= 0 and cur ~= "" and remoteSha ~= "" and remoteSha ~= "0" then
+	if ACE.CurrentVersion > 0 then
 		txt = "ACE Is " .. versionstring .. "!\n\n"
 	else
 		txt = versionstring
@@ -777,53 +654,27 @@ function ACE.HomeGUIUpdate( Table )
 end
 
 --[[=========================
-	Changelog - GitHub commits (replaces changelog.txt)
+	Changelog.txt
 ]]--=========================
 
---- Fetches recent commit changelog from GitHub.
--- @param branch string|nil Branch to fetch, defaults to ACE.Branch or "master"/"dev".
--- @param onDone function|nil Callback with changelog table.
-function ACE.FetchChangelog(branch, onDone)
-	branch = branch or ACE.Branch or "master"
-	if isstring(ACE.Version) and ACE.Version:find("-dev") then branch = "dev" end
-	if branch == "canary" then branch = "dev" end
-	local url = "https://api.github.com/repos/ACE-Project-Team/ArmoredCombatExtended/commits?sha=" .. branch .. "&per_page=50"
+function ACE.ChangelogHTTPCallBack(contents)
+	local Temp = string.Explode( "*", contents )
 
-	http.Fetch(url, function(body, _, _, code)
-		if code ~= 200 then
-			ACE.LogWarn("Changelog fetch failed, GitHub API " .. tostring(code))
-			if onDone then onDone({}) end
-			return
-		end
-		local data = util.JSONToTable(body)
-		if not data then
-			ACE.LogWarn("Changelog fetch failed to parse JSON")
-			if onDone then onDone({}) end
-			return
-		end
-		local out = {}
-		for i, c in ipairs(data) do
-			out[i] = {
-				sha = string.sub(c.sha or "", 1, 7),
-				message = c.commit and c.commit.message or "",
-				date = c.commit and c.commit.author and c.commit.author.date or "",
-				url = c.html_url or ""
-			}
-		end
-		acemenupanel.Changelog = out
-		if onDone then onDone(out) end
-		-- refresh Changelog panel if currently open
-		if acemenupanel.ActiveDisplayTable and acemenupanel.ActiveDisplayTable == ACE.ChangelogMenuTable then
-			acemenupanel:UpdateDisplay(acemenupanel.ActiveDisplayTable)
-		end
-	end, function()
-		ACE.LogWarn("Changelog fetch no internet")
-		if onDone then onDone({}) end
-	end)
+	acemenupanel.Changelog = {}  --changelog table
+	for _,String in pairs(Temp) do
+		acemenupanel.Changelog[tonumber(string.sub(String,2,4))] = string.Trim(string.sub(String, 5))
+	end
+
+	table.SortByKey(acemenupanel.Changelog,true)
+
+	local Table = {}
+	Table.guicreate = (function( _, Table ) ACE.HomeGUICreate( Table ) end or nil)
+	Table.guiupdate = (function( _, Table ) ACE.HomeGUIUpdate( Table ) end or nil)
+	acemenupanel:UpdateDisplay( Table )
+
 end
 
--- initial fetch (lazy, no auto UpdateDisplay of Home)
-timer.Simple(2, function() ACE.FetchChangelog(nil, function() end) end)
+http.Fetch("http://raw.github.com/ACE-Project-Team/ArmoredCombatExtended/master/changelog.txt", ACE.ChangelogHTTPCallBack, function() end)
 
 --[[=========================
 	Clientside folder content

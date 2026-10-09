@@ -935,8 +935,11 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		end
 	end
 
+	-- A kinetic round that defeats the plate goes through it instead of ricocheting.
+	local Penetrated = ACE.IsKineticDamageType(Bullet.Type) and (HitRes.Overkill or 0) > 0
+
 	-- Checking for ricochet. The angle value is clamped but can cause game crashes if this overflow check doesnt exist. Why?
-	if ricoProb < math.Rand(0,1) and Angle < 90 then
+	if not Penetrated and ricoProb < math.Rand(0,1) and Angle < 90 then
 		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
 		HitRes.Loss	= 1 - Ricochet
 		-- Keep Energy as the incoming impact budget. The shared post-penetration

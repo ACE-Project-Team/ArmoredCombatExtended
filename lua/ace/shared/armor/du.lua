@@ -8,6 +8,7 @@ Material.desc		= "Heavy yet extremely effective armor. Though costly, a slab of 
 Material.year		= 1970 -- Dont blame about this, ik that RHA has existed before this year but it would be cool to see: when?
 
 Material.massMod	= 2.43
+Material.BluntTransfer = 0.12 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 1.06 --Slight and almost unnoticable penalty to high thickness armor
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

@@ -8,6 +8,7 @@ Material.desc		= "Ceramic is usually used as a material to ensure shells do not 
 Material.year		= 1955
 
 Material.massMod		= 1.2
+Material.BluntTransfer = 0.08 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 0.99
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

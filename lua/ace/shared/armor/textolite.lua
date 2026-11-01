@@ -8,6 +8,7 @@ Material.desc     = "Fiberglass based material, this material provides decent pr
 Material.year     = 1955
 
 Material.massMod  = 0.35
+Material.BluntTransfer = 0.3 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve    = 0.94
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

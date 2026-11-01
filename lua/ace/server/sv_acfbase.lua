@@ -138,7 +138,7 @@ function ACE.Check( Entity )
 	return Entity.ACE.Type
 end
 
-function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type )
+function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, Type, HitPos, Dir )
 
 	local Activated = ACE.Check( Entity )
 	local CanDo = hook.Run("ACE_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun )
@@ -163,7 +163,7 @@ function ACE.Damage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun, T
 
 	elseif Activated == "Squishy" then
 
-		hitRes = ACE.SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type)
+		hitRes = ACE.SquishyDamage( Entity , Energy , FrArea , Angle , Inflictor , Bone, Gun , Type, HitPos, Dir)
 
 	end
 
@@ -304,26 +304,35 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	}
 
 	local HitRes = ACE.CalcDamage( Target , Energy , FrArea , Angle  , Type)
+
+	local Driver = Entity:GetDriver()
+	local canDamageDriver = IsValid(Driver) and canDamagePlayer(Driver, Inflictor)
+
+	if canDamageDriver then
+		-- The seat's own armor shields the driver, resolved as a plate of its material and thickness. A bullet it
+		-- stops still passes on blunt trauma; one it lets through goes on into the driver and their body armor.
+		local Material = Entity.ACE.Material or "RHA"
+		local _, Post = ACE.ResolveArmorLayer(Driver, Material, Entity.ACE.Armour or 0, Energy, FrArea, Angle, Type)
+
+		if Post.Continue then
+			local Left = { Kinetic = Post.RemainingKinetic, Penetration = Post.RemainingPenetration, Momentum = (Energy.Momentum or 0) * Post.Remaining }
+			ACE.FleshDamage(Driver, Left, FrArea, Inflictor, HITGROUP_CHEST, Gun, nil, nil, Type)
+		else
+			ACE.FleshBlunt(Driver, (Energy.Kinetic or 0) * 1000 * (ACE.GetMaterialData(Material).BluntTransfer or 0.15), HITGROUP_CHEST, Inflictor, Gun)
+		end
+	end
+
 	if HitRes.KineticThresholdFailed then
 		HitRes.Kill = false
 		return HitRes
 	end
 
-	local Driver = Entity:GetDriver()
-	local validd = Driver:IsValid()
-	local canDamageDriver = validd and canDamagePlayer(Driver, Inflictor)
-
 	--In case of HitRes becomes NAN. That means theres no damage, so leave it as 0
 	if HitRes.Damage ~= HitRes.Damage then HitRes.Damage = 0 end
 
-	if canDamageDriver then
-		local dmg = 40
-		Driver:TakeDamage( HitRes.Damage * dmg , Inflictor, Gun )
-	end
-
 	HitRes.Kill = false
 	if HitRes.Damage >= Entity.ACE.Health then --Drivers will no longer survive seat destruction
-		if canDamageDriver then
+		if canDamageDriver and IsValid(Driver) then
 			Driver:Kill()
 		end
 		HitRes.Kill = true
@@ -335,192 +344,34 @@ function ACE.VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun, Typ
 	return HitRes
 end
 
-function ACE.SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type)
-	--local Size = Entity:BoundingRadius()
-	local Mass = Entity:GetPhysicsObject():GetMass()
-	local MaxPen = Energy.Penetration
-	local Penetration = MaxPen
-	--print("Pen: " .. math.Round(Penetration,1))
-	local MaxHealth = Entity:GetMaxHealth() --Used to set the max HP lost when hitting a nonvital part.
-	local MassRatio = Mass / 90 --Scalar for bodymass of entity. Used to make bigger creatures harder to kill.
-	local HitRes = {}
-	local Damage = 0
-	local BoneArmor = 0
-
-	local BodyArmor = 0 --Thickness of armor to determine if any damage taken.
-
-	local IsPly = false
-	if Entity:IsPlayer() then IsPly = true end
-	if IsPly and not canDamagePlayer(Entity, Inflictor) then
-		return {
-			Damage = 0,
-			Overkill = 0,
-			Loss = 0,
-			Kill = false
-		}
+-- The damage itself lives in sv_ace_squishy_damage.lua. This keeps the bullet's exit working.
+function ACE.SquishyDamage(Entity, Energy, FrArea, _, Inflictor, Bone, Gun, Type, HitPos, Dir)
+	if Entity:IsPlayer() and not canDamagePlayer(Entity, Inflictor) then
+		return { Damage = 0, Overkill = 0, Loss = 0, Kill = false }
 	end
 
-	if IsPly then
-		BodyArmor = 3 * (1 + Entity:Armor() / 100) --Thickness of armor to determine if any damage taken. Having 200 armor has a 3x body armor mult.
-		--print("BodyArmorThickness: " .. BodyArmor)
-	end
+	local BodyThickness, Layer = ACE.FleshDamage(Entity, Energy, FrArea, Inflictor, Bone or HITGROUP_GENERIC, Gun, HitPos, Dir, Type)
 
-	local FleshThickness = 5 * MassRatio --Past the armor, the thickness of flesh in RHA to do max damage. 5mm for human.
-
-	local caliber = 20 * (FrArea ^ (1 / ACE.PenAreaMod) / 3.1416) ^ 0.5
-	local BaseDamage = caliber * (4 + 0.1 * caliber)
-
-	if Bone then
-		--This means we hit the head
-		if Bone == 1 then
-			--print("Head Hit")
-			BoneArmor = MassRatio * 3.6 --3.6mm for a human skull?
-
-			if IsPly and Entity:Armor() > 75 then --High enough armor. Assume we have a helmet.
-				BoneArmor = BoneArmor + BodyArmor
-			end
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				Damage = Penetration * BaseDamage * 2.5 --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
-
-			--This means we hit the torso. We are assuming body armour/tough exoskeleton/zombie don't give fuck here, so it's tough
-		elseif Bone == 0 or Bone == 2 or Bone == 3 then
-			--print("Body Hit")
-			BoneArmor = MassRatio * 2 --2mm for a ribcage?
-
-			--If we have any armor the chest will always be protected.
-			BoneArmor = BoneArmor + BodyArmor
-
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				Damage = Penetration * BaseDamage --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
-
-		elseif Bone == 4 or Bone == 5 then
-			--print("Arm Hit")
-
-			BoneArmor = 0 --Unprotected unless covered in armor?
-
-			if IsPly and Entity:Armor() > 50 then --High enough armor. Assume we have armor/kevelar.
-				BoneArmor = BoneArmor + BodyArmor / 4
-			end
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				--As arms are nonvital you cannot take more than 20% of your health from an arm hit. Energy excluded.
-				Damage = math.min(Penetration * BaseDamage * 0.5, MaxHealth * 0.2) --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
-
-		elseif Bone == 6 or Bone == 7 then
-			--print("Leg Hit")
-			BoneArmor = MassRatio * 0 --Unprotected unless covered in armor?
-
-			if IsPly and Entity:Armor() > 50 then --High enough armor. Assume we have armor/kevelar.
-				BoneArmor = BoneArmor + BodyArmor / 4
-			end
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				--As arms are less vital you cannot take more than 30% of your health from an arm hit. Energy excluded.
-				Damage = math.min(Penetration * BaseDamage * 0.7, MaxHealth * 0.3) --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
-
-		elseif Bone == 10 then
-			--print("Leg Hit")
-			BoneArmor = 0 --Unprotected unless covered in armor?
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				--As it's entirely nonvital limit damage to 0.1x
-				Damage = math.min(Penetration * BaseDamage * 0.7, MaxHealth * 0.1) --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
-		else --Just in case we hit something not standard
-			BoneArmor = MassRatio * 2 --2mm for a ribcage?
-
-			--If we have any armor the chest will always be protected.
-			BoneArmor = BoneArmor + BodyArmor
-
-
-			if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-				Penetration = Penetration - BoneArmor
-				--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-				Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-				Damage = Penetration * BaseDamage --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			else
-				Penetration = 0
-			end
+	-- Body armor stopped the bullet. It ricochets off the armor's own surface, not the hitbox; armor whose surface
+	-- isn't known doesn't ricochet it.
+	if not BodyThickness then
+		if Layer and Layer.Normal then
+			return { Damage = 0, Overkill = 0, Loss = 1, Kill = false, HitNormal = Layer.Normal, RicochetArmour = Layer.Armour }
 		end
-	else --Just in case we hit something not standard
-		BoneArmor = MassRatio * 2 --2mm for a ribcage?
 
-		--If we have any armor the chest will always be protected.
-		BoneArmor = BoneArmor + BodyArmor
-
-
-		if Penetration > BoneArmor then --We penetrated any armor. Now do damage.
-			Penetration = Penetration - BoneArmor
-			--print("PenRemaining: " .. math.Round(Penetration-FleshThickness,1))
-			Penetration = math.min(Penetration / FleshThickness,1) -- Gets fraction penetrated
-
-			Damage = Penetration * BaseDamage --If we penetrate the armour then we get into the important bits inside, so DAMAGE
-		end
+		return { Damage = 0, Overkill = 0, Loss = 1, Kill = false, NoRicochet = true }
 	end
-
-	--if Type == "Spall" then
-		--dmg = 0.03
-		--print(Damage * dmg)
-	--end
-
-	--print("SquishyDamage: " .. math.Round(Damage,1))
-	--print("PenFraction: " .. math.Round(Penetration,1))
-
-	--local MaxDig = (( Energy.Penetration * 1 / Bullet.PenArea ) * ACE.KEtoRHA / ACE.GroundtoRHA ) / 25.4
-	--local EnergyRatio =  (FleshThickness * Penetration) / MaxPen
-	local EnergyAbsorbed = Penetration * (Energy.Kinetic or 0) --Technically unrealistic but eh. I'll look up a more advanced model for hydralic pressure eventually.
-	--print("Energy Absorbed: " .. EnergyAbsorbed .. "Kj")
-
-	Damage = Damage + EnergyAbsorbed --1 damage every 2 Kj absorbed.
-
-	Entity:TakeDamage(Damage, Inflictor, Gun)
-	HitRes.Kill = false
 
 	--We create a dummy table to pass armour values to the calc function
 	local Target = {
 		ACE = {
-			Armour = BoneArmor + FleshThickness
+			Armour = BodyThickness
 		}
 	}
 
-	HitRes = ACE.CalcDamage(Target, Energy, FrArea, 0, Type)
+	local HitRes = ACE.CalcDamage(Target, Energy, FrArea, 0, Type)
+	HitRes.Kill = false
+	HitRes.NoRicochet = true -- Bullets don't glance off flesh
 
 	return HitRes
 end

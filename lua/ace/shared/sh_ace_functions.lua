@@ -565,6 +565,14 @@ function ACE.CheckMaterial( MatId )
 
 end
 
+--- Whether players may put this material on a prop: it exists, isn't hidden, and fits ACE.Year.
+-- @param Mat string ACE material id
+-- @return boolean
+function ACE.IsMaterialAllowed( Mat )
+	local MatData = ACE.ArmorTypes[Mat]
+	return MatData ~= nil and not MatData.hidden and (ACE.Year or 0) >= (MatData.year or 0)
+end
+
 function ACE.CheckRound( id )
 
 	local rounddata = ACE.RoundTypes[ id ]

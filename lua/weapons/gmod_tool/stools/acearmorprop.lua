@@ -44,8 +44,41 @@ local function CalcArmor( Area, Ductility, Thickness, Mat )
 end
 
 
+-- Pasted materials the server doesn't allow are converted to RHA; the paster gets one warning
+-- per paste, debounced because AdvDupe2 applies modifiers over many ticks.
+local MaterialWarnings = {}
+
+hook.Add( "PlayerDisconnected", "ACE_MaterialWarn", function( ply )
+	MaterialWarnings[ply:EntIndex()] = nil
+end )
+
+local function WarnDisallowedMaterial( ply, MatId )
+	if not IsValid( ply ) then return end
+
+	local Key = ply:EntIndex()
+	local Entry = MaterialWarnings[Key] or { Ply = ply, Counts = {} }
+	MaterialWarnings[Key] = Entry
+	Entry.Counts[MatId] = (Entry.Counts[MatId] or 0) + 1
+
+	timer.Create( "ACE_MaterialWarn_" .. Key, 1, 1, function()
+		local Data = MaterialWarnings[Key]
+		MaterialWarnings[Key] = nil
+		if not Data or not IsValid( Data.Ply ) then return end
+
+		local Parts = {}
+		for Id, Count in pairs( Data.Counts ) do
+			Parts[#Parts + 1] = Id .. " (" .. Count .. (Count == 1 and " prop)" or " props)")
+		end
+		table.sort( Parts )
+
+		ACE.SendMsg( Data.Ply, Color( 255, 0, 0 ),
+			"[ACE] This dupe uses armor materials this server doesn't allow: " .. table.concat( Parts, ", " )
+			.. ". They were converted to RHA of the same weight. Don't save over your original dupe, or the original materials will be lost." )
+	end )
+end
+
 -- Apply tool settings to a prop and store duplicator metadata.
-local function ApplySettings( _, ent, data )
+local function ApplySettings( ply, ent, data )
 
 	if not SERVER then return end
 
@@ -65,6 +98,11 @@ local function ApplySettings( _, ent, data )
 	local con = ent:CFW_GetContraption()
 
 	if data.Material then
+		if not isstring( data.Material ) then data.Material = ACE.BackCompMat[data.Material] or data.Material end
+		if not ACE.IsMaterialAllowed( data.Material ) then
+			WarnDisallowedMaterial( ply, data.Material )
+			data.Material = "RHA"
+		end
 		ACE.GetEntityState(ent, true)
 		ent.ACE.Material = data.Material
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Material = data.Material } )
@@ -91,6 +129,11 @@ function TOOL:LeftClick( trace )
 	local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
 	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
 	local material  = self:GetClientInfo( "material" ) or "RHA"
+
+	if not ACE.IsMaterialAllowed( material ) then
+		ACE.SendMsg( ply, Color( 255, 0, 0 ), "[ACE] " .. material .. " is not an armor material this server allows." )
+		return false
+	end
 
 	local mass		= CalcArmor( ent.ACE.Area, ductility / 100, thickness , material)
 

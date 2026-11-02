@@ -173,6 +173,32 @@ function ACE.GetMaterialName( Mat )
 	return GroundMat
 end
 
+local YellowBlooded = {
+	[BLOOD_COLOR_YELLOW] = true,
+	[BLOOD_COLOR_GREEN] = true,
+	[BLOOD_COLOR_ANTLION] = true,
+	[BLOOD_COLOR_ANTLION_WORKER] = true,
+	[BLOOD_COLOR_ZOMBIE] = true,
+}
+
+--- Decal an entity's blood leaves behind, or nil if the hit shouldn't leave one.
+-- Blood color isn't networked, so a client only knows it for the local player; other
+-- players and NPCs fall back to red blood.
+-- @param Entity Entity The entity that was hit
+-- @return string|nil Decal material name
+function ACE.GetBloodDecal( Entity )
+	if not IsValid( Entity ) then return nil end
+
+	local BloodColor = Entity.GetBloodColor and Entity:GetBloodColor()
+
+	if YellowBlooded[BloodColor] then return "YellowBlood" end
+	if BloodColor == BLOOD_COLOR_MECH then return "Impact.Concrete" end
+	if BloodColor == BLOOD_COLOR_DONT_BLEED and ( SERVER or not ( Entity:IsPlayer() or Entity:IsNPC() ) ) then return nil end
+	if not ( Entity:IsPlayer() or Entity:IsNPC() ) then return nil end
+
+	return "Blood"
+end
+
 -- changes here will be automatically reflected in the armor properties tool
 function ACE.CalcArmor( Area, Ductility, Mass )
 

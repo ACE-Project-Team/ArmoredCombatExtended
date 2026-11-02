@@ -1432,8 +1432,7 @@ do
 			if not check then return end
 		end
 
-		local matData = ACE.ArmorTypes[material]
-		if not matData then return end
+		if not ACE.IsMaterialAllowed(material) then return end
 
 		E2SetACEArmor(this, thickness, ductility, material)
 

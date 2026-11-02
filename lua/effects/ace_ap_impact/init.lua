@@ -123,11 +123,14 @@ function EFFECT:Init( data )
 			--DecalMat = "Impact.Glass"
 		elseif  MatVal == "Flesh"  then
 			self:Flesh( Color( 100,0,0, 150 ) )
+			DecalMat = ACE.GetBloodDecal( SurfaceTr.Entity )
 		else
 			self:Dust( SMKColor )
 		end
 
-		util.Decal(DecalMat, SurfaceTr.StartPos, self.Origin + self.DirVec * 10 )
+		if DecalMat then
+			util.Decal(DecalMat, SurfaceTr.StartPos, self.Origin + self.DirVec * 10 )
+		end
 		ACE.SBulletImpact( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
 
 	end

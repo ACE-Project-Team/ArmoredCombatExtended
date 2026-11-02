@@ -86,11 +86,14 @@ function EFFECT:Init( data )
 			--DecalMat = "Impact.Glass"
 		elseif  MatVal == "Flesh"  then
 			self:Flesh( Color( 100,0,0, 150 ) )
+			DecalMat = nil
 		else
 			self:Dust( SMKColor )
 		end
 
-	util.Decal(DecalMat, self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10 )
+	if DecalMat then
+		util.Decal(DecalMat, self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10 )
+	end
 	ACE.SRicochet( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
 
 	local Energy = (self.Mass * (self.Velocity / 39.37) ^2) / 1700000

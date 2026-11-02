@@ -141,12 +141,15 @@ function EFFECT:Init( data )
 			--DecalMat = "Impact.Glass"
 		elseif  MatVal == "Flesh"  then
 			self:Flesh( Color( 100,0,0, 150 ) )
+			DecalMat = ACE.GetBloodDecal( SurfaceTr.Entity )
 		else
 			self:Dust( SMKColor )
 		end
 
-		util.Decal(DecalMat, FTrace.StartPos, FTrace.HitPos + self.DirVec * 50, nil )
-		util.Decal(DecalMat, BTrace.StartPos, BTrace.HitPos - self.DirVec * 50, BackTraceFilter )
+		if DecalMat then
+			util.Decal(DecalMat, FTrace.StartPos, FTrace.HitPos + self.DirVec * 50, nil )
+			util.Decal(DecalMat, BTrace.StartPos, BTrace.HitPos - self.DirVec * 50, BackTraceFilter )
+		end
 
 		self.Normal = FTrace.HitNormal
 		if IsValid(FTrace.Entity) then

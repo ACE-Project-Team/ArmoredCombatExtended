@@ -1,0 +1,10 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/ace/wearables/ace_shell"
+	"$bumpmap" "models/ace/wearables/ace_shell_n"
+	"$color2" "[0.078 0.078 0.072]"
+	"$phong" "1"
+	"$phongexponent" "15"
+	"$phongboost" "0.4"
+	"$phongfresnelranges" "[0.3 0.6 1]"
+}

@@ -434,6 +434,7 @@ include("ace/shared/compatibility/cppiCompatibility.lua")
 include("ace/shared/sh_crewseat_base.lua")
 AddCSLuaFile("ace/shared/sh_crewseat_base.lua")
 AddCSLuaFile("ace/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_ace_wearables.lua")
 
 if SERVER then
 

@@ -766,8 +766,9 @@ function ENT:CalcRPM()
 				Penetration = (1 + math.max(Mass / 2, 20) / 2.5) * 5 * self.Throttle / 100
 			}, 2, 0, self:CPPIGetOwner())
 
-			if math.Rand(0,1) > 0.99 * HealthRatio * 1.2 then
-				self:EmitSound( "ambient/materials/door_hit1.wav", 120, math.random(45,100)  ) --npc/strider/strider_step4.wav
+			if math.Rand(0,1) > 0.99 * HealthRatio * 1.2 and CurTime() >= (self.NextDamageClank or 0) then
+				self.NextDamageClank = CurTime() + 0.6
+				self:EmitSound( "ambient/materials/door_hit1.wav", 75, math.random(45,100), 0.4 ) --npc/strider/strider_step4.wav
 			end
 
 		else

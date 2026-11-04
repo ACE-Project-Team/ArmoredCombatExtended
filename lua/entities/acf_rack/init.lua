@@ -640,6 +640,7 @@ function ENT:AddMissile(MissileSlot) --Where the majority of the missile paramat
 	missile.StraightRunning = ACE.GetRackValue(BulletData, "predictiondelay") or ACE.GetGunValue(BulletData.Id, "predictiondelay") or 1.25
 	missile.StringName = (ACE.GetRackValue(BulletData, "name") or ACE.GetGunValue(BulletData.Id, "name") or "") .. " - " .. BulletData.Type
 	missile.MinStartDelay = ACE.GetRackValue(BulletData, "armdelay") or ACE.GetGunValue(BulletData.Id, "armdelay") or 0.3
+	missile.GhostTime = ACE.GetRackValue(BulletData, "ghosttime") or ACE.GetGunValue(BulletData.Id, "ghosttime") or 0
 
 	missile.MissileVelocityMul = ACE.GetRackValue(BulletData, "velmul") or ACE.GetGunValue(BulletData.Id, "velmul") or 3
 	missile.MissileCalMul = ACE.GetRackValue(BulletData, "calmul") or ACE.GetGunValue(BulletData.Id, "calmul") or 1

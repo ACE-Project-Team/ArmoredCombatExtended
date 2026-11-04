@@ -1,5 +1,6 @@
 SWEP.PrintName = "XM1014"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 1200
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Shotguns"
 SWEP.Purpose = "SO MUCH RECOIL"

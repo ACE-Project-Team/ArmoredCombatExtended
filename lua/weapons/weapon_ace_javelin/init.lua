@@ -10,7 +10,10 @@ function SWEP:Equip()
 
 	self.BulletData.Filter = {self:GetOwner()}
 
-	self:GetOwner():GiveAmmo( 4 * self.Primary.ClipSize, self.Primary.Ammo , false )
+	local owner = self:GetOwner()
+	if owner:IsPlayer() then
+		owner:GiveAmmo( 4 * self.Primary.ClipSize, self.Primary.Ammo , false )
+	end
 end
 
 

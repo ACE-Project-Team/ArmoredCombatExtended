@@ -1,5 +1,6 @@
 SWEP.PrintName = "AWP"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 15000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Sniper Rifles"
 SWEP.Purpose = "Powerful sniper rifle"
@@ -24,6 +25,7 @@ SWEP.ReloadSound = "Weapon_Pistol.Reload" --Sound other players hear when you re
 
 SWEP.ZoomFOV = 10
 SWEP.HasScope = true --True if the weapon has a sniper-style scope
+SWEP.NPCLookDistance = 20000
 SWEP.ReticuleSize = 10
 
 --Recoil (crosshair movement) settings--

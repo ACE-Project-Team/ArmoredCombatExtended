@@ -1,5 +1,6 @@
 SWEP.PrintName = "USP"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 1500
 SWEP.Spawnable = true
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Pistols"

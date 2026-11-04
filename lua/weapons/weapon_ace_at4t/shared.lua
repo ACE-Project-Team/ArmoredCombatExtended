@@ -1,5 +1,6 @@
 SWEP.PrintName = "AT-4 Proto"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCUsable = false --Not offered to NPCs
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Clear Backblast!"

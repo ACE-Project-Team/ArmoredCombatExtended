@@ -4,6 +4,8 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 local TraceMissileLOS = include("ace/shared/sh_ace_missiletrace.lua")
 
+local LauncherIgnoreTime = 0.5 --Seconds a player or NPC launcher can't be hit by its own missile
+
 DEFINE_BASECLASS("acf_explosive")
 
 --local GunTable	= ACE.Weapons.Guns
@@ -114,6 +116,7 @@ end
 function ENT:Think()
 
 	if self.Exploded then return true end
+	if not self.LastThink then return true end --Initialize did not finish, so there is no flight state to step
 
 	local CT = ACE.CurTime
 	DeltaTime = CT - self.LastThink
@@ -483,11 +486,27 @@ function ENT:Think()
 		--Detonation by fuse, if available
 
 		if self.CanDetonate == true then
-			local tr = TraceMissileLOS(
-				Pos + self.Flight * DeltaTime * -30,
-				Pos + self.Flight * DeltaTime * 49,
-				{self}
-			)
+			local tr = { Hit = false }
+
+			--Nothing is hit during the missile's ghost time, so it clears whatever launched it
+			if CT >= self.TimeOfLaunch + (self.GhostTime or 0) then
+				local Back = self.Flight * DeltaTime * -30
+
+				--Never look back past the launch point, or the first step reaches into the launcher
+				if self.LaunchPos then
+					local Flown = Pos:Distance(self.LaunchPos)
+					if Back:Length() > Flown then Back = Back:GetNormalized() * Flown end
+				end
+
+				--A player or NPC launcher is not part of a contraption, so it is filtered out for the first moments of flight
+				local Filter = {self}
+				local Launcher = self.Launcher
+				if IsValid(Launcher) and (Launcher:IsPlayer() or Launcher:IsNPC()) and CT < self.TimeOfLaunch + LauncherIgnoreTime then
+					Filter[2] = Launcher
+				end
+
+				tr = TraceMissileLOS(Pos + Back, Pos + self.Flight * DeltaTime * 49, Filter)
+			end
 
 			--[[
 			self.LOSTraceData.start = Pos + self.Flight * DeltaTime * -30
@@ -616,6 +635,7 @@ function ENT:ConfigureLaunch()
 
 	--self.GuidanceActivationDelay = self.GuidanceActivationDelay + CT
 	self.MissilePosition = self:GetPos()
+	self.LaunchPos = self.MissilePosition
 
 	local CT = CurTime()
 	ACE.ActiveMissiles[self] = true
@@ -669,7 +689,9 @@ function ENT:Detonate()
 	self.Bulletdata2["Flight"] = self.Flight * 39.37 * self.MissileVelocityMul
 
 	self.Bulletdata2.Pos = self:GetPos()
-	self.Bulletdata2.Owner = self:CPPIGetOwner()
+	--Prop protection only takes players as owners, so an NPC launch keeps its shooter in DamageOwner
+	local Shooter = self.DamageOwner
+	self.Bulletdata2.Owner = isentity(Shooter) and IsValid(Shooter) and Shooter or self:CPPIGetOwner()
 
 	self.CreateShell = ACE.RoundTypes[self.Bulletdata2.Type].create
 	self:CreateShell( self.Bulletdata2 )

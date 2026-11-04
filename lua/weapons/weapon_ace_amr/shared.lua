@@ -1,5 +1,6 @@
 SWEP.PrintName = "Anti Materiel Rifle"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 15000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Oversized Tank Sniper"
@@ -24,6 +25,7 @@ SWEP.ReloadSound = "Weapon_Pistol.Reload" --Sound other players hear when you re
 SWEP.ReticuleSize = 10
 SWEP.ZoomFOV = 20
 SWEP.HasScope = true --True if the weapon has a sniper-style scope
+SWEP.NPCLookDistance = 20000
 
 
 --Recoil (crosshair movement) settings--

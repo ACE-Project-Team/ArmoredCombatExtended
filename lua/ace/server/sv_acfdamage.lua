@@ -92,6 +92,14 @@ function ACE.HE( Hitpos , _ , FillerMass, FragMass, Inflictor, NoOcc, Gun, Blast
 	)
 
 	local Radius       = ACE.CalculateHERadius(FillerMass) -- Scalling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m.
+
+	--- Fires for every HE explosion, before any damage is dealt.
+	-- @tparam Vector pos Where the explosion is centred.
+	-- @tparam number radius The blast radius, in units.
+	-- @tparam Entity inflictor Whoever caused it, which may be NULL.
+	-- @tparam Entity gun The gun, missile or grenade it came from, which may be NULL.
+	-- @realm server
+	hook.Run("ACE_OnExplosion", Hitpos, Radius, Inflictor, Gun)
 	local MaxSphere    = 4 * PI * (Radius * 2.54) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Power        = FillerMass * ACE.HEPower -- Power in KiloJoules of the filler mass of  TNT
 	local Amp          = math.min(Power / 2000, 50)

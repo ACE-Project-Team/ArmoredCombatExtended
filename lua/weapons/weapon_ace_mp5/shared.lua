@@ -1,5 +1,6 @@
 SWEP.PrintName = "MP5"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 2500
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Submachine Guns"
 SWEP.Purpose = "Rush A"

@@ -23,7 +23,7 @@ function SWEP:ACEFireBullet(Position, Direction)
 
 	local ShooterEnt = self:GetParent()
 
-	if ShooterEnt:IsPlayer() then
+	if ShooterEnt:IsPlayer() or ShooterEnt:IsNPC() then
 		self.BulletData.Owner = ShooterEnt
 	else
 		self.BulletData.Owner = ShooterEnt:CPPIGetOwner() or ShooterEnt:GetOwner() or ShooterEnt
@@ -35,6 +35,13 @@ function SWEP:ACEFireBullet(Position, Direction)
 	if self.BeforeFire then
 		self:BeforeFire()
 	end
+
+	--- Fires when an ACE SWEP shoots, before the bullet is created.
+	-- @tparam Weapon wep The ACE SWEP that fired.
+	-- @tparam Entity owner The player or NPC holding the weapon.
+	-- @tparam table bulletData The bullet data. Pos is the start position and Flight the velocity vector.
+	-- @realm server
+	hook.Run("ACE_SWEPFired", self, ShooterEnt, self.BulletData)
 
 	ACE.CreateBullet(self.BulletData)
 end
@@ -109,7 +116,8 @@ function SWEP:DoAmmoStatDisplay()
 		sendInfo = sendInfo .. string.format(", (2)%.1fmm pen", MaxPen)
 	end
 
-	ACE.SendNotification(self:GetOwner(), sendInfo, 10)
+	local Owner = self:GetOwner()
+	if IsValid(Owner) and Owner:IsPlayer() then ACE.SendNotification(Owner, sendInfo, 10) end
 end
 
 function SWEP:Equip()
@@ -121,7 +129,10 @@ function SWEP:Equip()
 
 	local owner = self:GetOwner()
 	if not owner:IsPlayer() then
-		owner:SetMaxLookDistance( 10000 )
+		owner:SetMaxLookDistance( self.NPCLookDistance or 10000 )
+		-- The engine stops an NPC firing past this weapon field, which defaults far
+		-- shorter than ACE weapons reach.
+		self:SetSaveValue( "m_fMaxRange1", self.NPCMaxRange or 4000 )
 	end
 end
 
@@ -157,11 +168,13 @@ end
 function SWEP:Deploy()
 	local owner = self:GetOwner()
 
-	self.NormalPlayerWalkSpeed = owner:GetWalkSpeed()
-	self.NormalPlayerRunSpeed = owner:GetRunSpeed()
+	if owner:IsPlayer() then
+		self.NormalPlayerWalkSpeed = owner:GetWalkSpeed()
+		self.NormalPlayerRunSpeed = owner:GetRunSpeed()
 
-	owner:SetWalkSpeed( self.NormalPlayerWalkSpeed * self.CarrySpeedMul )
-	owner:SetRunSpeed( self.NormalPlayerRunSpeed * self.CarrySpeedMul * 0.8)
+		owner:SetWalkSpeed( self.NormalPlayerWalkSpeed * self.CarrySpeedMul )
+		owner:SetRunSpeed( self.NormalPlayerRunSpeed * self.CarrySpeedMul * 0.8)
+	end
 	self:SetNextPrimaryFire( CurTime() + self.DeployDelay )
 	self:Think()
 	self:DoAmmoStatDisplay()

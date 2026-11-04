@@ -1027,6 +1027,7 @@ function ACE.GenerateMissile(MissileData,Crate,BData) --Shorthand function for g
 
 	missile.StraightRunning = MissileData.DelayPrediction or 0.5
 	missile.MinStartDelay = MissileData.ArmDelay or 0.3
+	missile.GhostTime = MissileData.GhostTime or 0
 
 	missile.MissileVelocityMul = MissileData.MissileVelocityMul or MissileData.velmul or ACE.GetGunValue(BData.Id, "velmul") or 3
 	missile.MissileCalMul = MissileData.MissileCalMul or MissileData.calmul or ACE.GetGunValue(BData.Id, "calmul") or 1

@@ -1,5 +1,6 @@
 SWEP.PrintName = "AT-4"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 3000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Clear Backblast!"
@@ -134,6 +135,9 @@ function SWEP:InitBulletData()
 end
 
 
+SWEP.LaunchSpeed = 234 --Rocket speed off the tube, in m/s
+SWEP.LaunchDrag = 0.003
+
 function SWEP:PrimaryAttack()
 
 	if self:Clip1() == 0 and self:Ammo1() > 0 then
@@ -153,12 +157,17 @@ function SWEP:PrimaryAttack()
 
 		if SERVER then
 
+			local LaunchDir = owner:GetAimVector()
+			if not owner:IsPlayer() then
+				LaunchDir = self:GetNPCLaunchDir()
+			end
+
 			local MDat = {
 				Owner = owner,
 				Launcher = owner,
 
-				Pos = owner:GetShootPos() + owner:GetAimVector() * 1500,
-				Ang = owner:GetAimVector():Angle(),
+				Pos = owner:GetShootPos() + LaunchDir * 75,
+				Ang = LaunchDir:Angle(),
 
 				Mdl = "models/munitions/round_100mm_mortar_shot.mdl",
 
@@ -166,7 +175,7 @@ function SWEP:PrimaryAttack()
 				FinMul = 0,
 				ThrusterTurnRate = 0,
 
-				InitialVelocity = 234,
+				InitialVelocity = self.LaunchSpeed,
 				Thrust = 0,
 				BurnTime = 5,
 				MotorDelay = 0,
@@ -175,7 +184,7 @@ function SWEP:PrimaryAttack()
 				BoostTime = 0,
 				BoostDelay = 0,
 
-				Drag = 0.003,
+				Drag = self.LaunchDrag,
 				GuidanceName = "Dumb",
 				FuseName = "Contact",
 				HasInertial = false,
@@ -211,6 +220,8 @@ function SWEP:PrimaryAttack()
 			else
 				self:TakePrimaryAmmo(1)
 			end
+		else
+			self:TakePrimaryAmmo(1) --NPC owners have no RemoveAmmo, so the clip is the only count
 		end
 
 	end

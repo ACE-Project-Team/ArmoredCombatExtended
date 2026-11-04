@@ -3,6 +3,7 @@ AddCSLuaFile( "shared.lua" )
 --include("shared.lua")
 
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCUsable = false --Not offered to NPCs
 SWEP.Category = "ACE Tools"
 SWEP.SubCategory = "Tools"
 

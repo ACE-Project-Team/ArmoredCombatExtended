@@ -1,5 +1,6 @@
 SWEP.PrintName = "Benelli M3"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 1200
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Shotguns"
 SWEP.Purpose = "Breach AND Clear. Buckshot style."

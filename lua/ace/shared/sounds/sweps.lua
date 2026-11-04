@@ -1,12 +1,57 @@
 if SERVER then
 	util.AddNetworkString("ACE_SWEPSounds")
+	util.AddNetworkString("ACE_SWEPPrecache")
 
-	function ACE.NetworkSPEffects(ent, propmass)
+	-- Clients load a weapon's fire sounds when it spawns, not on its first shot: a far NPC's weapon never reaches them, so they would otherwise first hear of it mid-fight.
+	local announcedSounds = {}
+
+	local function SendPrecache(sounds, targets)
+		net.Start("ACE_SWEPPrecache")
+		net.WriteUInt(#sounds, 16)
+		for _, snd in ipairs(sounds) do
+			net.WriteString(snd)
+		end
+		net.Send(targets)
+	end
+
+	hook.Add("OnEntityCreated", "ACE_SWEPPrecache", function(ent)
+		if not ent:IsWeapon() then return end
+
+		-- The weapon's table is filled in after this hook
+		timer.Simple(0, function()
+			if not IsValid(ent) or not ent.Primary then return end
+
+			local snd = ent.Primary.Sound
+			if not snd or announcedSounds[snd] or not ACE.GSounds.GunFire[snd] then return end
+
+			announcedSounds[snd] = true
+			SendPrecache({ snd }, player.GetHumans())
+		end)
+	end)
+
+	-- A joining client asks once it can receive, for the weapons spawned before it arrived
+	net.Receive("ACE_SWEPPrecache", function(_, ply)
+		if ply.ACE_SWEPPrecacheSent then return end
+		ply.ACE_SWEPPrecacheSent = true
+
+		SendPrecache(table.GetKeys(announcedSounds), ply)
+	end)
+
+	-- The shooter's position and sound go along with the weapon: a client far away has no copy of an NPC or its weapon, so it cannot read them from the entity.
+	local function SendFireSound(ent, propmass, targets)
+		local owner = ent:GetOwner()
+		local shooter = IsValid(owner) and owner or ent
 
 		net.Start("ACE_SWEPSounds", true)
 		net.WriteEntity(ent)
 		net.WriteFloat(propmass)
-		net.Send(ent:GetOwner())
+		net.WriteVector(shooter:GetPos())
+		net.WriteString(ent.Primary.Sound or "")
+		net.Send(targets)
+	end
+
+	function ACE.NetworkSPEffects(ent, propmass)
+		SendFireSound(ent, propmass, ent:GetOwner())
 	end
 
 	-- The previous networking function. Removed owner from vars since ent (the swep) already has the owner and sounds networked in it.
@@ -20,26 +65,51 @@ if SERVER then
 			end
 		end
 
-		net.Start("ACE_SWEPSounds", true)
-		net.WriteEntity(ent)
-		net.WriteFloat(propmass)
-		net.Send(targets)
+		SendFireSound(ent, propmass, targets)
 	end
 
 else
-	-- We receive data from server. Perform actions according to game type.
+	local precachedSounds = {}
+
+	net.Receive("ACE_SWEPPrecache", function()
+		for _ = 1, net.ReadUInt(16) do
+			local snd = net.ReadString()
+			local data = ACE.GSounds.GunFire[snd]
+
+			if data and not precachedSounds[snd] then
+				precachedSounds[snd] = true
+
+				for _, distanced in pairs(data) do
+					if istable(distanced) and distanced.Package then
+						for _, path in ipairs(distanced.Package) do
+							util.PrecacheSound(path)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	hook.Add("InitPostEntity", "ACE_SWEPPrecache", function()
+		net.Start("ACE_SWEPPrecache")
+		net.SendToServer()
+	end)
+
+	-- We receive data from server. In singleplayer our own shots are not predicted, so the server tells us to play them here.
+	-- Everyone else's shots, NPCs included, go through the distance-based gunfire sound.
 	net.Receive("ACE_SWEPSounds", function()
 
 		local swep = net.ReadEntity()
 		local propmass = net.ReadFloat()
+		local origin = net.ReadVector()
+		local sound = net.ReadString()
+		local owner = IsValid(swep) and swep:GetOwner()
 
-		if IsValid(swep) then
-			if game.SinglePlayer() then
-				swep.ACEPropmass = propmass
-				swep:DoSPClientEffects()
-			else
-				ACE.SGunFire(swep:GetOwner(), swep.Primary.Sound, 1, propmass)
-			end
+		if owner == LocalPlayer() then
+			swep.ACEPropmass = propmass
+			swep:DoSPClientEffects()
+		else
+			ACE.SGunFire(owner, sound, 1, propmass, origin)
 		end
 	end)
 end

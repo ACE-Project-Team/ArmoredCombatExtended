@@ -1,5 +1,6 @@
 SWEP.PrintName = "XM25"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 3000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Lob HE behind cover"

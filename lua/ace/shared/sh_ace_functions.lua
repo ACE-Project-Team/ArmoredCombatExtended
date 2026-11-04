@@ -671,6 +671,8 @@ if SERVER then
 	end
 
 	function ACE.SendNotification(ply, hint, duration)
+		if isentity(ply) and not ply:IsPlayer() then return end --NPC owners have no client to notify
+
 		net.Start("ACE_SendMessage")
 		net.WriteBool(true)
 		net.WriteString(hint)

@@ -1,5 +1,6 @@
 SWEP.PrintName = "FIM-92 Stinger"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCUsable = false --Not offered to NPCs
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Fire and forget about it"

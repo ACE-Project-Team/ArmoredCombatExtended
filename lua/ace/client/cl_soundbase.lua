@@ -526,13 +526,17 @@ do
 	-- Nothing is accessing it so avoid globals everywhere
 	local fireSoundPackageIndex = {}
 
-	function ACE.SGunFire( Gun, Sound, PitchOverride, Propellant )
-		if not IsValid(Gun) then return end
+	-- Origin is used when Gun is not on this client, such as an NPC shooting far away
+	function ACE.SGunFire( Gun, Sound, PitchOverride, Propellant, Origin )
+		local HasGun = IsValid(Gun)
+		if not HasGun and not Origin then return end
 		if not Sound or Sound == "" then return end
 
 		Propellant = math.max(Propellant,50)
 
 		local hearingPos = getHearingPos(ACE.SGetHearingEntity( LocalPlayer() ))
+		local gunPos = HasGun and Gun:GetPos() or Origin
+		local gunID = HasGun and Gun:EntIndex() or Sound
 
 		local event = newSoundEvent({
 			Sound = Sound or "",
@@ -540,9 +544,9 @@ do
 			SoundLevel = 100,
 			Pitch = PitchOverride,
 
-			Duration = ACE.GetDistanceTime((hearingPos - Gun:GetPos()):Length()),
+			Duration = ACE.GetDistanceTime((hearingPos - gunPos):Length()),
 
-			Origin = Gun:GetPos()
+			Origin = gunPos
 		})
 
 		function event:OnArrived()
@@ -556,7 +560,6 @@ do
 			local soundDistance = getFireSoundDistance(dist, Propellant * 40 * ACE.DistanceMultipler)
 			local soundData = ACE.GSounds["GunFire"][Sound]
 			local volFix = 1
-			local gunID	= Gun:EntIndex()
 
 			-- using the old gunid, but wont that cause memory leak?
 			if soundData then

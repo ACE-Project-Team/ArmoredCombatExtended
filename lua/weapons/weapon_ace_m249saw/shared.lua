@@ -1,5 +1,6 @@
 SWEP.PrintName = "M249 SAW"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 5000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "LMGs"
 SWEP.Purpose = "SUPPRESSING FIIIIRRRRREEEEE!!!!!! BRATATAT"

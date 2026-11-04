@@ -1,5 +1,6 @@
 SWEP.PrintName = "P228"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 1500
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Pistols"
 SWEP.Purpose = "AP Pistol"

@@ -1,5 +1,6 @@
 AddCSLuaFile("shared.lua")
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCMaxRange = 1000
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Grenades/Mines"
 
@@ -35,6 +36,12 @@ SWEP.Primary.DefaultClip	= 5
 SWEP.Primary.Automatic		= false
 SWEP.Primary.Ammo		= "Grenade"
 
+-- NPC throw settings (units are Hammer units, 39.37 per metre)
+SWEP.NPCThrowMinRange = 300 --Enemies closer than this are not grenaded
+SWEP.NPCThrowMaxRange = 1200 --Enemies farther than this are not grenaded
+SWEP.NPCThrowHorizontalSpeed = 600 --Constant horizontal speed of the lob
+SWEP.NPCThrowCooldown = 5 --Seconds between NPC throws
+
 SWEP.JustDeployed = true
 
 function SWEP:Deploy()
@@ -46,6 +53,20 @@ function SWEP:Deploy()
 	self:DoAmmoStatDisplay()
 
 	return true
+end
+
+-- Shared entity setup for player and NPC throws.
+local function SpawnGrenadeEntity(owner, pos, ang)
+	local ent = ents.Create("ace_grenade")
+	ent:SetPos(pos)
+	ent:SetAngles(ang)
+	ent:Spawn()
+	if CPPI then
+		ent:CPPISetOwner( Entity(0) )
+	end
+	ent.DamageOwner = owner -- Done to avoid owners from manipulating the entity, but allowing the damage to be credited by him.
+
+	return ent
 end
 
 function SWEP:ThrowNade(power, heightoffset)
@@ -80,21 +101,61 @@ function SWEP:ThrowNade(power, heightoffset)
 
 		local aim = owner:GetAimVector() * 9 + Vector(0,0,0.1)
 
-		local ent = ents.Create("ace_grenade")
-		ent:SetPos(owner:GetShootPos() + Vector(0, 0, heightoffset))
-		ent:SetAngles(owner:EyeAngles())
-		ent:Spawn()
+		local ent = SpawnGrenadeEntity(owner, owner:GetShootPos() + Vector(0, 0, heightoffset), owner:EyeAngles())
 		ent:GetPhysicsObject():ApplyForceCenter(aim * power + owner:GetVelocity() * ent:GetPhysicsObject():GetMass())
-		if CPPI then
-			ent:CPPISetOwner( Entity(0) )
-		end
-		ent.DamageOwner = owner -- Done to avoid owners from manipulating the entity, but allowing the damage to be credited by him.
 	end)
+end
+
+--- Lobs a grenade at the NPC owner's current enemy on a simple ballistic arc.
+-- Does nothing when there is no valid enemy, the enemy is outside the throw band, or the cooldown is running.
+-- @realm server
+function SWEP:NPCThrowNade()
+	local owner = self:GetOwner()
+
+	if CurTime() < (self.NPCNextThrow or 0) then return end
+
+	local enemy = owner:GetEnemy()
+	if not IsValid(enemy) then return end
+
+	local start = owner:GetShootPos()
+	local toTarget = enemy:WorldSpaceCenter() - start
+	local horizontal = Vector(toTarget.x, toTarget.y, 0)
+	local dist = horizontal:Length()
+
+	if dist < self.NPCThrowMinRange or dist > self.NPCThrowMaxRange then return end
+
+	-- Fixed horizontal speed; the vertical speed is solved so the grenade lands on the target.
+	local flightTime = dist / self.NPCThrowHorizontalSpeed
+	local gravity = physenv.GetGravity()
+	local vz = (toTarget.z - 0.5 * gravity.z * flightTime * flightTime) / flightTime
+	local velocity = horizontal:GetNormalized() * self.NPCThrowHorizontalSpeed + Vector(0, 0, vz)
+
+	self.NPCNextThrow = CurTime() + self.NPCThrowCooldown
+	self:SetNextPrimaryFire(CurTime() + self.NPCThrowCooldown)
+
+	self:TakePrimaryAmmo(1)
+	self:EmitSound(self.Primary.Sound)
+
+	local ent = SpawnGrenadeEntity(owner, start + Vector(0, 0, -7), velocity:Angle())
+	local phys = ent:GetPhysicsObject()
+	if IsValid(phys) then
+		phys:SetVelocity(velocity)
+	end
+end
+
+function SWEP:GetCapabilities()
+	return CAP_WEAPON_RANGE_ATTACK1
 end
 
 function SWEP:PrimaryAttack()
 	if not self:CanPrimaryAttack() then return end
 	if (self:Ammo1() == 0) and (self:Clip1() == 0) then return end
+
+	if self:GetOwner():IsNPC() then
+		if SERVER then self:NPCThrowNade() end
+		return
+	end
+
 	self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
 	self:SetNextSecondaryFire(CurTime() + self.Primary.Delay)
 
@@ -132,6 +193,8 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Think()
+	if self:GetOwner():IsNPC() then return end --NPCs throw from their reserve directly, no clip refill
+
 	if self:Ammo1() > 0 and self:Clip1() == 0 then
 		self:SetClip1(1)
 		self:GetOwner():RemoveAmmo(1, "Grenade")

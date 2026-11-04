@@ -74,6 +74,10 @@ SWEP.NormalPlayerRunSpeed	= 400
 
 SWEP.NPCMinBurst = 1 --Min bullets to fire per burst
 SWEP.NPCMaxBurst = 10 --Max bullets to fire per burst
+SWEP.NPCLookDistance = 10000 -- How far an NPC holding this weapon can spot targets, in units.
+SWEP.NPCMaxRange = 4000 -- How far an NPC holding this weapon will open fire, in units.
+SWEP.NPCUsable = true -- Whether NPCs can be given this weapon. Set it to false on weapons NPCs cannot use.
+SWEP.NPCVehicleAimSpread = 0.5 -- NPCs aim within this fraction of a vehicle's size around its middle, on each axis.
 
 
 function SWEP:GetNPCBurstSettings()
@@ -104,11 +108,13 @@ function SWEP:SetupDataTables()
 
 			if not IsValid(owner) then return end
 
-			owner:SetCanZoom(not zoom) --Block HL2 suit zoom
+			if owner:IsPlayer() then
+				owner:SetCanZoom(not zoom) --Block HL2 suit zoom
 
-			timer.Simple(0, function() --If player is in a vehicle you need to delay by 1 tick because ???
-				owner:SetFOV(zoom and self.ZoomFOV or 0, 0.25)
-			end)
+				timer.Simple(0, function() --If player is in a vehicle you need to delay by 1 tick because ???
+					owner:SetFOV(zoom and self.ZoomFOV or 0, 0.25)
+				end)
+			end
 
 			if self.HasScope then
 				owner:EmitSound("weapons/awp/zoom.wav")
@@ -204,6 +210,91 @@ function SWEP:GetSharedRandomSpread()
 	return x, y
 end
 
+--- Returns the entity whose velocity tells how an NPC's enemy is moving.
+-- A seated player rides their vehicle, and a parented vehicle reads no velocity of its own, so this walks up to the root parent.
+-- @tparam Entity enemy The NPC's enemy.
+-- @treturn Entity The enemy, or the root of whatever it rides.
+-- @realm shared
+function SWEP:GetNPCMovingRoot(enemy)
+	local root = enemy
+	if enemy:IsPlayer() and enemy:InVehicle() then root = enemy:GetVehicle() end
+	while IsValid(root:GetParent()) do root = root:GetParent() end
+	return root
+end
+
+--- Returns where an NPC holding this weapon aims at an enemy.
+-- A seated player is aimed at through their whole vehicle, at a random point within NPCVehicleAimSpread of its middle.
+-- The vehicle's extent comes from its parts' positions in the baseplate's frame. Anyone else is aimed at their center.
+-- @tparam Entity enemy The NPC's enemy.
+-- @treturn Vector The position to aim at.
+-- @realm shared
+function SWEP:GetNPCAimPos(enemy)
+	local center = enemy:WorldSpaceCenter()
+	if not (enemy:IsPlayer() and enemy:InVehicle()) then return center end
+
+	local seat = enemy:GetVehicle()
+	local con = seat.CFW_GetContraption and seat:CFW_GetContraption()
+	local base = con and con:GetACEBaseplate()
+	if not IsValid(base) then return center end
+
+	local mins, maxs
+	for ent in pairs(con.ents) do
+		if IsValid(ent) then
+			local pos = base:WorldToLocal(ent:WorldSpaceCenter())
+			if mins then
+				mins = Vector(math.min(mins.x, pos.x), math.min(mins.y, pos.y), math.min(mins.z, pos.z))
+				maxs = Vector(math.max(maxs.x, pos.x), math.max(maxs.y, pos.y), math.max(maxs.z, pos.z))
+			else
+				mins, maxs = pos, pos
+			end
+		end
+	end
+	if not mins then return center end
+
+	local half = (maxs - mins) * 0.5 * self.NPCVehicleAimSpread
+	local offset = Vector(math.Rand(-1, 1) * half.x, math.Rand(-1, 1) * half.y, math.Rand(-1, 1) * half.z)
+	return base:LocalToWorld((mins + maxs) * 0.5 + offset)
+end
+
+--- Returns the direction an NPC launches a rocket at its enemy.
+-- Aims at GetNPCAimPos, led by the target's velocity and raised for drop, then spread by proficiency.
+-- Uses the weapon's LaunchSpeed (m/s) and LaunchDrag; the rocket slows by drag * v^2, so it covers d meters in (e^(drag * d) - 1) / (drag * v0) seconds.
+-- @treturn Vector The launch direction.
+-- @realm server
+function SWEP:GetNPCLaunchDir()
+	local owner = self:GetOwner()
+	local dir = owner:GetAimVector()
+	local enemy = owner:GetEnemy()
+
+	if IsValid(enemy) then
+		local from = owner:GetShootPos()
+		local center = self:GetNPCAimPos(enemy)
+		local velocity = self:GetNPCMovingRoot(enemy):GetVelocity()
+		local aimPos = center
+		local time = 0
+
+		for _ = 1, 2 do --The second pass times the flight to the led position
+			local meters = from:Distance(aimPos) / 39.37
+			time = (math.exp(self.LaunchDrag * meters) - 1) / (self.LaunchDrag * self.LaunchSpeed)
+			aimPos = center + velocity * time
+		end
+
+		aimPos.z = aimPos.z + 0.5 * 9.8 * time ^ 2 * 39.37 --Missiles fall at 9.8 m/s^2
+		dir = (aimPos - from):GetNormalized()
+	end
+
+	local prof = 6 - owner:GetCurrentWeaponProficiency()
+	local degrees = (self.BaseSpread + math.min(owner:GetVelocity():Length() / self.NormalPlayerRunSpeed, 1) * self.MovementSpread + 0.5) * prof * ACE.SWEPInaccuracyMul
+	local spreadX, spreadY = self:GetSharedRandomSpread()
+
+	local sideAxis = dir:Cross(Vector(0, 0, 1)):GetNormalized()
+	local upAxis = dir:Cross(sideAxis):GetNormalized()
+	dir = dir:RotateAroundAxis(upAxis, spreadX * degrees)
+	dir = dir:RotateAroundAxis(sideAxis, spreadY * degrees)
+
+	return dir
+end
+
 SWEP.Heat = 0
 
 function SWEP:GetShootDir()
@@ -238,7 +329,8 @@ function SWEP:GetShootDir()
 
 		local spreadX, spreadY = self:GetSharedRandomSpread()
 		local degrees = math.Clamp((self.Heat / self.HeatMax) ^ 2 * self.MaxSpread + self.BaseSpread, self.BaseSpread, self.BaseSpread + self.MaxSpread)
-		degrees = degrees + math.min(owner:GetVelocity():Length() / self.NormalPlayerRunSpeed, 1) * self.MovementSpread
+		local runRef = self.NormalPlayerRunSpeed or 400
+		degrees = degrees + math.min(owner:GetVelocity():Length() / runRef, 1) * self.MovementSpread
 
 		degrees = (degrees + 0.5) * Prof
 
@@ -246,13 +338,18 @@ function SWEP:GetShootDir()
 		spreadY = spreadY * degrees * ACE.SWEPInaccuracyMul
 
 		local Enemy = owner:GetEnemy()
-		local EnemyPos = Enemy:WorldSpaceCenter()
-		local NPCPos = owner:GetShootPos()
-		local DifPos = EnemyPos - NPCPos
+		shootDir = owner:GetAimVector()
 
-		local TravelTime = DifPos:Length() / self.BulletData.MuzzleVel / 39.37 + engine.TickInterval()
+		if IsValid(Enemy) then
+			local EnemyPos = Enemy:WorldSpaceCenter()
+			local NPCPos = owner:GetShootPos()
+			local DifPos = EnemyPos - NPCPos
 
-		shootDir = (DifPos + Enemy:GetVelocity() * TravelTime):GetNormalized()
+			local TravelTime = DifPos:Length() / self.BulletData.MuzzleVel / 39.37 + engine.TickInterval()
+
+			shootDir = (DifPos + Enemy:GetVelocity() * TravelTime):GetNormalized()
+		end
+
 		local sideAxis = shootDir:Cross(Vector(0, 0, 1)):GetNormalized()
 		local upAxis = shootDir:Cross(sideAxis):GetNormalized()
 		shootDir = shootDir:RotateAroundAxis(upAxis, spreadX)
@@ -419,9 +516,9 @@ function SWEP:HandleRecoil()
 		self.Heat = math.max(self.Heat - (self.HeatReductionRate * delta), 0)
 	end
 
-	if game.SinglePlayer() and SERVER or CLIENT then
-		local owner = self:GetOwner()
+	local owner = self:GetOwner()
 
+	if owner:IsPlayer() and (game.SinglePlayer() and SERVER or CLIENT) then
 		local zoomBonus = self:GetZoomState() and self.ZoomRecoilBonus or 1
 		local crouchBonus = owner:Crouching() and self.CrouchRecoilBonus or 1
 		local totalBonus = zoomBonus * crouchBonus
@@ -451,7 +548,9 @@ function SWEP:Think()
 			self:EmitSound(Sound(self.ReloadSound))
 			self:SendWeaponAnim(ACT_VM_RELOAD)
 			self:SetClip1(self:Clip1() + 1)
-			self:GetOwner():RemoveAmmo(1, self:GetPrimaryAmmoType())
+			if self:GetOwner():IsPlayer() then --NPCs have no RemoveAmmo, their reserve is not tracked
+				self:GetOwner():RemoveAmmo(1, self:GetPrimaryAmmoType())
+			end
 
 			self.NextReload = CurTime() + 0.5
 		elseif (self:Clip1() == self.Primary.ClipSize or self:Ammo1() == 0) and self.Reloading then
@@ -548,7 +647,7 @@ function SWEP:Deploy()
 
 	local owner = self:GetOwner()
 	if not owner:IsPlayer() then
-		owner:SetMaxLookDistance( 10000 )
+		owner:SetMaxLookDistance( self.NPCLookDistance or 10000 )
 
 if SERVER then
 self:SetOwnerZoomSpeed(self:GetZoomState())

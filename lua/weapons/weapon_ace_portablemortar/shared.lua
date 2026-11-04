@@ -1,5 +1,6 @@
 SWEP.PrintName = "80mm Portable Mortar"
 SWEP.Base = "weapon_ace_base"
+SWEP.NPCUsable = false --Not offered to NPCs
 SWEP.Category = "ACE Weapons"
 SWEP.SubCategory = "Special"
 SWEP.Purpose = "Lob HE behind cover"

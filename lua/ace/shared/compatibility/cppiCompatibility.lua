@@ -26,7 +26,10 @@ timer.Simple(1, function()
 
         if not IsValid(Owner) then return end
 
-        return Owner, Owner:UniqueID()
+        -- UniqueID only exists on players; NPCs and the world get an empty string.
+        local UID = Owner:IsPlayer() and Owner:UniqueID() or ""
+
+        return Owner, UID
     end
 
     if CLIENT then return end

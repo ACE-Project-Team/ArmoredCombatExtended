@@ -917,10 +917,16 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	Bullet.Ricochets = Bullet.Ricochets or 0
 
 	local Angle	= ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
-	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"] )
+	local HitRes	= ACE.Damage( Target, Energy, Bullet["PenArea"], Angle, Bullet["Owner"], Bone, Bullet["Gun"], Bullet["Type"], HitPos, Bullet["Flight"] )
 
 	HitRes.Ricochet = false
 	HitRes.RicochetSelected = false
+
+	-- Body armor on a player reports the surface the bullet met, since the hitbox is only a box
+	if HitRes.HitNormal then
+		HitNormal = HitRes.HitNormal
+		Angle = ACE.GetHitAngle( HitNormal , Bullet["Flight"] )
+	end
 
 	local Ricochet  = 0
 	local ricoProb  = 1
@@ -935,7 +941,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 			ricoProb = 0
 
 		--Guarenteed to not richochet
-		elseif Bullet.Caliber * 3.33 > Target.ACE.Armour  then -- / math.max(math.sin(90-Angle),0.0001)
+		elseif Bullet.Caliber * 3.33 > (HitRes.RicochetArmour or Target.ACE.Armour)  then -- / math.max(math.sin(90-Angle),0.0001)
 			ricoProb = 1
 
 		else
@@ -947,7 +953,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 	local Penetrated = ACE.IsKineticDamageType(Bullet.Type) and (HitRes.Overkill or 0) > 0
 
 	-- Checking for ricochet. The angle value is clamped but can cause game crashes if this overflow check doesnt exist. Why?
-	if not Penetrated and ricoProb < math.Rand(0,1) and Angle < 90 then
+	if not Penetrated and not HitRes.NoRicochet and ricoProb < math.Rand(0,1) and Angle < 90 then
 		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
 		HitRes.Loss	= 1 - Ricochet
 		-- Keep Energy as the incoming impact budget. The shared post-penetration

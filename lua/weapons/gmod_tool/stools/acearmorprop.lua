@@ -570,7 +570,7 @@ if CLIENT then
 		-- Rebuild the list each time to avoid stale entries.
 		for _, Mat  in pairs(MaterialTypes) do
 			local year = Mat.year or 0
-			if (ACE.Year or 0) >= year then
+			if (ACE.Year or 0) >= year and not Mat.hidden then
 				ToolPanel.ComboMat:AddChoice(Mat.sname, Mat.id )
 			end
 		end

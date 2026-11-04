@@ -8,6 +8,7 @@ Material.desc		= "Despite of being heavier than RHA, Cast steel material provide
 Material.year		= 1930
 
 Material.massMod		= 1.2
+Material.BluntTransfer = 0.15 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 1
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

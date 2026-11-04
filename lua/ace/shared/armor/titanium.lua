@@ -8,6 +8,7 @@ Material.desc		= "Lightweight and super resiliant. But E X P E N S I V E. 60% Li
 Material.year		= 1950 -- Dont blame about this, ik that RHA has existed before this year but it would be cool to see: when?
 
 Material.massMod		= 0.61
+Material.BluntTransfer = 0.18 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 1 --Slight and almost unnoticable penalty to high thickness armor
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

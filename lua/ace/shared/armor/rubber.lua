@@ -8,6 +8,7 @@ Material.desc		= "Another material that while useless against kinetic rounds, ex
 Material.year		= 1955
 
 Material.massMod		= 0.2
+Material.BluntTransfer = 0.6 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 0.93
 
 Material.specialeffect  = 20 --Caliber to divide HEAT caliber by when rubber catches the shells taking more of the energy. A caliber above this number results in a damage multiplier. ex 60mm/30 -> 2x

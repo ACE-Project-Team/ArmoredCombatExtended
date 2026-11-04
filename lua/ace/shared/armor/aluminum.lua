@@ -8,6 +8,7 @@ Material.desc		= "Aluminum is normally used by AFVs or light constructions, as i
 Material.year		= 1955
 
 Material.massMod		= 0.333
+Material.BluntTransfer = 0.25 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 0.92
 
 Material.effectiveness  = 0.8325

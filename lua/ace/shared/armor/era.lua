@@ -8,6 +8,7 @@ Material.desc		= "An explosive composite sandwiched between 2 plates. When penet
 Material.year		= 1955
 
 Material.massMod		= 2
+Material.BluntTransfer = 0.1 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 0.95
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

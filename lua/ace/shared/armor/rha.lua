@@ -8,6 +8,7 @@ Material.desc		= "Simple, generic, but trusty steel. The standard armor everythi
 Material.year		= 1900 -- Dont blame about this, ik that RHA has existed before this year but it would be cool to see: when?
 
 Material.massMod		= 1
+Material.BluntTransfer = 0.15 -- Share of a stopped bullet's energy that still reaches the body behind this armor
 Material.curve		= 1 --Slight and almost unnoticable penalty to high thickness armor
 
 --All effectiveness values multiply the Line of Sight armor values of armor.

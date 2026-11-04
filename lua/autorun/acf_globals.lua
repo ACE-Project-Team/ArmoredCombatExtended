@@ -267,6 +267,8 @@ if SERVER then
     CreateConVar("ace_ammomod", 1, FCVAR_ARCHIVE)
     CreateConVar("ace_gunfire", 1, FCVAR_ARCHIVE)
 
+    CreateConVar( "ace_bodyarmor_min_damage", 4, FCVAR_ARCHIVE )  -- Hits that body armor stopped or let through deal no damage below this many HP. HL2 suit armor doesn't count.
+
     -- Debris
     CreateConVar("ace_debris_lifetime", 30, FCVAR_ARCHIVE)
     CreateConVar("ace_debris_children", 1, FCVAR_ARCHIVE)
@@ -432,11 +434,13 @@ include("ace/shared/compatibility/cppiCompatibility.lua")
 include("ace/shared/sh_crewseat_base.lua")
 AddCSLuaFile("ace/shared/sh_crewseat_base.lua")
 AddCSLuaFile("ace/shared/compatibility/cppiCompatibility.lua")
+include("ace/shared/sh_ace_wearables.lua")
 
 if SERVER then
 
     include("ace/shared/sv_ace_networking.lua")
     include("ace/server/sv_acfbase.lua")
+    include("ace/server/sv_ace_squishy_damage.lua")
     include("ace/server/sv_acfdamage.lua")
     include("ace/server/sv_acfballistics.lua")
     include("ace/server/sv_contraption.lua")

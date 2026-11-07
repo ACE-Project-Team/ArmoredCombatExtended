@@ -27,7 +27,7 @@ Material.ArmorMul	= 0.2
 Material.NormMult	= 0.5
 
 if SERVER then
-	function Material.ArmorResolution( Entity, armor, losArmor, losArmorHealth, maxPenetration, FrArea, _, damageMult, _)
+	function Material.ArmorResolution( Entity, _, losArmor, losArmorHealth, maxPenetration, FrArea, _, damageMult, _)
 
 		local HitRes = {}
 

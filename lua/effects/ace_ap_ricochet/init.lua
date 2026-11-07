@@ -55,7 +55,7 @@ function EFFECT:Init( data )
 
 		if SurfaceTr.HitNonWorld then --Overide with ACE prop material
 			local TEnt = SurfaceTr.Entity
-			if  TEnt:IsPlayer() or TEnt:IsNPC() then --Super disgusting. Get rid of this ASAP.
+			if  TEnt:IsPlayer() or TEnt:IsNPC() or TEnt:IsRagdoll() then --Super disgusting. Get rid of this ASAP.
 				MatVal = "Flesh"
 			else
 				MatVal = "Metal"

@@ -454,6 +454,7 @@ if SERVER then
     AddCSLuaFile("ace/client/cl_acemenu_gui.lua")
     AddCSLuaFile("ace/client/cl_acfrender.lua")
     AddCSLuaFile("ace/client/cl_soundbase.lua")
+    AddCSLuaFile("ace/client/cl_ace_decals.lua")
 
     AddCSLuaFile("ace/client/cl_acemenu_missileui.lua")
 
@@ -466,6 +467,7 @@ elseif CLIENT then
     include("ace/client/cl_acfballistics.lua")
     include("ace/client/cl_acfrender.lua")
     include("ace/client/cl_soundbase.lua")
+    include("ace/client/cl_ace_decals.lua")
 
     include("ace/client/cl_acfpermission.lua")
     include("ace/client/gui/cl_acfsetpermission.lua")

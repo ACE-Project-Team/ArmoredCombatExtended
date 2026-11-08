@@ -7,6 +7,7 @@ Round.type  = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name  = "[CLUSTER-HEAT] - " .. ACE.Translation.ShellHEAT[1] --Human readable name
 Round.model = "models/missiles/glatgm/9m112f.mdl" --Shell flight model
 Round.desc  = ACE.Translation.ShellHEAT[2]
+Round.decals = { pen = "heat_pen", nopen = "heat_nopen" }
 Round.netid = 28 --Unique ammotype ID for network transmission
 
 Round.Type  = "CHEAT"

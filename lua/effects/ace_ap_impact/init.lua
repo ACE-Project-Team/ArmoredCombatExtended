@@ -36,9 +36,6 @@ local function PerformDecalTrace( Effect )
 	return util.TraceLine( Tr )
 end
 
--- NOTE: PerformBulletEffect was removed; the engine bullet it fired stamped the
--- stock "concrete" impact decal (TE_GUNSHOTDECAL) alongside our own decals.
-
 function EFFECT:Init( data )
 
 	self.AmmoCrate   = data:GetEntity() 		-- The ammo crate Entity of this round.
@@ -143,7 +140,6 @@ function EFFECT:Init( data )
 		end
 	end
 
-	--PerformBulletEffect( self ) --engine stamped a stock decal we now replace; see NOTE above
 
 
 	if self.Emitter then self.Emitter:Finish() end

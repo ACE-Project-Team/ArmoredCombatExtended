@@ -10,6 +10,7 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "[HEAT-FS] - " .. ACE.Translation.ShellHEATFS[1] --Human readable name
 Round.model = "models/munitions/round_100mm_mortar_shot.mdl" --Shell flight model
 Round.desc = ACE.Translation.ShellHEATFS[2]
+Round.decals = { pen = "heat_pen", nopen = "heat_nopen" }
 Round.netid = 18 --Unique ammotype ID for network transmission
 
 Round.Type  = "HEATFS"

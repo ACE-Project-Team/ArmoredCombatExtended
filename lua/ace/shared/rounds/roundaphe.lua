@@ -189,6 +189,8 @@ function Round.endeffect( _, Bullet )
 		Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
 	util.Effect( "ACE_Scaled_Explosion", Flash )
 
+	ACE.BulletDecal( Bullet, false )
+
 end
 
 function Round.pierceeffect( _, Bullet )

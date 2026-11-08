@@ -36,17 +36,8 @@ local function PerformDecalTrace( Effect )
 	return util.TraceLine( Tr )
 end
 
-local function PerformBulletEffect( Effect )
-	local BulletEffect = {}
-	BulletEffect.Num       = 1
-	BulletEffect.Src       = Effect.Origin - Effect.DirVec
-	BulletEffect.Dir       = Effect.DirVec
-	BulletEffect.Spread    = Vector(0,0,0)
-	BulletEffect.Tracer    = 0
-	BulletEffect.Force     = 0
-	BulletEffect.Damage    = 0
-	LocalPlayer():FireBullets(BulletEffect)
-end
+-- NOTE: PerformBulletEffect was removed; the engine bullet it fired stamped the
+-- stock "concrete" impact decal (TE_GUNSHOTDECAL) alongside our own decals.
 
 function EFFECT:Init( data )
 
@@ -128,7 +119,12 @@ function EFFECT:Init( data )
 			self:Dust( SMKColor )
 		end
 
-		if DecalMat then
+		local Key = MatVal ~= "Flesh" and ACE.GetDamageDecal( self.Id, false, nil, MatVal )
+		if Key then
+			if IsValid( SurfaceTr.Entity ) or SurfaceTr.HitWorld then
+				ACE.PlaceDecal( Key, SurfaceTr.Entity, SurfaceTr.HitPos, SurfaceTr.HitNormal, self.Caliber / 2 )
+			end
+		elseif DecalMat then
 			util.Decal(DecalMat, SurfaceTr.StartPos, self.Origin + self.DirVec * 10 )
 		end
 		ACE.SBulletImpact( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )
@@ -147,7 +143,7 @@ function EFFECT:Init( data )
 		end
 	end
 
-	PerformBulletEffect( self )
+	--PerformBulletEffect( self ) --engine stamped a stock decal we now replace; see NOTE above
 
 
 	if self.Emitter then self.Emitter:Finish() end

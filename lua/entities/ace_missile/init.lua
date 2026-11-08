@@ -642,6 +642,10 @@ function ENT:ConfigureLaunch()
 	self.Fuse:Configure(self, self.Guidance)
 	self.TimeOfLaunch = CT
 
+	self.FakeCrate = ents.Create( "acf_fakecrate2" )
+	self.FakeCrate:RegisterTo( self.Bulletdata2 )
+	self:DeleteOnRemove( self.FakeCrate )
+
 end
 
 function ENT:Detonate()
@@ -664,7 +668,7 @@ function ENT:Detonate()
 
 	if not IsValid(self) then return end
 
-	local fakecrate = ents.Create("acf_fakecrate2")
+	local fakecrate = IsValid( self.FakeCrate ) and self.FakeCrate or ents.Create( "acf_fakecrate2" )
 	self.Bulletdata2["Gun"]			= self
 	--self.FakeCrate = self.FakeCrate or ents.Create("acf_fakecrate2")
 	self.Bulletdata2["Crate"] = fakecrate:EntIndex()

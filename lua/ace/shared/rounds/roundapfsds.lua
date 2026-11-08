@@ -145,6 +145,7 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.PostPenetration.Continue then
+			Bullet.PenArmour = Target.ACE.Armour
 			table.insert( Bullet.Filter , Target )				--"Penetrate" (Ingoring the prop for the retry trace)
 
 			ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic , Bullet.Caliber , Target.ACE.Armour , Bullet.Owner , Target.ACE.Material) --Do some spalling
@@ -208,6 +209,7 @@ function Round.pierceeffect( _, Bullet )
 		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
 		Spall:SetScale( Bullet.SimFlight:Length() )
 		Spall:SetMagnitude( Bullet.RoundMass )
+		Spall:SetRadius( Bullet.PenArmour or 1023 )
 	util.Effect( "ACE_AP_Penetration", Spall )
 
 end

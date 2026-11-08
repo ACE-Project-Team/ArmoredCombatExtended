@@ -70,6 +70,7 @@ function EFFECT:Init( data )
 	if IsValid(self.AmmoCrate) then
 		self.Id      = self.AmmoCrate:GetNWString( "AmmoType", "AP" )
 		self.Caliber = self.AmmoCrate:GetNWFloat( "Caliber", 10 )
+		self.FinsCut = data:GetRadius() < self.Caliber * 2.5
 	else
 		self.Id = "AP"
 		self.Caliber = 1 -- If you lose the crate at this point, adding a 10cm (100mm) could lead to cases like doing huge sparks from a 7.62mm MG...
@@ -146,7 +147,15 @@ function EFFECT:Init( data )
 			self:Dust( SMKColor )
 		end
 
-		if DecalMat then
+		local Key = MatVal ~= "Flesh" and ACE.GetDamageDecal( self.Id, true, self.FinsCut, MatVal )
+		if Key then
+			if IsValid( FTrace.Entity ) or FTrace.HitWorld then
+				ACE.PlaceDecal( Key, FTrace.Entity, FTrace.HitPos, FTrace.HitNormal, self.Caliber / 2 )
+			end
+			if IsValid( BTrace.Entity ) and BTrace.Entity == FTrace.Entity then
+				ACE.PlaceDecal( Key, BTrace.Entity, BTrace.HitPos, self.DirVec, self.Caliber / 2 )
+			end
+		elseif DecalMat then
 			util.Decal(DecalMat, FTrace.StartPos, FTrace.HitPos + self.DirVec * 50, nil )
 			util.Decal(DecalMat, BTrace.StartPos, BTrace.HitPos - self.DirVec * 50, BackTraceFilter )
 		end

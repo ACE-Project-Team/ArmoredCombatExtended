@@ -337,7 +337,7 @@ end
 function Round.ricocheteffect( _, Bullet )
 
 	local Spall = EffectData()
-		Spall:SetEntity( Bullet.Gun )
+		Spall:SetEntity( Bullet.Crate )
 		Spall:SetOrigin( Bullet.SimPos )
 		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
 		Spall:SetScale( Bullet.SimFlight:Length() )

@@ -911,6 +911,8 @@ function ACE.BulletClient( Index, Bullet, Type, Hit, HitPos )
 		end
 
 		Effect:SetScale( Hit )  --Hit Type
+		Effect:SetRadius( math.min( Bullet.PenArmour or 1023, 1023 ) )
+		Bullet.PenArmour = nil
 		util.Effect( "ACE_BulletEffect", Effect, true, true )
 
 	elseif Type == "Init" then

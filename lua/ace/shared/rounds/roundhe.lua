@@ -9,6 +9,7 @@ Round.type  = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name  = "[HE] - " .. ACE.Translation.ShellHE[1] --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc  = ACE.Translation.ShellHE[2]
+Round.decals = { pen = "he_pen", nopen = "he_nopen", rico = "he_rico" }
 Round.netid = 2 --Unique ammotype ID for network transmission
 
 Round.Type  = "HE"
@@ -152,27 +153,13 @@ function Round.endeffect( _, Bullet )
 		Flash:SetRadius( math.Round(math.max(Radius / 39.37, 1),2) )
 	util.Effect( "ACE_Scaled_Explosion", Flash )
 
+	ACE.BulletDecal( Bullet, false )
+
 end
 
 function Round.pierceeffect( _, Bullet )
 
-	local BulletEffect = {}
-		BulletEffect.Num	= 1
-		BulletEffect.Src	= Bullet.SimPos - Bullet.SimFlight:GetNormalized()
-		BulletEffect.Dir	= Bullet.SimFlight:GetNormalized()
-		BulletEffect.Spread = Vector(0,0,0)
-		BulletEffect.Tracer = 0
-		BulletEffect.Force  = 0
-		BulletEffect.Damage = 0
-	LocalPlayer():FireBullets(BulletEffect)
-
-	util.Decal("ExplosiveGunshot", Bullet.SimPos + Bullet.SimFlight * 10, Bullet.SimPos - Bullet.SimFlight * 10)
-
-	local Spall = EffectData()
-		Spall:SetOrigin( Bullet.SimPos )
-		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
-		Spall:SetScale(math.max(((Bullet.RoundMass * (Bullet.SimFlight:Length() / 39.37) ^ 2) / 2000) / 10000, 1))
-	util.Effect( "AP_Hit", Spall )
+	ACE.BulletDecal( Bullet, true )
 
 end
 

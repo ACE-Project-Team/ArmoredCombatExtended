@@ -91,7 +91,12 @@ function EFFECT:Init( data )
 			self:Dust( SMKColor )
 		end
 
-	if DecalMat then
+	local Key = MatVal ~= "Flesh" and ACE.GetRicochetDecal( self.Id, MatVal )
+	if Key then
+		if IsValid( SurfaceTr.Entity ) or SurfaceTr.HitWorld then
+			ACE.PlaceDecal( Key, SurfaceTr.Entity, SurfaceTr.HitPos, SurfaceTr.HitNormal, self.Caliber / 2, 2 )
+		end
+	elseif DecalMat then
 		util.Decal(DecalMat, self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10 )
 	end
 	ACE.SRicochet( self.Origin, self.Caliber, self.Velocity, SurfaceTr.HitWorld, MatVal )

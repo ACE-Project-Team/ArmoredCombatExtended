@@ -9,6 +9,7 @@ Round.type  = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name  = "[APDS] - " .. ACE.Translation.ShellAPDS[1] --Human readable name
 Round.model = "models/munitions/dart_100mm.mdl" --Shell flight model
 Round.desc  = ACE.Translation.ShellAPDS[2]
+Round.decals = { pen = "apcr_pen", nopen = "apfsds_rod" }
 Round.netid = 9 --Unique ammotype ID for network transmission
 
 Round.Type  = "APDS"
@@ -133,6 +134,7 @@ function Round.network( Crate, BulletData )
 	Crate:SetNWString( "AmmoType", "APDS" )
 	Crate:SetNWString( "AmmoID", BulletData.Id )
 	Crate:SetNWFloat( "Caliber", BulletData.Caliber )
+	Crate:SetNWFloat( "SCalMult", BulletData.SCalMult )
 	Crate:SetNWFloat( "ProjMass", BulletData.ProjMass )
 	Crate:SetNWFloat( "PropMass", BulletData.PropMass )
 	Crate:SetNWFloat( "DragCoef", BulletData.DragCoef )

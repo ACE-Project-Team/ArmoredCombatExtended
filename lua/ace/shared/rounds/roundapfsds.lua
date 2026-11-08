@@ -9,6 +9,7 @@ Round.type  = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name  = "[APFSDS] - " .. ACE.Translation.ShellAPFSDS[1] --Human readable name
 Round.model = "models/munitions/dart_100mm.mdl" --Shell flight model
 Round.desc  = ACE.Translation.ShellAPFSDS[2]
+Round.decals = { pen = "apfsds_rod", thin = "apfsds_fins", nopen = "apfsds_rod" }
 Round.netid = 16 --Unique ammotype ID for network transmission
 
 Round.Type  = "APFSDS"
@@ -112,6 +113,7 @@ function Round.network( Crate, BulletData )
 	Crate:SetNWString( "AmmoType", "APFSDS" )
 	Crate:SetNWString( "AmmoID", BulletData.Id )
 	Crate:SetNWFloat( "Caliber", BulletData.Caliber )
+	Crate:SetNWFloat( "SCalMult", BulletData.SCalMult )
 	Crate:SetNWFloat( "ProjMass", BulletData.ProjMass )
 	Crate:SetNWFloat( "PropMass", BulletData.PropMass )
 	Crate:SetNWFloat( "DragCoef", BulletData.DragCoef )
@@ -145,6 +147,7 @@ function Round.propimpact( _, Bullet, Target, HitNormal, HitPos, Bone )
 		local HitRes	= ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone )
 
 		if HitRes.PostPenetration.Continue then
+			Bullet.PenArmour = Target.ACE.Armour
 			table.insert( Bullet.Filter , Target )				--"Penetrate" (Ingoring the prop for the retry trace)
 
 			ACE.Spall( HitPos , Bullet.Flight , Bullet.Filter , HitRes.PostPenetration.SpentKinetic , Bullet.Caliber , Target.ACE.Armour , Bullet.Owner , Target.ACE.Material) --Do some spalling
@@ -208,6 +211,7 @@ function Round.pierceeffect( _, Bullet )
 		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
 		Spall:SetScale( Bullet.SimFlight:Length() )
 		Spall:SetMagnitude( Bullet.RoundMass )
+		Spall:SetRadius( Bullet.PenArmour or 1023 )
 	util.Effect( "ACE_AP_Penetration", Spall )
 
 end

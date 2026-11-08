@@ -1,0 +1,8 @@
+"VertexLitGeneric"
+{
+    "$basetexture"   "ace/damage/ace_he_nopen_v2"
+    "$decal"         1
+    "$decalscale"    0.05
+    "$translucent"   1
+    "$vertexcolor"   1
+}

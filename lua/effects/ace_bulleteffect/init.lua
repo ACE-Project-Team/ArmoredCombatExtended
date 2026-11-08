@@ -62,6 +62,7 @@ do
 			--Bullet penetrated, don't remove old effect
 			elseif (Hit == 2) then
 
+				Bullet.PenArmour = data:GetRadius()
 				self.HitPierce = ACE.RoundTypes[Bullet.AmmoType]["pierceeffect"]
 				self:HitPierce( Bullet )
 

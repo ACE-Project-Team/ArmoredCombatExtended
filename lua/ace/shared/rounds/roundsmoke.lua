@@ -216,30 +216,14 @@ end
 
 function Round.pierceeffect( _, Bullet )
 
-	local BulletEffect = {}
-		BulletEffect.Num = 1
-		BulletEffect.Src = Bullet.SimPos - Bullet.SimFlight:GetNormalized()
-		BulletEffect.Dir = Bullet.SimFlight:GetNormalized()
-		BulletEffect.Spread = Vector(0,0,0)
-		BulletEffect.Tracer = 0
-		BulletEffect.Force = 0
-		BulletEffect.Damage = 0
-	LocalPlayer():FireBullets(BulletEffect)
-
-	util.Decal("ExplosiveGunshot", Bullet.SimPos + Bullet.SimFlight * 10, Bullet.SimPos - Bullet.SimFlight * 10)
-
-	local Spall = EffectData()
-		Spall:SetOrigin( Bullet.SimPos )
-		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
-		Spall:SetScale(math.max(((Bullet.RoundMass * (Bullet.SimFlight:Length() / 39.37) ^ 2) / 2000) / 10000, 1))
-	util.Effect( "AP_Hit", Spall )
+	ACE.BulletDecal( Bullet, true )
 
 end
 
 function Round.ricocheteffect( _, Bullet )
 
 	local Spall = EffectData()
-		Spall:SetEntity( Bullet.Gun )
+		Spall:SetEntity( Bullet.Crate )
 		Spall:SetOrigin( Bullet.SimPos )
 		Spall:SetNormal( (Bullet.SimFlight):GetNormalized() )
 		Spall:SetScale( Bullet.SimFlight:Length() )

@@ -9,7 +9,7 @@ ACE.DecalK = {
 	ricochet    = 0.1312,
 	he          = 0.1312,   -- splash == 2.55x caliber   (he_pen / he_nopen)
 	heat_pen    = 0.20,     -- pinhole == 0.22x caliber
-	apfsds      = 0.041,    -- pass BORE caliber; fin span ~0.48x bore
+	apfsds      = 0.229,    -- pass ROD caliber; hole == 1.00x rod
 
 	-- steel, failed to penetrate
 	ap_nopen    = 0.252,    -- dished dent == 1.10x caliber
@@ -81,12 +81,23 @@ function ACE.DecalSize( Key, CaliberCm )
 	return K * ( CaliberCm * 10 ) / ACE.DecalNominal
 end
 
+--- Caliber a decal is sized from: the rod for APFSDS marks, the bore otherwise.
+-- @param Key string Decal key
+-- @param Crate Entity Ammo crate
+-- @param CaliberCm number Bore caliber in cm
+-- @return number
+function ACE.DecalCaliber( Key, Crate, CaliberCm )
+	if not string.StartWith( Key, "apfsds" ) then return CaliberCm end
+
+	return CaliberCm * ( IsValid( Crate ) and Crate:GetNWFloat( "SCalMult", 0.18 ) or 0.18 )
+end
+
 --- Stamp a damage decal at a hit position.
 -- @param Key string Decal key, e.g. "ap_pen"
 -- @param Ent Entity Surface entity (may be the worldspawn)
 -- @param Pos Vector Hit position
 -- @param Normal Vector Hit normal
--- @param CaliberCm number ACE caliber in cm; APFSDS takes the BORE caliber
+-- @param CaliberCm number ACE caliber in cm; APFSDS takes the rod caliber (ACE.DecalCaliber)
 -- @param Stretch number|nil Optional x-stretch for ricochets (default 1)
 function ACE.PlaceDecal( Key, Ent, Pos, Normal, CaliberCm, Stretch )
 	local Mat = ACE.DecalMaterial( Key )

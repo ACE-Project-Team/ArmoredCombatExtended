@@ -150,10 +150,10 @@ function EFFECT:Init( data )
 		local Key = MatVal ~= "Flesh" and ACE.GetDamageDecal( self.Id, true, self.FinsCut, MatVal )
 		if Key then
 			if IsValid( FTrace.Entity ) or FTrace.HitWorld then
-				ACE.PlaceDecal( Key, FTrace.Entity, FTrace.HitPos, FTrace.HitNormal, self.Caliber / 2 )
+				ACE.PlaceDecal( Key, FTrace.Entity, FTrace.HitPos, FTrace.HitNormal, ACE.DecalCaliber( Key, self.AmmoCrate, self.Caliber / 2 ) )
 			end
 			if IsValid( BTrace.Entity ) and BTrace.Entity == FTrace.Entity then
-				ACE.PlaceDecal( Key, BTrace.Entity, BTrace.HitPos, self.DirVec, self.Caliber / 2 )
+				ACE.PlaceDecal( Key, BTrace.Entity, BTrace.HitPos, self.DirVec, ACE.DecalCaliber( Key, self.AmmoCrate, self.Caliber / 2 ) )
 			end
 		elseif DecalMat then
 			util.Decal(DecalMat, FTrace.StartPos, FTrace.HitPos + self.DirVec * 50, nil )

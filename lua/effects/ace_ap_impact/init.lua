@@ -119,7 +119,7 @@ function EFFECT:Init( data )
 		local Key = MatVal ~= "Flesh" and ACE.GetDamageDecal( self.Id, false, nil, MatVal )
 		if Key then
 			if IsValid( SurfaceTr.Entity ) or SurfaceTr.HitWorld then
-				ACE.PlaceDecal( Key, SurfaceTr.Entity, SurfaceTr.HitPos, SurfaceTr.HitNormal, self.Caliber / 2 )
+				ACE.PlaceDecal( Key, SurfaceTr.Entity, SurfaceTr.HitPos, SurfaceTr.HitNormal, ACE.DecalCaliber( Key, self.AmmoCrate, self.Caliber / 2 ) )
 			end
 		elseif DecalMat then
 			util.Decal(DecalMat, SurfaceTr.StartPos, self.Origin + self.DirVec * 10 )

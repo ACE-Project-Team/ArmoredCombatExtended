@@ -49,8 +49,9 @@ local LastVariant = {}
 --- Material handle for a decal key, picking one of the 4 seed variants and
 --- avoiding the same variant twice in a row for that key.
 -- @param Key string Decal key, e.g. "ap_pen"
+-- @param World boolean|nil Target is the world or a brush entity
 -- @return IMaterial|nil
-function ACE.DecalMaterial( Key )
+function ACE.DecalMaterial( Key, World )
 	local Base = ACE.DecalFor[Key]
 	if not Base then return nil end
 
@@ -61,8 +62,19 @@ function ACE.DecalMaterial( Key )
 	LastVariant[Key] = V
 
 	local Name = "ace/damage/" .. Base .. "_v" .. V
-	DecalMaterials[Name] = DecalMaterials[Name] or Material( Name )
-	return DecalMaterials[Name]
+	if not World then
+		DecalMaterials[Name] = DecalMaterials[Name] or Material( Name )
+		return DecalMaterials[Name]
+	end
+
+	local WName = Name .. "#world"
+	DecalMaterials[WName] = DecalMaterials[WName] or CreateMaterial( "ace_decal_world_" .. Base .. "_v" .. V, "LightmappedGeneric", {
+		["$basetexture"] = Name,
+		["$decal"] = 1,
+		["$decalscale"] = 0.05,
+		["$translucent"] = 1,
+	} )
+	return DecalMaterials[WName]
 end
 
 -- Nominal decal size in world units for a 256px texture at $decalscale 0.05.
@@ -100,7 +112,8 @@ end
 -- @param CaliberCm number ACE caliber in cm; APFSDS takes the rod caliber (ACE.DecalCaliber)
 -- @param Stretch number|nil Optional x-stretch for ricochets (default 1)
 function ACE.PlaceDecal( Key, Ent, Pos, Normal, CaliberCm, Stretch )
-	local Mat = ACE.DecalMaterial( Key )
+	local World = not IsValid( Ent ) or string.sub( Ent:GetModel() or "", 1, 1 ) == "*"
+	local Mat = ACE.DecalMaterial( Key, World )
 	if not Mat then return end
 
 	local Size = ACE.DecalSize( Key, CaliberCm )

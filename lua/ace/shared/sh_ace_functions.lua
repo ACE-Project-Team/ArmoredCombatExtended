@@ -1595,3 +1595,16 @@ if CLIENT then
 		util.ScreenShake(pos, amplitude, frequency, duration, radius, airshake)
 	end
 end
+
+-- Get and cache the world bounds
+function ACE.GetWorldBounds()
+	if not ACE.WorldBounds then
+		local min, max = game.GetWorld():GetModelBounds()
+		ACE.WorldBounds = {min = min, max = max}
+	end
+	return ACE.WorldBounds
+end
+
+hook.Add( "InitPostEntity", "ACE.CacheWorldBounds", function()
+	ACE.GetWorldBounds()
+end )

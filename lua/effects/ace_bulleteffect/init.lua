@@ -222,13 +222,16 @@ end
 
 function EFFECT:ApplyMovement( Bullet, Index )
 
+	-- the bullet will never come back to the map.
 	local setPos = Bullet.SimPos
-	if (math.abs(setPos.x) > 16380) or (math.abs(setPos.y) > 16380) or (setPos.z < -16380) then -- the bullet will never come back to the map.
+	local WorldBounds = ACE.GetWorldBounds()
+	local WorldBoundsMax = WorldBounds.max
+	local WorldBoundsMin = WorldBounds.min
+	if (math.abs(setPos.x) > WorldBoundsMax.x) or (math.abs(setPos.y) > WorldBoundsMax.y) or (setPos.z < WorldBoundsMin.z) then
 		ACE.RemoveBulletClient( Bullet, Index )
-
 		return
 	end
-	if setPos.z < 16380 then
+	if setPos.z < WorldBoundsMin.z then
 		self:SetPos( setPos ) --Moving the effect to the calculated position
 		self:SetAngles( Bullet.SimFlight:Angle() )
 

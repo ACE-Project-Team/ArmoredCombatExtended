@@ -231,7 +231,7 @@ function EFFECT:ApplyMovement( Bullet, Index )
 		ACE.RemoveBulletClient( Bullet, Index )
 		return
 	end
-	if setPos.z < WorldBoundsMin.z then
+	if setPos.z < WorldBoundsMax.z then
 		self:SetPos( setPos ) --Moving the effect to the calculated position
 		self:SetAngles( Bullet.SimFlight:Angle() )
 

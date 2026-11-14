@@ -972,8 +972,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		Bullet.Ricochets	= Bullet.Ricochets + 1
 		Bullet["Pos"]	= HitPos + HitNormal * 0.05
 		Bullet.FlightTime	= 0
-		Bullet.Flight = Bullet.Flight * 0.05 --0.05 = ~35 m/s for a 700 m/s projectile
-		Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Ricochet
+		Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
 
 		if IsValid( ACE.GetPhysicalParent(Target):GetPhysicsObject() ) then
 			Bullet.TraceBackComp = math.max(ACE.GetPhysicalParent(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)

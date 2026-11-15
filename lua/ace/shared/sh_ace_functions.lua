@@ -190,11 +190,12 @@ function ACE.GetBloodDecal( Entity )
 	if not IsValid( Entity ) then return nil end
 
 	local BloodColor = Entity.GetBloodColor and Entity:GetBloodColor()
+	local Bleeds = Entity:IsPlayer() or Entity:IsNPC() or Entity:IsRagdoll()
 
 	if YellowBlooded[BloodColor] then return "YellowBlood" end
 	if BloodColor == BLOOD_COLOR_MECH then return "Impact.Concrete" end
-	if BloodColor == BLOOD_COLOR_DONT_BLEED and ( SERVER or not ( Entity:IsPlayer() or Entity:IsNPC() ) ) then return nil end
-	if not ( Entity:IsPlayer() or Entity:IsNPC() ) then return nil end
+	if BloodColor == BLOOD_COLOR_DONT_BLEED and ( SERVER or not Bleeds ) then return nil end
+	if not Bleeds then return nil end
 
 	return "Blood"
 end

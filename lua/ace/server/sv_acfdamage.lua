@@ -895,6 +895,13 @@ function ACE.SpallTrace(HitVec, Index, SpallEnergy, SpallArea, Inflictor, SpallV
 	end
 end
 
+--Ricochet tuning
+ACE.RicochetMinRetention    = 0.05 -- Minimum fraction of impact energy kept by a ricochet
+ACE.RicochetMaxRetention    = 0.2  -- Maximum fraction of impact energy kept by a ricochet
+ACE.RicochetSurfaceOffset   = 0.05 -- Source units to lift the bullet off the hit surface so the next trace does not immediately re-collide (~1.3 mm)
+ACE.RicochetDirectionJitter = 0.05 -- Random deflection added to the reflected direction (up to ~3 degrees)
+ACE.RicochetMaxCount        = 5    -- Maximum ricochets a projectile may perform against entities
+
 --Calculates the vector of the ricochet of a round upon impact at a set angle
 function ACE.RicochetVector(Flight, HitNormal)
 	local Vec = Flight:GetNormalized()
@@ -954,7 +961,7 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 
 	-- Checking for ricochet. The angle value is clamped but can cause game crashes if this overflow check doesnt exist. Why?
 	if not Penetrated and not HitRes.NoRicochet and ricoProb < math.Rand(0,1) and Angle < 90 then
-		Ricochet	= math.Clamp( Angle / 90, 0.05, 0.2) -- atleast 5% of energy is kept, but no more than 20%
+		Ricochet	= math.Clamp( Angle / 90, ACE.RicochetMinRetention, ACE.RicochetMaxRetention )
 		HitRes.Loss	= 1 - Ricochet
 		-- Keep Energy as the incoming impact budget. The shared post-penetration
 		-- contract applies HitRes.Loss exactly once to derive spent/residual energy.
@@ -967,12 +974,12 @@ function ACE.RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		HitRes.RicochetSelected = true
 	end
 
-	if Ricochet > 0 and Bullet.Ricochets < 5 and IsValid(Target) then
+	if Ricochet > 0 and Bullet.Ricochets < ACE.RicochetMaxCount and IsValid(Target) then
 
 		Bullet.Ricochets	= Bullet.Ricochets + 1
-		Bullet["Pos"]	= HitPos + HitNormal * 0.05
+		Bullet["Pos"]	= HitPos + HitNormal * ACE.RicochetSurfaceOffset
 		Bullet.FlightTime	= 0
-		Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
+		Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * ACE.RicochetDirectionJitter):GetNormalized() * Speed * Ricochet
 
 		if IsValid( ACE.GetPhysicalParent(Target):GetPhysicsObject() ) then
 			Bullet.TraceBackComp = math.max(ACE.GetPhysicalParent(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)
@@ -1040,7 +1047,7 @@ function ACE.PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then
 			Bullet.GroundRicos  = Bullet.GroundRicos + 1
 			Bullet.Pos		= HitPos + HitNormal * 1
-			Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
+			Bullet.Flight	= (ACE.RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * ACE.RicochetDirectionJitter):GetNormalized() * Speed * Ricochet
 			HitRes.Ricochet	= true
 		end
 
